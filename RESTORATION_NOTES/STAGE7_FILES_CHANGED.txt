@@ -1,0 +1,16 @@
+RESTORATION_NOTES/STAGE7_LOGGER_VIDEO_ASPECT_RU.md
+apps/android/src/main/kotlin/com/tvnext/app/MainActivity.kt
+apps/android/src/main/kotlin/com/tvnext/app/ProfileChannelEditor.kt
+apps/android/src/main/kotlin/com/tvnext/app/ProfilePersonalData.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecoveryMainMenu.kt
+apps/android/src/main/kotlin/com/tvnext/app/VideoAspectSettingsDialog.kt
+core/common/src/androidMain/kotlin/com/tvnext/app/core/common/log/Logger.android.kt
+core/common/src/commonMain/kotlin/com/tvnext/app/core/common/log/Logger.kt
+core/common/src/desktopMain/kotlin/com/tvnext/app/core/common/log/Logger.desktop.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidChannelPreferences.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidVideoAspectSettings.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidVideoViewport.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/PlayerSurface.android.kt
+core/player/src/commonMain/kotlin/com/tvnext/app/core/player/VideoAspectMode.kt
+core/player/src/commonTest/kotlin/com/tvnext/app/core/player/VideoAspectModeTest.kt
+tools/VideoAspectModeSmoke.kt

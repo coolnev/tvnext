@@ -1,0 +1,123 @@
+{
+  "input_archive": "TVNext3-src(4).zip",
+  "input_sha256": "506ec0077f38aff226fabed8b04f2817662b89391c1444ebfe7906dbc773ed4f",
+  "kotlin_files_syntax_parsed": 238,
+  "syntax_errors": [],
+  "desktop_files_byte_identical": 76,
+  "changed_files": [
+    {
+      "path": "features/tvg/src/commonMain/kotlin/com/tvnext/app/feature/tvg/ui/TvgComponent.kt",
+      "before_sha256": "45d81bbdb734bfeff25800b5b197398474fae46a13a4f006b54148ddcd5fe108",
+      "after_sha256": "1f997c58e7d409c634d3bccb2a3b125ae081b6d9130b8b3f286be2130b41b3ca"
+    },
+    {
+      "path": "features/settings/src/commonMain/kotlin/com/tvnext/app/feature/settings/ui/SettingsComponent.kt",
+      "before_sha256": "cb3abb561ae96d74e5364794e1d5cf17293a75b11d6c7bf9287fbba36cfcefbb",
+      "after_sha256": "441e5eab54cf242a38e69aaf31acf15be988f03ef278350cb59cdda63b311bdb"
+    },
+    {
+      "path": "features/search/src/commonMain/kotlin/com/tvnext/app/feature/search/ui/SearchComponent.kt",
+      "before_sha256": "15ce1be226312b6b5a596cc028d7a300ba61888ba53fa608c2f03c7feee6cc9a",
+      "after_sha256": "dfd0abc6902bdfdff4a40a28535dcbc5005ecfb650bc793f9ee81d2d2e1d8086"
+    },
+    {
+      "path": "features/media/src/commonMain/kotlin/com/tvnext/app/feature/media/ui/MediaComponent.kt",
+      "before_sha256": "b66c45e3c6dedfed59d0b89352ea3e93ccb2208afd402067c10c533a32719716",
+      "after_sha256": "5ae21f971965b215e9a45389f11fb3b3ff7e64a327f13fbe2ffa575bc4c68028"
+    },
+    {
+      "path": "features/media/src/commonMain/kotlin/com/tvnext/app/feature/media/ui/MediaScreen.kt",
+      "before_sha256": "cfbfadb797dcff7c9049b54434f3b2d0de6ccc1e8a1d561637238e4728de0091",
+      "after_sha256": "f9c696320b7f86e2fa57babba90a4f25a2f1da15ce428b7f72069ebb1c498b84"
+    },
+    {
+      "path": "features/home/src/commonMain/kotlin/com/tvnext/app/feature/home/ui/HomeComponent.kt",
+      "before_sha256": "392c37eb1a75ec55a3a1137d642e70b82080d2e3116a657a88a704cc56ad5c4c",
+      "after_sha256": "5e807c0b667bfad3ae25e65d8a3ff3dfb1e07967d6927dbd525650508e958119"
+    },
+    {
+      "path": "features/channels/src/commonMain/kotlin/com/tvnext/app/feature/channels/ui/ChannelsComponent.kt",
+      "before_sha256": "3e18334ceb053d57fc64759796f9eefda4a99b0d87a877e9563cc6e45afa53ce",
+      "after_sha256": "74abb36bbb97e514d1ffaf11297b061968050fa7652a6a8a095e94f8c425d92e"
+    },
+    {
+      "path": "features/channels/src/commonMain/kotlin/com/tvnext/app/feature/channels/ui/ChannelsScreen.kt",
+      "before_sha256": "9e5d5a3970318dad8931673657b1cdfe8a475aac91f817e3805915f67405744d",
+      "after_sha256": "16ce0ca92123b6865f9cc3d2d578c26127ba737a084e330137ec4fe1c1687452"
+    },
+    {
+      "path": "core/ui/src/commonMain/kotlin/com/tvnext/app/core/ui/component/TvCardButton.kt",
+      "before_sha256": "6fcff9f14e3a86488ddef066e9bbb3290eebd38499caf658736da32e17acc814",
+      "after_sha256": "890fda5090e32368db0810740411aa29ccb79f928bef44da1e4a711d8f204141"
+    },
+    {
+      "path": "core/tmdb/src/commonMain/kotlin/com/tvnext/app/core/tmdb/TmdbRepository.kt",
+      "before_sha256": "166bb0ddf3658bb6a3fc50fe5eefff4d55c0b38dee83429131c1d7398c330e36",
+      "after_sha256": "4985f6f5dd7d2121e1c354c913f664e3f3cef300b7ef099a7f07f6d1157bd5b9"
+    },
+    {
+      "path": "core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidPlaybackController.kt",
+      "before_sha256": "865137f1c2044f2de0137ae60c7f39cc25a59e38956915b1789697ae60b30ec5",
+      "after_sha256": "5a9da677cffe93b436a7cbf98c5e32951c1ce2a1765ea576f4af29a55a644e8b"
+    },
+    {
+      "path": "core/player/src/androidMain/kotlin/com/tvnext/app/core/player/PlayerSurface.android.kt",
+      "before_sha256": "c234e601a4b89574a0b40fd195594be37a453843cfba6376ad3893312e3a8756",
+      "after_sha256": "cce6e6fe41403841a6e6c5178e5c1e1f828b7b6693e3581eb6ff1a13dcbd512e"
+    },
+    {
+      "path": "core/iptv/src/commonMain/kotlin/com/tvnext/app/core/iptv/data/IptvPlaylistRepository.kt",
+      "before_sha256": "f480f928cc625a6ebba65a767bf7db73f7557deccbd3ac20995a0055d9cfb83b",
+      "after_sha256": "0484c3fcecd8efb66107309984a38d47e4baaf8caa75ee6a473cd029aeaa5038"
+    },
+    {
+      "path": "core/iptv/src/commonMain/kotlin/com/tvnext/app/core/iptv/data/LiteEpgRepository.kt",
+      "before_sha256": "29f8a803757988a944d5f8c24eb7632720ca5793966adc55fafd4813389c6f58",
+      "after_sha256": "c3f6cf8709987444610126d430a2ecb11789b2e6889bf406e78ab1297e42c327"
+    },
+    {
+      "path": "core/iptv/src/commonMain/kotlin/com/tvnext/app/core/iptv/data/M3uSource.kt",
+      "before_sha256": "197fe4a1e6ff86f3a1a59d6c9a867fda98af08b33cd3fa27345285ecfc45e930",
+      "after_sha256": "18c457237e5c6e312c383e314199a36b59db5a6873364d83b891862c74629393"
+    },
+    {
+      "path": "core/iptv/src/commonMain/kotlin/com/tvnext/app/core/iptv/archive/ArchiveDepthResolver.kt",
+      "before_sha256": "2da398d2cb45aaef28185292463b30b79f596de36ae512cc079c531cb6e2bdc8",
+      "after_sha256": "64348cac7529f58208a7b8e874b97019e6bc10af74687877f82183097d3d2583"
+    },
+    {
+      "path": "core/iptv/src/commonMain/kotlin/com/tvnext/app/core/iptv/archive/ArchiveRepository.kt",
+      "before_sha256": "ae03cbdb1af2e370a06e1f5b67c068d3107ae2f9e6b6cdb9cd80617881973ede",
+      "after_sha256": "b85394517a416ebbbc274cf27c1272f8c9fde4a0b334f2494e1c2d5a83422ec1"
+    },
+    {
+      "path": "core/iptv/src/androidMain/kotlin/com/tvnext/app/core/iptv/data/EpgIo.android.kt",
+      "before_sha256": "02d4aa41eaaaa687de6c955361d697e16131d61d2bdde01f7b2b22ffa8764d9d",
+      "after_sha256": "3c56872b4dcab0fbdb802cd59524a6627f12a9adc668489af38e528ca1b116cc"
+    },
+    {
+      "path": "core/app/src/commonMain/kotlin/com/tvnext/app/core/app/AppComponent.kt",
+      "before_sha256": "be7ded9c5f51261bbbe8c645dddb11030c0087c4cb7630559362495fe95460f1",
+      "after_sha256": "5b0e03c19d2aff94f903d38a1d9cb3667e71d44080bb18ac1b26b74c69ef8253"
+    },
+    {
+      "path": "apps/android/src/main/kotlin/com/tvnext/app/MainActivity.kt",
+      "before_sha256": "466dae0d1376befd857544caba7656b88f21cdd41eb8d3911d3208846ce57460",
+      "after_sha256": "e03f584b351875f5e3a493f8a326d509fee4601c87ddc39087895f6ae574421d"
+    },
+    {
+      "path": "apps/android/src/main/kotlin/com/tvnext/app/TVNextApplication.kt",
+      "before_sha256": "3c7003b6e58b87c7a57864bfaa548f198732968f82e1741bf79dd26c6d16ceb1",
+      "after_sha256": "0c9b90468d8ec665e824fa9efef0ec48ba5b1dc84c5db751da86d73262ed3711"
+    }
+  ],
+  "added_source_files": [
+    "apps/android/src/main/kotlin/com/tvnext/app/PlaybackViewModel.kt",
+    "core/common/src/commonMain/kotlin/com/tvnext/app/core/common/util/AndroidCancellation.kt",
+    "core/iptv/src/androidMain/kotlin/com/tvnext/app/core/iptv/data/AndroidEpgRepository.kt",
+    "features/channels/src/commonMain/kotlin/com/tvnext/app/feature/channels/ui/AndroidChannelFocus.kt",
+    "features/channels/src/commonTest/kotlin/com/tvnext/app/feature/channels/ui/AndroidChannelFocusTest.kt"
+  ],
+  "apk_build": "BLOCKED: Gradle distribution unavailable; no Android SDK or dependency cache; compilation and runtime tests not run",
+  "focus_regression_tests": "5 tests added, NOT RUN"
+}

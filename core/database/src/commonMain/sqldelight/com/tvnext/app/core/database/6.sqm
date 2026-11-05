@@ -1,0 +1,20 @@
+-- Migration 6: optional TMDB metadata cache. Independent from IPTV/EPG/history.
+CREATE TABLE IF NOT EXISTS tmdb_cache (
+    media_item_id TEXT NOT NULL PRIMARY KEY,
+    tmdb_id INTEGER,
+    media_type TEXT NOT NULL DEFAULT '',
+    title TEXT,
+    original_title TEXT,
+    overview TEXT,
+    poster_path TEXT,
+    backdrop_path TEXT,
+    release_date TEXT,
+    vote_average REAL,
+    genres TEXT NOT NULL DEFAULT '',
+    runtime_minutes INTEGER,
+    director TEXT,
+    cast TEXT NOT NULL DEFAULT '',
+    original_language TEXT,
+    updated_at INTEGER NOT NULL,
+    status TEXT NOT NULL
+);

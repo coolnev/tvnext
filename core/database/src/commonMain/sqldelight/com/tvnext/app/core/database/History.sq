@@ -1,0 +1,38 @@
+-- Watch history: recently played items (stable ids), typed by content kind
+-- (LIVE channel / VOD media-library item), capped at 20.
+
+CREATE TABLE history (
+    item_id TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    watched_at INTEGER NOT NULL,
+    PRIMARY KEY (item_id, content_type)
+);
+
+insertHistory:
+INSERT OR REPLACE INTO history(item_id, content_type, watched_at)
+VALUES (?, ?, ?);
+
+selectRecentHistory:
+SELECT * FROM history ORDER BY watched_at DESC LIMIT ?;
+
+selectRecentHistoryByType:
+SELECT * FROM history WHERE content_type = ? ORDER BY watched_at DESC LIMIT ?;
+
+selectAllHistory:
+SELECT * FROM history ORDER BY watched_at DESC;
+
+deleteHistoryByItem:
+DELETE FROM history WHERE item_id = ? AND content_type = ?;
+
+-- Stable-id migration: rewrites history entries whose item changed its id.
+updateHistoryItemId:
+UPDATE history SET item_id = ? WHERE item_id = ? AND content_type = ?;
+
+deleteAllHistory:
+DELETE FROM history;
+
+-- Keeps only the newest N entries (SQLite `LIMIT -1 OFFSET ?` = all rows past offset).
+deleteOldestHistory:
+DELETE FROM history WHERE (item_id, content_type) IN (
+    SELECT item_id, content_type FROM history ORDER BY watched_at DESC LIMIT -1 OFFSET ?
+);

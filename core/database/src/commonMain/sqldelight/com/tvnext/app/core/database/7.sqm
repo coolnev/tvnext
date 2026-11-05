@@ -1,0 +1,8 @@
+-- Migration 7: index for the BULK "now playing across many channels" queries
+-- (Home screen, channel list), which filter epg_programme by playlist_id +
+-- time range only (no channel_id). The existing idx_epg_programme_channel_start
+-- index has channel_id before start_time, so it cannot serve a time-range scan
+-- across a whole playlist efficiently — those queries were doing a full table
+-- scan over every programme row of the playlist. This is a genuine,
+-- measurable source of UI lag on weak TV hardware with a large EPG.
+CREATE INDEX IF NOT EXISTS idx_epg_programme_playlist_start ON epg_programme(playlist_id, start_time, stop_time);

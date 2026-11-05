@@ -1,0 +1,54 @@
+-- VOD / media-library items (a separate M3U source type, see playlist.type = 'VOD').
+
+CREATE TABLE media_item (
+    id TEXT NOT NULL PRIMARY KEY,
+    playlist_id TEXT NOT NULL,
+    number INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    stream_url TEXT NOT NULL,
+    logo_url TEXT,
+    category TEXT NOT NULL DEFAULT '',
+    tvg_id TEXT,
+    tvg_name TEXT,
+    duration_seconds INTEGER,
+    season TEXT,
+    episode TEXT,
+    is_favorite INTEGER NOT NULL DEFAULT 0
+);
+
+insertMediaItem:
+INSERT OR REPLACE INTO media_item(
+    id, playlist_id, number, name, stream_url, logo_url, category, tvg_id,
+    tvg_name, duration_seconds, season, episode, is_favorite
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAllMediaItems:
+SELECT * FROM media_item ORDER BY number ASC;
+
+selectMediaItemsByPlaylist:
+SELECT * FROM media_item WHERE playlist_id = ? ORDER BY number ASC;
+
+selectMediaItemById:
+SELECT * FROM media_item WHERE id = ?;
+
+deleteMediaItemsByPlaylist:
+DELETE FROM media_item WHERE playlist_id = ?;
+
+deleteAllMediaItems:
+DELETE FROM media_item;
+
+setMediaFavorite:
+UPDATE media_item SET is_favorite = ? WHERE id = ?;
+
+-- Stable-id migration: rewrites a media item's id (favorites travel with the row).
+updateMediaItemId:
+UPDATE media_item SET id = ? WHERE id = ?;
+
+deleteMediaItemById:
+DELETE FROM media_item WHERE id = ?;
+
+selectMediaFavoriteIds:
+SELECT id FROM media_item WHERE is_favorite = 1;
+
+countMediaItemsByPlaylist:
+SELECT COUNT(*) FROM media_item WHERE playlist_id = ?;

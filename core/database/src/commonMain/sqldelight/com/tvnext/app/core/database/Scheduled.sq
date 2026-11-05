@@ -1,0 +1,44 @@
+-- "Запланировать просмотр": a future programme the user asked to be reminded
+-- about. No automatic channel switching is ever performed from here.
+
+CREATE TABLE scheduled_programme (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlist_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    channel_name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_scheduled_unique
+    ON scheduled_programme(playlist_id, channel_id, start_time);
+
+insertScheduled:
+INSERT OR REPLACE INTO scheduled_programme(
+    playlist_id, channel_id, channel_name, title, start_time, end_time, created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteScheduled:
+DELETE FROM scheduled_programme
+WHERE playlist_id = ? AND channel_id = ? AND start_time = ?;
+
+selectAllScheduled:
+SELECT * FROM scheduled_programme ORDER BY start_time ASC;
+
+selectScheduled:
+SELECT * FROM scheduled_programme
+WHERE playlist_id = ? AND channel_id = ? AND start_time = ?;
+
+-- Removes reminders whose programme already ended (housekeeping).
+deleteExpiredScheduled:
+DELETE FROM scheduled_programme WHERE end_time < ?;
+
+-- Stable-id migration: rewrites a channel's scheduled programmes to its new id.
+updateScheduledChannelId:
+UPDATE scheduled_programme SET channel_id = ? WHERE channel_id = ?;
+
+-- Removes every reminder of a playlist (used when the playlist is deleted).
+deleteScheduledByPlaylist:
+DELETE FROM scheduled_programme WHERE playlist_id = ?;

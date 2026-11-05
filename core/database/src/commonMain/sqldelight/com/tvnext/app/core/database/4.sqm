@@ -1,0 +1,37 @@
+-- Migration 4: catch-up / archive (timeshift) support and scheduled
+-- programmes.
+--
+-- Channels gain the provider's catch-up attributes parsed from #EXTINF
+-- (catchup / catchup-days / catchup-source / catchup-type / timeshift).
+-- archive_capability caches what the app MEASURED about a channel's archive
+-- depth (never an invented number; "unknown" is stored as status=UNKNOWN).
+-- scheduled_programme holds the user's "запланировать просмотр" entries.
+
+ALTER TABLE channel ADD COLUMN catchup TEXT;
+ALTER TABLE channel ADD COLUMN catchup_days INTEGER;
+ALTER TABLE channel ADD COLUMN catchup_source TEXT;
+ALTER TABLE channel ADD COLUMN catchup_type TEXT;
+ALTER TABLE channel ADD COLUMN timeshift TEXT;
+
+CREATE TABLE IF NOT EXISTS archive_capability (
+    channel_id TEXT NOT NULL PRIMARY KEY,
+    status TEXT NOT NULL,
+    declared_days INTEGER,
+    measured_ms INTEGER,
+    last_probed_at INTEGER,
+    last_error TEXT
+);
+
+CREATE TABLE IF NOT EXISTS scheduled_programme (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlist_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    channel_name TEXT NOT NULL,
+    title TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scheduled_unique
+    ON scheduled_programme(playlist_id, channel_id, start_time);

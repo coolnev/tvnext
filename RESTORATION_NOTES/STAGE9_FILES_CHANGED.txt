@@ -1,0 +1,14 @@
+CHANGED FROM STAGE8:
+apps/android/src/main/kotlin/com/tvnext/app/MainActivity.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecoveryControlPanel.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecoveryMainMenu.kt
+core/app/src/commonMain/kotlin/com/tvnext/app/core/app/AppShell.kt
+core/ui/src/commonMain/kotlin/com/tvnext/app/core/ui/component/TvCardButton.kt
+core/ui/src/commonMain/kotlin/com/tvnext/app/core/ui/component/TvPlayerPanel.kt
+features/channels/src/commonMain/kotlin/com/tvnext/app/feature/channels/ui/ChannelsScreen.kt
+features/home/src/commonMain/kotlin/com/tvnext/app/feature/home/ui/HomeScreen.kt
+features/media/src/commonMain/kotlin/com/tvnext/app/feature/media/ui/AndroidMediaScreen.kt
+ADDED:
+RESTORATION_NOTES/STAGE9_RUNTIME_NAVIGATION_TOUCH_RU.md
+
+Static integration checks: 13 PASSED. Full Android Gradle build NOT executed.

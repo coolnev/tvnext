@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="TVNext"
+           Language="1033"
+           Version="1.0.0"
+           Manufacturer="TVNext"
+           UpgradeCode="70FBD4FB-76C4-4D2E-A759-175CD6F534D1"
+           Codepage="65001">
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perUser"
+             InstallPrivileges="limited"
+             Description="TVNext - IPTV player (live TV, archives, VOD, EPG)"
+             Manufacturer="TVNext"
+             Keywords="IPTV,TV,player"/>
+
+    <!-- Per-user install: no admin rights needed. -->
+    <Property Id="MSIINSTALLPERUSER" Value="1"/>
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of TVNext is already installed."/>
+
+    <Media Id="1" Cabinet="TVNext.cab" EmbedCab="yes"/>
+
+    <Icon Id="app.ico" SourceFile="..\icon.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="app.ico"/>
+
+    <!--
+      WixUI_InstallDir gives the standard wizard UI the user asked for: a
+      licence page, then an install-folder picker (writable PATH field + a
+      BROWSE button -> WixUIModeChange folder picker) and a confirm screen with
+      a Change button that returns to that picker. This is the part that shows a
+      writable install path and a Browse/Change button.
+
+      The only addition on top of it is the "delete user data" checkbox, shown
+      on a separate dialog (RemoveDataDlg) that appears ONLY at uninstall time.
+    -->
+    <WixVariable Id="WixUILicenseRtf" Value="..\LICENSE.rtf"/>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+    <Property Id="REMOVE_USER_DATA" Value="0" Secure="yes"/>
+    <UIRef Id="WixUI_InstallDir"/>
+    <UIRef Id="TVNextExtraUI"/>
+
+    <!-- The "delete user data" checkbox sheet: shown only while uninstalling. -->
+    <InstallUISequence>
+      <Show Dialog="RemoveDataDlg" Before="ProgressDlg">REMOVE="ALL"</Show>
+    </InstallUISequence>
+
+    <!--
+      Wipe %USERPROFILE%\.tvnext on uninstall, ONLY when the user ticks the
+      checkbox. Data lives outside the install folder; a plain uninstall leaves
+      it behind so reinstalls remember playlists/history.
+      Deferred + CustomActionData: deferred CA cannot read MSI properties, so
+      SetRemoveUserData (immediate) marshals REMOVE_USER_DATA -> CustomActionData.
+      Guarded against app upgrades (which also set REMOVE=ALL).
+    -->
+    <CustomAction Id="SetRemoveUserData"
+                  Property="RemoveUserData"
+                  Value="[REMOVE_USER_DATA]"
+                  Execute="immediate"/>
+    <CustomAction Id="RemoveUserData"
+                  Script="vbscript"
+                  Execute="deferred"
+                  Impersonate="yes"
+                  Return="ignore">
+      <![CDATA[
+        On Error Resume Next
+        If Session("CustomActionData") = "1" Then
+          Set shell = CreateObject("WScript.Shell")
+          Set fso = CreateObject("Scripting.FileSystemObject")
+          home = shell.SpecialFolders("Profile")
+          If home <> "" And fso.FolderExists(home & "\.tvnext") Then
+            fso.DeleteFolder home & "\.tvnext", True
+          End If
+        End If
+      ]]>
+    </CustomAction>
+    <InstallExecuteSequence>
+      <Custom Action="SetRemoveUserData" Before="RemoveUserData">REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="RemoveUserData" After="InstallFiles">REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+    </InstallExecuteSequence>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="ProgramsFolder" Name="Programs">
+          <Directory Id="INSTALLFOLDER" Name="TVNext"/>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="TVNext"/>
+      </Directory>
+      <Directory Id="DesktopFolder" Name="DesktopFolder"/>
+    </Directory>
+
+    <!-- Start-menu shortcut. -->
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="2ACB84E4-BE8E-47A2-B341-A47252B4A1B0">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="TVNext"
+                  Description="TVNext - IPTV player"
+                  Target="[INSTALLFOLDER]TVNext.exe"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\TVNext" Name="startMenuShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <!-- Desktop shortcut. -->
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="B22A6D93-6697-42AB-A1F3-30AD256D0E62">
+        <Shortcut Id="DesktopShortcut"
+                  Name="TVNext"
+                  Description="TVNext - IPTV player"
+                  Target="[INSTALLFOLDER]TVNext.exe"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RegistryValue Root="HKCU" Key="Software\TVNext" Name="desktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="ProductFeature" Title="TVNext" Level="1">
+      <ComponentGroupRef Id="AppFiles"/>
+      <ComponentRef Id="ApplicationShortcut"/>
+      <ComponentRef Id="DesktopShortcut"/>
+    </Feature>
+
+    <!--
+      Extra UI that only adds the "delete user data" dialog on top of the
+      standard WixUI_InstallDir wizard. Declared as its own UI (referenced via
+      TVMextExtraUIRef) so it does not clash with WixUI_InstallDir; WiX merges
+      both at link time, RemoveDataDlg just plugs into the shared flow.
+    -->
+    <UI Id="TVNextExtraUI">
+      <Dialog Id="RemoveDataDlg" Width="370" Height="270" Title="[ProductName] Setup" NoMinimize="yes">
+        <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="20" Transparent="yes" NoPrefix="yes" Text="TVNext - Confirm Removal"/>
+        <Control Id="Description" Type="Text" X="135" Y="31" Width="220" Height="20" Transparent="yes" NoPrefix="yes" Text="Uninstalling TVNext"/>
+        <Control Id="InstallText" Type="Text" X="33" Y="70" Width="304" Height="100" NoPrefix="yes" Text="TVNext stores your data (playlists, channels, EPG, settings) in %USERPROFILE%\.tvnext. Program files will be removed. If you also want to delete your data, check the box below."/>
+
+        <Control Id="RemoveDataCheckbox" Type="CheckBox" X="33" Y="180" Width="304" Height="17"
+                 Property="REMOVE_USER_DATA" CheckBoxValue="1" TabSkip="no"
+                 Text="Delete all user data (playlists, channels, EPG, settings) and remove the .tvnext folder"/>
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
+          <Publish Event="EndDialog" Value="Return"/>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Finish">
+          <Publish Event="EndDialog" Value="Return"/>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Text="Cancel">
+          <Publish Event="EndDialog" Value="Exit"/>
+        </Control>
+      </Dialog>
+    </UI>
+  </Product>
+</Wix>

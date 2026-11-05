@@ -1,0 +1,11 @@
+-- Migration 5: case-insensitive programme title search.
+--
+-- SQLite's LIKE is case-sensitive for Cyrillic (only ASCII A-Z is folded), so
+-- «Невский» was not found when the user typed «невский». The title search now
+-- runs over a pre-lowered copy of the title; the column is backfilled on the
+-- next EPG refresh (parser version bump forces one re-download).
+
+ALTER TABLE epg_programme ADD COLUMN lower_title TEXT NOT NULL DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_epg_programme_lower_title
+    ON epg_programme(playlist_id, lower_title);

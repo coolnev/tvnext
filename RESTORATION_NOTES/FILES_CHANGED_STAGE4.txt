@@ -1,0 +1,23 @@
+New:
+.gitignore
+RESTORATION_NOTES/FILES_CHANGED_STAGE4.txt
+RESTORATION_NOTES/STAGE4_AGENT_MERGE_RU.md
+apps/android/src/main/kotlin/com/tvnext/app/RecordingSchedulePolicy.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecordingStorageLocations.kt
+core/player/src/commonMain/kotlin/com/tvnext/app/core/player/PlaybackSeekStep.kt
+core/player/src/commonMain/kotlin/com/tvnext/app/core/player/StreamRecoveryPolicy.kt
+core/player/src/commonTest/kotlin/com/tvnext/app/core/player/RecoveredPolicyTest.kt
+tools/RecordingScheduleSmoke.kt
+tools/RecoveredPlayerPoliciesSmoke.kt
+Changed:
+RESTORATION_NOTES/README_RU.md
+apps/android/build.gradle.kts
+apps/android/src/main/kotlin/com/tvnext/app/LocalRecoveryStore.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecordingExport.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecordingFormats.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecordingService.kt
+apps/android/src/main/kotlin/com/tvnext/app/RecoveryControlPanel.kt
+tools/RecordingFormatsSmoke.kt
+Removed local files:
+TVNext_0521_MediaScreen_KMP_Patch.zip
+local.properties

@@ -1,0 +1,7 @@
+TVNext stage 31 validation
+- Stage 30 source file set retained: PASS (421/421 existing)
+- Kotlin/JVM ArchiveDepthChanges smoke test: PASS
+- No changes to Gradle or native sources: PASS
+- ZIP CRC check: see outer packaging checks
+- Full Gradle Android compile: NOT RUN (SDK absent; gradle wrapper distribution unavailable offline)
+- Real Android TV playback, EPG server and Kinopoisk API: NOT TESTED

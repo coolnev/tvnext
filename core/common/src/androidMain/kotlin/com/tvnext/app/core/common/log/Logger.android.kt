@@ -1,0 +1,11 @@
+package com.tvnext.app.core.common.log
+
+import android.util.Log
+
+internal actual fun platformLogDebug(tag: String, message: String) {
+    Log.d(tag, message)
+}
+
+internal actual fun platformLogError(tag: String, message: String, throwable: Throwable?) {
+    if (throwable != null) Log.e(tag, message, throwable) else Log.e(tag, message)
+}

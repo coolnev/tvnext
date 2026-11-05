@@ -1,0 +1,10 @@
+TVNext этап 10 — локальная проверка исходников
+
+Исходная база: TVNext_0521_STAGE9_TOUCH_MENU_INTEGRATED
+Эталон: TVNext-0.5.21-release.apk, SHA-256 69e4165379d729dfff81dd800140e04df81f6058c4c5a610fd9617d08e289d0d
+Байткод сравнения: UI Windows 0.5.8 / ui-desktop.jar / TvCardButtonKt (javap).
+Изменено 2 Kotlin-файла, добавлены диагностический скрипт и отчёт.
+Проверка связей: python tools/check_stage10_touch.py — 10 из 10 PASS.
+Синтаксис: Kotlin PSI — 2 файла, 0 ошибок.
+Сохранены побайтно: apps/android, apps/desktop, core/player, features, gradle, manifest.
+Не проверено: полная компиляция Gradle, жесты на устройстве, визуальное соответствие оригиналу.

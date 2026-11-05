@@ -1,0 +1,6 @@
+TVNext stage 30 (EPG while playback) — validation
+- Gate compiled using kotlinc + kotlinx-coroutines-core-jvm: PASS
+- Gate runtime checks: playback foreground permits refresh; background blocks; awaitForeground resumes while video active: PASS
+- New expect/actual paceEpgCacheHydration: commonMain, androidMain, desktopMain present: PASS
+- Full Android Gradle/SDK build: NOT AVAILABLE in this environment; device performance unverified
+- Base: TVNext_0521_STAGE29_EPG_VIDEO_PRIORITY_SOURCE.zip (no source files dropped)

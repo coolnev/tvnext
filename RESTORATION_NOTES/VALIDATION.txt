@@ -1,0 +1,15 @@
+TVNext source restoration - phase 1 - 2026-11-01
+
+REFERENCE APK SHA256:
+69e4165379d729dfff81dd800140e04df81f6058c4c5a610fd9617d08e289d0d
+
+CHECKS:
+- Parsed all Kotlin sources with Kotlin compiler PSI after CRLF normalization:
+  257 source files, 0 syntax errors.
+- Compiled RecordingFormats.kt and tools/RecordingFormatsSmoke.kt using kotlinc 1.9.0:
+  HLS parser smoke checks: OK.
+- Full Gradle build NOT run: unavailable Gradle distribution + Android SDK.
+  ./gradlew --version -> java.net.UnknownHostException: services.gradle.org
+- Native JNI binaries/CMake of original 0.5.21 NOT reconstructed.
+
+DO NOT TREAT THIS RESTORATION AS A VERIFIED 0.5.21 BUILD.

@@ -1,0 +1,6 @@
+Modified files against stage 9:
+core/ui/src/commonMain/kotlin/com/tvnext/app/core/ui/component/TvCardButton.kt
+core/ui/src/commonMain/kotlin/com/tvnext/app/core/ui/component/TvPlayerPanel.kt
+Added:
+RESTORATION_NOTES/STAGE10_TOUCH_EVIDENCE_RU.md
+tools/check_stage10_touch.py

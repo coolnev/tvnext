@@ -1,0 +1,42 @@
+-- Per-channel catch-up / archive capability cache.
+--
+-- status: NONE (no catch-up mechanism at all), AVAILABLE (archive confirmed),
+-- UNKNOWN ("не удалось определить" — the mechanism exists but the depth could
+-- not be reliably measured). declared_days comes from the provider's
+-- `catchup-days`; measured_ms is the oldest reachable offset the app verified
+-- experimentally. effective depth = measured ?: declared, then clamped by the
+-- user's archive limit at read time (never stored here).
+
+CREATE TABLE archive_capability (
+    channel_id TEXT NOT NULL PRIMARY KEY,
+    status TEXT NOT NULL,
+    declared_days INTEGER,
+    measured_ms INTEGER,
+    last_probed_at INTEGER,
+    last_error TEXT
+);
+
+upsertArchiveCapability:
+INSERT OR REPLACE INTO archive_capability(
+    channel_id, status, declared_days, measured_ms, last_probed_at, last_error
+) VALUES (?, ?, ?, ?, ?, ?);
+
+selectArchiveCapability:
+SELECT * FROM archive_capability WHERE channel_id = ?;
+
+selectArchiveCapabilitiesByPlaylist:
+SELECT * FROM archive_capability WHERE channel_id IN (
+    SELECT id FROM channel WHERE playlist_id = ?
+);
+
+deleteArchiveCapability:
+DELETE FROM archive_capability WHERE channel_id = ?;
+
+-- Stable-id migration: rewrites a channel's archive capability to its new id.
+updateArchiveCapabilityChannelId:
+UPDATE archive_capability SET channel_id = ? WHERE channel_id = ?;
+
+deleteArchiveCapabilitiesByPlaylist:
+DELETE FROM archive_capability WHERE channel_id IN (
+    SELECT id FROM channel WHERE playlist_id = ?
+);

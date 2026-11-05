@@ -1,0 +1,220 @@
+-- EPG (XMLTV) cache, scoped per playlist: every playlist has its own EPG source
+-- (its `url-tvg` or the user override) and its own cache, so identical tvg-ids
+-- in different playlists can never be merged.
+--
+-- Versioned batches: rows carry a batch_id. A refresh writes the NEW rows with
+-- a fresh batch id while readers keep seeing the OLD (active) batch, so a
+-- multi-minute import never leaves the TV Guide / "now playing" empty.
+-- Commit replaces the active batch and deletes the old rows in one
+-- transaction; an aborted import simply drops its partial batch.
+
+CREATE TABLE epg_channel (
+    playlist_id TEXT NOT NULL,
+    id TEXT NOT NULL,
+    display_names TEXT NOT NULL DEFAULT '',
+    icon_url TEXT,
+    batch_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (playlist_id, id)
+);
+
+CREATE TABLE epg_programme (
+    playlist_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    stop_time INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    lower_title TEXT NOT NULL DEFAULT '',
+    description TEXT,
+    category TEXT,
+    episode_num TEXT,
+    batch_id INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_epg_programme_channel_start
+    ON epg_programme(playlist_id, batch_id, channel_id, start_time);
+-- Covers the BULK (whole-playlist, no channel_id filter) queries used by the
+-- Home screen and channel list to resolve "now playing" for many channels at
+-- once (selectNowPlaying / selectProgrammesInRangeByPlaylist). The composite
+-- index above has channel_id BEFORE start_time, so it cannot binary-search a
+-- time range across all of a playlist's channels — without this index those
+-- bulk queries fall back to a full scan of every programme row of the
+-- playlist, which on a large EPG (hundreds of thousands to millions of rows)
+-- is a real, measurable source of UI lag on weaker TV hardware.
+CREATE INDEX idx_epg_programme_playlist_start
+    ON epg_programme(playlist_id, batch_id, start_time, stop_time);
+
+-- Index for the case-insensitive title search (Cyrillic is case-SENSITIVE in
+-- SQLite LIKE, so the search runs over the pre-lowered column).
+CREATE INDEX idx_epg_programme_lower_title
+    ON epg_programme(playlist_id, batch_id, lower_title);
+
+-- One cache-metadata row per playlist (playlist_id is the primary key).
+-- active_batch is the row set visible to readers; during a refresh it keeps
+-- pointing at the previous batch until commitReplace switches it.
+CREATE TABLE epg_cache (
+    playlist_id TEXT NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL DEFAULT '',
+    fetched_at INTEGER,
+    source TEXT NOT NULL DEFAULT '',
+    last_error TEXT,
+    channel_count INTEGER NOT NULL DEFAULT 0,
+    programme_count INTEGER NOT NULL DEFAULT 0,
+    active_batch INTEGER NOT NULL DEFAULT 0
+);
+
+deleteEpgProgrammesByPlaylist:
+DELETE FROM epg_programme WHERE playlist_id = ?;
+
+deleteEpgChannelsByPlaylist:
+DELETE FROM epg_channel WHERE playlist_id = ?;
+
+deleteEpgCacheByPlaylist:
+DELETE FROM epg_cache WHERE playlist_id = ?;
+
+insertEpgChannel:
+INSERT OR REPLACE INTO epg_channel(playlist_id, id, display_names, icon_url, batch_id)
+VALUES (?, ?, ?, ?, ?);
+
+insertEpgProgramme:
+INSERT OR REPLACE INTO epg_programme(
+    playlist_id, channel_id, start_time, stop_time, title, lower_title, description, category, episode_num, batch_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectEpgChannels:
+SELECT * FROM epg_channel WHERE playlist_id = ? AND batch_id = ? ORDER BY id ASC;
+
+selectEpgChannelById:
+SELECT * FROM epg_channel WHERE playlist_id = ? AND id = ? AND batch_id = ?;
+
+selectCurrentProgramme:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND channel_id = ? AND batch_id = ? AND start_time <= ? AND stop_time > ?
+ORDER BY start_time DESC
+LIMIT 1;
+
+selectNextProgramme:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND channel_id = ? AND batch_id = ? AND start_time >= ?
+ORDER BY start_time ASC
+LIMIT 1;
+
+selectUpcomingProgrammes:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND channel_id = ? AND batch_id = ? AND stop_time > ?
+ORDER BY start_time ASC
+LIMIT ?;
+
+selectProgrammesInRange:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND channel_id = ? AND batch_id = ? AND start_time < ? AND stop_time > ?
+ORDER BY start_time ASC;
+
+-- Title search within a playlist (used by the global Search tab).
+-- Runs over the PRE-LOWERED title column: SQLite LIKE is case-sensitive for
+-- Cyrillic, so a plain `title LIKE` would miss «Невский» when the user types
+-- «невский». The caller lowercases the query first.
+-- DISTINCT: epg_programme has no unique key and real XMLTV sources can list
+-- the same programme twice; duplicate rows must never reach the UI.
+selectProgrammesByTitle:
+SELECT DISTINCT * FROM epg_programme
+WHERE playlist_id = ? AND batch_id = ? AND lower_title LIKE '%' || ? || '%'
+ORDER BY start_time ASC
+LIMIT ?;
+
+-- All programmes overlapping [from, to] for an entire playlist (one query,
+-- used by the TV Guide grid). NOTE: deliberately NO `DISTINCT` — on a multi-
+-- million-row EPG, `DISTINCT *` makes SQLite sort/hash every row into a temp
+-- b-tree (the biggest TV Guide cost). Duplicate rows from the source are
+-- collapsed in Kotlin by (channel_id, start_time), which is O(n) with a set.
+selectProgrammesInRangeByPlaylist:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND batch_id = ? AND start_time < ? AND stop_time > ?
+ORDER BY channel_id ASC, start_time ASC;
+
+-- Low-RAM TV Guide path: only the channels currently visible in the viewport.
+-- The existing (playlist_id, channel_id, start_time) index makes this cheap
+-- even when the playlist contains millions of programme rows.
+selectProgrammesInRangeByChannels:
+SELECT * FROM epg_programme
+WHERE playlist_id = ?
+  AND batch_id = ?
+  AND channel_id IN ?
+  AND start_time < ?
+  AND stop_time > ?
+ORDER BY channel_id ASC, start_time ASC;
+
+-- All programmes on air at the given moment, for a whole playlist
+-- (used to enrich the channel list with the currently playing programme in one query).
+selectNowPlaying:
+SELECT * FROM epg_programme
+WHERE playlist_id = ? AND batch_id = ? AND start_time <= ? AND stop_time > ?;
+
+-- Android TV channel-list path: fetch only the currently visible/requested
+-- EPG channels instead of scanning every programme in the playlist.
+selectNowPlayingByChannels:
+SELECT * FROM epg_programme
+WHERE playlist_id = ?
+  AND batch_id = ?
+  AND channel_id IN ?
+  AND start_time <= ?
+  AND stop_time > ?;
+
+selectEpgCacheMeta:
+SELECT * FROM epg_cache WHERE playlist_id = ?;
+
+upsertEpgCacheMeta:
+INSERT OR REPLACE INTO epg_cache(playlist_id, url, fetched_at, source, last_error, channel_count, programme_count, active_batch)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+countEpgChannels:
+SELECT COUNT(*) FROM epg_channel WHERE playlist_id = ? AND batch_id = ?;
+
+countEpgProgrammes:
+SELECT COUNT(*) FROM epg_programme WHERE playlist_id = ? AND batch_id = ?;
+
+-- Recovery for an interrupted legacy streaming import: programme rows retain
+-- the XMLTV channel id even when the buffered epg_channel batch was lost.
+selectDistinctProgrammeChannelIds:
+SELECT DISTINCT channel_id FROM epg_programme WHERE playlist_id = ? AND batch_id = ?;
+
+-- Archive retention: removes programmes that ended before [cutoff] (the app
+-- only keeps historical EPG inside the archive window, nothing more).
+-- Only rows of the active batch are pruned — a batch being imported must not
+-- be touched before commit.
+pruneOldEpgProgrammes:
+DELETE FROM epg_programme WHERE playlist_id = ? AND stop_time < ? AND batch_id = ?;
+
+-- ---------------------------------------------------------------------------
+-- Two-phase import support
+-- ---------------------------------------------------------------------------
+
+-- Next batch id for a playlist: max(existing)+1 (1 when nothing was imported).
+nextEpgBatch:
+SELECT COALESCE(MAX(batch_id), 0) + 1 FROM (
+    SELECT batch_id FROM epg_channel WHERE playlist_id = ?
+    UNION ALL
+    SELECT batch_id FROM epg_programme WHERE playlist_id = ?
+);
+
+-- Active batch id persisted in epg_cache (0 when no cache metadata exists yet).
+selectEpgActiveBatch:
+SELECT active_batch FROM epg_cache WHERE playlist_id = ?;
+
+-- Minimal epg_cache row for the active batch (fresh import without metadata).
+insertEpgActiveBatch:
+INSERT OR REPLACE INTO epg_cache(playlist_id, active_batch) VALUES (?, ?);
+
+updateEpgActiveBatch:
+UPDATE epg_cache SET active_batch = ? WHERE playlist_id = ?;
+
+deleteEpgBatchProgrammes:
+DELETE FROM epg_programme WHERE playlist_id = ? AND batch_id = ?;
+
+deleteEpgBatchChannels:
+DELETE FROM epg_channel WHERE playlist_id = ? AND batch_id = ?;
+
+deleteEpgOtherProgrammes:
+DELETE FROM epg_programme WHERE playlist_id = ? AND batch_id != ?;
+
+deleteEpgOtherChannels:
+DELETE FROM epg_channel WHERE playlist_id = ? AND batch_id != ?;

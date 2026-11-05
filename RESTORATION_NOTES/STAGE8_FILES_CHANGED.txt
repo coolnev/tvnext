@@ -1,0 +1,9 @@
+RESTORATION_NOTES/STAGE8_ANDROID_DECODERS_RU.md
+apps/android/src/main/kotlin/com/tvnext/app/MainActivity.kt
+apps/android/src/main/kotlin/com/tvnext/app/ProfileChannelEditor.kt
+apps/android/src/main/kotlin/com/tvnext/app/ProfilePersonalData.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidChannelPreferences.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidDecoderPolicy.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidMediaCodecSelector.kt
+core/player/src/androidMain/kotlin/com/tvnext/app/core/player/AndroidPlaybackController.kt
+tools/AndroidDecoderPolicySmoke.kt

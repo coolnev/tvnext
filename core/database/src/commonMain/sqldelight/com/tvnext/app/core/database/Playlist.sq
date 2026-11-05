@@ -1,0 +1,56 @@
+CREATE TABLE playlist (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    last_updated INTEGER,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    url_tvg TEXT,
+    type TEXT NOT NULL DEFAULT 'LIVE',
+    is_default INTEGER NOT NULL DEFAULT 0
+);
+
+insertPlaylist:
+INSERT OR REPLACE INTO playlist(id, name, url, last_updated, enabled, url_tvg, type, is_default)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectPlaylistById:
+SELECT * FROM playlist WHERE id = ?;
+
+selectAllPlaylists:
+SELECT * FROM playlist ORDER BY rowid ASC;
+
+selectEnabledPlaylists:
+SELECT * FROM playlist WHERE enabled = 1 ORDER BY rowid ASC;
+
+selectEnabledByType:
+SELECT * FROM playlist WHERE enabled = 1 AND type = ? ORDER BY rowid ASC;
+
+selectDefaultPlaylist:
+SELECT * FROM playlist WHERE is_default = 1 LIMIT 1;
+
+deletePlaylist:
+DELETE FROM playlist WHERE id = ?;
+
+deleteAllPlaylists:
+DELETE FROM playlist;
+
+updateLastUpdated:
+UPDATE playlist SET last_updated = ? WHERE id = ?;
+
+renamePlaylist:
+UPDATE playlist SET name = ? WHERE id = ?;
+
+setDefaultPlaylist:
+UPDATE playlist SET is_default = CASE WHEN id = ? THEN 1 ELSE 0 END;
+
+clearDefaultPlaylist:
+UPDATE playlist SET is_default = 0;
+
+updatePlaylistType:
+UPDATE playlist SET type = ? WHERE id = ?;
+
+updateEpgUrl:
+UPDATE playlist SET url_tvg = ? WHERE id = ?;
+
+countPlaylists:
+SELECT COUNT(*) FROM playlist;

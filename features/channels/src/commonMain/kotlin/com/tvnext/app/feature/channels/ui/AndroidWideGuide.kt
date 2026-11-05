@@ -1,0 +1,770 @@
+package com.tvnext.app.feature.channels.ui
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.focusable
+import kotlinx.coroutines.flow.collect
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import com.tvnext.app.core.common.util.formatDate
+import com.tvnext.app.core.common.util.formatTimeOfDay
+import com.tvnext.app.core.common.util.startOfDay
+import com.tvnext.app.core.iptv.domain.Channel
+import com.tvnext.app.core.iptv.xmltv.EpgProgramme
+import com.tvnext.app.core.tmdb.ProgrammeMetadata
+import com.tvnext.app.core.tmdb.ProgrammeMetadataRepository
+import com.tvnext.app.core.ui.component.AutoScrollText
+import com.tvnext.app.core.ui.component.TvCardButton
+import com.tvnext.app.core.ui.image.ChannelLogo
+import com.tvnext.app.core.ui.image.LocalLogoImageLoader
+import kotlinx.coroutines.CancellationException
+import org.koin.core.context.GlobalContext
+
+private enum class GuideFocusColumn { CHANNELS, PROGRAMMES, DAYS, CATEGORIES }
+
+/**
+ * TV-only wide EPG overlay; the artwork/description strip is outside the three columns.
+ * In bottom-description mode the grid fills the ENTIRE width instead of leaving a blank
+ * reserved video column. Channels and the current programme start at the same Y position.
+ * No live channel switch occurs when the user merely moves D-pad focus.
+ */
+@Composable
+internal fun AndroidWideGuide(
+    channels: List<Channel>,
+    playingChannelId: String,
+    focusedChannelId: String?,
+    timeline: ChannelTimelineState,
+    nowPlaying: Map<String, EpgProgramme>,
+    now: Long,
+    showNumbers: Boolean,
+    showCategories: Boolean,
+    descriptionOnRight: Boolean,
+    categories: List<String>,
+    selectedCategory: String?,
+    onToggleCategories: () -> Unit,
+    onChooseCategory: (String?) -> Unit,
+    onChannelFocus: (String) -> Unit,
+    onVisibleChannelsChanged: (Set<String>) -> Unit,
+    onPlayChannel: (String) -> Unit,
+    onPlayArchive: (String, EpgProgramme) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val activeId = focusedChannelId?.takeIf { id -> channels.any { it.id == id } }
+        ?: channels.firstOrNull { it.id == playingChannelId }?.id
+        ?: channels.firstOrNull()?.id ?: playingChannelId
+    val programmeList = if (timeline.channelId == activeId) timeline.programmes else emptyList()
+    val days = remember(programmeList) {
+        programmeList.map { formatDate(it.start) }.distinct()
+    }
+    val today = remember(now) { formatDate(now) }
+    // Keep the user's selected day while browsing different channels.
+    var chosenDay by remember { mutableStateOf(today) }
+    val displayedDay = chosenDay.takeIf { it in days } ?: days.firstOrNull { it == today } ?: days.firstOrNull()
+    val dayProgrammes = remember(programmeList, displayedDay) {
+        programmeList.filter { formatDate(it.start) == displayedDay }
+    }
+    var chosenProgramme by remember(activeId, displayedDay) { mutableStateOf<EpgProgramme?>(null) }
+    val currentProgramme = dayProgrammes.firstOrNull { it.start <= now && now < it.stop }
+    val highlighted = chosenProgramme?.takeIf { it in dayProgrammes }
+        ?: currentProgramme ?: dayProgrammes.firstOrNull()
+    // A centred, bounded row window replaces LazyColumn.scrollToItem entirely.
+    // The Stage 15 negative scroll offset moved the selected row towards the
+    // bottom and competed with focus/EPG re-composition on every D-pad press.
+    val rowHeight = 62.dp
+    val rowSpacing = 2.dp
+    val categoryScroll = rememberLazyListState()
+    val channelFocus = remember { FocusRequester() }
+    val categoryFocus = remember { FocusRequester() }
+    var categoryCursor by remember(selectedCategory, categories) {
+        mutableIntStateOf(
+            when (selectedCategory) {
+                null -> 0
+                FAVORITES_CATEGORY -> 1
+                else -> (categories.indexOf(selectedCategory) + 2).coerceAtLeast(0)
+            }
+        )
+    }
+    val programmeFocus = remember { FocusRequester() }
+    val dayFocus = remember { FocusRequester() }
+    var activeColumn by remember { mutableStateOf(GuideFocusColumn.CHANNELS) }
+
+    // Focus never follows recycled row children. The focused element is the
+    // stable column container, even as channel/EPG data arrives asynchronously.
+    LaunchedEffect(showCategories) {
+        withFrameNanos { }
+        runCatching {
+            if (showCategories) {
+                activeColumn = GuideFocusColumn.CATEGORIES
+                categoryFocus.requestFocus()
+            } else {
+                activeColumn = GuideFocusColumn.CHANNELS
+                channelFocus.requestFocus()
+            }
+        }
+    }
+    LaunchedEffect(showCategories, playingChannelId) {
+        if (!showCategories && focusedChannelId == null && channels.isNotEmpty()) {
+            onChannelFocus(activeId)
+        }
+    }
+    LaunchedEffect(showCategories, categoryCursor) {
+        if (showCategories) categoryScroll.scrollToItem(categoryCursor)
+    }
+
+    // Consume both DOWN and UP so Compose does not also try to transfer focus
+    // to another, potentially virtualized, row in the same LazyColumn.
+    fun selectAdjacentChannel(delta: Int) {
+        val next = guideAdjacentIndex(channels.size, channels.indexOfFirst { it.id == activeId }, delta)
+        if (next != null && channels[next].id != activeId) onChannelFocus(channels[next].id)
+    }
+    fun selectAdjacentProgramme(delta: Int) {
+        val next = guideAdjacentIndex(dayProgrammes.size, dayProgrammes.indexOf(highlighted), delta)
+        if (next != null) chosenProgramme = dayProgrammes[next]
+    }
+    fun selectAdjacentDay(delta: Int) {
+        val next = guideAdjacentIndex(days.size, days.indexOf(displayedDay), delta)
+        if (next != null && days[next] != displayedDay) {
+            chosenDay = days[next]
+            chosenProgramme = null
+        }
+    }
+
+    val finder = remember { GlobalContext.get().getOrNull<ProgrammeMetadataRepository>() }
+    var remoteInfo by remember { mutableStateOf<ProgrammeMetadata?>(null) }
+    LaunchedEffect(highlighted?.title, finder) {
+        remoteInfo = null
+        val title = highlighted?.title?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
+        if (finder == null) return@LaunchedEffect
+        // Cancel stale searches on rapid D-pad input. Cached cards appear without network.
+        delay(280)
+        try {
+            remoteInfo = finder.find(title)
+        } catch (cancelled: CancellationException) {
+            throw cancelled // Preserve structured cancellation when focus changes quickly.
+        } catch (_: Exception) {
+            remoteInfo = null // Network/API errors must not terminate the UI coroutine.
+        }
+    }
+    val grid: @Composable (Modifier) -> Unit = { gridModifier ->
+        BoxWithConstraints(gridModifier) {
+            // All three columns use the same number of slots and channel-selected
+            // vertical anchor. The first channel starts at the TOP (no fake rows).
+            val availableRowsHeight = (maxHeight - 35.dp - 12.dp).coerceAtLeast(rowHeight)
+            val viewportCapacity = guideOddCapacity(
+                ((availableRowsHeight + rowSpacing) / (rowHeight + rowSpacing)).toInt()
+            )
+            val channelIndex = channels.indexOfFirst { it.id == activeId }
+            val channelAnchorSlot = guideChannelAnchorSlot(channels.size, channelIndex, viewportCapacity)
+            Row(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            // Categories slide IN FROM THE LEFT and occupy an additional rail.
+            // Never replace the channel list: channel/programme/day columns remain
+            // mounted and shift to the right together, preserving their selection.
+            AnimatedVisibility(
+                visible = showCategories,
+                enter = slideInHorizontally(initialOffsetX = { -it }) +
+                    expandHorizontally(expandFrom = Alignment.Start),
+                exit = slideOutHorizontally(targetOffsetX = { -it }) +
+                    shrinkHorizontally(shrinkTowards = Alignment.Start),
+            ) {
+                Column(Modifier.width(190.dp).fillMaxHeight()) {
+                    Text("Категории", color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.height(35.dp).padding(start = 10.dp, bottom = 4.dp))
+                    val categoryValues = listOf<String?>(null, FAVORITES_CATEGORY) + categories
+                    LazyColumn(
+                        state = categoryScroll,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                            .focusRequester(categoryFocus)
+                            .onPreviewKeyEvent { event ->
+                                when (event.key) {
+                                    Key.DirectionUp, Key.DirectionDown -> {
+                                        if (event.type == KeyEventType.KeyDown) {
+                                            val step = if (event.key == Key.DirectionUp) -1 else 1
+                                            categoryCursor = guideAdjacentIndex(categoryValues.size, categoryCursor, step)
+                                                ?: categoryCursor
+                                        }
+                                        true
+                                    }
+                                    Key.DirectionCenter, Key.Enter -> {
+                                        if (event.type == KeyEventType.KeyUp) {
+                                            onChooseCategory(categoryValues.getOrNull(categoryCursor))
+                                        }
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            }
+                            .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.CATEGORIES }
+                            .focusable(),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        item { GuideRow("Все каналы", activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 0, onClick = { onChooseCategory(null) }) }
+                        item { GuideRow("Избранное", activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 1,
+                            onClick = { onChooseCategory(FAVORITES_CATEGORY) }) }
+                        items(categories) { category -> GuideRow(category,
+                            activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == categories.indexOf(category) + 2,
+                            onClick = { onChooseCategory(category) }) }
+                    }
+                }
+            }
+            Column(Modifier.weight(0.40f).fillMaxHeight()) {
+                Text("Каналы", color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.height(35.dp).padding(start = 10.dp, bottom = 4.dp))
+                    CentredGuideRows(
+                        values = channels,
+                        selectedIndex = channels.indexOfFirst { it.id == activeId },
+                        rowHeight = rowHeight,
+                        rowSpacing = rowSpacing,
+                        viewportCapacity = viewportCapacity,
+                        clampChannelEdges = true,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                            .focusRequester(channelFocus)
+                            .onPreviewKeyEvent { event ->
+                                when (event.key) {
+                                    Key.DirectionUp -> {
+                                        if (event.type == KeyEventType.KeyDown) selectAdjacentChannel(-1)
+                                        true
+                                    }
+                                    Key.DirectionDown -> {
+                                        if (event.type == KeyEventType.KeyDown) selectAdjacentChannel(1)
+                                        true
+                                    }
+                                    Key.DirectionRight -> {
+                                        if (event.type == KeyEventType.KeyDown) runCatching { programmeFocus.requestFocus() }
+                                        true
+                                    }
+                                    Key.DirectionLeft -> {
+                                        if (event.type == KeyEventType.KeyDown) onToggleCategories()
+                                        true
+                                    }
+                                    // The host owns D-pad focus. Rows are deliberately
+                                    // not focusable, so OK must select the channel HERE
+                                    // on its first press, not rely on a second button tap.
+                                    Key.DirectionCenter, Key.Enter -> {
+                                        if (event.type == KeyEventType.KeyUp) onPlayChannel(activeId)
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            }
+                            .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.CHANNELS }
+                            .focusable(),
+                        // Debounce EPG refresh while a user holds DOWN/UP.
+                        onVisibleChanged = { visible ->
+                            onVisibleChannelsChanged(visible.mapTo(mutableSetOf()) { it.id })
+                        },
+                    ) { channel ->
+                            val current = channel.id == activeId
+                            val programme = nowPlaying[channel.id]
+                                ?: if (timeline.channelId == channel.id) {
+                                    timeline.programmes.firstOrNull { it.start <= now && now < it.stop }
+                                } else null
+                            val duration = programme?.let { (it.stop - it.start).coerceAtLeast(1L) } ?: 1L
+                            val progress = programme?.let {
+                                ((now - it.start).toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                            } ?: 0f
+                            TvCardButton(
+                                onClick = { onPlayChannel(channel.id) },
+                                selected = current && activeColumn == GuideFocusColumn.CHANNELS,
+                                // Only the stable list host takes D-pad focus; rows remain touch-clickable.
+                                modifier = Modifier.fillMaxWidth().height(rowHeight)
+                                    .focusProperties { canFocus = false },
+                                containerAlpha = if (current) 0.24f else 0.08f,
+                                shape = RoundedCornerShape(6.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    ChannelLogo(channel.logoUrl, modifier = Modifier.size(31.dp),
+                                        placeholderText = channel.name)
+                                    if (showNumbers) {
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(channel.number.toString(), color = MaterialTheme.colorScheme.primary,
+                                            fontSize = 10.sp, maxLines = 1)
+                                    }
+                                    Spacer(Modifier.width(6.dp))
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        val adult = com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)
+                                        Text((if (adult) "🔒 " else "") + channel.name,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                            color = if (adult) Color(0xFFFF6767) else Color.White,
+                                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                                            lineHeight = 15.sp)
+                                        Text(programme?.title ?: "Нет данных EPG", maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis, color = Color.White,
+                                            fontSize = 11.sp, lineHeight = 13.sp)
+                                        if (programme != null) {
+                                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                                Text(formatTimeOfDay(programme.start), color = MaterialTheme.colorScheme.primary,
+                                                    fontSize = 10.sp, lineHeight = 11.sp)
+                                                Spacer(Modifier.width(5.dp))
+                                                Box(Modifier.weight(1f).height(2.dp)
+                                                    .background(Color.White.copy(alpha = 0.28f))) {
+                                                    Box(Modifier.fillMaxWidth(progress).fillMaxHeight()
+                                                        .background(MaterialTheme.colorScheme.primary))
+                                                }
+                                                Spacer(Modifier.width(5.dp))
+                                                Text(formatTimeOfDay(programme.stop), color = MaterialTheme.colorScheme.primary,
+                                                    fontSize = 10.sp, lineHeight = 11.sp)
+                                            }
+                                        }
+                                    }
+                                    if (channel.hasCatchupMechanism) {
+                                        Text("◷", color = Color.White, fontSize = 12.sp,
+                                            modifier = Modifier.padding(start = 2.dp))
+                                    }
+                                }
+                            }
+                    }
+            }
+            Column(Modifier.weight(0.48f).fillMaxHeight()) {
+                Text(channels.firstOrNull { it.id == activeId }?.name ?: "Программа передач",
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium, modifier = Modifier.height(35.dp).padding(start = 9.dp, bottom = 4.dp))
+                CentredGuideRows(
+                    values = dayProgrammes,
+                    selectedIndex = dayProgrammes.indexOf(highlighted),
+                    rowHeight = rowHeight,
+                    rowSpacing = rowSpacing,
+                    viewportCapacity = viewportCapacity,
+                    anchorSlot = channelAnchorSlot,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                        .focusRequester(programmeFocus)
+                        .onPreviewKeyEvent { event ->
+                            when (event.key) {
+                                Key.DirectionUp -> {
+                                    if (event.type == KeyEventType.KeyDown) selectAdjacentProgramme(-1)
+                                    true
+                                }
+                                Key.DirectionDown -> {
+                                    if (event.type == KeyEventType.KeyDown) selectAdjacentProgramme(1)
+                                    true
+                                }
+                                Key.DirectionLeft -> {
+                                    if (event.type == KeyEventType.KeyDown) runCatching { channelFocus.requestFocus() }
+                                    true
+                                }
+                                Key.DirectionRight -> {
+                                    if (event.type == KeyEventType.KeyDown) runCatching { dayFocus.requestFocus() }
+                                    true
+                                }
+                                Key.DirectionCenter, Key.Enter -> {
+                                    if (event.type == KeyEventType.KeyUp) {
+                                        highlighted?.let { programme ->
+                                            if (programme.start <= now &&
+                                                channels.firstOrNull { it.id == activeId }?.hasCatchupMechanism == true
+                                            ) onPlayArchive(activeId, programme)
+                                        }
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                        .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.PROGRAMMES }
+                        .focusable(),
+                    emptyLabel = if (timeline.loading) "Загрузка телепрограммы…" else "Нет программы на выбранный день",
+                ) { programme ->
+                        val selected = programme == highlighted && activeColumn == GuideFocusColumn.PROGRAMMES
+                        GuideRow(
+                            "${formatTimeOfDay(programme.start)}  ${programme.title}", selected,
+                            currentBroadcast = programme.start <= now && now < programme.stop,
+                            onClick = {
+                                chosenProgramme = programme
+                                if (programme.start <= now && channels.firstOrNull { it.id == activeId }?.hasCatchupMechanism == true) {
+                                    onPlayArchive(activeId, programme)
+                                }
+                            },
+                            height = rowHeight,
+                        )
+                }
+            }
+            Column(Modifier.weight(0.12f).fillMaxHeight()) {
+                Text("Дни", color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth().height(35.dp).padding(bottom = 4.dp))
+                CentredGuideRows(
+                    values = days,
+                    selectedIndex = days.indexOf(displayedDay),
+                    rowHeight = rowHeight,
+                    rowSpacing = rowSpacing,
+                    viewportCapacity = viewportCapacity,
+                    anchorSlot = channelAnchorSlot,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                        .focusRequester(dayFocus)
+                        .onPreviewKeyEvent { event ->
+                            when (event.key) {
+                                Key.DirectionUp -> {
+                                    if (event.type == KeyEventType.KeyDown) selectAdjacentDay(-1)
+                                    true
+                                }
+                                Key.DirectionDown -> {
+                                    if (event.type == KeyEventType.KeyDown) selectAdjacentDay(1)
+                                    true
+                                }
+                                Key.DirectionLeft -> {
+                                    if (event.type == KeyEventType.KeyDown) runCatching { programmeFocus.requestFocus() }
+                                    true
+                                }
+                                Key.DirectionRight -> true
+                                // Changing the day with UP/DOWN applies immediately;
+                                // consume OK so it cannot fall through to the player.
+                                Key.DirectionCenter, Key.Enter -> true
+                                else -> false
+                            }
+                        }
+                        .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.DAYS }
+                        .focusable(),
+                    emptyLabel = "Нет дат EPG",
+                ) { day ->
+                        val firstProgramme = programmeList.firstOrNull { formatDate(it.start) == day }
+                        val dateTitle = firstProgramme?.let { "${guideWeekday(it.start)}\n$day" } ?: day
+                        GuideRow(dateTitle, day == displayedDay && activeColumn == GuideFocusColumn.DAYS,
+                            onClick = { chosenDay = day; chosenProgramme = null },
+                            height = rowHeight, centerContent = true,
+                            underline = day == displayedDay && activeColumn != GuideFocusColumn.DAYS)
+                }
+            }
+            }
+        }
+    }
+    // Artwork is only allocated after a decoded bitmap exists; absent images leave zero gap.
+    val description = highlighted?.description?.takeIf(::isUsefulProgrammeDescription)
+            ?: remoteInfo?.overview?.takeIf(::isUsefulProgrammeDescription)
+            ?: "Описание передачи отсутствует"
+    val info: @Composable (Modifier) -> Unit = { infoModifier ->
+        if (descriptionOnRight) Column(
+            modifier = infoModifier.background(Color.Black.copy(alpha = 0.50f))
+                .padding(start = 15.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+        ) {
+            GuideArtwork(remoteInfo?.frameUrl, remoteInfo?.posterUrl, descriptionOnRight)
+            Column(Modifier.fillMaxWidth()) {
+                GuideDescription(highlighted, description)
+            }
+        } else Row(
+            modifier = infoModifier.background(Color.Black.copy(alpha = 0.50f))
+                .padding(start = 15.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            GuideArtwork(remoteInfo?.frameUrl, remoteInfo?.posterUrl, descriptionOnRight)
+            Column(Modifier.weight(1f)) {
+                GuideDescription(highlighted, description)
+            }
+        }
+    }
+    if (descriptionOnRight) {
+        Row(modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.70f))) {
+            grid(Modifier.weight(0.80f).fillMaxHeight())
+            info(Modifier.weight(0.20f).fillMaxHeight())
+        }
+    } else {
+        Column(modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.70f))) {
+            grid(Modifier.fillMaxWidth().weight(1f))
+            info(Modifier.fillMaxWidth().height(146.dp))
+        }
+    }
+}
+
+/**
+ * Fixed-slot TV guide viewport with no scroll mutations or recycled focus.
+ * Channels clamp to the top and bottom. EPG/date rows instead use the channel's
+ * selected slot so the three selected rows always share one horizontal line.
+ */
+@Composable
+private fun <T> CentredGuideRows(
+    values: List<T>,
+    selectedIndex: Int,
+    rowHeight: Dp,
+    rowSpacing: Dp,
+    modifier: Modifier = Modifier,
+    viewportCapacity: Int? = null,
+    clampChannelEdges: Boolean = false,
+    anchorSlot: Int? = null,
+    emptyLabel: String = "Нет элементов",
+    onVisibleChanged: ((List<T>) -> Unit)? = null,
+    row: @Composable (T) -> Unit,
+) {
+    BoxWithConstraints(modifier.clipToBounds()) {
+        if (values.isEmpty()) {
+            Text(emptyLabel, color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.Center).padding(8.dp))
+        } else {
+            // Always an odd number of full rows; the middle row is exactly
+            // the viewport centre, regardless of the selected index.
+            val capacity = guideOddCapacity(viewportCapacity ?: ((maxHeight + rowSpacing) / (rowHeight + rowSpacing))
+                .toInt().coerceAtLeast(1))
+            val window = when {
+                clampChannelEdges -> guideClampedChannelWindow(values.size, selectedIndex, capacity)
+                anchorSlot != null -> guideAlignedWindow(values.size, selectedIndex, capacity, anchorSlot)
+                else -> guideCentredIndexWindow(values.size, selectedIndex, capacity)
+            }
+            val visible = window.mapNotNull { values.getOrNull(it) }
+            if (onVisibleChanged != null) {
+                LaunchedEffect(visible) {
+                    // Coalesce fast remote key repeats before refreshing EPG.
+                    delay(130)
+                    onVisibleChanged(visible)
+                }
+            }
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                verticalArrangement = Arrangement.spacedBy(rowSpacing),
+            ) {
+                for (index in window) {
+                    val item = values.getOrNull(index)
+                    if (item == null) Spacer(Modifier.fillMaxWidth().height(rowHeight))
+                    else row(item)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideDescription(programme: EpgProgramme?, description: String) {
+    Text(programme?.title ?: "Телепрограмма", maxLines = 2,
+        style = MaterialTheme.typography.titleMedium, color = Color.White)
+    if (programme != null) {
+        Text("${formatTimeOfDay(programme.start)} — ${formatTimeOfDay(programme.stop)} · ${formatDate(programme.start)}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium)
+    }
+    Text(description, style = MaterialTheme.typography.bodyMedium,
+        color = Color.White, maxLines = 7, overflow = TextOverflow.Ellipsis)
+}
+
+@Composable
+internal fun GuideArtwork(frameUrl: String?, posterUrl: String?, rightColumn: Boolean) {
+    val loader = LocalLogoImageLoader.current
+    var bitmap by remember(frameUrl, posterUrl, loader) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(frameUrl, posterUrl, loader) {
+        bitmap = null
+        if (loader != null) {
+            // An unavailable TMDB backdrop must not prevent the poster fallback.
+            // Keep the two fetches independent: one malformed image is not fatal.
+            suspend fun safeLoad(url: String?): ImageBitmap? {
+                if (url.isNullOrBlank()) return null
+                return try {
+                    loader.load(url)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            bitmap = safeLoad(frameUrl) ?: safeLoad(posterUrl)
+        }
+    }
+    bitmap?.let { picture ->
+        // Reserve only the width ACTUALLY occupied by the decoded image.
+        // A portrait poster fitted inside a wide 173dp backdrop slot used to
+        // leave a huge invisible gap before the description text.
+        val maxWidth = if (rightColumn) 180.dp else 173.dp
+        val maxHeight = if (rightColumn) 115.dp else 126.dp
+        val aspect = picture.width.toFloat() / picture.height.coerceAtLeast(1).toFloat()
+        val imageWidth = minOf(maxWidth, maxHeight * aspect)
+        val imageHeight = imageWidth / aspect.coerceAtLeast(0.01f)
+        Row(verticalAlignment = Alignment.Top) {
+            Image(
+                bitmap = picture,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.TopStart,
+                modifier = Modifier.size(imageWidth, imageHeight)
+                    .clip(RoundedCornerShape(7.dp)),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
+    }
+}
+
+@Composable
+private fun GuideRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    height: androidx.compose.ui.unit.Dp = 53.dp,
+    centerContent: Boolean = false,
+    underline: Boolean = false,
+    currentBroadcast: Boolean = false,
+) {
+    TvCardButton(onClick = onClick, selected = selected,
+        modifier = Modifier.fillMaxWidth().height(height)
+            .background(if (currentBroadcast) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else Color.Transparent)
+            .focusProperties { canFocus = false },
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+        containerAlpha = if (selected) 0.23f else if (currentBroadcast) 0.16f else 0.05f,
+        shape = RoundedCornerShape(6.dp),
+        contentAlignment = if (centerContent) Alignment.Center else Alignment.CenterStart) {
+        Text(label, color = Color.White, fontSize = 12.sp, lineHeight = 15.sp,
+            textDecoration = if (underline) TextDecoration.Underline else TextDecoration.None,
+            textAlign = if (centerContent) TextAlign.Center else TextAlign.Start,
+            modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier,
+            maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Russian abbreviated weekday for programme dates, based on the provider's local day. */
+internal fun guideWeekday(epochMillis: Long): String {
+    val noonMillis = startOfDay(epochMillis) + 12L * 60 * 60 * 1000
+    val day = noonMillis / (24L * 60 * 60 * 1000)
+    val index = ((day + 3L) % 7L + 7L).toInt() % 7
+    return arrayOf("пн", "вт", "ср", "чт", "пт", "сб", "вс")[index]
+}
+
+/** Reusable detailed programme view; avoids a text-only dialog when artwork is cached. */
+@Composable
+internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
+    val finder = remember { GlobalContext.get().getOrNull<ProgrammeMetadataRepository>() }
+    var remote by remember(programme?.title) { mutableStateOf<ProgrammeMetadata?>(null) }
+    LaunchedEffect(programme?.title, finder) {
+        remote = null
+        val title = programme?.title?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
+        delay(150)
+        try {
+            remote = finder?.find(title)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            remote = null
+        }
+    }
+    val description = programme?.description?.takeIf(::isUsefulProgrammeDescription)
+        ?: remote?.overview?.takeIf(::isUsefulProgrammeDescription)
+        ?: "Описание передачи недоступно"
+    val loader = LocalLogoImageLoader.current
+    var picture by remember(remote?.frameUrl, remote?.posterUrl, loader) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(remote?.frameUrl, remote?.posterUrl, loader) {
+        picture = null
+        if (loader != null) {
+            suspend fun load(url: String?): ImageBitmap? {
+                if (url.isNullOrBlank()) return null
+                return try { loader.load(url) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { null }
+            }
+            picture = load(remote?.frameUrl) ?: load(remote?.posterUrl)
+        }
+    }
+    val style = MaterialTheme.typography.bodyMedium
+    val measure = rememberTextMeasurer()
+    val density = LocalDensity.current
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 4.dp)) {
+        val maxTextHeight = (maxHeight * 0.64f).coerceIn(190.dp, 430.dp)
+        if (picture == null) {
+            ExpandableGuideDescription(description, Modifier.fillMaxWidth(), maxTextHeight)
+        } else {
+            val art = picture!!
+            val aspect = art.width.toFloat() / art.height.coerceAtLeast(1)
+            val pictureWidth = minOf(190.dp, 142.dp * aspect)
+            val pictureHeight = pictureWidth / aspect.coerceAtLeast(0.01f)
+            val textWidth = (maxWidth - pictureWidth - 10.dp).coerceAtLeast(80.dp)
+            val linePixels = with(density) {
+                if (style.lineHeight.isSpecified) style.lineHeight.toPx()
+                else if (style.fontSize.isSpecified) style.fontSize.toPx() * 1.25f
+                else 19.dp.toPx()
+            }
+            val lines = (with(density) { pictureHeight.toPx() } / linePixels).toInt().coerceAtLeast(1)
+            // Measure actual line breaks at the width beside the image. Once the
+            // image ends, the remainder continues across the full panel width.
+            val layout = measure.measure(AnnotatedString(description), style = style,
+                maxLines = lines, overflow = TextOverflow.Clip,
+                constraints = Constraints(maxWidth = with(density) { textWidth.roundToPx() }))
+            val split = if (layout.lineCount > 0)
+                layout.getLineEnd(layout.lineCount - 1, visibleEnd = true).coerceIn(0, description.length)
+                else 0
+            val topText = description.take(split).trimEnd()
+            val remainingText = description.drop(split).trimStart()
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    Image(bitmap = art, contentDescription = null,
+                        contentScale = ContentScale.Fit, alignment = Alignment.TopStart,
+                        modifier = Modifier.size(pictureWidth, pictureHeight).clip(RoundedCornerShape(7.dp)))
+                    Spacer(Modifier.width(10.dp))
+                    Text(topText, modifier = Modifier.weight(1f), style = style,
+                        color = MaterialTheme.colorScheme.onSurface)
+                }
+                if (remainingText.isNotEmpty()) {
+                    ExpandableGuideDescription(remainingText, Modifier.fillMaxWidth(),
+                        (maxTextHeight - pictureHeight).coerceAtLeast(65.dp))
+                }
+            }
+        }
+    }
+}
+
+/** Content grows with text until a TV-safe maximum; overflow scrolls back/forth. */
+@Composable
+private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum: Dp) {
+    val scroll = rememberScrollState()
+    val density = LocalDensity.current
+    Column(modifier.heightIn(max = maximum).verticalScroll(scroll)) {
+        Text(text, color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium)
+    }
+    LaunchedEffect(text, scroll.maxValue) {
+        scroll.scrollTo(0)
+        if (scroll.maxValue > 0 && scroll.maxValue != Int.MAX_VALUE) {
+            delay(3000)
+            val speed = with(density) { 18.dp.toPx() }
+            val duration = (scroll.maxValue / speed * 1000).toInt().coerceIn(1500, 90_000)
+            while (true) {
+                scroll.animateScrollTo(scroll.maxValue, tween(duration, easing = LinearEasing))
+                delay(3000)
+                scroll.animateScrollTo(0, tween(duration, easing = LinearEasing))
+                delay(3000)
+            }
+        }
+    }
+}
+
+/** Missing XMLTV synopsis placeholders must not suppress TMDB/Kinopoisk fallback. */
+private fun isUsefulProgrammeDescription(text: String): Boolean {
+    val normalized = text.trim().lowercase().trim('.', ' ', '…')
+    return normalized.length > 12 && normalized !in setOf(
+        "нет описания", "описание отсутствует", "описание недоступно",
+        "нет данных", "нет информации", "no description available",
+    )
+}

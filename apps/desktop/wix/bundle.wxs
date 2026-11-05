@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+  <Bundle Name="TVNext"
+          Version="1.0.0"
+          Manufacturer="TVNext"
+          UpgradeCode="BCEFCE2E-7FB5-4D58-9B8B-4F4970EACDE4"
+          IconSourceFile="..\icon.ico">
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense">
+      <bal:WixStandardBootstrapperApplication LicenseFile="..\LICENSE.rtf" ShowVersion="yes"/>
+    </BootstrapperApplicationRef>
+    <Chain>
+      <!-- The MSI lives in apps/desktop/build/wix (relative to this file). -->
+      <MsiPackage SourceFile="..\build\wix\TVNext-1.0.0.msi" Compressed="yes"/>
+    </Chain>
+  </Bundle>
+</Wix>

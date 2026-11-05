@@ -1,0 +1,13 @@
+-- Migration 8: versioned EPG batches for the two-phase import.
+--
+-- A refresh now writes the NEW rows with a fresh batch_id while readers keep
+-- seeing the OLD (active) batch, so a multi-minute XMLTV import never leaves
+-- the TV Guide / "now playing" empty. commitReplace switches the active batch
+-- and deletes the old rows in one transaction; an aborted import just drops
+-- its partial batch and the previous cache stays intact.
+
+ALTER TABLE epg_channel ADD COLUMN batch_id INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE epg_programme ADD COLUMN batch_id INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE epg_cache ADD COLUMN active_batch INTEGER NOT NULL DEFAULT 0;
