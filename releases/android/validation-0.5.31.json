@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-05",
+  "versionName": "0.5.31-recovery-preview",
+  "versionCode": 531,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "e857d6bdc2359e7b94fb18b17601c5d2351473106888b0920689c1bfe9323308",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity"
+  ],
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 205,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "androidApis": [
+    28,
+    35
+  ],
+  "syntheticLargeIndexProgrammes": 20000,
+  "parserBenchmark": {
+    "programmes": 50000,
+    "xmlBytes": 64838971,
+    "beforeMs": 705,
+    "afterMs": 422,
+    "note": "JVM measurement in this environment, not physical TV speed"
+  },
+  "emulator": {
+    "apiLevel": 28,
+    "hardwareAcceleration": false,
+    "installedReleaseVersionVerified": 531,
+    "freshCacheStartupMadeHttpRequests": false,
+    "interruptedHttpTest": {
+      "passed": true,
+      "fixture": "Local gzipped XMLTV, 3000 programmes, one channel; old cache contains three programmes",
+      "gzipBytes": 158199,
+      "immediateDropRetry": {
+        "passed": true,
+        "note": "The first connection closed before the client retained bytes; the retry correctly started from zero."
+      },
+      "partialFileResume": {
+        "passed": true,
+        "range": "bytes=79099-",
+        "ifRange": "\"epg-runtime-v1\"",
+        "offset": 79099,
+        "remainingBytes": 79100
+      },
+      "completedProgrammeCountIncludingPreservedArchive": 3003,
+      "oldCacheVisibleDuringDownload": true,
+      "downloadNoticeShown": true,
+      "temporaryFilesRemovedAfterDatabaseCommit": true,
+      "fatalExceptions": 0,
+      "applicationAnrs": 0,
+      "videoPlayback": "Not measured; synthetic channel stream absent."
+    },
+    "installedApkSha256MatchesRelease": true
+  },
+  "physicalTV": false,
+  "liveUserEpgEndpointTested": false,
+  "liveMetadataServicesRetested": false
+}

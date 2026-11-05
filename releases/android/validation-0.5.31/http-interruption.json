@@ -1,0 +1,36 @@
+[
+  {
+    "attempt": 1,
+    "range": null,
+    "ifRange": null,
+    "start": 0,
+    "total": 158199,
+    "time": 1793909385.9429886
+  },
+  {
+    "attempt": 2,
+    "range": null,
+    "ifRange": null,
+    "start": 0,
+    "total": 158199,
+    "time": 1793909388.0199134
+  },
+  {
+    "phase": "resumable-drop",
+    "attempt": 1,
+    "range": null,
+    "ifRange": null,
+    "start": 0,
+    "total": 158199,
+    "time": 1793909522.6653507
+  },
+  {
+    "phase": "resumable-drop",
+    "attempt": 2,
+    "range": "bytes=79099-",
+    "ifRange": "\"epg-runtime-v1\"",
+    "start": 79099,
+    "total": 158199,
+    "time": 1793909527.6327496
+  }
+]

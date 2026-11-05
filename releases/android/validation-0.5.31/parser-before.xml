@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="LiteXmltvThroughputTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-05T19:40:03.438Z" hostname="085a0b39215a" time="0.922">
+  <properties/>
+  <testcase name="largeChannelGroupedFeedIsReadCompletelyWithFullDescriptions[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvThroughputTest" time="0.918"/>
+  <system-out><![CDATA[[LiteEpgParser] Parsed 1 channels / 50000 programmes
+XMLTV_BENCHMARK entries=50000 bytes=64838971 elapsedMs=705
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
