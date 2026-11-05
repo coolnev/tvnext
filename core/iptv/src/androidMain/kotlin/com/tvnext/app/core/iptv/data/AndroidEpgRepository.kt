@@ -5,6 +5,7 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.tvnext.app.core.database.TvNextDatabase
+import com.tvnext.app.core.common.log.Logger
 import io.ktor.client.HttpClient
 import java.io.File
 import kotlinx.coroutines.*
@@ -19,7 +20,13 @@ class AndroidEpgRepository private constructor(private val indexed: IndexedEpgRe
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             playlists.observePlaylists().drop(1).collect {
                 indexed.invalidateConfiguration()
-                indexed.refreshState()
+                try {
+                    indexed.refreshState()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Logger.e("AndroidEPG", "Failed to read EPG state after playlist change", error)
+                }
             }
         }
     }
@@ -38,8 +45,9 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
                     .callback(AndroidSqliteDriver.Callback(TvNextDatabase.Schema)).build())
             helper.setWriteAheadLoggingEnabled(true)
             val driver = AndroidSqliteDriver(helper)
-            driver.execute(null, "PRAGMA synchronous=NORMAL", 0)
-            driver.execute(null, "PRAGMA busy_timeout=3000", 0)
+            // FrameworkSQLite owns the WAL connection pool and its connection settings.
+            // In particular busy_timeout returns a row: SQLDelight's Android execute()
+            // uses executeUpdateDelete(), which rejects it and prevents the index opening.
             IndexedEpgStore(TvNextDatabase(driver), driver)
         },
         playlists = playlists, channels = channels, config = config,

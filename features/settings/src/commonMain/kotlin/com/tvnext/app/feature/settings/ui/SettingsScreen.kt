@@ -836,7 +836,7 @@ private fun EpgSection(
                     "не сопоставлено: ${diagnostics.unmatchedM3u}",
             )
         }
-        val lastEpgError = epg.lastError
+        val lastEpgError = epg.lastError ?: state.epgStateError
         if (lastEpgError != null) {
             Text(
                 text = lastEpgError,

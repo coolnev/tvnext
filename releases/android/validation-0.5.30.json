@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-05",
+  "versionName": "0.5.30-recovery-preview",
+  "versionCode": 530,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "792bb615648927c139cb1bad27835cfa8dd0c355cf9102e27026ba2de310e778",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity"
+  ],
+  "tests": [
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 202,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "androidRuntimeTests": {
+    "framework": "Robolectric 4.16.1, native SQLite, AndroidSqliteDriver + FrameworkSQLite",
+    "apiLevels": [
+      28,
+      35
+    ],
+    "scenarios": [
+      "EPG state for settings",
+      "XMLTV import, current and archived programmes, cached reopen without HTTP",
+      "settings survive a cache read failure"
+    ],
+    "beforeFix": "The first two scenarios failed on API 28 with the original code; SQLiteException from executeUpdateDelete(PRAGMA busy_timeout)."
+  },
+  "emulator": {
+    "apiLevel": 28,
+    "hardwareAcceleration": false,
+    "data": "Synthetic one-channel local XMLTV fixture; no user playlist or API keys",
+    "previousApkSettingsCrashReproduced": true,
+    "upgrade529to530WithoutDataReset": true,
+    "settingsOpenedAfterUpgrade": true,
+    "epgChannels": 1,
+    "epgProgrammes": 3,
+    "offlineRestart": {
+      "passed": true,
+      "processRestarted": true,
+      "sourceDisconnected": "adb reverse removed; Wi-Fi and mobile data disabled",
+      "visibleProgrammes": [
+        "4 ноября 18:30 Архивная передача",
+        "5 ноября 18:29 Тест EPG сейчас",
+        "5 ноября 19:30 Следующая передача"
+      ],
+      "channelRightOpensProgrammeList": true,
+      "sourceHttpRequestsAcrossImportAndRestart": 1,
+      "fatalExceptionsAfterRestart": 0,
+      "inputAnrsAfterRestart": 0,
+      "videoPlayback": "Not tested: the synthetic channel has no video stream; the player correctly reports connection recovery while the guide remains usable."
+    },
+    "limitation": "Software emulation without KVM: first launch while resizing the virtual display and injecting Menu produced an input-dispatch ANR. Main-thread trace was in ThreadedRenderer.nLoadSystemProperties. This environment does not measure TV startup speed or playback smoothness."
+  },
+  "physicalTV": false,
+  "liveMetadataServicesRetested": false
+}

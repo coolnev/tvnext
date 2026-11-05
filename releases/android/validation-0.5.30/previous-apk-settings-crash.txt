@@ -1,0 +1,30 @@
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: FATAL EXCEPTION: main
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: Process: com.tvnext.app.recovery, PID: 3237
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: android.database.sqlite.SQLiteException: unknown error (code 0 SQLITE_OK): Queries can be performed using SQLiteDatabase query or rawQuery methods only.
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at android.database.sqlite.SQLiteConnection.nativeExecuteForChangedRowCount(Native Method)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at android.database.sqlite.SQLiteConnection.executeForChangedRowCount(SQLiteConnection.java:748)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at android.database.sqlite.SQLiteSession.executeForChangedRowCount(SQLiteSession.java:754)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at android.database.sqlite.SQLiteStatement.executeUpdateDelete(SQLiteStatement.java:64)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at androidx.sqlite.db.framework.FrameworkSQLiteStatement.executeUpdateDelete(FrameworkSQLiteStatement.android.kt:34)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.driver.android.AndroidPreparedStatement.execute(AndroidSqliteDriver.kt:261)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.driver.android.AndroidSqliteDriver.execute$lambda$1(AndroidSqliteDriver.kt:184)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.driver.android.AndroidSqliteDriver$$ExternalSyntheticLambda4.invoke(D8$$SyntheticClass:0)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.driver.android.AndroidSqliteDriver.execute-zeHU3Mk(AndroidSqliteDriver.kt:169)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.driver.android.AndroidSqliteDriver.execute(AndroidSqliteDriver.kt:184)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at app.cash.sqldelight.db.SqlDriver$DefaultImpls.execute$default(SqlDriver.kt:63)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at com.tvnext.app.core.iptv.data.AndroidEpgRepositoryKt.createIndex$lambda$0(AndroidEpgRepository.kt:42)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at com.tvnext.app.core.iptv.data.AndroidEpgRepositoryKt$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlin.SynchronizedLazyImpl.getValue(LazyJVM.kt:86)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at com.tvnext.app.core.iptv.data.IndexedEpgRepository.getStore(IndexedEpgRepository.kt:31)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at com.tvnext.app.core.iptv.data.IndexedEpgRepository.access$getStore(IndexedEpgRepository.kt:18)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at com.tvnext.app.core.iptv.data.IndexedEpgRepository$refreshState$2.invokeSuspend(IndexedEpgRepository.kt:82)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:798)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+11-05 18:35:35.616  3237  3237 E AndroidRuntime: 	Suppressed: kotlinx.coroutines.internal.DiagnosticCoroutineContextException: [StandaloneCoroutine{Cancelling}@9e9b95b, Dispatchers.Main]
+11-05 18:35:35.653  1830  2209 W ActivityManager:   Force finishing activity com.tvnext.app.recovery/com.tvnext.app.MainActivity

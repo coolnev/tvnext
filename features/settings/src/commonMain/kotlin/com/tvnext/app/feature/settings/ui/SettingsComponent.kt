@@ -55,6 +55,7 @@ data class SettingsState(
     /** Local EPG URL edit field (persisted on refresh). */
     val epgUrlField: String = "",
     val epgRefreshing: Boolean = false,
+    val epgStateError: String? = null,
     val tmdbEnabled: Boolean = false,
     val tmdbApiKey: String = "",
     val tmdbTesting: Boolean = false,
@@ -328,7 +329,7 @@ class DefaultSettingsComponent(
             }
         }
         launch {
-            epgRepository.refreshState()
+            readEpgStateSafely()
             epgRepository.observeState().collect { epgState ->
                 setState { state ->
                     state.copy(
@@ -486,8 +487,17 @@ class DefaultSettingsComponent(
 
     private fun refreshEpgState() {
         launch {
-            epgRepository.refreshState()
+            readEpgStateSafely()
         }
+    }
+
+    private suspend fun readEpgStateSafely() {
+        runCatching { epgRepository.refreshState() }
+            .onSuccess { setState { it.copy(epgStateError = null) } }
+            .onFailure { error ->
+                Logger.e(TAG, "Failed to read EPG cache", error)
+                setState { it.copy(epgStateError = "Не удалось прочитать кэш EPG", epgRefreshing = false) }
+            }
     }
 
     private companion object {

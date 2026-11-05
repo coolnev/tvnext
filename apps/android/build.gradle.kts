@@ -25,8 +25,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 529
-        versionName = "0.5.29-recovery"
+        versionCode = 530
+        versionName = "0.5.30-recovery"
     }
 
     buildTypes {
@@ -56,6 +56,10 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -70,6 +74,9 @@ kotlin {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("io.ktor:ktor-client-mock:3.5.2")
     implementation(compose.foundation)
     implementation(compose.material3)
     implementation(libs.androidx.activity.compose)
