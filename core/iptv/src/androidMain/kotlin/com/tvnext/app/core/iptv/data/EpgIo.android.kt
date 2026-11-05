@@ -81,7 +81,6 @@ actual fun openEpgTextSource(path: String): EpgTextSource =
                 .buffered(1 shl 20)
         }
         override fun read(into: CharArray, offset: Int, length: Int): Int {
-            checkEpgImportPriority()
             return source.read(into, offset, length)
         }
         override fun close() {
@@ -326,20 +325,15 @@ private const val MAX_COMPRESSED_BYTES = 256L * 1024 * 1024
 
 /** Cooperatively yield CPU to Media3 without suspending EPG until video ends. */
 actual fun paceEpgParser() {
-    // Only backgrounding the application may suspend a new import. Playback
-    // itself is never a reason to abandon XMLTV parsing.
-    checkEpgImportPriority()
-    // Protect playback from the process being killed under heap pressure.
-    val runtime = Runtime.getRuntime()
-    val used = runtime.totalMemory() - runtime.freeMemory()
-    if (used * 100L > runtime.maxMemory() * 78L) {
-        throw EpgMemoryPressureException()
-    }
-    // Called every 256 XMLTV programmes on the dedicated BACKGROUND thread.
-    // During live playback reduce CPU competition, not import correctness.
+    // The indexed importer has bounded XML/batch buffers. An unrelated video
+    // heap watermark or Activity.onStop must not discard a downloaded guide.
+    // Android's BACKGROUND worker provides scheduling priority; avoid adding
+    // ~82 seconds of fixed sleeps to a 1.5-million-programme feed during playback.
     Thread.yield()
-    try { Thread.sleep(if (AndroidEpgPlaybackGate.isVideoActive) 14L else 3L) }
-    catch (interrupted: InterruptedException) { Thread.currentThread().interrupt() }
+    if (AndroidEpgPlaybackGate.isVideoActive) {
+        try { Thread.sleep(1L) }
+        catch (interrupted: InterruptedException) { Thread.currentThread().interrupt() }
+    }
 }
 
 /** Cache hydration is streamed on the XMLTV worker, never on the UI thread. */

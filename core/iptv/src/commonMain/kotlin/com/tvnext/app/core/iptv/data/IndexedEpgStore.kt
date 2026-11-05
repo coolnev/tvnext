@@ -10,6 +10,8 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
 
     init {
         // This index belongs only to the dedicated EPG DB, not the legacy app DB.
+        driver.execute(null, "DROP INDEX IF EXISTS idx_epg_programme_channel_start", 0)
+        driver.execute(null, "DROP INDEX IF EXISTS idx_epg_programme_playlist_start", 0)
         driver.execute(null, "CREATE UNIQUE INDEX IF NOT EXISTS epg_index_identity ON epg_programme(playlist_id,batch_id,channel_id,start_time)", 0)
     }
 
@@ -25,9 +27,21 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
 
     fun write(source: String, generation: Long, rows: List<Pair<String, EpgProgramme>>, publishCold: Boolean) {
         database.transaction {
-            rows.forEach { (key, p) ->
-                q.insertEpgProgramme(source, key, p.start, p.stop, p.title, p.title.lowercase(),
-                    p.description, p.category, p.episodeNum, generation)
+            // Stay below SQLite's 999-variable limit on Android 7/8. One SQL
+            // statement per 64 rows amortizes execution and query invalidation.
+            rows.chunked(64).forEach { part ->
+                val placeholders = List(part.size) { "(?,?,?,?,?,?,?,?,?,?)" }.joinToString(",")
+                driver.execute(null, "INSERT OR REPLACE INTO epg_programme " +
+                    "(playlist_id,channel_id,start_time,stop_time,title,lower_title,description,category,episode_num,batch_id) VALUES $placeholders", part.size * 10) {
+                    part.forEachIndexed { row, (key, p) ->
+                        val at = row * 10
+                        bindString(at, source); bindString(at + 1, key)
+                        bindLong(at + 2, p.start); bindLong(at + 3, p.stop)
+                        bindString(at + 4, p.title); bindString(at + 5, p.title.lowercase())
+                        bindString(at + 6, p.description); bindString(at + 7, p.category)
+                        bindString(at + 8, p.episodeNum); bindLong(at + 9, generation)
+                    }
+                }
             }
             if (publishCold) {
                 val old = snapshot(source)

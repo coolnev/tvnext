@@ -26,6 +26,7 @@ class AndroidAppDataReset(private val context: Context) : AppDataReset {
         // Reset means reset all imported EPG as well. It is now stored outside
         // cacheDir so Android cannot evict it between ordinary app launches.
         File(context.noBackupFilesDir, "epg_cache").deleteRecursively()
+        File(context.noBackupFilesDir, "epg-downloads-v1").deleteRecursively()
     }
 
     override fun requestResetAndRestart() {

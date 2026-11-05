@@ -111,6 +111,41 @@ class AndroidEpgRegressionTest {
             assertEquals(1, requests)
         } finally { client.close() }
     }
+    @Test fun largeGuideFinishesWhileVideoIsActiveAndActivityLeavesForeground() = runBlocking<Unit> {
+        val context = RuntimeEnvironment.getApplication()
+        AndroidFallbackEpgSettings(context).setEnabled(false)
+        AndroidEpgPlaybackGate.setAppForeground(true)
+        AndroidEpgPlaybackGate.setVideoActive(true)
+        val now = System.currentTimeMillis()
+        val format = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z").withZone(ZoneOffset.UTC)
+        val xml = buildString {
+            append("<tv>")
+            repeat(20_000) { i ->
+                val start = now + (i - 10_000) * 60_000L
+                append("<programme channel='news' start='${format.format(Instant.ofEpochMilli(start))}' stop='${format.format(Instant.ofEpochMilli(start + 60_000))}'><title>Передача $i</title><desc>${"Описание передачи. ".repeat(16)}</desc></programme>")
+            }
+            append("</tv>")
+        }
+        val client = HttpClient(MockEngine {
+            AndroidEpgPlaybackGate.setAppForeground(false)
+            respond(xml)
+        }) { install(HttpTimeout) }
+        val started = System.nanoTime()
+        try {
+            val repository = AndroidEpgRepository(client, playlists, channels, config, context)
+            val result = repository.refreshIfStale(true)
+            assertTrue("$result", result is AppResult.Success)
+            assertEquals(20_000, repository.observeState().value.programmeCount)
+            assertNotNull(repository.getNowPlaying(listOf(item), now)[item.id])
+            assertNotNull(repository.getAvailableProgrammeRange(listOf(item)))
+            println("ANDROID_INDEX_BENCHMARK programmes=20000 elapsedMs=${(System.nanoTime() - started)/1_000_000}")
+        } finally {
+            AndroidEpgPlaybackGate.setAppForeground(true)
+            AndroidEpgPlaybackGate.setVideoActive(false)
+            client.close()
+        }
+    }
+
     @Test fun settingsRemainUsableWhenReadingEpgCacheFails() = runBlocking<Unit> {
         val context = RuntimeEnvironment.getApplication()
         val client = HttpClient(MockEngine { error("Unexpected network") })

@@ -37,7 +37,9 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
     config: EpgConfigProvider, context: Context): IndexedEpgRepository {
     val app = context.applicationContext
     val fallback = AndroidFallbackEpgSettings(app)
-    return IndexedEpgRepository(
+    val downloads = EpgSourceDownload(client, File(app.noBackupFilesDir, "epg-downloads-v1"))
+    lateinit var repository: IndexedEpgRepository
+    repository = IndexedEpgRepository(
         storeProvider = {
             val path = File(app.noBackupFilesDir, "epg-index-v1.db").absolutePath
             val helper = FrameworkSQLiteOpenHelperFactory().create(
@@ -52,7 +54,21 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
         },
         playlists = playlists, channels = channels, config = config,
         fallbackUrls = { if (fallback.enabled()) fallback.urls() else emptyList() },
-        stream = { url, consume -> withEpgStream(client, url, consume) },
+        stream = { url, consume ->
+            downloads.consume(url, repository::downloadProgress, repository::downloadReady) { file ->
+                val context = currentCoroutineContext()
+                openEpgTextSource(file.absolutePath).use { source ->
+                    consume(object : EpgTextSource {
+                        override fun read(into: CharArray, offset: Int, length: Int): Int {
+                            context.ensureActive()
+                            return source.read(into, offset, length)
+                        }
+                        override fun close() = Unit
+                    })
+                }
+            }
+        },
+        onSourceImported = downloads::acknowledge,
         legacyDirectories = { url, ids ->
             platformEpgCacheDir()?.let { root ->
                 (ids.map { File(root, IndexedEpgRepository.sourceId("$it\u0000$url")) } +
@@ -62,4 +78,5 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
         },
         awaitImport = { AndroidEpgPlaybackGate.awaitForeground() },
     )
+    return repository
 }

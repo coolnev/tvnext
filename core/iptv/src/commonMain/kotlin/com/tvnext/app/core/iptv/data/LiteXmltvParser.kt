@@ -37,17 +37,8 @@ internal class LiteXmltvParser {
         var parsedProgrammes = 0
 
         while (true) {
-            val channelPos = scanner.find("<channel")
-            val programmePos = scanner.find("<programme")
-            val ch = if (channelPos < 0) Int.MAX_VALUE else channelPos
-            val pr = if (programmePos < 0) Int.MAX_VALUE else programmePos
-            if (ch == Int.MAX_VALUE && pr == Int.MAX_VALUE) {
-                // Nothing found yet: keep reading until the document ends.
-                if (!scanner.fillMore()) break
-                continue
-            }
-
-            if (ch < pr) {
+            val tag = scanner.nextElementTag() ?: break
+            if (tag == "channel") {
                 val element = scanner.extractElement("channel") ?: return false
                 parsedChannels++
                 parseChannelElement(element, lookup, xmltvIdToKeys)
@@ -422,7 +413,29 @@ private class XmlScanner(private val source: EpgTextSource) {
     var closedDocument = false
         private set
 
-    fun find(tag: String): Int = buf.indexOf(tag, cursor)
+    // Inspect each next opening tag once. Searching the entire unread tail
+    // for a missing <channel> on every <programme> repeatedly scanned the same text.
+    fun nextElementTag(): String? {
+        while (true) {
+            val p = buf.indexOf("<", cursor)
+            if (p < 0) {
+                if (!fillMore()) return null
+                continue
+            }
+            cursor = p
+            if (!eof && buf.length - p < 12 && readMore()) continue
+            if (matchesTag(p, "channel")) return "channel"
+            if (matchesTag(p, "programme")) return "programme"
+            cursor = p + 1
+        }
+    }
+
+    private fun matchesTag(start: Int, name: String): Boolean {
+        val end = start + 1 + name.length
+        if (end >= buf.length) return false
+        for (i in name.indices) if (buf[start + 1 + i] != name[i]) return false
+        return buf[end].isWhitespace() || buf[end] == '>' || buf[end] == '/'
+    }
 
     /** Reads the next chunk; returns false at end of input. */
     fun fillMore(): Boolean {

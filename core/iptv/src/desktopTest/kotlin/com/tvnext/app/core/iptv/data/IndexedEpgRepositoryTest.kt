@@ -176,6 +176,36 @@ class IndexedEpgRepositoryTest {
         } finally { f.close() }
     }
 
+    @Test fun forcedPrimaryRefreshDoesNotDownloadRedundantBackupGuides() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            val requests = arrayListOf<String>()
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup1.xml", "https://unused.invalid/backup2.xml")) { url, consume ->
+                requests += url
+                StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }
+                true
+            }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            assertEquals(listOf("https://unused.invalid/epg.xml"), requests)
+        } finally { f.close() }
+    }
+
+    @Test fun stopsDownloadingBackupSourcesOnceVisibleChannelsAreCovered() = runBlocking<Unit> {
+        val f = Fixture()
+        f.playlistList = f.playlistList.map { it.copy(epgUrl = null) }
+        try {
+            val requests = arrayListOf<String>()
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup1.xml", "https://unused.invalid/backup2.xml")) { url, consume ->
+                requests += url
+                StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }
+                true
+            }
+            r.getNowPlaying(f.roster, now)
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            assertEquals(listOf("https://unused.invalid/backup1.xml"), requests)
+        } finally { f.close() }
+    }
+
     @Test fun legacyCurrentAndArchiveFilesMigrateWithoutHttp() = runBlocking<Unit> {
         val f = Fixture()
         val dir = Files.createTempDirectory("tvnext-old-epg")

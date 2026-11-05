@@ -27,6 +27,7 @@ class IndexedEpgRepository(
     private val worker: CoroutineDispatcher = epgParseDispatcher(),
     private val clock: () -> Long = ::currentTimeMillis,
     private val automaticRefresh: Boolean = true,
+    private val onSourceImported: (String) -> Unit = {},
 ) : EpgRepository {
     private val store by lazy(storeProvider)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -34,7 +35,6 @@ class IndexedEpgRepository(
     private val sourceLock = Mutex()
     private val importLock = Mutex()
     private val priority = AtomicReference<Set<String>>(emptySet())
-    private val missing = AtomicReference<Set<String>>(emptySet())
     private val importing = ConcurrentHashMap<String, Long>()
     @Volatile private var configuration: Configuration? = null
     @Volatile private var autoJob: Job? = null
@@ -45,6 +45,13 @@ class IndexedEpgRepository(
         val signature: String, val primary: Boolean)
     private data class Configuration(val enabled: Boolean, val sources: List<Source>,
         val primaryByPlaylist: Map<String, List<String>>)
+
+    internal fun downloadProgress(progress: EpgSourceDownload.Progress) {
+        fun mb(bytes: Long) = (bytes / (1024.0 * 1024) * 10).toLong() / 10.0
+        val size = if (progress.total != null) "${mb(progress.bytes)} / ${mb(progress.total)} МБ" else "${mb(progress.bytes)} МБ"
+        _state.update { it.copy(notice = "Скачивание EPG: $size" + if (progress.attempt > 1) " · докачка" else "") }
+    }
+    internal fun downloadReady() { _state.update { it.copy(notice = "Обработка EPG…") } }
 
     override fun observeState(): StateFlow<EpgState> = _state.asStateFlow()
     override fun observeVersion(): Flow<Long> = _version.asStateFlow()
@@ -92,9 +99,8 @@ class IndexedEpgRepository(
             channelCount = snapshots.maxOfOrNull { s -> s.channels }?.toInt() ?: 0) }
     }
 
-    private fun requestPriority(requested: List<Channel>, absent: Set<String>) {
+    private fun requestPriority(requested: List<Channel>) {
         priority.set(requested.mapTo(hashSetOf(), ::key))
-        missing.set(absent)
         if (!automaticRefresh) return
         synchronized(this) {
             if (autoJob?.isActive == true) return
@@ -126,7 +132,7 @@ class IndexedEpgRepository(
                         clock() - old.fetchedAt in 0 until EpgRepository.TTL_MS
                     if (!force && (fresh || (old?.retryAt ?: 0L) > clock())) continue
                     // Do not fetch unrelated backup feeds when the visible channels have EPG.
-                    if (!source.primary && !force && missing.get().isEmpty()) continue
+                    if (!source.primary && !needsBackup(cfg, source)) continue
                     awaitImport()
                     _state.update { it.copy(isLoading = true, lastError = null) }
                     if (!import(source)) failure = true
@@ -142,7 +148,18 @@ class IndexedEpgRepository(
         } catch (error: Exception) {
             _state.update { it.copy(lastError = "Не удалось обновить EPG. Сохранённая программа доступна.") }
             AppResult.Failure(AppError.Database(error))
-        } finally { _state.update { it.copy(isLoading = false) }; importLock.unlock() }
+        } finally { _state.update { it.copy(isLoading = false, notice = null) }; importLock.unlock() }
+    }
+
+    private fun needsBackup(cfg: Configuration, source: Source): Boolean {
+        val viewport = priority.get()
+        val wanted = source.channels.filter { viewport.isEmpty() || key(it) in viewport }.mapTo(hashSetOf(), ::key)
+        if (wanted.isEmpty()) return false
+        for (cached in cfg.sources) {
+            wanted.removeAll(store.now(cached.id, wanted, clock()).keys)
+            if (wanted.isEmpty()) return false
+        }
+        return true
     }
 
     private suspend fun import(source: Source): Boolean {
@@ -154,10 +171,13 @@ class IndexedEpgRepository(
             val success = stream(source.url) { input ->
                 complete = LiteXmltvParser().parse(input, LiteXmltvParser().buildChannelLookup(source.channels),
                     "", writer, fullDescriptions = true)
+                writer.flush()
+                if (!complete) throw InvalidEpgDocumentException()
             }
             writer.flush()
             check(success && complete && writer.count > 0) { "Incomplete or unmatched XMLTV" }
             store.complete(source.id, generation, source.signature, clock(), clock())
+            onSourceImported(source.url)
             _version.update { it + 1L }
             true
         } catch (cancelled: CancellationException) {
@@ -175,7 +195,7 @@ class IndexedEpgRepository(
 
     /** Synchronous bounded sink on the single background parser thread. */
     private inner class BatchWriter(private val source: Source, private val generation: Long) : EpgProgrammeSink {
-        private val batch = ArrayList<Pair<String, EpgProgramme>>(128)
+        private val batch = ArrayList<Pair<String, EpgProgramme>>(512)
         private var chars = 0
         var count = 0L
         private val seen = hashSetOf<String>()
@@ -184,17 +204,16 @@ class IndexedEpgRepository(
             chars += programme.title.length + (programme.description?.length ?: 0)
             seen.add(key)
             val urgent = key in priority.get() && programme.start <= clock() && programme.stop > clock()
-            if (batch.size >= 128 || chars >= 256 * 1024 || urgent) flush(urgent)
+            if (batch.size >= 512 || chars >= 256 * 1024 || urgent) flush(urgent)
         }
         fun flush(urgent: Boolean = false) {
             if (batch.isEmpty()) return
-            checkEpgImportPriority()
             store.write(source.id, generation, batch, publishCold = true)
             count += batch.size
             batch.clear(); chars = 0
             if (urgent || clock() - publishedAt >= 500L) {
                 publishedAt = clock()
-                _state.update { it.copy(channelCount = seen.size, programmeCount = count.toInt()) }
+                _state.update { it.copy(channelCount = seen.size, programmeCount = count.toInt(), notice = "Обработка EPG: $count передач") }
                 _version.update { it + 1L }
             }
         }
@@ -247,7 +266,7 @@ class IndexedEpgRepository(
             }
             for (channel in requested) rows[key(channel)]?.let { result[channel.id] = it.copy(channelId = channel.id) }
         }
-        requestPriority(channels, channels.filter { it.id !in result }.mapTo(hashSetOf(), ::key))
+        requestPriority(channels)
         result
     }
 
@@ -287,7 +306,7 @@ class IndexedEpgRepository(
             }
             requested.forEach { c -> result[c.id] = merge(result[c.id].orEmpty(), rows[key(c)].orEmpty()).map { it.copy(channelId = c.id) } }
         }
-        requestPriority(channels, channels.filter { result[it.id].isNullOrEmpty() }.mapTo(hashSetOf(), ::key))
+        requestPriority(channels)
         result
     }
 
@@ -319,7 +338,7 @@ class IndexedEpgRepository(
         .filter { it.startsWith("http://", true) || it.startsWith("https://", true) }.distinct()
 
     companion object {
-        private const val RETRY_MS = 15L * 60 * 1000
+        private const val RETRY_MS = 60_000L
         internal fun sourceId(url: String): String = MessageDigest.getInstance("SHA-256")
             .digest(url.toByteArray()).joinToString("") { "%02x".format(it) }
         internal fun merge(primary: List<EpgProgramme>, backup: List<EpgProgramme>): List<EpgProgramme> {
