@@ -1,0 +1,154 @@
+package com.tvnext.app.core.tmdb
+
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.tvnext.app.core.database.TvNextDatabase
+import com.tvnext.app.core.iptv.domain.MediaItem
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestData
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import kotlin.test.*
+
+class MetadataNetworkTest {
+    private val synopsis = "Полное русское описание фильма. ".repeat(8)
+    private val search = """{"results":[{"id":42,"title":"Хитровка","overview":"Из поиска","poster_path":"/p.jpg","backdrop_path":"/f.jpg"}]}"""
+    private val details get() = """{"id":42,"title":"Хитровка","overview":"$synopsis","poster_path":"/p.jpg","backdrop_path":"/f.jpg"}"""
+    private val item = MediaItem("film", "p", "Хитровка", 1, "Фильмы", "https://example.org/movie")
+    private class Settings : TmdbSettingsStore {
+        override suspend fun isEnabled() = true
+        override suspend fun setEnabled(enabled: Boolean) = Unit
+        override suspend fun getApiKey() = "test-key"
+        override suspend fun setApiKey(apiKey: String) = Unit
+    }
+    private class Key(private val value: String) : KinopoiskKeyStore {
+        override suspend fun getKey() = value
+        override suspend fun setKey(value: String) = Unit
+    }
+    private inner class Fixture(handler: suspend (HttpRequestData) -> Pair<Int, String>) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        init { TvNextDatabase.Schema.create(driver) }
+        val client = HttpClient(MockEngine { request ->
+            val (code, text) = handler(request)
+            respond(text, HttpStatusCode.fromValue(code), headersOf("Content-Type", "application/json"))
+        }) { install(HttpTimeout); install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+        val database = TvNextDatabase(driver)
+        val tmdb = SqlDelightTmdbRepository(client, database, Settings())
+        fun programme(kinoKey: String = "") = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, Key(kinoKey)), Settings())
+        fun close() { client.close(); driver.close() }
+    }
+    @Test fun transientSearchAndDetailsFailuresAreRetried() = runBlocking<Unit> {
+        var searches = 0; var cards = 0
+        val f = Fixture {
+            if (it.url.encodedPath.contains("search")) {
+                searches++; if (searches == 1) 503 to "{}" else 200 to search
+            } else { cards++; if (cards == 1) 500 to "{}" else 200 to details }
+        }
+        try {
+            assertEquals(42, f.tmdb.searchMovie("Хитровка").single().id)
+            assertEquals(synopsis, f.tmdb.getMovieDetails(42).overview)
+            assertEquals(2, searches); assertEquals(2, cards)
+        } finally { f.close() }
+    }
+    @Test fun badKeyIsNotRetried() = runBlocking<Unit> {
+        var calls = 0
+        val f = Fixture { calls++; 401 to "{}" }
+        try {
+            assertNotNull(runCatching { f.tmdb.searchMovie("Хитровка") }.exceptionOrNull())
+            assertEquals(1, calls)
+        } finally { f.close() }
+    }
+    @Test fun searchArtworkSurvivesAFullCardOutage() = runBlocking<Unit> {
+        val f = Fixture { if (it.url.encodedPath.contains("search")) 200 to search else 404 to "{}" }
+        try {
+            val result = f.programme().find("Хитровка")
+            assertEquals("Из поиска", result?.overview)
+            assertTrue(result?.posterUrl?.endsWith("/p.jpg") == true)
+            assertTrue(result?.frameUrl?.endsWith("/f.jpg") == true)
+        } finally { f.close() }
+    }
+    @Test fun kinopoiskFillsMissingFrameEvenWhenTmdbHasSynopsisAndPoster() = runBlocking<Unit> {
+        var kinoDetails = 0
+        val f = Fixture { request ->
+            if (request.url.host == "api.poiskkino.dev") {
+                assertEquals("test-key", request.headers["X-API-KEY"])
+                if (request.url.encodedPath.endsWith("/search")) 200 to
+                    """{"docs":[{"id":9,"name":"Хитровка","description":"$synopsis","poster":{"url":"https://example.org/kp-p.jpg"}}]}"""
+                else { kinoDetails++; 200 to """{"description":"$synopsis","backdrop":{"url":"https://example.org/kp-frame.jpg"}}""" }
+            } else if (request.url.encodedPath.contains("search")) 200 to search.replace("\"backdrop_path\":\"/f.jpg\"", "\"backdrop_path\":null")
+            else 200 to details.replace("\"backdrop_path\":\"/f.jpg\"", "\"backdrop_path\":null")
+        }
+        try {
+            val result = f.programme("test-key").find("Хитровка")
+            assertEquals(synopsis, result?.overview)
+            assertEquals("https://example.org/kp-frame.jpg", result?.frameUrl)
+            assertTrue(result?.posterUrl?.startsWith("https://image.tmdb.org/") == true)
+            assertEquals(1, kinoDetails)
+        } finally { f.close() }
+    }
+    @Test fun simultaneousProgrammeCardsShareOneLookupAndCacheItsResult() = runBlocking<Unit> {
+        var searches = 0
+        val f = Fixture {
+            if (it.url.encodedPath.contains("search")) { searches++; delay(50); 200 to search }
+            else 200 to details
+        }
+        try {
+            val repository = f.programme()
+            val cards = (1..12).map { async(Dispatchers.Default) { repository.find("Хитровка") } }.awaitAll()
+            assertTrue(cards.all { it?.overview == synopsis })
+            assertEquals(1, searches)
+            assertEquals(synopsis, repository.find("Хитровка")?.overview)
+            assertEquals(1, searches)
+        } finally { f.close() }
+    }
+    @Test fun kinopoiskDownloadsStillFromImageEndpointWhenBackdropIsAbsent() = runBlocking<Unit> {
+        var images = 0
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") {
+                if (request.url.encodedPath.contains("search")) 200 to """{"results":[]}""" else 404 to "{}"
+            } else if (request.url.encodedPath.endsWith("/image")) {
+                images++
+                assertEquals("9", request.url.parameters["movieId"])
+                200 to """{"docs":[{"type":"still","url":"https://example.org/full.jpg","previewUrl":"https://example.org/still.jpg"}]}"""
+            } else if (request.url.encodedPath.endsWith("/search")) 200 to
+                """{"docs":[{"id":9,"name":"Хитровка","description":"$synopsis","poster":{"url":"https://example.org/poster.jpg"}}]}"""
+            else 200 to """{"description":"$synopsis","poster":{"url":"https://example.org/poster.jpg"}}"""
+        }
+        try {
+            val card = f.programme("test-key").find("Хитровка")
+            assertEquals("https://example.org/still.jpg", card?.frameUrl)
+            assertEquals("https://example.org/poster.jpg", card?.posterUrl)
+            assertEquals(1, images)
+        } finally { f.close() }
+    }
+    @Test fun aServerFailureDoesNotEraseTheLastGoodVodCard() = runBlocking<Unit> {
+        var offline = false
+        val f = Fixture {
+            if (offline) 401 to "{}"
+            else if (it.url.encodedPath.contains("search")) 200 to search else 200 to details
+        }
+        try {
+            assertEquals(TmdbCacheStatus.FOUND, f.tmdb.enrich(item).status)
+            offline = true
+            val cached = f.tmdb.enrich(item, true)
+            assertEquals(TmdbCacheStatus.FOUND, cached.status)
+            assertEquals(synopsis, cached.metadata?.overview)
+        } finally { f.close() }
+    }
+    @Test fun aTemporaryErrorExpiresAfterSecondsInsteadOfBeingCachedForAWeek() = runBlocking<Unit> {
+        var offline = true
+        val f = Fixture {
+            if (offline) 401 to "{}" else if (it.url.encodedPath.contains("search")) 200 to search else 200 to details
+        }
+        try {
+            assertEquals(TmdbCacheStatus.ERROR, f.tmdb.enrich(item).status)
+            f.driver.execute(null, "UPDATE tmdb_cache SET updated_at = ?", 1) { bindLong(0, System.currentTimeMillis() - 30_000) }
+            offline = false
+            assertEquals(TmdbCacheStatus.FOUND, f.tmdb.enrich(item).status)
+        } finally { f.close() }
+    }
+}

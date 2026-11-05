@@ -202,6 +202,18 @@ class MainActivity : ComponentActivity() {
                     ?.updateDecodeMode(settings.videoDecodeMode)
             }
         }
+        // Resolve the small LOCAL settings snapshot before constructing the
+        // navigation tree. Never show Channels first and switch tabs later.
+        // This reads no playlist, EPG, artwork or network resource.
+        val startupSettings = kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+            koin.get<SettingsRepository>().load()
+        }
+        val startupTab = when (startupSettings.startScreen) {
+            StartScreen.HOME -> AppTab.HOME
+            StartScreen.CHANNELS -> AppTab.CHANNELS
+            StartScreen.TV_GUIDE -> AppTab.TV_GUIDE
+            StartScreen.MEDIA_LIBRARY -> AppTab.MEDIA_LIBRARY
+        }
         val rootComponent = DefaultAppComponent(
             componentContext = defaultComponentContext(),
             factory = koin.get(),
@@ -209,6 +221,8 @@ class MainActivity : ComponentActivity() {
             reminderService = koin.get(),
             playlistRepository = koin.get(),
             epgRepository = koin.get(),
+            initialTab = startupTab,
+            initialSettings = startupSettings,
             onExitRequested = {
                 // Second Back on Home (or a single Back on Home after the first
                 // confirmation) closes the app entirely.
@@ -217,21 +231,6 @@ class MainActivity : ComponentActivity() {
             mainContext = koin.get(named("mainDispatcher")),
         )
         appComponent = rootComponent
-        // Apply the persisted start-tab choice once at process start. No
-        // setting is fetched on the UI thread; the default remains Channels.
-        exportScope.launch {
-            val chosen = withContext(Dispatchers.IO) {
-                runCatching { koin.get<SettingsRepository>().load().startScreen }
-                    .getOrDefault(StartScreen.CHANNELS)
-            }
-            val tab = when (chosen) {
-                StartScreen.HOME -> AppTab.HOME
-                StartScreen.CHANNELS -> AppTab.CHANNELS
-                StartScreen.TV_GUIDE -> AppTab.TV_GUIDE
-                StartScreen.MEDIA_LIBRARY -> AppTab.MEDIA_LIBRARY
-            }
-            rootComponent.selectTab(tab)
-        }
         // Android's dispatcher is the authoritative BACK path for TV remotes
         // and gesture/system back. The same state machine handles it exactly
         // once, so a guide/timeline cannot consume the first press and fall
@@ -495,6 +494,10 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         com.tvnext.app.core.iptv.data.AndroidEpgPlaybackGate.setAppForeground(true)
+        exportScope.launch {
+            kotlinx.coroutines.delay(150)
+            GlobalContext.get().get<com.tvnext.app.core.iptv.data.EpgRepository>().refreshIfStale(false)
+        }
         AndroidPerformanceDiagnostics.start(applicationContext)
         // Back in the foreground: re-arm the boot marker so only a FOREGROUND
         // kill (e.g. during the EPG import) is later treated as a crash, not a

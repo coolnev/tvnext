@@ -35,6 +35,10 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
+        androidMain.dependencies {
+            implementation(libs.sqldelight.android.driver)
+            implementation("androidx.sqlite:sqlite-framework:2.6.2")
+        }
         getByName("desktopTest").dependencies {
             // In-memory SQLite for repository/store tests (history, EPG cache).
             implementation(libs.sqldelight.sqlite.driver)

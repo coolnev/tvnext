@@ -68,6 +68,8 @@ interface TmdbRepository {
     suspend fun clearCache()
 }
 
+private class TmdbHttpFailure(val code: Int, val retryAfterMs: Long) : IllegalStateException("TMDB HTTP $code")
+
 class SqlDelightTmdbRepository(
     private val client: HttpClient,
     private val database: TvNextDatabase,
@@ -88,29 +90,20 @@ class SqlDelightTmdbRepository(
         const val TMDB_RETRY_DELAY_MS = 400L
     }
 
-    /**
-     * TMDB sits behind Cloudflare, whose edge sometimes drops the connection
-     * during TLS setup/renegotiation (observed as flaky timeouts and
-     * "no connection" results). The app's shared HTTP client is tuned for
-     * large streaming downloads, so TMDB requests use their own generous
-     * per-request timeouts and retry transient failures up to three times
-     * with a short backoff. HTTP-level errors (4xx/5xx, surfaced here as
-     * "TMDB HTTP …" from ensureSuccess) and coroutine cancellation are NOT
-     * retried — a wrong key would otherwise hammer the API. This runs in
-     * commonMain (Android + desktop), so retriability is decided by message
-     * patterns rather than JVM exception types.
-     */
+    /** Retry transient transport, 408/429/5xx failures. Authentication failures,
+     * malformed JSON and cancellation fail promptly without extra requests. */
     private suspend fun <T> tmdbRequest(block: suspend () -> T): T {
         var attempt = 0
         while (true) {
             try {
                 return block()
-            } catch (e: Throwable) {
+            } catch (e: Exception) {
                 val isCancellation = e is kotlinx.coroutines.CancellationException
-                val isHttpError = e.message?.startsWith("TMDB HTTP") == true
-                if (isCancellation || isHttpError || attempt >= TMDB_MAX_RETRIES) throw e
+                val http = e as? TmdbHttpFailure
+                val permanent = http != null && http.code !in setOf(408, 429, 500, 502, 503, 504)
+                if (isCancellation || permanent || e is kotlinx.serialization.SerializationException || attempt >= TMDB_MAX_RETRIES) throw e
                 attempt++
-                delay(TMDB_RETRY_DELAY_MS * attempt)
+                delay(maxOf(TMDB_RETRY_DELAY_MS * attempt, http?.retryAfterMs ?: 0L).coerceAtMost(5_000L))
             }
         }
     }
@@ -159,8 +152,8 @@ class SqlDelightTmdbRepository(
     private suspend fun details(type: String, id: Int, language: String): TmdbDetails {
         val key = settings.getApiKey().trim()
         require(key.isNotBlank()) { "TMDB API key is empty" }
-        val response = tmdbRequest {
-            client.get("https://api.themoviedb.org/3/$type/$id") {
+        return tmdbRequest {
+            val response = client.get("https://api.themoviedb.org/3/$type/$id") {
                 parameter("api_key", key)
                 parameter("language", language)
                 parameter("append_to_response", "credits")
@@ -170,9 +163,9 @@ class SqlDelightTmdbRepository(
                     socketTimeoutMillis = TMDB_REQUEST_TIMEOUT_MS
                 }
             }
+            ensureSuccess(response)
+            response.body<TmdbDetails>()
         }
-        ensureSuccess(response)
-        return response.body()
     }
 
     override suspend fun enrich(item: MediaItem, forceRefresh: Boolean): TmdbLookupResult {
@@ -183,8 +176,14 @@ class SqlDelightTmdbRepository(
         }
         if (!settingsOk) return TmdbLookupResult(null, TmdbCacheStatus.ERROR)
         val cached = withContext(Dispatchers.Default) { readCache(item.id) }
-        if (!forceRefresh && cached != null && currentTimeMillis() - cached.updated_at < ttlMs) {
-            return TmdbLookupResult(cached.toMetadata(), TmdbCacheStatus.valueOf(cached.status))
+        val cacheTtl = when {
+            cached?.status == "ERROR" -> 20_000L
+            cached?.status == "NOT_FOUND" -> 60L * 60_000L
+            cached?.overview.isNullOrBlank() || cached?.poster_path.isNullOrBlank() || cached?.backdrop_path.isNullOrBlank() -> 2 * 60_000L
+            else -> ttlMs
+        }
+        if (!forceRefresh && cached != null && currentTimeMillis() - cached.updated_at in 0 until cacheTtl) {
+            return TmdbLookupResult(cached.takeIf { it.tmdb_id != null }?.toMetadata(), TmdbCacheStatus.valueOf(cached.status))
         }
         if (isAndroidPlatform()) return enrichAndroid(item)
         val key = item.id
@@ -245,7 +244,17 @@ class SqlDelightTmdbRepository(
                 saveCache(item.id, null, "NOT_FOUND")
                 return TmdbLookupResult(null, TmdbCacheStatus.NOT_FOUND)
             }
-            val details = if (normalized.isTv) getTvDetails(best.id, "ru-RU") else getMovieDetails(best.id, "ru-RU")
+            val details = try {
+                if (normalized.isTv) getTvDetails(best.id, "ru-RU") else getMovieDetails(best.id, "ru-RU")
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // A details outage must not throw away a valid search card.
+                TmdbDetails(best.id, title = best.title, name = best.name, original_title = best.original_title,
+                    overview = best.overview, poster_path = best.poster_path, backdrop_path = best.backdrop_path,
+                    release_date = best.release_date, first_air_date = best.first_air_date,
+                    original_language = best.original_language)
+            }
             val metadata = details.toMetadata(if (normalized.isTv) "tv" else "movie")
             val finalMetadata = if (metadata.title.isNullOrBlank() && metadata.originalTitle.isNullOrBlank()) {
                 val en = if (normalized.isTv) getTvDetails(best.id, "en-US") else getMovieDetails(best.id, "en-US")
@@ -258,12 +267,14 @@ class SqlDelightTmdbRepository(
                             if (normalized.isTv) getTvDetails(best.id, language) else getMovieDetails(best.id, language)
                         }.getOrNull()
                     }
-                val en = if (normalized.isTv) getTvDetails(best.id, "en-US") else getMovieDetails(best.id, "en-US")
-                metadata.copy(overview = original?.overview ?: en.overview ?: metadata.overview)
+                val en = runCatching { if (normalized.isTv) getTvDetails(best.id, "en-US") else getMovieDetails(best.id, "en-US") }.getOrNull()
+                metadata.copy(overview = original?.overview ?: en?.overview ?: metadata.overview)
             } else metadata
             saveCache(item.id, finalMetadata, "FOUND")
             TmdbLookupResult(finalMetadata, TmdbCacheStatus.FOUND)
         }.getOrElse {
+            val previous = withContext(Dispatchers.Default) { readCache(item.id) }
+            if (previous?.tmdb_id != null) return TmdbLookupResult(previous.toMetadata(), TmdbCacheStatus.FOUND)
             saveCache(item.id, null, "ERROR")
             TmdbLookupResult(null, TmdbCacheStatus.ERROR)
         }
@@ -358,7 +369,8 @@ class SqlDelightTmdbRepository(
     }
 
     private fun ensureSuccess(response: HttpResponse) {
-        if (response.status.value !in 200..299) error("TMDB HTTP ${response.status.value}")
+        if (response.status.value !in 200..299) throw TmdbHttpFailure(response.status.value,
+            response.headers["Retry-After"]?.toLongOrNull()?.coerceIn(0, 5)?.times(1_000L) ?: 0L)
     }
 
     private fun TmdbDetails.toMetadata(type: String): TmdbMetadata = TmdbMetadata(

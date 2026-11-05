@@ -32,12 +32,8 @@ actual class DatabaseFactory(
         // for the whole multi-minute import. NORMAL removes most of that cost.
         runCatching { driver.execute(null, "PRAGMA synchronous=NORMAL;", 0) { } }
             .onFailure { e -> android.util.Log.w("TVNextDatabase", "synchronous pragma failed: ${e.message}") }
-        // A force-stop during a large EPG import can leave a large WAL file
-        // behind even though the next process starts from a consistent DB.
-        // Checkpoint it immediately so stale WAL pages do not count against
-        // Android TV's small cache partition.
-        runCatching { driver.execute(null, "PRAGMA wal_checkpoint(TRUNCATE);", 0) { } }
-            .onFailure { e -> android.util.Log.w("TVNextDatabase", "startup WAL checkpoint failed: ${e.message}") }
+        // Do not checkpoint/truncate a possibly large legacy WAL during startup.
+        // EPG now owns a separate database; startup reads stay independent.
         registerRawSqlDriver(driver)
         return driver
     }

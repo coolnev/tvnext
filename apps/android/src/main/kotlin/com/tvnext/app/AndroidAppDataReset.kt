@@ -21,6 +21,7 @@ class AndroidAppDataReset(private val context: Context) : AppDataReset {
         if (!resetMarker.isFile) return
         resetMarker.delete()
         context.deleteDatabase("tvnext.db")
+        context.deleteDatabase(File(context.noBackupFilesDir, "epg-index-v1.db").absolutePath)
         context.cacheDir.deleteRecursively()
         // Reset means reset all imported EPG as well. It is now stored outside
         // cacheDir so Android cannot evict it between ordinary app launches.

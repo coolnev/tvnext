@@ -1,0 +1,488 @@
+{
+  "date": "2026-11-05",
+  "versionName": "0.5.29-recovery-preview",
+  "versionCode": 529,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "result": "BUILD SUCCESSFUL",
+  "tests": [
+    {
+      "module": "core/iptv",
+      "name": "ArchiveCandidatesTest[desktop]",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:30.966Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "ArchiveDepthResolverTest[desktop]",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:31.054Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "ArchiveRepositoryTest[desktop]",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:31.216Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "CatchupUrlBuilderTest[desktop]",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:31.671Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "ChannelIdStabilityTest[desktop]",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:31.727Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "ChannelStoreFavoritesTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:31.944Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "DatabaseMigrationTest[desktop]",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.010Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "EpgArchiveHistoryTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.117Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "EpgGridQueryTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.120Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "EpgMatcherTest[desktop]",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.171Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "EpgTwoPhaseImportTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.221Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "FullDescriptionRegressionTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.275Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "HistoryStoreTest[desktop]",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.372Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "IndexedEpgRepositoryTest[desktop]",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:32.437Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "LiteEpgRepositoryCacheTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:33.889Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "LiteXmltvParserTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:33.943Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "PlaylistMultiTest[desktop]",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:33.963Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "RealEpgImportReproTest[desktop]",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.018Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "ScheduledRepositoryTest[desktop]",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.019Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "VodMediaLibraryTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.058Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "M3uParserTest[desktop]",
+      "tests": "28",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.086Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "RealWorldM3uParserTest[desktop]",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.090Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "GzipTest[desktop]",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.103Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "XmltvParserTest[desktop]",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.110Z"
+    },
+    {
+      "module": "core/iptv",
+      "name": "XmltvTimestampTest[desktop]",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:34.748Z"
+    },
+    {
+      "module": "core/tmdb",
+      "name": "MetadataNetworkTest[desktop]",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:35.672Z"
+    },
+    {
+      "module": "core/tmdb",
+      "name": "ProgrammeMetadataTest[desktop]",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.051Z"
+    },
+    {
+      "module": "core/tmdb",
+      "name": "TmdbSettingsStoreTest[desktop]",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.060Z"
+    },
+    {
+      "module": "core/tmdb",
+      "name": "TmdbTitleNormalizerTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.064Z"
+    },
+    {
+      "module": "core/network",
+      "name": "ArtworkFetcherTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:54:41.134Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "AndroidArchiveIndicatorTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.939Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "AndroidChannelFocusTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.984Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "ArtworkCacheTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:37.988Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "ChannelsComponentTest[desktop]",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.230Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "GuideCentreWindowTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.918Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "GuideClampedEdgeAndAlignmentTest[desktop]",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.923Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "GuideNavigationTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.930Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "GuideProgrammeTimelineTest[desktop]",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.936Z"
+    },
+    {
+      "module": "features/channels",
+      "name": "GuideRemoteUiTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:38.967Z"
+    },
+    {
+      "module": "features/home",
+      "name": "HomeRepositoryTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T18:03:43.279Z"
+    },
+    {
+      "module": "core/player",
+      "name": "AndroidPlaybackSessionTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:01.972Z"
+    },
+    {
+      "module": "core/player",
+      "name": "HlsPrefetchServerTest[desktop]",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:01.987Z"
+    },
+    {
+      "module": "core/player",
+      "name": "MpvRuntimeLocatorTest[desktop]",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.963Z"
+    },
+    {
+      "module": "core/player",
+      "name": "PlaybackErrorClassifierTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.967Z"
+    },
+    {
+      "module": "core/player",
+      "name": "PlaybackErrorTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.971Z"
+    },
+    {
+      "module": "core/player",
+      "name": "PlaybackStateTest[desktop]",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.974Z"
+    },
+    {
+      "module": "core/player",
+      "name": "RecoveredPolicyTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.976Z"
+    },
+    {
+      "module": "core/player",
+      "name": "StallFallbackTest[desktop]",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.979Z"
+    },
+    {
+      "module": "core/player",
+      "name": "TimeShiftBoundsTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.982Z"
+    },
+    {
+      "module": "core/player",
+      "name": "VideoAspectModeTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:01.942Z"
+    },
+    {
+      "module": "core/player",
+      "name": "VlcDecoderDetectorTest[desktop]",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.986Z"
+    },
+    {
+      "module": "core/player",
+      "name": "VlcErrorClassifierTest[desktop]",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T17:44:03.993Z"
+    }
+  ],
+  "total_tests": 345,
+  "apk_sha256": "2a581c2c0bfda4249304346c5d9e38bfb37413202b8caaa86189e31794dc8961",
+  "signature": "APK Signature Scheme v2 verified",
+  "signer_sha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "zipalign": "passed",
+  "zip_integrity": "passed",
+  "live_services_verified": false,
+  "live_services_limitation": "Environment outbound policy returned CONNECT 403 for api.themoviedb.org, api.poiskkino.dev and image.tmdb.org. HTTP behavior, caching and decoding tested locally.",
+  "physical_android_tv_tested": false
+}

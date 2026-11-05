@@ -26,6 +26,9 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class HomeState(
     val isLoading: Boolean = false,
@@ -80,12 +83,14 @@ class DefaultHomeComponent(
         // Re-load Home content after an EPG refresh so cards pick up the new
         // current/next programmes without an app restart.
         launch {
-            epgRepository.observeVersion().distinctUntilChanged().collect { version ->
+            val versions = epgRepository.observeVersion().distinctUntilChanged()
+            (if (isAndroidPlatform()) versions.sample(750L) else versions).collect { version ->
                 // Version 0 is the process-local initial value; it is not a new
                 // EPG import. Reload only after an actual refresh notification.
                 if (version > 0L) dispatch(HomeIntent.Load)
             }
         }
+        if (isAndroidPlatform()) launch { channelsRepository.observeChanges().collect { load() } }
     }
 
     override fun reduce(state: HomeState, intent: HomeIntent): HomeState = when (intent) {
@@ -112,7 +117,6 @@ class DefaultHomeComponent(
     private fun load() {
         if (isAndroidPlatform()) loadJob?.cancel()
         loadJob = launch {
-            if (isAndroidPlatform()) kotlinx.coroutines.delay(150)
             setState { it.copy(isLoading = true, error = null) }
             // 0) Show the cached content INSTANTLY (the Home tab is recreated
             //    on every tab switch — a cold recompute costs ~1-2 s of EPG
@@ -123,7 +127,8 @@ class DefaultHomeComponent(
             // 1) Recompute from the local DB (fast; the now-next EPG pass is
             //    cached for a minute).
             try {
-                val content = repository.getContent()
+                val content = if (isAndroidPlatform()) withContext(Dispatchers.IO) { repository.getContent() }
+                    else repository.getContent()
                 HomeContentHolder.content = content
                 setState { it.copy(isLoading = false, content = content, error = null) }
             } catch (error: Exception) {

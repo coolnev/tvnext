@@ -123,7 +123,7 @@ data class ChannelTimelineState(
 )
 
 data class ChannelsState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val hasPlaylist: Boolean = false,
     val channels: List<Channel> = emptyList(),
@@ -253,6 +253,7 @@ class DefaultChannelsComponent(
 
     /** Channel-name overlay timer; only one exists at a time (cancelled first). */
     private var channelNameTimer: Job? = null
+    private var catalogLoadJob: Job? = null
 
     /**
      * In-flight EPG refresh jobs. Each of [loadNowPlaying]/[loadEpgForSelected]
@@ -391,6 +392,14 @@ class DefaultChannelsComponent(
             }
         }
         load()
+        if (isAndroidPlatform()) {
+            launch { repository.observeChanges().collect { load() } }
+            launch {
+                com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.drop(1).collect { pending ->
+                    if (!pending && state.value.channels.isEmpty()) load()
+                }
+            }
+        }
     }
 
     override fun reduce(state: ChannelsState, intent: ChannelsIntent): ChannelsState = when (intent) {
@@ -591,20 +600,27 @@ class DefaultChannelsComponent(
     }
 
     private fun load() {
+        if (isAndroidPlatform()) catalogLoadJob?.cancel()
         // load() is invoked directly from init (NOT via dispatch(Load)), so the
         // reduce() branch that sets isLoading=true never runs here. Set it
         // explicitly: otherwise the very first startup would show the
         // "channels not loaded" empty state during the whole first refresh
         // instead of a loading spinner.
         setState { it.copy(isLoading = true, error = null) }
-        launch {
+        catalogLoadJob = launch {
             runCatching {
                 val configured = repository.isConfigured()
                 setState { it.copy(hasPlaylist = configured) }
-                if (!configured) {
+                if (!configured && isAndroidPlatform() && com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value) {
+                    // The first M3U import is still running; do not claim that
+                    // the user has no playlist and do not start a second fetch.
+                    return@launch
+                } else if (!configured) {
                     applyChannelsSnapshot(emptyList()) { it.copy(isLoading = false) }
                 } else {
                     val cached = repository.getChannels()
+                    if (isAndroidPlatform() && cached.isEmpty() &&
+                        com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value) return@launch
                     // Desktop: restore focus on the playing/last-selected channel
                     // (its category is opened too so it stays visible).
                     val (savedCategory, savedChannel) = restoreLastView(

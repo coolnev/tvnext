@@ -1,5 +1,7 @@
 package com.tvnext.app.core.player
 
+import kotlin.math.roundToInt
+
 /** Aspect selection tokens remain stable across profile backup/import and app upgrades.
  *  INHERIT is only meaningful as a per-channel value. AUTO honors the video SAR/DAR;
  *  STRETCH fills the whole available player area; ZOOM fills while cropping.
@@ -11,7 +13,7 @@ enum class VideoAspectMode(
     val denominator: Int = 0,
 ) {
     INHERIT("inherit", "Как в общих настройках"),
-    AUTO("fit", "Автоматически"),
+    AUTO("fit", "Авто"),
     STRETCH("fill", "Растянуть на экран"),
     ZOOM("zoom", "Заполнить с обрезкой"),
     RATIO_16_9("16:9", "16:9", 16, 9),
@@ -54,8 +56,8 @@ fun videoViewportSize(width: Int, height: Int, ratio: Float?): Pair<Int, Int> {
     }
     val availableRatio = width.toDouble() / height
     return if (availableRatio > ratio) {
-        ((height * ratio.toDouble()).toInt().coerceIn(1, width)) to height
+        ((height * ratio.toDouble()).roundToInt().coerceIn(1, width)) to height
     } else {
-        width to ((width / ratio.toDouble()).toInt().coerceIn(1, height))
+        width to ((width / ratio.toDouble()).roundToInt().coerceIn(1, height))
     }
 }

@@ -1,28 +1,31 @@
 # TVNext — актуальный контекст, 2026-11-05
 
-Текущая база — предоставленный пользователем TVNextR, версия `0.5.28-recovery-preview`, Android release, пакет `com.tvnext.app.recovery`, versionCode `528`.
+Текущая версия TVNextR: `0.5.29-recovery-preview`, versionCode 529, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28.
 
-Актуальные исходники: `/workspace/work/tvnext-current`. Старый `/workspace/tvnext` — прежняя версия 0.2.0, не использовать как базу текущего релиза.
-
+Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
-В этой ветке сохранены исходный ZIP пользователя, распакованные исходники, коммит исправлений, APK и контрольная сумма. Первый коммит `0445ce8` сохраняет исходную базу до изменений. Не заменять ветки с прежними APK и исходниками.
+Старый `/workspace/tvnext` — прежняя версия 0.2.0. Из неё восстановлен только отсутствовавший в новом ZIP тестовый ресурс real-world-ru.m3u.
 
-APK: `releases/android/TVNextR-0.5.28.apk`.
-Оригинальный ZIP: `source-archives/TVnextR-source-2026-11-05.zip`.
-Изменения и ограничения: `RELEASE_ANDROID_0.5.28_RU.md`.
+Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-Исправлены непрерывный список EPG через все доступные даты, восстановление фокуса архивной передачи, навигация оконного режима каналы → программа → видео → OK/полный экран, часы внутри названия канала, постоянная область видео и перенос управляющих кнопок по ширине.
+APK: `releases/android/TVNextR-0.5.29.apk`.
+Описание: `RELEASE_ANDROID_0.5.29_RU.md`.
+Сводка: `releases/android/validation-0.5.29.json`.
 
-Проверки: 48 тестов (включая 5 Compose UI), checkEncoding, assembleRelease/lintVitalRelease, APK v2, zipalign, целостность APK. Испытаний на физическом ТВ не было.
+Android EPG теперь реализует IndexedEpgRepository и IndexedEpgStore. Adapter AndroidEpgRepository создаёт отдельный WAL SQLite index в noBackupFilesDir/epg-index-v1.db. Прежние компактные файлы импортируются потоково. UI читает индекс без HTTP и без гидрации полного EPG; видимые каналы задают приоритет, свежесть источника постоянная (12ч), публикация постепенная, старая программа сохраняется при сбоях. Desktop остаётся на LiteEpgRepository. EpgStore основного приложения не участвует в новом импорте.
 
-Окружение:
+Стартовая вкладка задаётся сразу по сохранённым настройкам. Нет ложного приглашения добавить плейлист во время первичной подготовки. Home/VOD и профильные проекции вынесены с UI. Соотношение сторон — «Авто».
+
+TMDB/Kinopoisk: повторы временных ошибок, сохранение удачного кэша/частичных карточек, объединение запросов, дозагрузка кадров через /v1.5/image. Изображения скачивает ограниченный отменяемый fetchArtworkBytes. Меню/пульт, непрерывные сутки EPG, архивный фокус и постоянный размер окна из 0.5.28 сохранены.
+
+Проверено: 345 тестов (IPTV 202, TMDB 19, network 3, channels/UI/artwork 51, Home 4, player 66), checkEncoding, assembleRelease/lintVitalRelease, подпись/zipalign/ZIP. Живые TMDB/Кинопоиск/CDN блокируются политикой сети окружения; локальные HTTP/SQLite/декодер проверки проходят. Физический ТВ не использовался.
 
 ```bash
 . /workspace/.tools/tvnext-env.sh
 cd /workspace/work/tvnext-current
-DISPLAY=:99 gradle --no-daemon --console=plain --max-workers=2 checkEncoding :features:channels:desktopTest :apps:android:assembleRelease
+DISPLAY=:100 gradle --no-daemon --console=plain --max-workers=2 checkEncoding :core:iptv:desktopTest :core:tmdb:desktopTest :core:network:desktopTest :features:channels:desktopTest :features:home:desktopTest :core:player:desktopTest :apps:android:assembleRelease
 ```
 
-Compose-тесты используют Skiko текущей ОС. Для этого запуска был поднят Xvfb :99; процесс не гарантирован в следующей сессии. JDK 21, Gradle 9.4.1, SDK 36 находятся в /workspace/.tools. Подпись использует локальное debug.keystore согласно apps/android/build.gradle.kts; приватный ключ не публикуется.
+Xvfb :100 запускался из /workspace/.tools/apt/x11/usr/bin/Xvfb; процесс не гарантирован в следующей сессии. JDK 21, Gradle 9.4.1, SDK 36 в /workspace/.tools. ReleaseSign использует /workspace/.tools/user-home/.android/debug.keystore; приватный ключ не опубликован.
 
-Не восстанавливать исходники из APK: полная база и последующие изменения сохранены в GitHub. Дальнейшие изменения также коммитить и сохранять в GitHub по запросу пользователя.
+Полные исходники, исходный ZIP, APK и проверки сохранять на GitHub при дальнейших изменениях, как просил пользователь.

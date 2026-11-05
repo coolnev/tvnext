@@ -31,5 +31,11 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.core)
         }
+        getByName("desktopTest").dependencies {
+            implementation("io.ktor:ktor-client-mock:3.5.2")
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.sqldelight.sqlite.driver)
+        }
     }
 }

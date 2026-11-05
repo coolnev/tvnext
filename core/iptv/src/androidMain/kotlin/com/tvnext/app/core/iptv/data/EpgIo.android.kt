@@ -196,7 +196,9 @@ actual suspend fun withEpgStream(
             header(HttpHeaders.UserAgent, USER_AGENT)
             header(HttpHeaders.Accept, "application/xml, application/gzip, */*")
             timeout {
-                requestTimeoutMillis = REQUEST_TIMEOUT_MS
+                // Includes low-priority parsing and disk indexing of large feeds.
+                // Socket timeout still detects a stalled server.
+                requestTimeoutMillis = 30L * 60 * 1000
                 socketTimeoutMillis = SOCKET_TIMEOUT_MS
             }
         }.execute { response ->

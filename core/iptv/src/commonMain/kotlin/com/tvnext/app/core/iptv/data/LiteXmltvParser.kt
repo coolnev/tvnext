@@ -26,11 +26,11 @@ internal class LiteXmltvParser {
         source: EpgTextSource,
         lookup: Map<String, MutableList<String>>,
         playlistId: String,
-        out: EpgBuffer,
+        out: EpgProgrammeSink,
         windowStart: Long = Long.MIN_VALUE,
         windowEnd: Long = Long.MAX_VALUE,
         fullDescriptions: Boolean = com.tvnext.app.core.common.platform.isAndroidPlatform(),
-    ) {
+    ): Boolean {
         val scanner = XmlScanner(source)
         val xmltvIdToKeys = HashMap<String, List<String>>()
         var parsedChannels = 0
@@ -48,19 +48,20 @@ internal class LiteXmltvParser {
             }
 
             if (ch < pr) {
-                val element = scanner.extractElement("channel") ?: break
+                val element = scanner.extractElement("channel") ?: return false
                 parsedChannels++
                 parseChannelElement(element, lookup, xmltvIdToKeys)
             } else {
-                val element = scanner.extractElement("programme") ?: break
+                val element = scanner.extractElement("programme") ?: return false
                 parsedProgrammes++
-                parseProgrammeElement(element, playlistId, xmltvIdToKeys, out, windowStart, windowEnd, fullDescriptions)
+                parseProgrammeElement(element, playlistId, xmltvIdToKeys, lookup, out, windowStart, windowEnd, fullDescriptions)
                 // Every 256 entries, give Android playback threads a small CPU
                 // window. Desktop stays unchanged through its platform actual.
                 if (parsedProgrammes % 256 == 0) paceEpgParser()
             }
         }
         Logger.d(TAG, "Parsed $parsedChannels channels / $parsedProgrammes programmes")
+        return scanner.closedDocument
     }
 
     /** Builds a normalised name/id -> channel keys index (ported from LiteTV). */
@@ -149,7 +150,8 @@ internal class LiteXmltvParser {
         element: String,
         playlistId: String,
         xmltvIdToKeys: Map<String, List<String>>,
-        out: EpgBuffer,
+        lookup: Map<String, MutableList<String>>,
+        out: EpgProgrammeSink,
         windowStart: Long,
         windowEnd: Long,
         fullDescriptions: Boolean,
@@ -158,7 +160,9 @@ internal class LiteXmltvParser {
         if (gt < 0) return
         val open = element.substring(0, gt + 1)
         val xmltvId = decodeXml(attr(open, "channel")) ?: return
-        val keys = xmltvIdToKeys[xmltvId] ?: return
+        // Some valid feeds omit <channel> declarations and use M3U tvg-id
+        // directly on programmes. These used to silently import zero rows.
+        val keys = xmltvIdToKeys[xmltvId] ?: matchChannelKeys(lookup, xmltvId) ?: return
         val title = childText(element, gt + 1, "title") ?: return
         if (title.isEmpty()) return
         val start = parseXmltvTime(decodeXml(attr(open, "start"))) ?: return
@@ -196,19 +200,25 @@ internal class LiteXmltvParser {
     }
 
     private fun attr(openTag: String, name: String): String? {
-        val needle = "$name="
-        var p = openTag.indexOf(needle)
+        var p = openTag.indexOf(name)
         while (p >= 0) {
             val before = if (p == 0) ' ' else openTag[p - 1]
-            if (before == ' ' || before == '\t') {
-                var q = p + needle.length
+            if (before.isWhitespace()) {
+                var q = p + name.length
+                while (q < openTag.length && openTag[q].isWhitespace()) q++
+                if (q >= openTag.length || openTag[q] != '=') {
+                    p = openTag.indexOf(name, p + name.length)
+                    continue
+                }
+                q++
+                while (q < openTag.length && openTag[q].isWhitespace()) q++
                 if (q < openTag.length && (openTag[q] == '"' || openTag[q] == '\'')) {
                     val quote = openTag[q]
                     val end = openTag.indexOf(quote, q + 1)
                     if (end > q) return openTag.substring(q + 1, end)
                 }
             }
-            p = openTag.indexOf(needle, p + 1)
+            p = openTag.indexOf(name, p + 1)
         }
         return null
     }
@@ -375,11 +385,15 @@ internal class LiteXmltvParser {
  * published batches, so the first channel rows appear on screen before the
  * whole document has been read.
  */
-internal class EpgBuffer {
+internal fun interface EpgProgrammeSink {
+    fun add(key: String, programme: EpgProgramme)
+}
+
+internal class EpgBuffer : EpgProgrammeSink {
     private val lock = Any()
     private val map = HashMap<String, ArrayList<EpgProgramme>>()
 
-    fun add(key: String, programme: EpgProgramme) {
+    override fun add(key: String, programme: EpgProgramme) {
         synchronized(lock) {
             map.getOrPut(key) { ArrayList() }.add(programme)
         }
@@ -405,11 +419,20 @@ private class XmlScanner(private val source: EpgTextSource) {
     private var cursor = 0
     private var eof = false
     private val chunk = CharArray(64 * 1024)
+    var closedDocument = false
+        private set
 
     fun find(tag: String): Int = buf.indexOf(tag, cursor)
 
     /** Reads the next chunk; returns false at end of input. */
-    fun fillMore(): Boolean = readMore()
+    fun fillMore(): Boolean {
+        // Missing/unknown tags must not grow a buffer to the size of the feed.
+        if (buf.length - cursor > 128) {
+            buf.delete(0, buf.length - 128)
+            cursor = 0
+        }
+        return readMore()
+    }
 
     private fun readMore(): Boolean {
         if (eof) return false
@@ -419,6 +442,8 @@ private class XmlScanner(private val source: EpgTextSource) {
             return false
         }
         buf.append(chunk, 0, n)
+        val end = buf.indexOf("</tv", (buf.length - n - 16).coerceAtLeast(0))
+        if (end >= 0 && buf.indexOf(">", end) >= 0) closedDocument = true
         return true
     }
 

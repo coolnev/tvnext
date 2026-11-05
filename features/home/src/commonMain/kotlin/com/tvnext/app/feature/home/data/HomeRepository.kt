@@ -43,7 +43,13 @@ class DefaultHomeRepository(
         val history = historyRepository.getRecent(HistoryRepository.MAX_HISTORY)
         val liveHistory = history.filter { it.contentType == WatchContentType.LIVE }
         val vodHistory = history.filter { it.contentType == WatchContentType.VOD }
-        val allVod = mediaLibrary.getItems(null)
+        val favoriteVodIds = mediaLibrary.getFavoriteIds()
+        // Home needs only a few IDs, not a full 20k-film profile projection.
+        val allVod = if (com.tvnext.app.core.common.platform.isAndroidPlatform()) {
+            val ids = (vodHistory.map { it.itemId } + favoriteVodIds.take(SECTION_LIMIT) +
+                listOfNotNull(com.tvnext.app.core.player.AndroidPlaybackSession.ids.value.vodId)).distinct()
+            ids.mapNotNull { mediaLibrary.getItemById(it) }
+        } else mediaLibrary.getItems(null)
         val vodById = allVod.associateBy { it.id }
 
         val favoriteIds = channelsRepository.getFavoriteIds()
@@ -95,7 +101,7 @@ class DefaultHomeRepository(
             }
             .take(SECTION_LIMIT)
         // «Избранные фильмы и сериалы»: favorite VOD items.
-        val favoriteVod = mediaLibrary.getFavoriteIds()
+        val favoriteVod = favoriteVodIds
             .mapNotNull { vodById[it] }
             .map { it.toFeaturedVod() }
             .take(SECTION_LIMIT)

@@ -171,6 +171,13 @@ class TVNextApplication : Application() {
         }
 
         // No automatic EPG diagnostic e-mails: removed in the 0.5 release.
+        applicationScope.launch {
+            GlobalContext.get().get<com.tvnext.app.feature.settings.data.SettingsRepository>().observe()
+                .map { it.epgEnabled to it.epgUrl }.distinctUntilChanged().collect {
+                    (GlobalContext.get().get<com.tvnext.app.core.iptv.data.EpgRepository>()
+                        as? com.tvnext.app.core.iptv.data.AndroidEpgRepository)?.fallbackSettingsChanged()
+                }
+        }
         LocalRecoveryStore(this).recoverInterrupted()
         seedDemoData()
     }
@@ -181,16 +188,17 @@ class TVNextApplication : Application() {
      * immediately. Anything already configured is left untouched.
      */
     private fun seedDemoData() {
+        com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value = true
         applicationScope.launch {
-            runCatching {
+            try { runCatching {
                 val playlistRepository = GlobalContext.get().get<PlaylistRepository>()
-                // Seed the user's sources by URL: each missing playlist is added
-                // (works after an app UPDATE too, not only on an empty library).
+                // Seed only a genuinely empty installation. An ordinary startup
+                // must not download/re-add sources the user already configured or removed.
                 val existingUrls = playlistRepository.getPlaylists()
                     .map { it.url.trimEnd('/') }
                     .toSet()
                 // LIVE: vivamax (крупный EPG для проверки телепрограммы).
-                if (LIVE_PLAYLIST_URL !in existingUrls) {
+                if (existingUrls.isEmpty()) {
                     playlistRepository.addPlaylist(
                         url = LIVE_PLAYLIST_URL,
                         type = PlaylistType.LIVE,
@@ -198,7 +206,7 @@ class TVNextApplication : Application() {
                     )
                 }
                 // Медиатека (VOD).
-                if (VOD_PLAYLIST_URL !in existingUrls) {
+                if (existingUrls.isEmpty()) {
                     playlistRepository.addPlaylist(
                         url = VOD_PLAYLIST_URL,
                         type = PlaylistType.VOD,
@@ -210,6 +218,8 @@ class TVNextApplication : Application() {
                     tmdbSettings.setEnabled(true)
                     tmdbSettings.setApiKey("698bff9ae128f80d8e6bff80ae075549")
                 }
+            } } finally {
+                com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value = false
             }
         }
     }
@@ -221,13 +231,5 @@ private const val LIVE_PLAYLIST_URL = "https://bittv.ltd/playlists/b0c7hew623:uw
 /** Debug-seed: VOD (медиатека). */
 private const val VOD_PLAYLIST_URL = "https://m.cdntv.online/f/9y6xwink2s/playlist.m3u8"
 
-private suspend fun fetchLogo(client: HttpClient, url: String): ByteArray? = runCatching {
-    client.get(url) {
-        header(HttpHeaders.UserAgent, "TVNext/0.1")
-        header(HttpHeaders.Accept, "image/*")
-        timeout {
-            requestTimeoutMillis = 8_000
-            socketTimeoutMillis = 8_000
-        }
-    }.bodyAsBytes()
-}.getOrNull()
+private suspend fun fetchLogo(client: HttpClient, url: String): ByteArray? =
+    com.tvnext.app.core.network.fetchArtworkBytes(client, url)

@@ -162,6 +162,33 @@ WHERE playlist_id = ?
 selectEpgCacheMeta:
 SELECT * FROM epg_cache WHERE playlist_id = ?;
 
+selectIndexedEpgBounds:
+SELECT MIN(start_time) AS first_start, MAX(stop_time) AS last_stop FROM epg_programme
+WHERE playlist_id = :source
+  AND batch_id = (SELECT active_batch FROM epg_cache WHERE playlist_id = :source)
+  AND channel_id = :channel;
+
+selectIndexedCurrent:
+SELECT * FROM epg_programme WHERE playlist_id = :source
+AND batch_id = (SELECT active_batch FROM epg_cache WHERE playlist_id = :source)
+AND channel_id IN :channels AND start_time <= :at AND stop_time > :at;
+
+selectIndexedUpcoming:
+SELECT * FROM epg_programme WHERE playlist_id = :source
+AND batch_id = (SELECT active_batch FROM epg_cache WHERE playlist_id = :source)
+AND channel_id = :channel AND stop_time > :at ORDER BY start_time LIMIT :rowLimit;
+
+selectIndexedRange:
+SELECT * FROM epg_programme WHERE playlist_id = :source
+AND batch_id = (SELECT active_batch FROM epg_cache WHERE playlist_id = :source)
+AND channel_id IN :channels AND start_time < :until AND stop_time > :fromTime
+ORDER BY channel_id, start_time;
+
+selectIndexedSearch:
+SELECT * FROM epg_programme WHERE playlist_id = :source
+AND batch_id = (SELECT active_batch FROM epg_cache WHERE playlist_id = :source)
+AND lower_title LIKE '%' || :text || '%' ORDER BY start_time LIMIT :rowLimit;
+
 upsertEpgCacheMeta:
 INSERT OR REPLACE INTO epg_cache(playlist_id, url, fetched_at, source, last_error, channel_count, programme_count, active_batch)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);

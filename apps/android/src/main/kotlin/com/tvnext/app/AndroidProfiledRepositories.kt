@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.drop
 
 /** Profile-specific channel names, visibility, order and favorites without modifying provider M3U. */
 internal class AndroidProfiledChannelsRepository(
@@ -32,13 +33,17 @@ internal class AndroidProfiledChannelsRepository(
     private val playlists: PlaylistRepository,
     private val personal: ProfilePersonalData,
 ) : ChannelsRepository {
-    override suspend fun getChannels(): List<Channel> = apply(source.getChannels())
+    override fun observeChanges(): Flow<Unit> = playlists.observePlaylists()
+        .distinctUntilChanged().drop(1).map { Unit }
+    override suspend fun getChannels(): List<Channel> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        apply(source.getChannels())
+    }
     override suspend fun getChannelsByPlaylist(playlistId: String): List<Channel> =
-        apply(source.getChannelsByPlaylist(playlistId))
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { apply(source.getChannelsByPlaylist(playlistId)) }
     private suspend fun apply(raw: List<Channel>): List<Channel> =
         projectProfileChannels(raw, getFavoriteIds(), personal.channelEdits(),
             personal.channelOrder(), hideDuplicates = personal.hideDuplicateChannels())
-    override suspend fun isConfigured(): Boolean = source.getEnabledPlaylists().isNotEmpty()
+    override suspend fun isConfigured(): Boolean = source.getEnabledByType(com.tvnext.app.core.iptv.domain.PlaylistType.LIVE).isNotEmpty()
     override suspend fun refresh(): AppResult<Unit> = playlists.refreshAll()
     override suspend fun getFavoriteIds(): Set<String> =
         personal.channelFavorites(source.getFavoriteIds())

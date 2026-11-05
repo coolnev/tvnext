@@ -4,6 +4,8 @@ import com.tvnext.app.core.common.result.AppResult
 import com.tvnext.app.core.iptv.domain.Channel
 
 interface ChannelsRepository {
+    /** Local catalog changes only; observing never performs network work. */
+    fun observeChanges(): kotlinx.coroutines.flow.Flow<Unit> = kotlinx.coroutines.flow.emptyFlow()
     /** All channels across every enabled playlist. */
     suspend fun getChannels(): List<Channel>
 

@@ -48,13 +48,9 @@ data class ProgrammeSearchHit(
 /**
  * EPG (electronic programme guide) contract.
  *
- * Implemented by the lightweight in-memory engine ([LiteEpgRepository], a port
- * of the LiteTV approach): the schedule lives in a `Map` keyed by playlist
- * channel, is streamed from the XMLTV with a sliding buffer (only our channels,
- * only title+times), and is cached on disk in a compact format that loads
- * almost instantly on the next launch. No SQLite, no native parser, no giant
- * documents in memory — the old pipeline silently killed low-end Android TV
- * boxes during import.
+ * Android uses IndexedEpgRepository: a separate durable SQLite index, bounded
+ * streaming import and independent cached reads of requested channels only.
+ * Desktop retains LiteEpgRepository. Queries never wait for an HTTP refresh.
  */
 interface EpgRepository {
 

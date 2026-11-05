@@ -12,7 +12,7 @@ object PlaybackUiRequests {
     val aspectRequests = aspectClicks.asSharedFlow()
     val recordRequests = recordClicks.asSharedFlow()
     val previousRequests = previousClicks.asSharedFlow()
-    val aspectLabel = MutableStateFlow("Автоматически")
+    val aspectLabel = MutableStateFlow("Авто")
     fun chooseAspect() { aspectClicks.tryEmit(Unit) }
     fun toggleRecording() { recordClicks.tryEmit(Unit) }
     fun previousChannel() { previousClicks.tryEmit(Unit) }

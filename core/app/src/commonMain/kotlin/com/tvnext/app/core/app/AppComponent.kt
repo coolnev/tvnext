@@ -90,6 +90,8 @@ class DefaultAppComponent(
     private val reminderService: ScheduledReminderService,
     private val playlistRepository: PlaylistRepository,
     private val epgRepository: EpgRepository,
+    private val initialTab: AppTab = if (isAndroidPlatform()) AppTab.CHANNELS else AppTab.HOME,
+    initialSettings: AppSettings = AppSettings(),
     private val onExitRequested: () -> Unit = {},
     mainContext: CoroutineContext,
 ) : AppComponent, ComponentContext by componentContext {
@@ -124,16 +126,8 @@ class DefaultAppComponent(
         scope.launch {
             runCatching { playlistRepository.refreshIfParserUpgraded() }
         }
-        // App-level background EPG refresh. This is the ONLY automatic EPG
-        // import in the app: the tab components are recreated on every
-        // navigation (a refresh tied to a tab would restart the download on
-        // every tab switch), so the XMLTV is fetched from here — process
-        // lifetime, once per launch. TTL-guarded, so a fresh cache skips the
-        // network entirely.
-        //
-        // Deferred a few seconds so the UI is up first; the lightweight engine
-        // streams the feed with bounded memory, so this is safe on low-end
-        // boxes. A fresh on-disk cache (same day) loads into memory instantly.
+        // Process-level freshness check. The repository coalesces it with
+        // viewport preloads and foreground retries; fresh disk data needs no HTTP.
         scope.launch {
             // Show the persisted channel programme cache immediately on
             // startup. This is disk-only; it never opens the XMLTV URL.
@@ -152,7 +146,7 @@ class DefaultAppComponent(
             .stateIn(
                 scope = scope,
                 started = SharingStarted.Eagerly,
-                initialValue = AppSettings(),
+                initialValue = initialSettings,
             )
 
     override val reminder: StateFlow<ScheduledProgramme?> = reminderService.reminder
@@ -164,7 +158,7 @@ class DefaultAppComponent(
     override val childStack: Value<ChildStack<AppTab, AppTabComponent>> =
         childStack(
             source = navigation,
-            initialConfiguration = if (isAndroidPlatform()) AppTab.CHANNELS else AppTab.HOME,
+            initialConfiguration = initialTab,
             serializer = AppTab.serializer(),
             childFactory = ::createTabComponent,
         )

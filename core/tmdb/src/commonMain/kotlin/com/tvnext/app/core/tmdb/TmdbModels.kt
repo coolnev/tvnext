@@ -20,6 +20,7 @@ data class TmdbSearchResult(
     val first_air_date: String? = null,
     val original_language: String? = null,
     val poster_path: String? = null,
+    val backdrop_path: String? = null,
 )
 
 @Serializable
@@ -80,9 +81,13 @@ data class TmdbMetadata(
     val originalLanguage: String? = null,
     val updatedAt: Long = 0L,
 ) {
-    val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
-    val backdropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1280$it" }
+    val posterUrl: String? get() = tmdbImageUrl(posterPath, "w500")
+    val backdropUrl: String? get() = tmdbImageUrl(backdropPath, "w1280")
 }
+
+internal fun tmdbImageUrl(path: String?, size: String): String? = path?.trim()
+    ?.takeIf { it.startsWith('/') && it.length > 1 }
+    ?.let { "https://image.tmdb.org/t/p/$size$it" }
 
 enum class TmdbCacheStatus { FOUND, NOT_FOUND, ERROR }
 
