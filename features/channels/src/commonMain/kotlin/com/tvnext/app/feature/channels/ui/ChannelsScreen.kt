@@ -8,12 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -336,6 +339,7 @@ private fun WatchingLayout(
     // Long-press OK on the VIDEO opens the TV Guide; short OK opens the browse
     // layout. A timer distinguishes them (Android TV remotes auto-repeat KeyDown).
     var okDownHeld by remember { mutableStateOf(false) }
+    val windowedRemote = remember { WindowedRemoteInput() }
     var okLongFired by remember { mutableStateOf(false) }
     var okTimer by remember { mutableStateOf<Job?>(null) }
     val okScope = rememberCoroutineScope()
@@ -372,7 +376,11 @@ private fun WatchingLayout(
     // player's own video surface): used to decide whether OK/Enter toggles the
     // full-screen <-> browse modes on Android TV. When a list row is focused the
     // key is NOT intercepted — OK selects the channel instead.
-    var videoFocused by remember { mutableStateOf(false) }
+    var rootVideoFocused by remember { mutableStateOf(false) }
+    var surfaceVideoFocused by remember { mutableStateOf(false) }
+    val videoFocused = rootVideoFocused || surfaceVideoFocused
+    val videoFocusRequester = remember { FocusRequester() }
+    var guidePlaybackTimeMs by remember { mutableStateOf<Long?>(null) }
     // Full-screen info overlay opened with the RIGHT arrow (Android TV): the
     // current programme / movie info, with a seek bar for VOD/archive content.
     var rightInfoVisible by remember { mutableStateOf(false) }
@@ -445,6 +453,13 @@ private fun WatchingLayout(
         drawerCloseJob?.cancel()
         drawerOpen = true
         if (isAndroidPlatform()) {
+            val playback = controller.state.value
+            guidePlaybackTimeMs = playback.item?.takeIf { it.kind == PlaybackContentKind.ARCHIVE }
+                ?.archiveEpgAnchorMs?.plus(playback.positionMs)
+            if (guidePlaybackTimeMs != null) {
+                highlightedChannelId = selectedChannel.id
+                if (state.filteredChannels.none { it.id == selectedChannel.id }) onCategorySelected(null)
+            }
             // Reset any pending "focus the TOP of the chosen category" /
             // "focus on return" request from the previous session — otherwise
             // focusTopNonce > 0 would re-run its LaunchedEffect when the
@@ -457,7 +472,7 @@ private fun WatchingLayout(
             // Рядом со списком каналов (справа от него) показываем программу
             // текущего канала: текущая передача + весь день = архив. Открываем
             // автоматически при открытии списка, если ещё не открыта.
-            if (component.timeline.value.channelId == null) {
+            if (component.timeline.value.channelId != selectedChannel.id) {
                 onShowTimeline(selectedChannel.id)
             }
         }
@@ -627,6 +642,7 @@ private fun WatchingLayout(
     // (immersive) composition mount before the focus request lands.
     LaunchedEffect(immersive) {
         if (immersive && isAndroidPlatform()) {
+            if (!drawerOpen && component.timeline.value.channelId != null) onHideTimeline()
             // The bottom-right EPG card belongs only to the channel-list focus.
             // When the user presses OK on the already-playing channel in the
             // browse layout, that row loses focus as we enter fullscreen; clear
@@ -667,18 +683,34 @@ private fun WatchingLayout(
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .then(if (isAndroidPlatform()) Modifier.onFocusChanged {
-                videoFocused = it.isFocused
+                rootVideoFocused = it.isFocused
                 if (!it.isFocused) {
                     okTimer?.cancel()
                     okTimer = null
                     okDownHeld = false
-                    rightKeyHeld = false
                 }
-            }.focusable() else Modifier.focusable().onFocusChanged { videoFocused = it.isFocused })
+            }.focusable() else Modifier.onFocusChanged { rootVideoFocused = it.isFocused }.focusable())
             .onPreviewKeyEvent { event ->
                 // When the transport controls own focus, arrows/OK must reach
                 // the individual buttons; never intercept them at the video root.
                 if (isAndroidPlatform() && infoPanelFocused) return@onPreviewKeyEvent false
+                if (isAndroidPlatform() && !immersive && windowedRemote.handle(
+                    event = event,
+                    pane = when {
+                        categoriesOpen -> WindowedPane.CATEGORIES
+                        videoFocused -> WindowedPane.VIDEO
+                        component.timeline.value.channelId != null -> WindowedPane.PROGRAMMES
+                        else -> WindowedPane.CHANNELS
+                    },
+                    onChannels = { categoriesOpen = false; focusReturnNonce++ },
+                    onProgrammes = { onShowTimeline(highlightedChannelId ?: selectedChannel.id) },
+                    onVideo = { videoFocusRequester.requestFocus() },
+                    onFullscreen = {
+                            if (component.timeline.value.channelId != null) onHideTimeline()
+                            archivePreview = null
+                            onToggleImmersive()
+                    },
+                )) return@onPreviewKeyEvent true
                 val isInfo = event.key == Key.Info
                 if (isInfo && event.type == KeyEventType.KeyUp && !drawerOpen && !categoriesOpen) {
                     if (rightInfoVisible) rightDetailsVisible = true else rightInfoVisible = true
@@ -693,7 +725,7 @@ private fun WatchingLayout(
                 // обработчику: он сразу откроет browse, и длинное нажатие не
                 // успеет сработать. (В browse/списке OK не трогаем — там своё
                 // поведение строк каналов.)
-                if (onOpenTvg != null && isOk && (immersive || videoFocused) && !drawerOpen && !categoriesOpen && component.timeline.value.channelId == null) {
+                if (onOpenTvg != null && isOk && immersive && !drawerOpen && !categoriesOpen && component.timeline.value.channelId == null) {
                     when (event.type) {
                         KeyEventType.KeyDown -> {
                             if (!okDownHeld) {
@@ -858,13 +890,6 @@ private fun WatchingLayout(
                             openDrawer()
                             true
                         }
-                        // Android TV "browse" layout (reduced): OK on the video
-                        // returns to the full-screen video (a repeated OK).
-                        isAndroidPlatform() && !immersive && videoFocused &&
-                            (event.key == Key.DirectionCenter || event.key == Key.Enter) -> {
-                            onToggleImmersive()
-                            true
-                        }
                         // Android TV fullscreen archive: UP/DOWN seek inside the
                         // archived programme. LEFT/RIGHT keep their universal
                         // fullscreen meanings: drawer and programme information.
@@ -978,21 +1003,16 @@ private fun WatchingLayout(
                         isAndroidPlatform() && !immersive && !categoriesOpen &&
                             !videoFocused && !searchFocused &&
                             event.key == Key.DirectionLeft -> {
-                            if (component.timeline.value.channelId != null) onHideTimeline()
-                            categoriesOpen = true
+                            if (component.timeline.value.channelId != null) {
+                                onHideTimeline()
+                                archivePreview = null
+                                focusReturnNonce++
+                            } else categoriesOpen = true
                             true
                         }
-                        isAndroidPlatform() && !immersive && categoriesOpen &&
-                            event.key == Key.DirectionRight -> {
-                            categoriesOpen = false
-                            focusReturnNonce++
-                            true
-                        }
-                        isAndroidPlatform() && !immersive && component.timeline.value.channelId != null &&
-                            event.key == Key.DirectionRight -> {
-                            onHideTimeline()
-                            archivePreview = null
-                            focusReturnNonce++
+                        isAndroidPlatform() && !immersive && videoFocused && event.key == Key.DirectionLeft -> {
+                            if (component.timeline.value.channelId != null) timelineFocusRequester.requestFocus()
+                            else focusReturnNonce++
                             true
                         }
                         event.isCtrlPressed && event.key == Key.F -> {
@@ -1032,6 +1052,7 @@ private fun WatchingLayout(
                     onArchiveProgramme = onArchiveProgramme,
                     onProgrammeHighlighted = { archivePreview = it },
                     onTimelineClosed = { onHideTimeline(); archivePreview = null; focusReturnNonce++ },
+                    timelineFocusRequester = timelineFocusRequester,
                 ) {
                     ChannelListPanel(
                         component = component,
@@ -1078,11 +1099,14 @@ private fun WatchingLayout(
                 Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
             }
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
             ) {
+                // The video owns a fixed 16:9 area. EPG text, controls and
+                // metadata scroll below it and never take height from the video.
+                val windowedVideoHeight = minOf(maxWidth * 9f / 16f, maxHeight * 0.60f)
                 Column(modifier = Modifier.fillMaxSize()) {
                     TvPlayerPanel(
                         controller = controller,
@@ -1094,10 +1118,11 @@ private fun WatchingLayout(
                             { position -> playingEpg.current?.let { (controller as? TimeShiftController)?.seekToTime(it.start + position) }; Unit } else null,
                         channelNameVisible = channelNameVisible,
                         clockPosition = clockPosition,
-                        showControls = !immersive,
+                        showControls = !immersive && !isAndroidPlatform(),
                         rounded = !immersive,
                         showDiagnostics = showDiagnostics,
-                        onVideoFocusedChange = { videoFocused = it },
+                        onVideoFocusedChange = { surfaceVideoFocused = it },
+                        videoFocusRequester = videoFocusRequester,
                         onVideoTap = if (isAndroidPlatform()) onToggleImmersive else null,
                         onRetry = { onSelectChannel(selectedChannel.id) },
                         onClose = onClosePlayer,
@@ -1107,51 +1132,63 @@ private fun WatchingLayout(
                         onToggleFavorite = { onToggleFavorite(selectedChannel.id) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f),
+                            .then(if (!immersive && isAndroidPlatform()) Modifier.height(windowedVideoHeight) else Modifier.weight(1f)),
                     )
-                    if (!immersive && isAndroidPlatform()) {
-                        AndroidPlaybackControls(
-                            paused = playerState.state == PlaybackState.PAUSED,
-                            positionMs = if (playerItemKind == PlaybackContentKind.ARCHIVE)
-                                playerState.positionMs else 0L,
-                            durationMs = if (playerItemKind == PlaybackContentKind.ARCHIVE)
-                                playerState.durationMs else 0L,
-                            onTogglePlayback = onTogglePlayback,
-                            onSeekBy = controller::seekBy,
-                            seekStepMs = archiveSeekStepMs,
-                            canPause = playerItemKind == PlaybackContentKind.ARCHIVE,
-                            isLiveChannel = playerItemKind == PlaybackContentKind.LIVE,
-                            diagnostics = playerState.diagnostics,
-                            onDetails = { windowedDescriptionVisible = true },
-                            onLive = if (playerItemKind == PlaybackContentKind.ARCHIVE)
-                                ({ (controller as? TimeShiftController)?.returnToLive(); Unit }) else null,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        )
-                    }
-                    if (!immersive && isAndroidPlatform() && windowedDescriptionVisible) {
-                        androidx.compose.material3.AlertDialog(
-                            onDismissRequest = { windowedDescriptionVisible = false },
-                            title = { Text(playingEpg.current?.title ?: selectedChannel.name) },
-                            text = { ProgrammeRichDetails(playingEpg.current) },
-                            confirmButton = {
-                                androidx.compose.material3.TextButton(onClick = { windowedDescriptionVisible = false }) {
-                                    Text("Закрыть")
-                                }
-                            },
-                        )
-                    }
-                    if (!immersive) {
-                        EpgPanel(
-                            epg = if (isAndroidPlatform() && timelineState.channelId != null && archivePreview != null)
-                                ChannelEpg(current = archivePreview, channelId = timelineState.channelId) else channelEpg,
-                            isArchive = playerItemKind == PlaybackContentKind.ARCHIVE,
-                            archiveAvailable = if (isAndroidPlatform()) state.channels.firstOrNull { it.id == channelEpg.channelId }?.let { androidHasArchive(it) } == true else selectedChannel.hasCatchupMechanism,
-                            onArchiveProgramme = { programme ->
-                                if (isAndroidPlatform()) component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, if (timelineState.channelId != null && archivePreview != null) timelineState.channelId else channelEpg.channelId))
-                                else onArchiveProgramme(programme)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    Column(
+                        if (!immersive && isAndroidPlatform()) Modifier.weight(1f).fillMaxWidth()
+                            .verticalScroll(rememberScrollState()) else Modifier,
+                    ) {
+                        if (!immersive && isAndroidPlatform()) {
+                            val programme = playingEpg.current
+                            val at = if (playerItemKind == PlaybackContentKind.ARCHIVE)
+                                (playerState.item?.archiveEpgAnchorMs ?: now) + playerState.positionMs else now
+                            val duration = programme?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0L
+                            AndroidPlaybackControls(
+                                requestInitialFocus = false,
+                                paused = playerState.state == PlaybackState.PAUSED,
+                                positionMs = programme?.let { (at - it.start).coerceAtLeast(0) } ?: 0L,
+                                durationMs = if (androidHasArchive(selectedChannel)) duration else 0L,
+                                onTogglePlayback = onTogglePlayback,
+                                onSeekBy = controller::seekBy,
+                                seekStepMs = archiveSeekStepMs,
+                                canPause = playerItemKind == PlaybackContentKind.ARCHIVE,
+                                isLiveChannel = playerItemKind == PlaybackContentKind.LIVE,
+                                diagnostics = playerState.diagnostics,
+                                onDetails = { windowedDescriptionVisible = true },
+                                onLive = if (playerItemKind == PlaybackContentKind.ARCHIVE)
+                                    ({ (controller as? TimeShiftController)?.returnToLive(); Unit }) else null,
+                                liveEdgeFraction = if (playerItemKind == PlaybackContentKind.ARCHIVE &&
+                                    programme != null && now in programme.start..programme.stop && duration > 0)
+                                    ((now - programme.start).toFloat() / duration).coerceIn(0f, 1f) else null,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                    .onFocusChanged { infoPanelFocused = it.hasFocus },
+                            )
+                        }
+                        if (!immersive && isAndroidPlatform() && windowedDescriptionVisible) {
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = { windowedDescriptionVisible = false },
+                                title = { Text(playingEpg.current?.title ?: selectedChannel.name) },
+                                text = { ProgrammeRichDetails(playingEpg.current) },
+                                confirmButton = {
+                                    androidx.compose.material3.TextButton(onClick = { windowedDescriptionVisible = false }) {
+                                        Text("Закрыть")
+                                    }
+                                },
+                            )
+                        }
+                        if (!immersive) {
+                            EpgPanel(
+                                epg = if (isAndroidPlatform() && timelineState.channelId != null && archivePreview != null)
+                                    ChannelEpg(current = archivePreview, channelId = timelineState.channelId) else channelEpg,
+                                isArchive = playerItemKind == PlaybackContentKind.ARCHIVE,
+                                archiveAvailable = if (isAndroidPlatform()) state.channels.firstOrNull { it.id == channelEpg.channelId }?.let { androidHasArchive(it) } == true else selectedChannel.hasCatchupMechanism,
+                                onArchiveProgramme = { programme ->
+                                    if (isAndroidPlatform()) component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, if (timelineState.channelId != null && archivePreview != null) timelineState.channelId else channelEpg.channelId))
+                                    else onArchiveProgramme(programme)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
 
@@ -1192,6 +1229,7 @@ private fun WatchingLayout(
                             playingChannelId = selectedChannel.id,
                             focusedChannelId = highlightedChannelId,
                             timeline = timelineState,
+                            initialProgrammeTimeMs = guidePlaybackTimeMs,
                             nowPlaying = nowPlaying,
                             now = now,
                             showNumbers = showChannelNumbers,
@@ -2649,10 +2687,16 @@ private fun ChannelCategoriesOrListPanel(
     onArchiveProgramme: (EpgProgramme) -> Unit,
     onProgrammeHighlighted: (EpgProgramme) -> Unit = {},
     onTimelineClosed: () -> Unit = {},
+    timelineFocusRequester: FocusRequester? = null,
     content: @Composable () -> Unit,
 ) {
     val timelineState by component.timeline.collectAsState()
     val timelineChannel = state.channels.firstOrNull { it.id == timelineState.channelId }
+    val initialProgrammeTimeMs = remember(timelineState.channelId) {
+        val playback = component.playbackController.state.value
+        playback.item?.takeIf { it.id == timelineState.channelId && it.kind == PlaybackContentKind.ARCHIVE }
+            ?.archiveEpgAnchorMs?.plus(playback.positionMs)
+    }
     Box(
         modifier = (if (isAndroidPlatform()) Modifier.width(400.dp).fillMaxHeight() else Modifier)
             .then(if (isAndroidPlatform()) Modifier.pointerInput(categoriesOpen) {
@@ -2684,6 +2728,8 @@ private fun ChannelCategoriesOrListPanel(
             showDetail = !isAndroidPlatform(),
             onProgrammeHighlighted = onProgrammeHighlighted,
             onBack = onTimelineClosed,
+            focusRequester = timelineFocusRequester,
+            initialProgrammeTimeMs = initialProgrammeTimeMs,
             programmes = timelineState.programmes,
             loading = timelineState.loading,
             now = now,
@@ -2756,9 +2802,22 @@ private fun ChannelTimelinePanel(
     transparentBackground: Boolean = false,
     showDetail: Boolean = true,
     requestInitialFocus: Boolean = false,
+    initialProgrammeTimeMs: Long? = null,
     onProgrammeHighlighted: (EpgProgramme) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    if (isAndroidPlatform() && !showDetail) {
+        AndroidWindowedProgrammeList(
+            channel = channel, programmes = programmes, loading = loading, now = now,
+            initialProgrammeTimeMs = initialProgrammeTimeMs,
+            focusRequester = focusRequester,
+            requestInitialFocus = requestInitialFocus,
+            onProgrammeHighlighted = onProgrammeHighlighted,
+            onPlayProgramme = { if (archiveAvailable && it.start <= now) onArchiveProgramme(it) },
+            modifier = modifier.width(400.dp).fillMaxHeight(),
+        )
+        return
+    }
     val visibleProgrammes = if (isAndroidPlatform()) remember(programmes) {
         programmes.distinctBy { Triple(it.channelId, it.start, it.stop) }
     } else programmes
@@ -3238,26 +3297,33 @@ private fun ChannelRow(
                     Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        // Android TV uses the channel name itself as the favorite
-                        // indicator, keeping the row clean and leaving no extra
-                        // star button on the right. Desktop retains the separate
-                        // favorite control below.
-                        text = (if (isAndroidPlatform() &&
-                            com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) "🔒 " else "") +
-                            if (isAndroidPlatform() && channel.isFavorite) "★ ${channel.name}" else channel.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (isAndroidPlatform() &&
-                            com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) {
-                            androidx.compose.ui.graphics.Color(0xFFFF6767)
-                        } else if (selected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            // Android TV uses the channel name itself as the favorite
+                            // indicator, keeping the row clean and leaving no extra
+                            // star button on the right. Desktop retains the separate
+                            // favorite control below.
+                            text = (if (isAndroidPlatform() &&
+                                com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) "🔒 " else "") +
+                                if (isAndroidPlatform() && channel.isFavorite) "★ ${channel.name}" else channel.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (isAndroidPlatform() &&
+                                com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) {
+                                androidx.compose.ui.graphics.Color(0xFFFF6767)
+                            } else if (selected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        if (isAndroidPlatform() && androidHasArchive(channel)) {
+                            ClockIcon(tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp).size(12.dp))
+                        }
+                    }
                     nowPlaying?.let { programme ->
                         Text(
                             text = programme.title,
@@ -3298,9 +3364,8 @@ private fun ChannelRow(
             }
         }
 
-        Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacingSmall))
-
-        if (onShowTimeline != null) {
+        if (onShowTimeline != null && !isAndroidPlatform()) {
+            Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacingSmall))
             TvCardButton(
                 onClick = onShowTimeline,
                 modifier = Modifier

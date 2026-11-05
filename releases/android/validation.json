@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-05",
+  "versionName": "0.5.28-recovery-preview",
+  "versionCode": 528,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "build": "checkEncoding :features:channels:desktopTest :apps:android:assembleRelease",
+  "result": "BUILD SUCCESSFUL",
+  "tests": [
+    {
+      "name": "AndroidArchiveIndicatorTest[desktop]",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.904Z"
+    },
+    {
+      "name": "AndroidChannelFocusTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.909Z"
+    },
+    {
+      "name": "ChannelsComponentTest[desktop]",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:33.837Z"
+    },
+    {
+      "name": "GuideCentreWindowTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.911Z"
+    },
+    {
+      "name": "GuideClampedEdgeAndAlignmentTest[desktop]",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.919Z"
+    },
+    {
+      "name": "GuideNavigationTest[desktop]",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.926Z"
+    },
+    {
+      "name": "GuideProgrammeTimelineTest[desktop]",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:34.934Z"
+    },
+    {
+      "name": "GuideRemoteUiTest[desktop]",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "timestamp": "2026-11-05T16:12:35.018Z"
+    }
+  ],
+  "apk_sha256": "c84c39b80219efb9a4f7764036898f43fa3c0ee89068998234aa3e7ef5a89e3d",
+  "original_source_sha256": "b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde",
+  "signature": "APK Signature Scheme v2 verified",
+  "zipalign": "passed",
+  "zip_integrity": "passed",
+  "physical_android_tv_tested": false
+}

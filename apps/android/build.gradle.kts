@@ -25,8 +25,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 3
-        versionName = "0.2.0-restore-0521"
+        versionCode = 528
+        versionName = "0.5.28-recovery"
     }
 
     buildTypes {

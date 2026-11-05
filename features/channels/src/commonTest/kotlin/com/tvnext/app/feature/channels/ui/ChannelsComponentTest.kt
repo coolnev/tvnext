@@ -21,6 +21,7 @@ import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import com.tvnext.app.core.player.PlaybackController
 import com.tvnext.app.core.player.PlaybackItem
 import com.tvnext.app.core.player.PlayerState
+import com.tvnext.app.core.player.PlaybackState
 import com.tvnext.app.feature.settings.data.SettingsRepository
 import com.tvnext.app.feature.settings.domain.AppInfo
 import com.tvnext.app.feature.settings.domain.AppSettings
@@ -31,7 +32,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -47,6 +50,7 @@ class ChannelsComponentTest {
 
         override fun play(item: PlaybackItem) {
             playedItem = item
+            _state.value = PlayerState(item = item, state = PlaybackState.PLAYING)
         }
 
         override fun pause() = Unit
@@ -91,7 +95,7 @@ class ChannelsComponentTest {
     }
 
     private class FakeSettingsRepository : SettingsRepository {
-        val settingsFlow = MutableStateFlow(AppSettings())
+        val settingsFlow = MutableStateFlow(AppSettings(openLastChannel = false))
         var lastChannelId: String? = null
 
         override suspend fun load(): AppSettings = settingsFlow.value
@@ -105,6 +109,9 @@ class ChannelsComponentTest {
         override suspend fun setLastChannelId(channelId: String?) {
             lastChannelId = channelId
         }
+        private var lastCategoryId: String? = null
+        override suspend fun getLastCategoryId(): String? = lastCategoryId
+        override suspend fun setLastCategoryId(categoryId: String?) { lastCategoryId = categoryId }
     }
 
     private class FakeHistoryRepository : HistoryRepository {
@@ -192,7 +199,7 @@ class ChannelsComponentTest {
             resume()
         }
         val context = DefaultComponentContext(lifecycle = lifecycle)
-        return DefaultChannelsComponent(
+        val component = DefaultChannelsComponent(
             componentContext = context,
             repository = FakeChannelsRepository(),
             playbackController = controller,
@@ -203,13 +210,24 @@ class ChannelsComponentTest {
             mainContext = Dispatchers.Unconfined,
             channelNameTimeoutMs = channelNameTimeoutMs,
         )
+        // Construction starts the load. Wait for real async projections;
+        // dispatching a second Load races selection and duplicates history.
+        runBlocking {
+            withTimeout(5_000) {
+                component.state.first { !it.isLoading && it.channels.isNotEmpty() }
+                val lastId = settings.getLastChannelId()
+                if (settings.load().openLastChannel && lastId != null) {
+                    controller.state.first { it.item?.id == lastId }
+                }
+            }
+        }
+        return component
     }
 
     @Test
     fun selectingChannelSetsSelectedChannelIdAndStartsPlayback() {
         val controller = FakePlaybackController()
         val component = createComponent(controller)
-        component.dispatch(ChannelsIntent.Load)
 
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
@@ -221,7 +239,6 @@ class ChannelsComponentTest {
     fun closingPlayerClearsSelectedChannelAndStopsPlayback() {
         val controller = FakePlaybackController()
         val component = createComponent(controller)
-        component.dispatch(ChannelsIntent.Load)
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
         component.dispatch(ChannelsIntent.ClosePlayer)
@@ -244,7 +261,6 @@ class ChannelsComponentTest {
         val controller = FakePlaybackController()
         val settings = FakeSettingsRepository()
         val component = createComponent(controller, settings)
-        component.dispatch(ChannelsIntent.Load)
 
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
@@ -260,14 +276,13 @@ class ChannelsComponentTest {
         }
         val component = createComponent(controller, settings)
 
-        component.dispatch(ChannelsIntent.Load)
 
         assertEquals("7", component.state.value.selectedChannelId)
         assertEquals("7", controller.playedItem?.id)
     }
 
     @Test
-    fun openLastChannelIgnoredWhenDisabled() {
+    fun lastChannelIsSelectedWithoutStartingPlaybackWhenAutoOpenIsDisabled() {
         val controller = FakePlaybackController()
         val settings = FakeSettingsRepository().apply {
             settingsFlow.value = AppSettings(openLastChannel = false)
@@ -275,9 +290,8 @@ class ChannelsComponentTest {
         }
         val component = createComponent(controller, settings)
 
-        component.dispatch(ChannelsIntent.Load)
 
-        assertNull(component.state.value.selectedChannelId)
+        assertEquals("7", component.state.value.selectedChannelId)
         assertNull(controller.playedItem)
     }
 
@@ -286,7 +300,6 @@ class ChannelsComponentTest {
         val controller = FakePlaybackController()
         val history = FakeHistoryRepository()
         val component = createComponent(controller, history = history)
-        component.dispatch(ChannelsIntent.Load)
 
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
@@ -294,40 +307,38 @@ class ChannelsComponentTest {
     }
 
     @Test
-    fun favoriteTogglePersistsToRepository() {
+    fun favoriteTogglePersistsToRepository() = runBlocking {
         val controller = FakePlaybackController()
         val component = createComponent(controller)
-        component.dispatch(ChannelsIntent.Load)
 
         component.dispatch(ChannelsIntent.FavoriteToggled("7"))
 
-        assertTrue(component.state.value.channels.first { it.id == "7" }.isFavorite)
+        withTimeout(5_000) { component.state.first { state -> state.channels.first { it.id == "7" }.isFavorite } }
 
         // Toggling off removes it again.
         component.dispatch(ChannelsIntent.FavoriteToggled("7"))
-        assertTrue(!component.state.value.channels.first { it.id == "7" }.isFavorite)
+        withTimeout(5_000) { component.state.first { state -> !state.channels.first { it.id == "7" }.isFavorite } }
+        Unit
     }
 
     @Test
     fun selectingChannelShowsChannelNameOverlay() {
         val component = createComponent(FakePlaybackController())
-        component.dispatch(ChannelsIntent.Load)
 
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
-        assertTrue(component.state.value.channelNameVisible)
+        assertTrue(component.channelNameVisible.value)
     }
 
     @Test
     fun channelNameHidesAfterTimeout() = runBlocking {
         val component = createComponent(FakePlaybackController(), channelNameTimeoutMs = 60)
-        component.dispatch(ChannelsIntent.Load)
         component.dispatch(ChannelsIntent.SelectChannel("7"))
-        assertTrue(component.state.value.channelNameVisible)
+        assertTrue(component.channelNameVisible.value)
 
         delay(200)
 
-        assertTrue(!component.state.value.channelNameVisible, "name must hide after the timeout")
+        assertTrue(!component.channelNameVisible.value, "name must hide after the timeout")
     }
 
     @Test
@@ -335,28 +346,26 @@ class ChannelsComponentTest {
         // A → B → C analogue: a new switch restarts the timer, so the name stays
         // visible for the full timeout measured from the LAST switch.
         val component = createComponent(FakePlaybackController(), channelNameTimeoutMs = 200)
-        component.dispatch(ChannelsIntent.Load)
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
         delay(120)
         component.dispatch(ChannelsIntent.SelectChannel("7")) // restart
-        assertTrue(component.state.value.channelNameVisible)
+        assertTrue(component.channelNameVisible.value)
 
         delay(120) // 240 ms after the first switch, 120 ms after the restart
-        assertTrue(component.state.value.channelNameVisible, "name must survive the restarted timer")
+        assertTrue(component.channelNameVisible.value, "name must survive the restarted timer")
 
         delay(150) // 270 ms after the restart — past the 200 ms timeout
-        assertTrue(!component.state.value.channelNameVisible)
+        assertTrue(!component.channelNameVisible.value)
     }
 
     @Test
     fun closingPlayerHidesChannelName() {
         val component = createComponent(FakePlaybackController())
-        component.dispatch(ChannelsIntent.Load)
         component.dispatch(ChannelsIntent.SelectChannel("7"))
 
         component.dispatch(ChannelsIntent.ClosePlayer)
 
-        assertTrue(!component.state.value.channelNameVisible)
+        assertTrue(!component.channelNameVisible.value)
     }
 }

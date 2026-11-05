@@ -41,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
@@ -105,6 +107,7 @@ fun TvPlayerPanel(
      * host must know about BOTH to intercept remote keys reliably.
      */
     onVideoFocusedChange: (Boolean) -> Unit = {},
+    videoFocusRequester: FocusRequester? = null,
     /** Tap on video surface: open touch controls/browse mode on Android. */
     onVideoTap: (() -> Unit)? = null,
     onRetry: () -> Unit,
@@ -172,8 +175,9 @@ fun TvPlayerPanel(
                     },
                 )
                 .background(Color.Black)
-                .focusable(enabled = videoFocusable, interactionSource = videoInteractionSource)
+                .then(videoFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .onFocusChanged { onVideoFocusedChange(it.isFocused) }
+                .focusable(enabled = videoFocusable, interactionSource = videoInteractionSource)
                 .then(
                     // One gesture owner per platform: Android uses the touch
                     // layer above PlayerView below; Desktop keeps its original

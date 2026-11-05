@@ -1,5 +1,36 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.common.util.startOfDay
+import com.tvnext.app.core.iptv.xmltv.EpgProgramme
+
+/** Keep the whole EPG in one chronological list, including midnight boundaries. */
+internal fun guideProgrammeTimeline(programmes: List<EpgProgramme>): List<EpgProgramme> =
+    programmes.distinctBy { Triple(it.channelId, it.start, it.stop) }.sortedBy { it.start }
+
+/** Explicit browsing wins; otherwise restore the programme at the playback clock. */
+internal fun guideProgrammeIndex(
+    programmes: List<EpgProgramme>, selectedStartMs: Long?, playbackTimeMs: Long,
+): Int {
+    if (programmes.isEmpty()) return -1
+    selectedStartMs?.let { start ->
+        programmes.indexOfFirst { it.start == start }.takeIf { it >= 0 }?.let { return it }
+    }
+    val anchor = selectedStartMs ?: playbackTimeMs
+    programmes.indexOfFirst { it.start <= anchor && anchor < it.stop }
+        .takeIf { it >= 0 }?.let { return it }
+    // A gap in EPG must not send an archive viewer to today's live programme.
+    return programmes.indexOfLast { it.start <= anchor }.takeIf { it >= 0 } ?: 0
+}
+
+/** Dates are shortcuts into the continuous list, never a filter on its rows. */
+internal fun guideProgrammeOnDay(
+    programmes: List<EpgProgramme>, dayStartMs: Long, playbackTimeMs: Long,
+): EpgProgramme? {
+    val onDay = programmes.filter { startOfDay(it.start) == dayStartMs }
+    return onDay.firstOrNull { it.start <= playbackTimeMs && playbackTimeMs < it.stop }
+        ?: onDay.firstOrNull()
+}
+
 /**
  * One D-pad step in a virtualized guide list. Returns null for empty lists,
  * rather than calling coerceIn(0, -1) or allowing focus to escape the guide.

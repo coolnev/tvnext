@@ -88,26 +88,28 @@ internal fun AndroidWideGuide(
     onPlayChannel: (String) -> Unit,
     onPlayArchive: (String, EpgProgramme) -> Unit,
     onClose: () -> Unit,
+    initialProgrammeTimeMs: Long? = null,
     modifier: Modifier = Modifier,
 ) {
     val activeId = focusedChannelId?.takeIf { id -> channels.any { it.id == id } }
+        // A category reset rebuilds filtered channels asynchronously. Keep the
+        // archive channel/clock while that list catches up with the playing item.
+        ?: playingChannelId.takeIf { initialProgrammeTimeMs != null && focusedChannelId == playingChannelId }
         ?: channels.firstOrNull { it.id == playingChannelId }?.id
         ?: channels.firstOrNull()?.id ?: playingChannelId
-    val programmeList = if (timeline.channelId == activeId) timeline.programmes else emptyList()
+    val programmeList = remember(timeline.channelId, timeline.programmes, activeId) {
+        if (timeline.channelId == activeId) guideProgrammeTimeline(timeline.programmes) else emptyList()
+    }
     val days = remember(programmeList) {
-        programmeList.map { formatDate(it.start) }.distinct()
+        programmeList.map { startOfDay(it.start) }.distinct()
     }
-    val today = remember(now) { formatDate(now) }
-    // Keep the user's selected day while browsing different channels.
-    var chosenDay by remember { mutableStateOf(today) }
-    val displayedDay = chosenDay.takeIf { it in days } ?: days.firstOrNull { it == today } ?: days.firstOrNull()
-    val dayProgrammes = remember(programmeList, displayedDay) {
-        programmeList.filter { formatDate(it.start) == displayedDay }
-    }
-    var chosenProgramme by remember(activeId, displayedDay) { mutableStateOf<EpgProgramme?>(null) }
-    val currentProgramme = dayProgrammes.firstOrNull { it.start <= now && now < it.stop }
-    val highlighted = chosenProgramme?.takeIf { it in dayProgrammes }
-        ?: currentProgramme ?: dayProgrammes.firstOrNull()
+    // Capture the clock once when opening the guide. EPG can arrive in two
+    // stages; do not persist the temporary live-only row as the user's choice.
+    var playbackTime by remember { mutableLongStateOf(initialProgrammeTimeMs ?: now) }
+    var selectedStartMs by remember(activeId) { mutableStateOf<Long?>(null) }
+    val highlightedIndex = guideProgrammeIndex(programmeList, selectedStartMs, playbackTime)
+    val highlighted = programmeList.getOrNull(highlightedIndex)
+    val displayedDay = highlighted?.let { startOfDay(it.start) }
     // A centred, bounded row window replaces LazyColumn.scrollToItem entirely.
     // The Stage 15 negative scroll offset moved the selected row towards the
     // bottom and competed with focus/EPG re-composition on every D-pad press.
@@ -128,21 +130,8 @@ internal fun AndroidWideGuide(
     val programmeFocus = remember { FocusRequester() }
     val dayFocus = remember { FocusRequester() }
     var activeColumn by remember { mutableStateOf(GuideFocusColumn.CHANNELS) }
+    var initialFocusApplied by remember { mutableStateOf(false) }
 
-    // Focus never follows recycled row children. The focused element is the
-    // stable column container, even as channel/EPG data arrives asynchronously.
-    LaunchedEffect(showCategories) {
-        withFrameNanos { }
-        runCatching {
-            if (showCategories) {
-                activeColumn = GuideFocusColumn.CATEGORIES
-                categoryFocus.requestFocus()
-            } else {
-                activeColumn = GuideFocusColumn.CHANNELS
-                channelFocus.requestFocus()
-            }
-        }
-    }
     LaunchedEffect(showCategories, playingChannelId) {
         if (!showCategories && focusedChannelId == null && channels.isNotEmpty()) {
             onChannelFocus(activeId)
@@ -159,14 +148,20 @@ internal fun AndroidWideGuide(
         if (next != null && channels[next].id != activeId) onChannelFocus(channels[next].id)
     }
     fun selectAdjacentProgramme(delta: Int) {
-        val next = guideAdjacentIndex(dayProgrammes.size, dayProgrammes.indexOf(highlighted), delta)
-        if (next != null) chosenProgramme = dayProgrammes[next]
+        val next = guideAdjacentIndex(programmeList.size, highlightedIndex, delta)
+        if (next != null) {
+            selectedStartMs = programmeList[next].start
+            playbackTime = programmeList[next].start
+        }
+    }
+    fun selectDay(day: Long) {
+        selectedStartMs = guideProgrammeOnDay(programmeList, day, now)?.start
+        selectedStartMs?.let { playbackTime = it }
     }
     fun selectAdjacentDay(delta: Int) {
-        val next = guideAdjacentIndex(days.size, days.indexOf(displayedDay), delta)
+        val next = guideAdjacentIndex(days.size, displayedDay?.let(days::indexOf) ?: -1, delta)
         if (next != null && days[next] != displayedDay) {
-            chosenDay = days[next]
-            chosenProgramme = null
+            selectDay(days[next])
         }
     }
 
@@ -188,6 +183,22 @@ internal fun AndroidWideGuide(
     }
     val grid: @Composable (Modifier) -> Unit = { gridModifier ->
         BoxWithConstraints(gridModifier) {
+            // Focus never follows recycled row children. The focused element is the
+            // stable column container, even as channel/EPG data arrives asynchronously.
+            LaunchedEffect(showCategories) {
+                withFrameNanos { }
+                runCatching {
+                    if (showCategories) {
+                        activeColumn = GuideFocusColumn.CATEGORIES
+                        categoryFocus.requestFocus()
+                    } else {
+                        val restoreArchive = !initialFocusApplied && initialProgrammeTimeMs != null && activeId == playingChannelId
+                        activeColumn = if (restoreArchive) GuideFocusColumn.PROGRAMMES else GuideFocusColumn.CHANNELS
+                        if (restoreArchive) programmeFocus.requestFocus() else channelFocus.requestFocus()
+                        initialFocusApplied = true
+                    }
+                }
+            }
             // All three columns use the same number of slots and channel-selected
             // vertical anchor. The first channel starts at the TOP (no fake rows).
             val availableRowsHeight = (maxHeight - 35.dp - 12.dp).coerceAtLeast(rowHeight)
@@ -364,8 +375,8 @@ internal fun AndroidWideGuide(
                     maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.titleMedium, modifier = Modifier.height(35.dp).padding(start = 9.dp, bottom = 4.dp))
                 CentredGuideRows(
-                    values = dayProgrammes,
-                    selectedIndex = dayProgrammes.indexOf(highlighted),
+                    values = programmeList,
+                    selectedIndex = highlightedIndex,
                     rowHeight = rowHeight,
                     rowSpacing = rowSpacing,
                     viewportCapacity = viewportCapacity,
@@ -405,14 +416,15 @@ internal fun AndroidWideGuide(
                         }
                         .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.PROGRAMMES }
                         .focusable(),
-                    emptyLabel = if (timeline.loading) "Загрузка телепрограммы…" else "Нет программы на выбранный день",
+                    emptyLabel = if (timeline.loading) "Загрузка телепрограммы…" else "Нет телепрограммы",
                 ) { programme ->
                         val selected = programme == highlighted && activeColumn == GuideFocusColumn.PROGRAMMES
                         GuideRow(
-                            "${formatTimeOfDay(programme.start)}  ${programme.title}", selected,
+                            "${formatDate(programme.start)}  ${formatTimeOfDay(programme.start)}  ${programme.title}", selected,
                             currentBroadcast = programme.start <= now && now < programme.stop,
                             onClick = {
-                                chosenProgramme = programme
+                                selectedStartMs = programme.start
+                                playbackTime = programme.start
                                 if (programme.start <= now && channels.firstOrNull { it.id == activeId }?.hasCatchupMechanism == true) {
                                     onPlayArchive(activeId, programme)
                                 }
@@ -427,7 +439,7 @@ internal fun AndroidWideGuide(
                     modifier = Modifier.fillMaxWidth().height(35.dp).padding(bottom = 4.dp))
                 CentredGuideRows(
                     values = days,
-                    selectedIndex = days.indexOf(displayedDay),
+                    selectedIndex = displayedDay?.let(days::indexOf) ?: -1,
                     rowHeight = rowHeight,
                     rowSpacing = rowSpacing,
                     viewportCapacity = viewportCapacity,
@@ -459,10 +471,9 @@ internal fun AndroidWideGuide(
                         .focusable(),
                     emptyLabel = "Нет дат EPG",
                 ) { day ->
-                        val firstProgramme = programmeList.firstOrNull { formatDate(it.start) == day }
-                        val dateTitle = firstProgramme?.let { "${guideWeekday(it.start)}\n$day" } ?: day
+                        val dateTitle = "${guideWeekday(day)}\n${formatDate(day)}"
                         GuideRow(dateTitle, day == displayedDay && activeColumn == GuideFocusColumn.DAYS,
-                            onClick = { chosenDay = day; chosenProgramme = null },
+                            onClick = { selectDay(day) },
                             height = rowHeight, centerContent = true,
                             underline = day == displayedDay && activeColumn != GuideFocusColumn.DAYS)
                 }
@@ -503,6 +514,70 @@ internal fun AndroidWideGuide(
         Column(modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.70f))) {
             grid(Modifier.fillMaxWidth().weight(1f))
             info(Modifier.fillMaxWidth().height(146.dp))
+        }
+    }
+}
+
+/** The same stable, continuous EPG cursor in the windowed programme pane. */
+@Composable
+internal fun AndroidWindowedProgrammeList(
+    channel: Channel,
+    programmes: List<EpgProgramme>,
+    loading: Boolean,
+    now: Long,
+    initialProgrammeTimeMs: Long?,
+    focusRequester: FocusRequester?,
+    requestInitialFocus: Boolean,
+    onProgrammeHighlighted: (EpgProgramme) -> Unit,
+    onPlayProgramme: (EpgProgramme) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val values = remember(programmes) { guideProgrammeTimeline(programmes) }
+    val playbackTime = remember(channel.id) { initialProgrammeTimeMs ?: now }
+    var selectedStartMs by remember(channel.id) { mutableStateOf<Long?>(null) }
+    val index = guideProgrammeIndex(values, selectedStartMs, playbackTime)
+    val highlighted = values.getOrNull(index)
+    val hostFocus = focusRequester ?: remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(channel.id, requestInitialFocus) {
+        if (requestInitialFocus) {
+            withFrameNanos { }
+            hostFocus.requestFocus()
+        }
+    }
+    LaunchedEffect(highlighted) { highlighted?.let(onProgrammeHighlighted) }
+    Column(modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.80f)).padding(18.dp)) {
+        Text(channel.name, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleLarge)
+        Text("Программа передач", style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(12.dp))
+        CentredGuideRows(
+            values = values, selectedIndex = index, rowHeight = 62.dp, rowSpacing = 4.dp,
+            modifier = Modifier.weight(1f).fillMaxWidth().focusRequester(hostFocus)
+                .onFocusChanged { focused = it.isFocused }
+                .onPreviewKeyEvent { event ->
+                    when (event.key) {
+                        Key.DirectionUp, Key.DirectionDown -> {
+                            if (event.type == KeyEventType.KeyDown) {
+                                guideAdjacentIndex(values.size, index, if (event.key == Key.DirectionUp) -1 else 1)
+                                    ?.let { selectedStartMs = values[it].start }
+                            }
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter -> {
+                            if (event.type == KeyEventType.KeyUp) highlighted?.let(onPlayProgramme)
+                            true
+                        }
+                        else -> false
+                    }
+                }.focusable(),
+            emptyLabel = if (loading) "Загрузка телепрограммы…" else "Программа передач недоступна",
+        ) { programme ->
+            GuideRow("${formatDate(programme.start)}  ${formatTimeOfDay(programme.start)}  ${programme.title}",
+                selected = programme == highlighted && focused,
+                currentBroadcast = programme.start <= now && now < programme.stop,
+                height = 62.dp,
+                onClick = { selectedStartMs = programme.start; onPlayProgramme(programme) })
         }
     }
 }

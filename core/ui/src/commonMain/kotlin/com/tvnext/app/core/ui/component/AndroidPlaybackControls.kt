@@ -24,6 +24,7 @@ fun AndroidPlaybackControls(
     seekStepMs: Long = 60_000L,
     modifier: Modifier = Modifier,
     interactive: Boolean = true,
+    requestInitialFocus: Boolean = true,
     canPause: Boolean = true,
     isLiveChannel: Boolean = false,
     liveEdgeFraction: Float? = null,
@@ -36,8 +37,8 @@ fun AndroidPlaybackControls(
     val pauseFocus = remember { FocusRequester() }
     val rewindFocus = remember { FocusRequester() }
     val aspectFocus = remember { FocusRequester() }
-    LaunchedEffect(interactive, canPause) {
-        if (interactive) {
+    LaunchedEffect(interactive, requestInitialFocus) {
+        if (interactive && requestInitialFocus) {
             withFrameNanos { }
             runCatching {
                 if (canPause) pauseFocus.requestFocus()
@@ -92,10 +93,10 @@ fun AndroidPlaybackControls(
                 }
             }
         }
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             TvCardButton(
                 onClick = { PlaybackUiRequests.chooseAspect() },
@@ -137,10 +138,9 @@ fun AndroidPlaybackControls(
                 onSeek = { onSeekBy(seekStepMs) },
                 enabled = interactive && durationMs > 0L,
             )
-            onLive?.let { TvCardButton(onClick = it) { Text("LIVE", color = MaterialTheme.colorScheme.onSurface) } }
-            onDetails?.let { TvCardButton(onClick = it) { Text("Описание", color = MaterialTheme.colorScheme.onSurface) } }
-            onClose?.let { TvCardButton(onClick = it) { Text("Закрыть", color = MaterialTheme.colorScheme.onSurface) } }
-            Spacer(Modifier.weight(1f))
+            onLive?.let { TvCardButton(onClick = it, enabled = interactive) { Text("LIVE", color = MaterialTheme.colorScheme.onSurface) } }
+            onDetails?.let { TvCardButton(onClick = it, enabled = interactive) { Text("Описание", color = MaterialTheme.colorScheme.onSurface) } }
+            onClose?.let { TvCardButton(onClick = it, enabled = interactive) { Text("Закрыть", color = MaterialTheme.colorScheme.onSurface) } }
             if (isLiveChannel) {
                 TvCardButton(onClick = { PlaybackUiRequests.toggleRecording() }, enabled = interactive,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
