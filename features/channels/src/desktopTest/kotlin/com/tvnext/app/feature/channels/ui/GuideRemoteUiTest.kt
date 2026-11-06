@@ -122,6 +122,66 @@ class GuideRemoteUiTest {
         } finally { client.close() }
     }
 
+    @Test fun descriptionArrivesAfterThePosterInWindowedDetails() = descriptionAfterPoster(0)
+    @Test fun descriptionArrivesAfterThePosterBelowTheFullGuide() = descriptionAfterPoster(1)
+    @Test fun descriptionArrivesAfterThePosterBesideTheFullGuide() = descriptionAfterPoster(2)
+
+    private fun descriptionAfterPoster(mode: Int) {
+        val synopsis = "Найденный сюжет о возвращении героя домой."
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val pictures = java.util.concurrent.atomic.AtomicInteger()
+        val client = HttpClient(MockEngine { request ->
+            val body = when {
+                request.url.encodedPath.endsWith("/search") ->
+                    """{"docs":[{"id":2,"name":"Холоп 2","poster":{"url":"https://example.org/poster.png"}}]}"""
+                request.url.encodedPath.endsWith("/2") -> { release.await(); """{"description":"$synopsis"}""" }
+                else -> "{}"
+            }
+            respond(body, headers = headersOf("Content-Type", "application/json"))
+        }) { install(HttpTimeout) }
+        val key = object : KinopoiskKeyStore {
+            override suspend fun getKey() = "test-key"
+            override suspend fun setKey(value: String) = Unit
+        }
+        val settings = object : TmdbSettingsStore {
+            override suspend fun isEnabled() = false
+            override suspend fun setEnabled(enabled: Boolean) = Unit
+            override suspend fun getApiKey() = ""
+            override suspend fun setApiKey(apiKey: String) = Unit
+        }
+        val tmdb = java.lang.reflect.Proxy.newProxyInstance(TmdbRepository::class.java.classLoader,
+            arrayOf(TmdbRepository::class.java)) { _, _, _ -> error("TMDB is disabled") } as TmdbRepository
+        val repository = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, key), settings)
+        loadKoinModules(module { single { repository } })
+        val image = androidx.compose.ui.graphics.ImageBitmap(80, 120)
+        val loader = object : com.tvnext.app.core.ui.image.LogoImageLoader {
+            override suspend fun load(url: String): androidx.compose.ui.graphics.ImageBitmap {
+                pictures.incrementAndGet(); return image
+            }
+        }
+        val programme = EpgProgramme(channel.id, now - hour / 2, now + hour / 2, "Холоп 2", "Описание\nпередачи\u00a0отсутствует")
+        try {
+            ui.setContent {
+                androidx.compose.runtime.CompositionLocalProvider(com.tvnext.app.core.ui.image.LocalLogoImageLoader provides loader) {
+                    MaterialTheme {
+                        if (mode == 0) Box(Modifier.size(700.dp, 500.dp)) { ProgrammeRichDetails(programme) }
+                        else AndroidWideGuide(channels = listOf(channel), playingChannelId = channel.id, focusedChannelId = channel.id,
+                            timeline = ChannelTimelineState(channel.id, false, listOf(programme)), nowPlaying = emptyMap(), now = now,
+                            showNumbers = false, showCategories = false, descriptionOnRight = mode == 2,
+                            categories = emptyList(), selectedCategory = null, onToggleCategories = {}, onChooseCategory = {},
+                            onChannelFocus = {}, onVisibleChannelsChanged = {}, onPlayChannel = {}, onPlayArchive = { _, _ -> },
+                            onClose = {}, modifier = Modifier.size(1100.dp, 700.dp))
+                    }
+                }
+            }
+            ui.waitUntil(5_000) { pictures.get() > 0 }
+            release.complete(Unit)
+            ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
+            ui.onNodeWithText(synopsis).assertIsDisplayed()
+            ui.onNodeWithText(programme.description!!).assertDoesNotExist()
+        } finally { release.complete(Unit); client.close() }
+    }
+
     @Test fun remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection() {
         var played: EpgProgramme? = null
         ui.setContent {

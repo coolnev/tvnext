@@ -42,6 +42,25 @@ class MetadataNetworkTest {
         fun programme(kinoKey: String = "") = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, Key(kinoKey)), Settings())
         fun close() { client.close(); driver.close() }
     }
+    @Test fun kinopoiskRetriesTheFullCardAfterAnImageOnlySearchResult() = runBlocking<Unit> {
+        var detailsCalls = 0
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search")) 200 to
+                """{"docs":[{"id":2,"name":"Холоп 2","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
+            else {
+                detailsCalls++
+                if (detailsCalls == 1) 503 to "{}" else 200 to """{"description":"$synopsis"}"""
+            }
+        }
+        try {
+            val result = f.programme("test-key").find("Холоп 2")
+            assertEquals(synopsis, result?.overview)
+            assertEquals("https://example.org/p.jpg", result?.posterUrl)
+            assertEquals(2, detailsCalls)
+        } finally { f.close() }
+    }
+
     @Test fun transientSearchAndDetailsFailuresAreRetried() = runBlocking<Unit> {
         var searches = 0; var cards = 0
         val f = Fixture {

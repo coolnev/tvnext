@@ -28,6 +28,7 @@ class IndexedEpgRepository(
     private val clock: () -> Long = ::currentTimeMillis,
     private val automaticRefresh: Boolean = true,
     private val onSourceImported: (String) -> Unit = {},
+    private val importTimeoutMs: Long = 20 * 60_000L,
 ) : EpgRepository {
     private val store by lazy(storeProvider)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -86,7 +87,9 @@ class IndexedEpgRepository(
 
     override suspend fun refreshState() = withContext(reads) {
         val cfg = sources()
-        val snapshots = cfg.sources.mapNotNull { store.snapshot(it.id) }
+        val sourceSnapshots = cfg.sources.mapNotNull { s -> store.snapshot(s.id)?.let { s.id to it } }
+        val snapshots = sourceSnapshots.map { it.second }
+        val coveredChannels = sourceSnapshots.flatMap { (source, snapshot) -> store.channelKeys(source, snapshot.generation) }.toSet()
         val active = playlists.getPlaylists().filter { it.enabled && it.type == PlaylistType.LIVE }
         val selected = playlists.getDefaultPlaylist()?.takeIf { p -> active.any { it.id == p.id } } ?: active.firstOrNull()
         val override = config.userEpgUrl().orEmpty()
@@ -96,7 +99,7 @@ class IndexedEpgRepository(
             effectiveUrl = override.takeIf(String::isNotBlank) ?: selected?.epgUrl,
             lastUpdated = snapshots.maxOfOrNull { s -> s.fetchedAt }?.takeIf { t -> t > 0L },
             programmeCount = snapshots.sumOf { s -> s.rows }.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
-            channelCount = snapshots.maxOfOrNull { s -> s.channels }?.toInt() ?: 0) }
+            channelCount = coveredChannels.size) }
     }
 
     private fun requestPriority(requested: List<Channel>) {
@@ -121,6 +124,7 @@ class IndexedEpgRepository(
                 val cfg = sources()
                 if (!cfg.enabled) return@withContext AppResult.Success(Unit)
                 var failure = false
+                var failureNotice: String? = null
                 // Cached sources (including backups) are readable before any HTTP.
                 for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
                 val ordered = cfg.sources.sortedWith(compareBy<Source> { !it.primary }
@@ -128,18 +132,17 @@ class IndexedEpgRepository(
                 for (source in ordered) {
                     if (source.channels.isEmpty()) continue
                     val old = store.snapshot(source.id)
-                    val fresh = old != null && old.signature == source.signature &&
-                        clock() - old.fetchedAt in 0 until EpgRepository.TTL_MS
+                    val fresh = old != null && cacheUsable(source, old)
                     if (!force && (fresh || (old?.retryAt ?: 0L) > clock())) continue
                     // Do not fetch unrelated backup feeds when the visible channels have EPG.
                     if (!source.primary && !needsBackup(cfg, source)) continue
                     awaitImport()
                     _state.update { it.copy(isLoading = true, lastError = null) }
-                    if (!import(source)) failure = true
+                    if (!import(source)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }
                 }
                 refreshState()
                 _state.update { it.copy(isLoading = false, lastError = if (failure)
-                    "Один из источников EPG не обновился. Сохранённая программа доступна." else null) }
+                    (failureNotice ?: "Один из источников EPG не обновился. Сохранённая программа доступна.") else null) }
                 if (failure) AppResult.Failure(AppError.InvalidData("Не удалось обновить источник EPG"))
                 else AppResult.Success(Unit)
             }
@@ -162,58 +165,111 @@ class IndexedEpgRepository(
         return true
     }
 
+    private fun cacheUsable(source: Source, snapshot: IndexedEpgStore.Snapshot): Boolean {
+        if (snapshot.fetchedAt <= 0 || snapshot.rows <= 0) return false
+        val age = clock() - snapshot.fetchedAt
+        // Restart, channel renaming, order and group edits are not changes to the XMLTV source.
+        if (age !in 0 until 7 * 24 * 60 * 60_000L) return false
+        val viewport = priority.get()
+        val covered = store.channelKeys(source.id, snapshot.generation)
+        val available = source.channels.map(::key).filter { it in covered }
+        // Channels absent from this feed need a backup, not repeated downloads of the same feed.
+        val probe = available.filter { it in viewport }.take(8).ifEmpty { available.take(8) }
+        if (probe.isEmpty() || store.now(source.id, probe, clock()).isEmpty()) return false
+        if (age < 24 * 60 * 60_000L) return true
+        // A weekly guide remains usable overnight. Refresh when its future coverage runs short.
+        return store.bounds(source.id, probe)?.last?.let { it > clock() + 12 * 60 * 60_000L } == true
+    }
+
     private suspend fun import(source: Source): Boolean {
         val generation = store.begin(source.id)
+        val previous = store.snapshot(source.id)
         importing[source.id] = generation
-        val writer = BatchWriter(source, generation)
+        val writer = BatchWriter(source, generation, previous?.fetchedAt?.let { it > 0L } == true)
         var complete = false
+        var parsedAt = 0L
         return try {
-            val success = stream(source.url) { input ->
-                complete = LiteXmltvParser().parse(input, LiteXmltvParser().buildChannelLookup(source.channels),
-                    "", writer, fullDescriptions = true)
+            val finished = withTimeoutOrNull(importTimeoutMs) {
+                val context = currentCoroutineContext()
+                _state.update { it.copy(notice = "Подготовка сохранённого EPG…") }
+                store.discardUncommitted(source.id, previous?.generation ?: 0L, generation) { context.ensureActive() }
+                val success = stream(source.url) { input ->
+                    val parser = LiteXmltvParser()
+                    complete = parser.parse(input, parser.buildChannelLookup(source.channels), "", writer,
+                        fullDescriptions = true, onProgress = { processed ->
+                            context.ensureActive()
+                            if (clock() - parsedAt >= 500L) {
+                                parsedAt = clock()
+                                _state.update { it.copy(notice = "Обработка EPG: проверено $processed передач") }
+                            }
+                        })
+                    writer.flush()
+                    if (!complete) throw InvalidEpgDocumentException()
+                }
                 writer.flush()
-                if (!complete) throw InvalidEpgDocumentException()
+                check(success && complete) { "Incomplete XMLTV" }
+                if (writer.count == 0L) throw NoMatchedEpgChannels()
+                _state.update { it.copy(notice = "Сохранение программы передач…") }
+                store.complete(source.id, generation, source.signature, clock(), clock()) { done, total ->
+                    context.ensureActive()
+                    if (done % 16 == 0 || done == total) _state.update { it.copy(
+                        notice = if (done == total) "Сохранение программы передач…" else "Сохранение архива: $done из $total каналов") }
+                }
+                true
             }
-            writer.flush()
-            check(success && complete && writer.count > 0) { "Incomplete or unmatched XMLTV" }
-            store.complete(source.id, generation, source.signature, clock(), clock())
+            if (finished != true) {
+                store.failed(source.id, generation, clock() + RETRY_MS)
+                _state.update { it.copy(lastError = "Обработка EPG не завершилась вовремя. Сохранённая программа доступна.") }
+                return false
+            }
             onSourceImported(source.url)
             _version.update { it + 1L }
+            // The active pointer has committed. Deleting old rows must not keep the loading spinner alive.
+            scope.launch(worker) {
+                val context = currentCoroutineContext()
+                try { store.purgeInactive(source.id, generation) { context.ensureActive() } }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { /* Inactive rows can be cleaned on the next successful import. */ }
+            }
             true
         } catch (cancelled: CancellationException) {
             store.failed(source.id, generation, clock() + RETRY_MS)
             throw cancelled
-        } catch (_: EpgImportDeferredException) {
-            store.failed(source.id, generation, 0L)
+        } catch (_: NoMatchedEpgChannels) {
+            store.failed(source.id, generation, clock() + 12 * 60 * 60_000L)
             false
         } catch (_: Exception) {
             store.failed(source.id, generation, clock() + RETRY_MS)
-            _version.update { it + 1L }
+            if (previous?.fetchedAt?.let { it > 0 } != true) _version.update { it + 1L }
             false
         } finally { importing.remove(source.id) }
     }
 
+    private class NoMatchedEpgChannels : IllegalStateException()
+
     /** Synchronous bounded sink on the single background parser thread. */
-    private inner class BatchWriter(private val source: Source, private val generation: Long) : EpgProgrammeSink {
+    private inner class BatchWriter(private val source: Source, private val generation: Long,
+        private val hasCompleteCache: Boolean = false) : EpgProgrammeSink {
         private val batch = ArrayList<Pair<String, EpgProgramme>>(512)
         private var chars = 0
         var count = 0L
         private val seen = hashSetOf<String>()
+        private val newKeys = hashSetOf<String>()
         override fun add(key: String, programme: EpgProgramme) {
             batch.add(key to programme)
             chars += programme.title.length + (programme.description?.length ?: 0)
-            seen.add(key)
+            if (seen.add(key)) newKeys.add(key)
             val urgent = key in priority.get() && programme.start <= clock() && programme.stop > clock()
             if (batch.size >= 512 || chars >= 256 * 1024 || urgent) flush(urgent)
         }
         fun flush(urgent: Boolean = false) {
             if (batch.isEmpty()) return
-            store.write(source.id, generation, batch, publishCold = true)
+            store.write(source.id, generation, batch, publishCold = true, newChannelKeys = newKeys)
             count += batch.size
-            batch.clear(); chars = 0
-            if (urgent || clock() - publishedAt >= 500L) {
+            batch.clear(); chars = 0; newKeys.clear()
+            if (!hasCompleteCache && (urgent || clock() - publishedAt >= 1_000L)) {
                 publishedAt = clock()
-                _state.update { it.copy(channelCount = seen.size, programmeCount = count.toInt(), notice = "Обработка EPG: $count передач") }
+                _state.update { it.copy(channelCount = seen.size, programmeCount = count.toInt(), notice = "Обработка EPG: сохранено $count передач") }
                 _version.update { it + 1L }
             }
         }
@@ -338,7 +394,7 @@ class IndexedEpgRepository(
         .filter { it.startsWith("http://", true) || it.startsWith("https://", true) }.distinct()
 
     companion object {
-        private const val RETRY_MS = 60_000L
+        private const val RETRY_MS = 15 * 60_000L
         internal fun sourceId(url: String): String = MessageDigest.getInstance("SHA-256")
             .digest(url.toByteArray()).joinToString("") { "%02x".format(it) }
         internal fun merge(primary: List<EpgProgramme>, backup: List<EpgProgramme>): List<EpgProgramme> {

@@ -30,6 +30,7 @@ internal class LiteXmltvParser {
         windowStart: Long = Long.MIN_VALUE,
         windowEnd: Long = Long.MAX_VALUE,
         fullDescriptions: Boolean = com.tvnext.app.core.common.platform.isAndroidPlatform(),
+        onProgress: ((Int) -> Unit)? = null,
     ): Boolean {
         val scanner = XmlScanner(source)
         val xmltvIdToKeys = HashMap<String, List<String>>()
@@ -48,7 +49,7 @@ internal class LiteXmltvParser {
                 parseProgrammeElement(element, playlistId, xmltvIdToKeys, lookup, out, windowStart, windowEnd, fullDescriptions)
                 // Every 256 entries, give Android playback threads a small CPU
                 // window. Desktop stays unchanged through its platform actual.
-                if (parsedProgrammes % 256 == 0) paceEpgParser()
+                if (parsedProgrammes % 256 == 0) { paceEpgParser(); onProgress?.invoke(parsedProgrammes) }
             }
         }
         Logger.d(TAG, "Parsed $parsedChannels channels / $parsedProgrammes programmes")

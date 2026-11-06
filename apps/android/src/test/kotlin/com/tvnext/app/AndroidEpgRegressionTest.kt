@@ -146,6 +146,53 @@ class AndroidEpgRegressionTest {
         }
     }
 
+    @Test fun guideFor1800ChannelsCommitsAndPreservesArchiveOnNativeAndroidSqlite() = runBlocking<Unit> {
+        val context = RuntimeEnvironment.getApplication()
+        AndroidFallbackEpgSettings(context).setEnabled(false)
+        AndroidEpgPlaybackGate.setAppForeground(true)
+        val roster = (0 until 1800).map { item.copy(id = "c$it", tvgId = "news$it", name = "Канал $it") }
+        val manyChannels = object : ChannelsRepository by channels {
+            override suspend fun getChannels() = roster
+            override suspend fun getChannelsByPlaylist(playlistId: String) = roster
+        }
+        val now = System.currentTimeMillis() / 1000 * 1000
+        val hour = 3_600_000L
+        val format = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z").withZone(ZoneOffset.UTC)
+        fun time(at: Long) = format.format(Instant.ofEpochMilli(at))
+        var rolling = false
+        val client = HttpClient(MockEngine {
+            val body = buildString {
+                append("<tv>")
+                repeat(1800) { channel ->
+                    val slots = if (rolling) 0..0 else -24..23
+                    for (slot in slots) {
+                        val start = now + slot * hour
+                        append("<programme channel='news$channel' start='${time(start)}' stop='${time(start+hour)}'><title>${if (rolling) "Новая" else "Передача"} $channel</title><desc>Сохранённое описание.</desc></programme>")
+                    }
+                }
+                append("</tv>")
+            }
+            respond(body)
+        }) { install(HttpTimeout) }
+        val start = System.nanoTime()
+        try {
+            val repository = AndroidEpgRepository(client, playlists, manyChannels, config, context)
+            assertTrue(withTimeout(120_000) { repository.refreshIfStale(true) } is AppResult.Success)
+            assertEquals(1800, repository.observeState().value.channelCount)
+            assertEquals(86_400, repository.observeState().value.programmeCount)
+            assertFalse(repository.observeState().value.isLoading)
+            rolling = true
+            assertTrue(withTimeout(120_000) { repository.refreshIfStale(true) } is AppResult.Success)
+            assertEquals(1800, repository.observeState().value.channelCount)
+            assertEquals(45_000, repository.observeState().value.programmeCount)
+            assertEquals(1800, repository.getNowPlaying(roster, now).size)
+            assertEquals("Новая 1799", repository.getNowPlaying(listOf(roster.last()), now)["c1799"]?.title)
+            assertEquals(24, repository.getProgrammesInRange(listOf(roster.last()), now-25*hour, now).getValue("c1799").size)
+            assertFalse(repository.observeState().value.isLoading)
+            println("ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=${(System.nanoTime()-start)/1_000_000}")
+        } finally { client.close() }
+    }
+
     @Test fun settingsRemainUsableWhenReadingEpgCacheFails() = runBlocking<Unit> {
         val context = RuntimeEnvironment.getApplication()
         val client = HttpClient(MockEngine { error("Unexpected network") })

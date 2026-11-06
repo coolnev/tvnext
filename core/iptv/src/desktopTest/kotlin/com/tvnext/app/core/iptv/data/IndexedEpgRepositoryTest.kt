@@ -59,14 +59,79 @@ class IndexedEpgRepositoryTest {
             override suspend fun getFavoriteIds(): Set<String> = emptySet()
             override suspend fun setFavorite(channelId: String, favorite: Boolean) = Unit
         }
-        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(),
+        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(), timeoutMs: Long = 20 * 60_000L,
             stream: suspend (String, suspend (EpgTextSource) -> Unit) -> Boolean): IndexedEpgRepository =
             IndexedEpgRepository({ store }, playlistRepo, channelRepo, object : EpgConfigProvider {
                 override suspend fun isEnabled() = true
                 override suspend fun userEpgUrl(): String? = null
             }, { fallback }, stream, { _, _ -> legacy }, worker = Dispatchers.IO.limitedParallelism(1),
-                clock = { time }, automaticRefresh = automatic).also { repos.add(it) }
+                clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs).also { repos.add(it) }
         suspend fun close() { repos.forEach { it.close() }; driver.close() }
+    }
+
+    @Test fun timedOutRefreshStopsLoadingAndKeepsThePreviousGuide() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            val initial = f.repo { _, consume -> StringEpgTextSource("<tv>${programme(title = "Сохранённая")}</tv>").use { consume(it) }; true }
+            initial.refreshIfStale()
+            val stalled = f.repo(timeoutMs = 100) { _, _ -> awaitCancellation() }
+            assertIs<AppResult.Failure>(withTimeout(2_000) { stalled.refreshIfStale(true) })
+            assertFalse(stalled.observeState().value.isLoading)
+            assertNull(stalled.observeState().value.notice)
+            assertTrue(stalled.observeState().value.lastError.orEmpty().contains("вовремя"))
+            assertEquals("Сохранённая", stalled.getNowPlaying(f.roster, now)["c"]?.title)
+        } finally { f.close() }
+    }
+
+    @Test fun expiredCoverageIsRefreshedEvenWhenDownloadedLessThanADayAgo() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            var requests = 0
+            val r = f.repo { _, consume -> requests++; StringEpgTextSource("<tv>${programme(start = f.time - hour)}</tv>").use { consume(it) }; true }
+            r.refreshIfStale()
+            f.time += 2 * hour
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(2, requests)
+            assertNotNull(r.getNowPlaying(f.roster, f.time)["c"])
+        } finally { f.close() }
+    }
+
+    @Test fun refreshDoesNotPublishPartialVersionsOverACompleteGuide() = runBlocking<Unit> {
+        val f = Fixture()
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+        try {
+            val first = f.repo { _, consume -> StringEpgTextSource("<tv>${programme(title = "Старая")}</tv>").use { consume(it) }; true }
+            first.refreshIfStale()
+            val r = f.repo { _, consume ->
+                StringEpgTextSource("<tv>${programme(title = "Новая")}</tv>").use { consume(it) }
+                entered.complete(Unit); release.await(); true
+            }
+            r.getNowPlaying(f.roster, now)
+            val job = async(Dispatchers.IO) { r.refreshIfStale(true) }
+            withTimeout(5_000) { entered.await() }
+            assertEquals(0L, r.observeVersion().first())
+            assertEquals("Старая", r.getNowPlaying(f.roster, now)["c"]?.title)
+            release.complete(Unit)
+            assertIs<AppResult.Success<Unit>>(job.await())
+            assertEquals(1L, r.observeVersion().first())
+            assertEquals("Новая", r.getNowPlaying(f.roster, now)["c"]?.title)
+        } finally { release.complete(Unit); f.close() }
+    }
+
+    @Test fun cleanupRetainsANewerImportAndTheActiveArchive() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            fun row(title: String) = listOf("p|c" to com.tvnext.app.core.iptv.xmltv.EpgProgramme("p|c", now-hour, now+hour, title))
+            val old = f.store.begin("s"); f.store.write("s", old, row("Старая"), true)
+            f.store.complete("s", old, "", now, now)
+            val active = f.store.begin("s"); f.store.write("s", active, row("Активная"), true)
+            f.store.complete("s", active, "", now, now)
+            val next = f.store.begin("s"); f.store.write("s", next, row("Будущая"), true)
+            f.store.purgeInactive("s", active)
+            assertEquals("Активная", f.store.now("s", listOf("p|c"), now)["p|c"]?.title)
+            assertEquals("Будущая", f.store.now("s", listOf("p|c"), now, next)["p|c"]?.title)
+            assertTrue(f.store.now("s", listOf("p|c"), now, old).isEmpty())
+        } finally { f.close() }
     }
 
     @Test fun missingChannelDeclarationsAndWhitespaceAttributesStillProduceEpg() = runBlocking<Unit> {
@@ -100,6 +165,66 @@ class IndexedEpgRepositoryTest {
             assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
             assertEquals(0, requests)
         } finally { restarted.close() }
+    }
+
+    @Test fun overnightRestartKeepsACompleteUsableGuideWithoutHttp() = runBlocking<Unit> {
+        val f = Fixture(); val path = f.path
+        try {
+            val body = "<tv>" + (0..72).joinToString("") { programme(start = now + (it - 1) * hour) } + "</tv>"
+            val r = f.repo { _, consume -> StringEpgTextSource(body).use { consume(it) }; true }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+        } finally { f.close() }
+        val reopened = Fixture(path); reopened.time = now + 37 * hour
+        try {
+            var requests = 0
+            val r = reopened.repo { _, _ -> requests++; error("Usable disk guide must not restart its download") }
+            assertNotNull(r.getNowPlaying(reopened.roster, reopened.time)["c"])
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(0, requests)
+        } finally { reopened.close() }
+    }
+
+    @Test fun aVisibleChannelAbsentFromAFreshFeedDoesNotRestartTheSameDownload() = runBlocking<Unit> {
+        val f = Fixture()
+        f.roster = f.roster + channel("missing").copy(name = "Канал без EPG", tvgId = "missing")
+        try {
+            var requests = 0
+            val r = f.repo { _, consume -> requests++; StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }; true }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            r.getNowPlaying(listOf(f.roster.last()), now)
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(1, requests)
+        } finally { f.close() }
+    }
+
+    @Test fun cosmeticChannelRenameDoesNotInvalidateTheDownloadedSource() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            var requests = 0
+            val r = f.repo { _, consume -> requests++; StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }; true }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            f.roster = f.roster.map { it.copy(name = "Новое название", number = 99, category = "Другая категория") }
+            r.invalidateConfiguration()
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(1, requests)
+        } finally { f.close() }
+    }
+
+    @Test fun primaryAndBackupCoverageCountIsTheUnionNotTheLargestSource() = runBlocking<Unit> {
+        val f = Fixture()
+        f.roster = (0 until 1800).map { i -> channel("c$i").copy(tvgId = "news$i") }
+        try {
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { url, consume ->
+                val ids = if (url.endsWith("/epg.xml")) 0 until 1533 else 1533 until 1800
+                val body = "<tv>" + ids.joinToString("") { programme(id = "news$it") } + "</tv>"
+                StringEpgTextSource(body).use { consume(it) }; true
+            }
+            r.getNowPlaying(f.roster, now)
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            assertEquals(1800, r.getNowPlaying(f.roster, now).size)
+            assertEquals(1800, r.observeState().value.channelCount)
+            assertFalse(r.observeState().value.isLoading)
+        } finally { f.close() }
     }
 
     @Test fun brokenRefreshKeepsCompleteCacheAndItsOriginalFreshness() = runBlocking<Unit> {

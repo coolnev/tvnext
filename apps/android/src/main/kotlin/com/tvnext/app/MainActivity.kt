@@ -392,6 +392,7 @@ class MainActivity : ComponentActivity() {
                         epgLoading = epgStatus.isLoading,
                         epgLoadedChannels = epgStatus.channelCount,
                         epgLoadedProgrammes = epgStatus.programmeCount,
+                        epgProgressText = epgStatus.notice,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
                             recoveryScreen == RecoveryScreen.RECORDINGS,
                         overlayContent = {

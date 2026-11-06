@@ -130,7 +130,7 @@ class ChannelsComponentTest {
         override suspend fun clear() = Unit
     }
 
-    private class FakeEpgRepository : EpgRepository {
+    private open class FakeEpgRepository : EpgRepository {
         override fun observeState(): StateFlow<EpgState> = MutableStateFlow(EpgState())
         override fun observeVersion(): Flow<Long> = flowOf(0L)
         override suspend fun refreshState() = Unit
@@ -194,6 +194,7 @@ class ChannelsComponentTest {
         history: HistoryRepository = FakeHistoryRepository(),
         channelNameTimeoutMs: Long = 3_000L,
         repository: ChannelsRepository = FakeChannelsRepository(),
+        epg: EpgRepository = FakeEpgRepository(),
     ): ChannelsComponent {
         val lifecycle = LifecycleRegistry().apply {
             create()
@@ -206,7 +207,7 @@ class ChannelsComponentTest {
             playbackController = controller,
             settingsRepository = settings,
             historyRepository = history,
-            epgRepository = FakeEpgRepository(),
+            epgRepository = epg,
             archiveRepository = FakeArchiveRepository(),
             mainContext = Dispatchers.Unconfined,
             channelNameTimeoutMs = channelNameTimeoutMs,
@@ -223,6 +224,29 @@ class ChannelsComponentTest {
             }
         }
         return component
+    }
+
+    @Test fun refreshingAnOpenTimelineNeverPublishesAnEmptyOrSingleRowPlaceholder() = runBlocking<Unit> {
+        val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val now = System.currentTimeMillis()
+        val original = (-4..4).map { n -> EpgProgramme("7", now + n * 3_600_000L,
+            now + (n + 1) * 3_600_000L, "Передача $n") }
+        var queries = 0
+        val epg = object : FakeEpgRepository() {
+            override suspend fun getProgrammesInRange(channels: List<Channel>, from: Long, to: Long): Map<String, List<EpgProgramme>> {
+                if (++queries > 1) { entered.complete(Unit); release.await() }
+                return mapOf("7" to original)
+            }
+        }
+        val component = createComponent(FakePlaybackController(), epg = epg)
+        component.dispatch(ChannelsIntent.ShowChannelTimeline("7"))
+        withTimeout(5_000) { component.timeline.first { it.programmes.size == original.size } }
+        component.dispatch(ChannelsIntent.ShowChannelTimeline("7"))
+        withTimeout(5_000) { entered.await() }
+        assertEquals(original, component.timeline.value.programmes)
+        assertTrue(!component.timeline.value.loading)
+        release.complete(Unit)
     }
 
     @Test fun reopeningChannelsDropsUnplayedTimelineAndReturnsFocusToPlayback() = runBlocking<Unit> {

@@ -96,6 +96,7 @@ fun AppShell(
     epgLoading: Boolean = false,
     epgLoadedChannels: Int = 0,
     epgLoadedProgrammes: Int = 0,
+    epgProgressText: String? = null,
 ) {
     val childStack by component.childStack.subscribeAsState()
     val activeTab = childStack.active.configuration
@@ -271,7 +272,7 @@ fun AppShell(
                 ) {
                     CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp,
                         color = Color.White)
-                    Text(if (epgLoadedProgrammes > 0)
+                    Text(epgProgressText?.takeIf { it.isNotBlank() } ?: if (epgLoadedProgrammes > 0)
                         "EPG: $epgLoadedChannels каналов · $epgLoadedProgrammes передач"
                         else "Загрузка EPG…", color = Color.White,
                         style = MaterialTheme.typography.labelSmall)

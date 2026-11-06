@@ -894,7 +894,9 @@ class DefaultChannelsComponent(
             }
         }
 
-        if (isAndroidPlatform()) {
+        val previousTimeline = _timeline.value.takeIf { it.channelId == channelId && it.programmes.isNotEmpty() }
+        // Keep the complete visible list, its cursor and metadata lookup while re-reading.
+        if (previousTimeline == null && isAndroidPlatform()) {
             // Do not put the Android TV UI into a spinner state while the full
             // day range is being fetched. The channel list already has the
             // current programme in nowPlaying, so show that immediately and
@@ -905,7 +907,7 @@ class DefaultChannelsComponent(
                 loading = false,
                 programmes = immediate?.let(::listOf).orEmpty(),
             )
-        } else {
+        } else if (previousTimeline == null) {
             _timeline.value = ChannelTimelineState(channelId = channelId, loading = true)
         }
         val channel = state.value.channels.firstOrNull { it.id == channelId } ?: run {
@@ -965,7 +967,8 @@ class DefaultChannelsComponent(
             }.onFailure { error ->
                 Logger.e(TAG, "Failed to load channel timeline", error)
                 if (_timeline.value.channelId == channelId) {
-                    _timeline.value = ChannelTimelineState(channelId, false, emptyList())
+                    if (_timeline.value.programmes.isEmpty())
+                        _timeline.value = ChannelTimelineState(channelId, false, emptyList())
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.tvnext.app.core.iptv.data
 
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.db.QueryResult
 import com.tvnext.app.core.database.TvNextDatabase
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 
@@ -9,7 +10,8 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
     private val q = database.epgQueries
 
     init {
-        // This index belongs only to the dedicated EPG DB, not the legacy app DB.
+        // These objects belong only to the dedicated EPG DB, never the app DB.
+        driver.execute(null, "CREATE TABLE IF NOT EXISTS epg_index_channel (source TEXT NOT NULL, generation INTEGER NOT NULL, channel_key TEXT NOT NULL, PRIMARY KEY(source,generation,channel_key))", 0)
         driver.execute(null, "DROP INDEX IF EXISTS idx_epg_programme_channel_start", 0)
         driver.execute(null, "DROP INDEX IF EXISTS idx_epg_programme_playlist_start", 0)
         driver.execute(null, "CREATE UNIQUE INDEX IF NOT EXISTS epg_index_identity ON epg_programme(playlist_id,batch_id,channel_id,start_time)", 0)
@@ -23,9 +25,51 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
             it.channel_count, it.last_error?.substringBefore(':')?.toLongOrNull() ?: 0L)
     }
 
-    fun begin(source: String): Long = q.nextEpgBatch(source, source).executeAsOne()
+    fun begin(source: String): Long = driver.executeQuery(null,
+        "SELECT MAX(COALESCE((SELECT batch_id FROM epg_programme WHERE playlist_id=? ORDER BY batch_id DESC LIMIT 1),0),COALESCE((SELECT active_batch FROM epg_cache WHERE playlist_id=?),0))+1",
+        { cursor -> cursor.next(); QueryResult.Value(cursor.getLong(0) ?: 1L) }, 2) {
+        bindString(0, source); bindString(1, source)
+    }.value
 
-    fun write(source: String, generation: Long, rows: List<Pair<String, EpgProgramme>>, publishCold: Boolean) {
+    private fun writeKeys(source: String, generation: Long, keys: Collection<String>) {
+        for (key in keys) driver.execute(null, "INSERT OR IGNORE INTO epg_index_channel(source,generation,channel_key) VALUES (?,?,?)", 3) {
+            bindString(0, source); bindLong(1, generation); bindString(2, key)
+        }
+    }
+
+    fun channelKeys(source: String, generation: Long): Set<String> {
+        val keys = driver.executeQuery(null,
+            "SELECT channel_key FROM epg_index_channel WHERE source=? AND generation=?",
+            { cursor ->
+                val result = linkedSetOf<String>()
+                while (cursor.next().value) cursor.getString(0)?.let(result::add)
+                QueryResult.Value(result)
+            }, 2) { bindString(0, source); bindLong(1, generation) }.value
+        if (keys.isNotEmpty()) return keys
+        // One-time upgrade of an existing 0.5.32 index; subsequent starts read only this small table.
+        val previous = q.selectDistinctProgrammeChannelIds(source, generation).executeAsList().toSet()
+        if (previous.isNotEmpty()) database.transaction { writeKeys(source, generation, previous) }
+        return previous
+    }
+
+    /** Only obsolete generations, in bounded transactions; never delete a newer in-flight import. */
+    fun purgeInactive(source: String, active: Long, checkpoint: () -> Unit = {}) {
+        while (true) {
+            checkpoint()
+            val deleted = database.transactionWithResult {
+                driver.execute(null, "DELETE FROM epg_programme WHERE rowid IN (SELECT rowid FROM epg_programme WHERE playlist_id=? AND batch_id<? LIMIT 4096)", 2) {
+                    bindString(0, source); bindLong(1, active)
+                }.value
+            }
+            if (deleted == 0L) break
+        }
+        driver.execute(null, "DELETE FROM epg_index_channel WHERE source=? AND generation<?", 2) {
+            bindString(0, source); bindLong(1, active)
+        }
+    }
+
+    fun write(source: String, generation: Long, rows: List<Pair<String, EpgProgramme>>, publishCold: Boolean,
+        newChannelKeys: Collection<String> = rows.map { it.first }.distinct()) {
         database.transaction {
             // Stay below SQLite's 999-variable limit on Android 7/8. One SQL
             // statement per 64 rows amortizes execution and query invalidation.
@@ -43,6 +87,7 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
                     }
                 }
             }
+            writeKeys(source, generation, newChannelKeys)
             if (publishCold) {
                 val old = snapshot(source)
                 if (old == null || old.generation == 0L) {
@@ -52,26 +97,37 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
         }
     }
 
-    fun complete(source: String, generation: Long, signature: String, fetchedAt: Long, now: Long) {
-        database.transaction {
-            val previous = snapshot(source)?.generation ?: 0L
-            if (previous != 0L && previous != generation) {
-                // Keep actual archived rows in SQL; never hydrate an old guide into RAM.
-                driver.execute(null, """
-                    INSERT OR IGNORE INTO epg_programme
-                    (playlist_id,channel_id,start_time,stop_time,title,lower_title,description,category,episode_num,batch_id)
-                    SELECT playlist_id,channel_id,start_time,stop_time,title,lower_title,description,category,episode_num,?
-                    FROM epg_programme WHERE playlist_id=? AND batch_id=? AND start_time<? AND stop_time>?
-                """.trimIndent(), 5) {
-                    bindLong(0, generation); bindString(1, source); bindLong(2, previous)
-                    bindLong(3, now); bindLong(4, now - 90L * 86_400_000L)
+    fun complete(source: String, generation: Long, signature: String, fetchedAt: Long, now: Long,
+        checkpoint: (Int, Int) -> Unit = { _, _ -> }) {
+        val previous = snapshot(source)?.generation ?: 0L
+        if (previous != 0L && previous != generation) {
+            // Copy one indexed channel at a time, without one huge INSERT/SELECT temp table.
+            // The previous generation stays active until every archive batch is ready.
+            val oldKeys = channelKeys(source, previous).toList()
+            oldKeys.forEachIndexed { index, key ->
+                checkpoint(index, oldKeys.size)
+                database.transaction {
+                    driver.execute(null, """
+                        INSERT OR IGNORE INTO epg_programme
+                        (playlist_id,channel_id,start_time,stop_time,title,lower_title,description,category,episode_num,batch_id)
+                        SELECT playlist_id,channel_id,start_time,stop_time,title,lower_title,description,category,episode_num,?
+                        FROM epg_programme WHERE playlist_id=? AND batch_id=? AND channel_id=? AND start_time<? AND stop_time>?
+                    """.trimIndent(), 6) {
+                        bindLong(0, generation); bindString(1, source); bindLong(2, previous); bindString(3, key)
+                        bindLong(4, now); bindLong(5, now - 90L * 86_400_000L)
+                    }
                 }
             }
-            val count = q.countEpgProgrammes(source, generation).executeAsOne()
-            val channelCount = q.selectDistinctProgrammeChannelIds(source, generation).executeAsList().size.toLong()
-            q.upsertEpgCacheMeta(source, "", fetchedAt, signature, null, channelCount, count, generation)
-            q.deleteEpgOtherProgrammes(source, generation)
         }
+        checkpoint(1, 1)
+        // Include retained archive-only channels in the persisted coverage table.
+        val allKeys = q.selectDistinctProgrammeChannelIds(source, generation).executeAsList()
+        database.transaction {
+            writeKeys(source, generation, allKeys)
+            val count = q.countEpgProgrammes(source, generation).executeAsOne()
+            q.upsertEpgCacheMeta(source, "", fetchedAt, signature, null, allKeys.size.toLong(), count, generation)
+        }
+        // Old rows are cleaned later. Switching the active pointer must not wait for their deletion.
     }
 
     fun failed(source: String, generation: Long, retryAt: Long) {
@@ -79,12 +135,26 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
             val old = snapshot(source)
             // A failed refresh keeps the last complete snapshot. A first import
             // may retain real partial rows, but is never marked as fresh.
-            if (old != null && old.generation != generation) q.deleteEpgBatchProgrammes(source, generation)
             val partial = old?.generation == generation
             val rows = if (partial) q.countEpgProgrammes(source, generation).executeAsOne() else old?.rows ?: 0L
-            val channels = if (partial) q.selectDistinctProgrammeChannelIds(source, generation).executeAsList().size.toLong() else old?.channels ?: 0L
+            val channels = if (partial) channelKeys(source, generation).size.toLong() else old?.channels ?: 0L
             q.upsertEpgCacheMeta(source, "", old?.fetchedAt?.takeIf { it > 0L }, old?.signature.orEmpty(),
                 "$retryAt:import", channels, rows, old?.generation ?: 0L)
+        }
+    }
+
+    fun discardUncommitted(source: String, active: Long, before: Long, checkpoint: () -> Unit) {
+        while (true) {
+            checkpoint()
+            val deleted = database.transactionWithResult {
+                driver.execute(null, "DELETE FROM epg_programme WHERE rowid IN (SELECT rowid FROM epg_programme WHERE playlist_id=? AND batch_id>? AND batch_id<? LIMIT 4096)", 3) {
+                    bindString(0, source); bindLong(1, active); bindLong(2, before)
+                }.value
+            }
+            if (deleted == 0L) break
+        }
+        driver.execute(null, "DELETE FROM epg_index_channel WHERE source=? AND generation>? AND generation<?", 3) {
+            bindString(0, source); bindLong(1, active); bindLong(2, before)
         }
     }
 

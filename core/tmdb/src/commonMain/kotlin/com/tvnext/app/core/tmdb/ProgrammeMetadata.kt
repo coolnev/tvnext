@@ -119,12 +119,28 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                     val movieId = kinopoiskMatchedId(responseBody, name)
                     val details = movieId?.let { id ->
                         try {
-                            val detailResponse = client.get("https://api.poiskkino.dev/v1.5/movie/$id") {
-                                header("X-API-KEY", token)
-                                timeout { requestTimeoutMillis = 6_000; connectTimeoutMillis = 3_000 }
+                            var detail: ProgrammeMetadata? = null
+                            for (attempt in 0..1) {
+                                val response = try {
+                                    client.get("https://api.poiskkino.dev/v1.5/movie/$id") {
+                                        header("X-API-KEY", token)
+                                        timeout { requestTimeoutMillis = 4_000; connectTimeoutMillis = 2_000; socketTimeoutMillis = 4_000 }
+                                    }
+                                } catch (cancelled: CancellationException) { throw cancelled }
+                                catch (_: Exception) {
+                                    if (attempt == 0) { delay(400); continue }
+                                    temporaryFailureAt = currentTimeMillis()
+                                    break
+                                }
+                                if (response.status.isSuccess()) {
+                                    detail = parseKinopoiskDetails(response.bodyAsText())
+                                    break
+                                }
+                                temporaryFailureAt = currentTimeMillis()
+                                if (response.status.value >= 500 && attempt == 0) { delay(400); continue }
+                                break
                             }
-                            if (detailResponse.status.isSuccess())
-                                parseKinopoiskDetails(detailResponse.bodyAsText()) else null
+                            detail
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (_: Exception) { null }

@@ -32,9 +32,12 @@ internal fun similarProgrammeTitle(candidate: String?, requested: String): Boole
 
 /** The same placeholder rules apply to XMLTV, remote cards and both description views. */
 fun hasProgrammeSynopsis(text: String?): Boolean {
-    val value = text?.trim()?.lowercase()?.trim('.', ' ', '…', '!') ?: return false
+    val value = text?.replace(Regex("<[^>]+>"), " ")?.trim()?.lowercase()
+        ?.replace(Regex("[\\s\\u00a0]+"), " ")?.trim('.', ' ', '…', '!') ?: return false
     if (value.length < 3) return false
+    if (Regex("^(?:описание|информация)(?: (?:передачи|программы|фильма))? (?:отсутствует|недоступн[ао]|не предоставлен[ао]).*$").matches(value)) return false
     return value !in setOf(
+        "фильм", "художественный фильм", "сериал", "х/ф", "т/с", "комедия", "драма", "боевик", "триллер",
         "описание", "нет описания", "описание отсутствует", "описание недоступно", "описание не предоставлено",
         "описание передачи отсутствует", "описание передачи недоступно", "описание программы отсутствует",
         "описание программы недоступно", "нет описания передачи", "нет описания программы",

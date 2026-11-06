@@ -71,7 +71,7 @@ class ProgrammeMetadataTest {
     }
 
     @Test fun missingDescriptionSentencesAreNotTreatedAsEpgSynopses() {
-        for (text in listOf("Описание передачи отсутствует", "Описание программы недоступно.", "Нет описания передачи", "No description available"))
+        for (text in listOf("Описание передачи отсутствует", "Описание программы недоступно.", "Нет описания передачи", "No description available", "Описание\nпередачи\u00a0отсутствует", "<p>Описание программы недоступно.</p>", "Комедия"))
             assertTrue(!hasProgrammeSynopsis(text), text)
         assertTrue(hasProgrammeSynopsis("Герой возвращается домой и встречает старого друга."))
     }
