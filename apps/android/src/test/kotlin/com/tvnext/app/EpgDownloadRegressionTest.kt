@@ -165,6 +165,18 @@ class EpgDownloadRegressionTest {
         }
     }
 
+    @Test fun aServerReturningNoGuideBytesStopsAfterTwoAttempts() = runBlocking<Unit> {
+        var requests = 0
+        val client = HttpClient(MockEngine { requests++; respond("unavailable", HttpStatusCode.ServiceUnavailable) }) { install(HttpTimeout) }
+        try {
+            try {
+                EpgSourceDownload(client, directory(), retryDelay = {}).consume(url) { fail("No document") }
+                fail("HTTP failure expected")
+            } catch (_: java.io.IOException) { }
+            assertEquals(2, requests)
+        } finally { client.close() }
+    }
+
     @Test fun missingSourceDoesNotRetryFourTimes() = runBlocking<Unit> {
         var requests = 0
         val client = HttpClient(MockEngine { requests++; respond("missing", HttpStatusCode.NotFound) }) { install(HttpTimeout) }

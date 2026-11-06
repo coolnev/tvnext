@@ -42,6 +42,74 @@ class MetadataNetworkTest {
         fun programme(kinoKey: String = "") = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, Key(kinoKey)), Settings())
         fun close() { client.close(); driver.close() }
     }
+    private fun userFullCard() = checkNotNull(javaClass.getResource("/kinopoisk-home-alone-2.json")).readText()
+
+    @Test fun actualUserSampleContainsAReadableFullAndShortSynopsis() {
+        val card = parseKinopoiskDetails(userFullCard())
+        assertTrue(card.overview.orEmpty().startsWith("Самый маленький герой Америки"))
+        assertTrue(hasProgrammeSynopsis(card.overview))
+        val json = Json.parseToJsonElement(userFullCard()) as kotlinx.serialization.json.JsonObject
+        val shortOnly = kotlinx.serialization.json.JsonObject(json - "description").toString()
+        assertTrue(parseKinopoiskDetails(shortOnly).overview.orEmpty().startsWith("Неугомонный малыш Кевин"))
+    }
+
+    @Test fun reopeningAnImageOnlyCardResumesItsDescriptionImmediately() = runBlocking<Unit> {
+        val enteredDetails = CompletableDeferred<Unit>()
+        var requests = 0
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search")) 200 to
+                """{"docs":[{"id":5928,"name":"Один дома 2: Затерянный в Нью-Йорке","poster":{"url":"https://example.org/p.jpg"}}]}"""
+            else {
+                requests++
+                if (requests == 1) { enteredDetails.complete(Unit); awaitCancellation() }
+                200 to userFullCard()
+            }
+        }
+        try {
+            val repository = f.programme("test-key")
+            val first = async { repository.find("Один дома 2: Затерянный в Нью-Йорке") }
+            withTimeout(2_000) { enteredDetails.await() }
+            first.cancelAndJoin()
+            val resumed = withTimeout(2_000) { repository.find("Один дома 2: Затерянный в Нью-Йорке") }
+            assertTrue(resumed?.overview.orEmpty().startsWith("Самый маленький герой Америки"))
+            assertNotNull(resumed?.posterUrl)
+            assertEquals(2, requests)
+        } finally { f.close() }
+    }
+
+    @Test fun aNumberedSequelWithASubtitleCanBeFoundByItsBroadcastShortName() = runBlocking<Unit> {
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search")) 200 to """{"docs":[${userFullCard()}]}"""
+            else 200 to userFullCard()
+        }
+        try {
+            val card = f.programme("test-key").find("Один дома 2")
+            assertTrue(card?.overview.orEmpty().startsWith("Самый маленький герой Америки"))
+        } finally { f.close() }
+    }
+
+    @Test fun aVisiblePosterOnlyCardRetriesTheSynopsisWithoutAnotherSearch() = runBlocking<Unit> {
+        var searches = 0; var detailsCalls = 0
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search")) {
+                searches++
+                200 to """{"docs":[{"id":5928,"name":"Один дома 2: Затерянный в Нью-Йорке","poster":{"url":"https://example.org/p.jpg"}}]}"""
+            } else {
+                detailsCalls++
+                if (detailsCalls <= 2) 503 to "{}" else 200 to userFullCard()
+            }
+        }
+        try {
+            val result = withTimeout(8_000) { f.programme("test-key").observe("Один дома 2").first { hasProgrammeSynopsis(it?.overview) } }
+            assertTrue(result?.overview.orEmpty().startsWith("Самый маленький герой Америки"))
+            assertEquals(1, searches)
+            assertEquals(3, detailsCalls)
+        } finally { f.close() }
+    }
+
     @Test fun buildDefaultKeyWorksBeforeSettingsAndManualKeysSurviveStoreRecreation() = runBlocking<Unit> {
         var expected = "build-default"
         var calls = 0

@@ -1,0 +1,267 @@
+{
+  "shortDescription": "Неугомонный малыш Кевин в одиночку покоряет Нью-Йорк. Очередной шедевр от Джона Хьюза и Криса Коламбуса",
+  "isSeries": false,
+  "countries": [
+    {
+      "id": 1,
+      "name": "США"
+    }
+  ],
+  "technology": {
+    "hasImax": false,
+    "has3D": false
+  },
+  "names": [
+    {
+      "language": "EN",
+      "name": "Home Alone 2: Lost in New York",
+      "type": "Original title on tmdb"
+    },
+    {
+      "language": "RU",
+      "name": "Один дома 2: Затерянный в Нью-Йорке",
+      "type": "Russian title on tmdb"
+    },
+    {
+      "language": "US",
+      "name": "Home Alone 2",
+      "type": "Alternative title on tmdb (short title)"
+    }
+  ],
+  "name": "Один дома 2: Затерянный в Нью-Йорке",
+  "alternativeName": "Home Alone 2: Lost in New York",
+  "typeNumber": 1,
+  "year": 1992,
+  "ratingMpaa": "pg",
+  "facts": [
+    {
+      "type": "FACT",
+      "spoiler": false,
+      "value": "Съёмки фильма проходили с 9 декабря 1991 года по 1 мая 1992 года."
+    },
+    {
+      "spoiler": false,
+      "value": "За участие в сиквеле <a href=\"/name/33503/\" class=\"all\">Маколей Калкин</a> получил фиксированный гонорар в размере 4,5 миллиона долларов и долю в 5% от кассовых сборов фильма. На тот момент это был самый большой чек, выписанный на имя ребёнка-актёра.",
+      "type": "FACT"
+    },
+    {
+      "type": "FACT",
+      "spoiler": false,
+      "value": "Магазин игрушек носит название «Игрушечная лавка Дункана». Это название магазин получил в честь исполнительного продюсера <a href=\"/name/25074/\" class=\"all\">Дункана Хендерсона</a>."
+    }
+  ],
+  "watchability": {
+    "items": []
+  },
+  "slogan": "First, he was home alone, now he's lost in New York",
+  "ticketsOnSale": false,
+  "rating": {
+    "filmCritics": 4.5,
+    "imdb": 6.9,
+    "kp": 8.037
+  },
+  "fees": {
+    "usa": {
+      "currency": "$",
+      "value": 173585516
+    },
+    "world": {
+      "currency": "$",
+      "value": 358994850
+    }
+  },
+  "premiere": {
+    "bluray": "2009-11-26T00:00:00.000Z",
+    "dvd": "2005-12-13T00:00:00.000Z",
+    "russia": "1994-12-23T00:00:00.000Z",
+    "world": "1992-11-15T00:00:00.000Z"
+  },
+  "hasSkippableFragments": true,
+  "movieLength": 119,
+  "poster": {
+    "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1599028/e87b5842-3065-422e-81e8-59a1ffcd9b6a/300x450",
+    "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1599028/e87b5842-3065-422e-81e8-59a1ffcd9b6a/600x900"
+  },
+  "backdrop": {
+    "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-ott/212840/2a000001612cb1fd548510a3a296ffde6bdd/678x380",
+    "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-ott/212840/2a000001612cb1fd548510a3a296ffde6bdd/1344x756"
+  },
+  "externalId": {
+    "kpHD": "490790b846806ca695588bc88cdf0d4d",
+    "imdb": "tt0104431",
+    "tmdb": 772
+  },
+  "type": "movie",
+  "persons": [
+    {
+      "enName": "Macaulay Culkin",
+      "enProfession": "actor",
+      "id": 33503,
+      "name": "Маколей Калкин",
+      "photo": "https://st.kp.yandex.net/images/actor_iphone/iphone360_33503.jpg",
+      "profession": "актеры",
+      "professionId": 1
+    },
+    {
+      "enName": "Joe Pesci",
+      "enProfession": "actor",
+      "id": 63985,
+      "name": "Джо Пеши",
+      "photo": "https://st.kp.yandex.net/images/actor_iphone/iphone360_63985.jpg",
+      "profession": "актеры",
+      "professionId": 1
+    },
+    {
+      "enName": "Daniel Stern",
+      "enProfession": "actor",
+      "id": 8912,
+      "name": "Дэниел Стерн",
+      "photo": "https://st.kp.yandex.net/images/actor_iphone/iphone360_8912.jpg",
+      "profession": "актеры",
+      "professionId": 1
+    }
+  ],
+  "distributors": {
+    "bluray": "Двадцатый Век Фокс СНГ",
+    "distributor": "Екатеринбург Арт",
+    "dvd": "Гемини-Фильм"
+  },
+  "updatedAt": "2026-11-05T12:44:02.460Z",
+  "lists": [
+    "genrecomedy",
+    "country1",
+    "year1990-1999"
+  ],
+  "description": "Самый маленький герой Америки устраивает большой переполох в Нью-Йорке! Кевин МакКалистер вернулся! Но теперь он один не дома, а в Нью-Йорке и у него достаточно денег и кредитных карточек, чтобы превратить Большое Яблоко в собственную площадку для игр.\n\nНо, как всегда, Кевину не суждено быть долго одному: его старые приятели ― жулики Гарри и Марв ― сбежали из тюрьмы, куда они попали стараниями Кевина. И надо же им было попасть именно в тот город, где Кевин планировал поразвлечься! Новые западни и ловушки уже ждут горе-бандитов.",
+  "votes": {
+    "filmCritics": 57,
+    "imdb": 453000,
+    "kp": 676620
+  },
+  "genres": [
+    {
+      "id": 6,
+      "name": "комедия",
+      "slug": "comedy"
+    },
+    {
+      "id": 11,
+      "name": "семейный",
+      "slug": "family"
+    },
+    {
+      "id": 10,
+      "name": "приключения",
+      "slug": "adventure"
+    }
+  ],
+  "hasOttFeatures": true,
+  "budget": {
+    "currency": "$",
+    "value": 18000000
+  },
+  "audience": [
+    {
+      "count": 41849600,
+      "country": "США"
+    },
+    {
+      "count": 4503631,
+      "country": "Германия"
+    },
+    {
+      "count": 2359212,
+      "country": "Франция"
+    }
+  ],
+  "similarMovies": [
+    {
+      "alternativeName": "Problem Child",
+      "id": 17696,
+      "name": "Трудный ребенок",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1600647/dac18413-3832-4e3f-92a7-fce150dfab28/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1600647/dac18413-3832-4e3f-92a7-fce150dfab28/600x900"
+      },
+      "rating": {
+        "kp": 6.97
+      },
+      "type": "movie",
+      "year": 1990
+    },
+    {
+      "alternativeName": "Problem Child 2",
+      "id": 12126,
+      "name": "Трудный ребенок 2",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1773646/d912f8c5-c72c-4698-88fc-95e3e4e389fb/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1773646/d912f8c5-c72c-4698-88fc-95e3e4e389fb/600x900"
+      },
+      "rating": {
+        "kp": 6.755
+      },
+      "type": "movie",
+      "year": 1991
+    },
+    {
+      "alternativeName": "Ri¢hie Ri¢h",
+      "id": 19287,
+      "name": "Богатенький Ричи",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1600647/511487d5-787a-4b39-ba5e-c600a6c7108c/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/1600647/511487d5-787a-4b39-ba5e-c600a6c7108c/600x900"
+      },
+      "rating": {
+        "kp": 6.605
+      },
+      "type": "movie",
+      "year": 1994
+    }
+  ],
+  "id": 5928,
+  "createdAt": "2026-02-11T04:27:23.000Z",
+  "logo": {
+    "url": "https://image.tmdb.org/t/p/original/7NEVN48eEVzIYJOjKllA8GIlt8P.png",
+    "previewUrl": "https://image.tmdb.org/t/p/w500/7NEVN48eEVzIYJOjKllA8GIlt8P.png"
+  },
+  "sequelsAndPrequels": [
+    {
+      "id": 8124,
+      "relationType": "BEFORE",
+      "type": "movie",
+      "name": "Один дома",
+      "alternativeName": "Home Alone",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/6201401/022a58e3-5b9b-411b-bfb3-09fedb700401/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/6201401/022a58e3-5b9b-411b-bfb3-09fedb700401/600x900"
+      },
+      "year": 1990
+    },
+    {
+      "id": 20789,
+      "relationType": "AFTER",
+      "type": "movie",
+      "name": "Один дома 3",
+      "alternativeName": "Home Alone 3",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/4774061/e3ace94b-e349-4451-a24b-8b4066a46ab6/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/4774061/e3ace94b-e349-4451-a24b-8b4066a46ab6/600x900"
+      },
+      "year": 1997
+    },
+    {
+      "id": 81576,
+      "relationType": "AFTER",
+      "type": "movie",
+      "name": "Один дома 4",
+      "alternativeName": "Home Alone 4: Taking Back the House",
+      "poster": {
+        "previewUrl": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/4774061/9085d7e4-6631-4d27-ad72-7c0306c17aca/300x450",
+        "url": "https://cdnrrviubnyuntopbez5.svc.cdn.yandex.net/get-kinopoisk-image/4774061/9085d7e4-6631-4d27-ad72-7c0306c17aca/600x900"
+      },
+      "year": 2002
+    }
+  ],
+  "ageRating": 0,
+  "top250": 192
+}

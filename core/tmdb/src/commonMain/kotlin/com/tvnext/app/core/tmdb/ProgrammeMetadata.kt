@@ -44,7 +44,13 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
     private val permits = Semaphore(2)
     @Volatile private var backoffUntil = 0L
     @Volatile private var temporaryFailureAt = 0L
-    fun resetAfterKeyChange() { backoffUntil = 0L; temporaryFailureAt = 0L }
+    private data class MatchedCard(val id: Int, val card: ProgrammeMetadata, val token: String, val time: Long)
+    private val matchedGuard = Any()
+    private val matched = LinkedHashMap<String, MatchedCard>()
+    fun resetAfterKeyChange() {
+        backoffUntil = 0L; temporaryFailureAt = 0L
+        synchronized(matchedGuard) { matched.clear() }
+    }
     fun temporaryFailureRecently(): Boolean =
         currentTimeMillis() - temporaryFailureAt in 0L..60_000L
     suspend fun hasKey(): Boolean = keys.getKey().isNotBlank()
@@ -69,14 +75,18 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
         if (query.isBlank() || token.isEmpty() || currentTimeMillis() < backoffUntil) return null
         return permits.withPermit {
             if (currentTimeMillis() < backoffUntil) return@withPermit null
-            var serviceResponded = false
+            val matchKey = normalizedProgrammeTitle(name) + "|" + programmeReleaseYear(name)
+            val known = synchronized(matchedGuard) { matched[matchKey]?.takeIf {
+                it.token == token && currentTimeMillis() - it.time in 0 until 24 * 60 * 60_000L
+            } }
+            var serviceResponded = known != null
             var best: ProgrammeMetadata? = null
             val result = withTimeoutOrNull(16_000L) {
                 try {
                     // Retry one transient server error; never retry a bad key
                     // or a rate-limited account in a tight loop.
                     var body: String? = null
-                    for (attempt in 0..1) {
+                    if (known == null) for (attempt in 0..1) {
                         val response = client.get("https://api.poiskkino.dev/v1.5/movie/search") {
                             header("X-API-KEY", token)
                             parameter("page", 1)
@@ -110,15 +120,18 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         temporaryFailureAt = currentTimeMillis()
                         return@withTimeoutOrNull null
                     }
-                    val responseBody = body ?: return@withTimeoutOrNull null
-                    val card = parseKinopoiskSearch(responseBody, name)
+                    val card = known?.card ?: body?.let { parseKinopoiskSearch(it, name) }
                         ?: return@withTimeoutOrNull null
+                    val movieId = known?.id ?: body?.let { kinopoiskMatchedId(it, name) }
+                    if (movieId != null) synchronized(matchedGuard) {
+                        if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
+                        matched[matchKey] = MatchedCard(movieId, card, token, currentTimeMillis())
+                    }
                     best = card
                     onUpdate?.invoke(card)
                     if (!card.overview.isNullOrBlank() && card.overview.length >= 120 &&
                         card.frameUrl != null && card.posterUrl != null)
                         return@withTimeoutOrNull card
-                    val movieId = kinopoiskMatchedId(responseBody, name)
                     val details = movieId?.let { id ->
                         try {
                             var detail: ProgrammeMetadata? = null
@@ -154,8 +167,11 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         posterUrl = details?.posterUrl ?: card.posterUrl,
                     )
                     best = combined
+                    if (movieId != null) synchronized(matchedGuard) {
+                        matched[matchKey] = MatchedCard(movieId, combined, token, currentTimeMillis())
+                    }
                     onUpdate?.invoke(combined)
-                    if (movieId != null && (combined.frameUrl == null || combined.posterUrl == null)) {
+                    if (movieId != null && hasProgrammeSynopsis(combined.overview) && (combined.frameUrl == null || combined.posterUrl == null)) {
                         try {
                             val images = client.get("https://api.poiskkino.dev/v1.5/image") {
                                 header("X-API-KEY", token)
@@ -198,8 +214,13 @@ private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
             (entry["names"] as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull {
                 (it as? JsonObject)?.get("name")?.jsonPrimitive?.content
             }
-        if (titles.none { similarProgrammeTitle(it, name) }) null
-        else entry to (if (year != null && entry["year"]?.jsonPrimitive?.content?.toIntOrNull() == year) 10 else 0)
+        val exact = titles.any { similarProgrammeTitle(it, name) }
+        // Numbered sequels are often broadcast without their colon subtitle.
+        val shortSequel = normalizedProgrammeTitle(name).substringAfterLast(' ').all(Char::isDigit) &&
+            titles.any { ':' in it && similarProgrammeTitle(it.substringBefore(':'), name) }
+        if (!exact && !shortSequel) null
+        else entry to ((if (exact) 100 else 50) +
+            if (year != null && entry["year"]?.jsonPrimitive?.content?.toIntOrNull() == year) 10 else 0)
     }.maxByOrNull { it.second }?.first
 }
 
@@ -255,7 +276,7 @@ class ProgrammeMetadataRepository(
     private val kinopoisk: KinopoiskProgrammeLookup,
     private val tmdbSettings: TmdbSettingsStore,
 ) {
-    private data class Cached(val result: ProgrammeMetadata?, val time: Long)
+    private data class Cached(val result: ProgrammeMetadata?, val time: Long, val complete: Boolean)
     private val cache = LinkedHashMap<String, Cached>()
     private val cacheGuard = Any()
     private var cacheRevision = 0L
@@ -268,8 +289,15 @@ class ProgrammeMetadataRepository(
     suspend fun clearCache() { synchronized(cacheGuard) { cache.clear(); cacheRevision++ } }
 
     fun observe(title: String): Flow<ProgrammeMetadata?> = channelFlow {
-        val result = find(title) { trySend(it) }
+        var result = find(title) { trySend(it) }
         trySend(result)
+        // A visible poster-only card must get another chance without leaving the screen.
+        repeat(2) {
+            if (result == null || hasProgrammeSynopsis(result?.overview)) return@channelFlow
+            delay(2_100)
+            result = find(title) { trySend(it) }
+            trySend(result)
+        }
     }
 
     suspend fun find(title: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
@@ -298,30 +326,34 @@ class ProgrammeMetadataRepository(
     private suspend fun lookup(raw: String, query: String, year: String?, key: String,
         publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
         val now = currentTimeMillis()
+        var retained: ProgrammeMetadata? = null
         val revision = synchronized(cacheGuard) {
-            cache[key]?.takeIf { now - it.time < when {
+            retained = cache[key]?.result
+            cache[key]?.takeIf { (it.complete || hasProgrammeSynopsis(it.result?.overview)) && now - it.time < when {
                 it.result == null -> 20_000L
-                !hasProgrammeSynopsis(it.result.overview) || it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
+                !hasProgrammeSynopsis(it.result.overview) -> 2_000L
+                it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
                 else -> 24 * 60 * 60_000L
             } }?.let { return it.result }
             cacheRevision
         }
+        retained?.let(publish)
         val progressGuard = Any()
         var tmdbCard: ProgrammeMetadata? = null
         var kinoCard: ProgrammeMetadata? = null
         fun combine(): ProgrammeMetadata? {
-            if (tmdbCard == null && kinoCard == null) return null
+            if (tmdbCard == null && kinoCard == null) return retained
             return ProgrammeMetadata(
                 overview = kinoCard?.overview?.takeIf(::hasProgrammeSynopsis)
-                    ?: tmdbCard?.overview?.takeIf(::hasProgrammeSynopsis),
-                frameUrl = tmdbCard?.frameUrl ?: kinoCard?.frameUrl,
-                posterUrl = tmdbCard?.posterUrl ?: kinoCard?.posterUrl,
+                    ?: tmdbCard?.overview?.takeIf(::hasProgrammeSynopsis) ?: retained?.overview?.takeIf(::hasProgrammeSynopsis),
+                frameUrl = tmdbCard?.frameUrl ?: kinoCard?.frameUrl ?: retained?.frameUrl,
+                posterUrl = tmdbCard?.posterUrl ?: kinoCard?.posterUrl ?: retained?.posterUrl,
             ).takeIf { it.overview != null || it.frameUrl != null || it.posterUrl != null }
         }
-        fun cacheResult(result: ProgrammeMetadata?) = synchronized(cacheGuard) {
+        fun cacheResult(result: ProgrammeMetadata?, complete: Boolean = false) = synchronized(cacheGuard) {
             if (revision == cacheRevision) {
                 if (cache.size >= 256 && key !in cache) cache.remove(cache.keys.first())
-                cache[key] = Cached(result, currentTimeMillis())
+                cache[key] = Cached(result, currentTimeMillis(), complete)
             }
         }
         fun progress(kino: Boolean, card: ProgrammeMetadata?) {
@@ -355,7 +387,7 @@ class ProgrammeMetadataRepository(
             }
         }
         val result = synchronized(progressGuard) { combine() }
-        if (result != null || !kinopoisk.temporaryFailureRecently()) cacheResult(result)
+        if (result != null || !kinopoisk.temporaryFailureRecently()) cacheResult(result, complete = true)
         return result
     }
 

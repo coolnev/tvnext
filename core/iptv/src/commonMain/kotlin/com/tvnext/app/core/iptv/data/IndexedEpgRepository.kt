@@ -48,9 +48,18 @@ class IndexedEpgRepository(
         val primaryByPlaylist: Map<String, List<String>>)
 
     internal fun downloadProgress(progress: EpgSourceDownload.Progress) {
-        fun mb(bytes: Long) = (bytes / (1024.0 * 1024) * 10).toLong() / 10.0
-        val size = if (progress.total != null) "${mb(progress.bytes)} / ${mb(progress.total)} МБ" else "${mb(progress.bytes)} МБ"
-        _state.update { it.copy(notice = "Скачивание EPG: $size" + if (progress.attempt > 1) " · докачка" else "") }
+        fun amount(bytes: Long): String = when {
+            bytes < 1024 -> "$bytes Б"
+            bytes < 1024 * 1024 -> "${(bytes / 102.4).toLong() / 10.0} КБ"
+            else -> "${(bytes / (1024.0 * 1024) * 10).toLong() / 10.0} МБ"
+        }
+        val notice = if (progress.bytes == 0L && progress.total == null) {
+            if (progress.attempt > 1) "Повтор подключения к EPG (${progress.attempt})…" else "Подключение к источнику EPG…"
+        } else {
+            val size = amount(progress.bytes) + (progress.total?.let { " / ${amount(it)}" } ?: "")
+            "Скачивание EPG: $size" + if (progress.resumed) " · докачка" else ""
+        }
+        _state.update { it.copy(notice = notice) }
     }
     internal fun downloadReady() { _state.update { it.copy(notice = "Обработка EPG…") } }
 
@@ -129,13 +138,19 @@ class IndexedEpgRepository(
                 for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
                 val ordered = cfg.sources.sortedWith(compareBy<Source> { !it.primary }
                     .thenBy { s -> s.channels.none { key(it) in priority.get() } })
+                val hasCompleteGuide = cfg.sources.any { source ->
+                    store.snapshot(source.id)?.let { it.fetchedAt > 0 && it.rows > 0 } == true
+                }
+                var primaryAttempted = false
                 for (source in ordered) {
                     if (source.channels.isEmpty()) continue
                     val old = store.snapshot(source.id)
                     val fresh = old != null && cacheUsable(source, old)
                     if (!force && (fresh || (old?.retryAt ?: 0L) > clock())) continue
                     // Do not fetch unrelated backup feeds when the visible channels have EPG.
+                    if (!source.primary && !force && hasCompleteGuide && !primaryAttempted) continue
                     if (!source.primary && !needsBackup(cfg, source)) continue
+                    if (source.primary) primaryAttempted = true
                     awaitImport()
                     _state.update { it.copy(isLoading = true, lastError = null) }
                     if (!import(source)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }

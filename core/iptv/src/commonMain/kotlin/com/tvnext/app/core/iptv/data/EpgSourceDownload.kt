@@ -26,7 +26,7 @@ class EpgSourceDownload(
     private val retryDelay: suspend (Long) -> Unit = { delay(it) },
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
-    data class Progress(val bytes: Long, val total: Long?, val attempt: Int)
+    data class Progress(val bytes: Long, val total: Long?, val attempt: Int, val resumed: Boolean = false)
     private val lock = Mutex()
 
     suspend fun consume(url: String, progress: (Progress) -> Unit = {},
@@ -70,12 +70,13 @@ class EpgSourceDownload(
             partial.delete(); metadata.delete()
         }
         var lastFailure: IOException? = null
+        var zeroByteFailures = 0
         for (attempt in 1..ATTEMPTS) {
             currentCoroutineContext().ensureActive()
             val previous = readMeta(metadata)
             val validator = previous.getProperty("validator").orEmpty()
             val offset = if (validator.isNotBlank() && partial.isFile) partial.length() else 0L
-            progress(Progress(offset, null, attempt))
+            progress(Progress(offset, null, attempt, resumed = offset > 0))
             try {
                 client.prepareGet(url) {
                     header(HttpHeaders.UserAgent, "TVNext/EPG")
@@ -86,7 +87,7 @@ class EpgSourceDownload(
                         header(HttpHeaders.Range, "bytes=$offset-")
                         header(HttpHeaders.IfRange, validator)
                     }
-                    timeout { requestTimeoutMillis = 5 * 60_000L; socketTimeoutMillis = 30_000L }
+                    timeout { requestTimeoutMillis = 5 * 60_000L; connectTimeoutMillis = 10_000L; socketTimeoutMillis = 15_000L }
                 }.execute { response ->
                     val status = response.status.value
                     if (status == 416) {
@@ -134,13 +135,13 @@ class EpgSourceDownload(
                                 out.write(buffer, 0, count)
                                 if (clock() - published >= 250) {
                                     published = clock()
-                                    progress(Progress(copied, total, attempt))
+                                    progress(Progress(copied, total, attempt, resumed = appendAt > 0))
                                 }
                             }
                         }
                     }
                     if (copied == 0L || (total != null && copied != total)) throw IOException("EPG download was interrupted")
-                    progress(Progress(copied, total ?: copied, attempt))
+                    progress(Progress(copied, total ?: copied, attempt, resumed = appendAt > 0))
                     check(partial.renameTo(complete)) { "Cannot commit EPG download" }
                 }
                 return complete
@@ -156,6 +157,8 @@ class EpgSourceDownload(
             } catch (failure: IOException) {
                 lastFailure = failure
             }
+            zeroByteFailures = if (partial.length() == 0L) zeroByteFailures + 1 else 0
+            if (zeroByteFailures >= 2) break
             if (attempt < ATTEMPTS) retryDelay(500L shl (attempt - 1))
         }
         throw lastFailure ?: IOException("EPG download failed")

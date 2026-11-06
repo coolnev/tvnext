@@ -69,6 +69,35 @@ class IndexedEpgRepositoryTest {
         suspend fun close() { repos.forEach { it.close() }; driver.close() }
     }
 
+    @Test fun browsingAnUnmatchedChannelDoesNotStartUncachedBackupDownloads() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            val initial = f.repo { _, consume -> StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }; true }
+            initial.refreshIfStale()
+            val missing = channel("missing").copy(name = "Без программы", tvgId = "missing")
+            f.roster = f.roster + missing
+            var requests = 0
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { _, _ -> requests++; error("No background HTTP for a missing channel") }
+            r.getNowPlaying(listOf(missing), now)
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(0, requests)
+            assertFalse(r.observeState().value.isLoading)
+        } finally { f.close() }
+    }
+
+    @Test fun connectionRetriesAreNotCalledResumeAndSmallTransfersDoNotShowZeroMegabytes() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            val r = f.repo { _, _ -> false }
+            r.downloadProgress(EpgSourceDownload.Progress(0, null, 2))
+            assertTrue(r.observeState().value.notice.orEmpty().contains("Повтор"))
+            assertFalse(r.observeState().value.notice.orEmpty().contains("докачка"))
+            r.downloadProgress(EpgSourceDownload.Progress(1024, null, 1, resumed = true))
+            assertTrue(r.observeState().value.notice.orEmpty().contains("КБ"))
+            assertTrue(r.observeState().value.notice.orEmpty().contains("докачка"))
+        } finally { f.close() }
+    }
+
     @Test fun timedOutRefreshStopsLoadingAndKeepsThePreviousGuide() = runBlocking<Unit> {
         val f = Fixture()
         try {
