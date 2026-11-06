@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MetadataNetworkTest[desktop]" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-06T09:14:14.819Z" hostname="9c2a62439f9c" time="3.984">
+  <properties/>
+  <testcase name="transientSearchAndDetailsFailuresAreRetried[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="2.396"/>
+  <testcase name="aTemporaryErrorExpiresAfterSecondsInsteadOfBeingCachedForAWeek[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.193"/>
+  <testcase name="buildDefaultKeyWorksBeforeSettingsAndManualKeysSurviveStoreRecreation[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.197"/>
+  <testcase name="badKeyIsNotRetried[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.024"/>
+  <testcase name="searchArtworkSurvivesAFullCardOutage[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.138"/>
+  <testcase name="placeholderInFullCardCannotEraseASearchSynopsis[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.043"/>
+  <testcase name="kinopoiskDownloadsStillFromImageEndpointWhenBackdropIsAbsent[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.073"/>
+  <testcase name="aServerFailureDoesNotEraseTheLastGoodVodCard[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.04"/>
+  <testcase name="simultaneousProgrammeCardsShareOneLookupAndCacheItsResult[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.171"/>
+  <testcase name="kholopSequelDescriptionArrivesWhileTmdbIsStillWaiting[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.116"/>
+  <testcase name="kinopoiskFillsMissingFrameEvenWhenTmdbHasSynopsisAndPoster[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.068"/>
+  <testcase name="kinopoiskRetriesTheFullCardAfterAnImageOnlySearchResult[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.426"/>
+  <testcase name="synopsisIsPublishedBeforeSlowKinopoiskDetailsAndImages[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.072"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

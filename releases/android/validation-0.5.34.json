@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.34-recovery-preview",
+  "versionCode": 534,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "24eb276e8733b2d321707008302e9f6556f9a0d7d6d926db5e901d3c4038ef08",
+  "sourceCommit": "9c1e0b0",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "provided default key present in APK DEX"
+  ],
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 28,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 64,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 24,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "totalTests": 116,
+  "beforeFix": {
+    "newGuideRegressions": 4,
+    "failures": 4,
+    "examples": [
+      "5 programme rows instead of 10",
+      "9 programme rows instead of 18",
+      "unconfirmed archive time retained on return to channels",
+      "same archive time carried into another channel"
+    ]
+  },
+  "afterFix": {
+    "bottomDescription": {
+      "channelRows": 5,
+      "programmeRows": 10
+    },
+    "rightDescription": {
+      "channelRows": 9,
+      "programmeRows": 18
+    },
+    "currentProgrammeAlignment": "Within half a compact programme row of selected channel centre",
+    "returnFromUnconfirmedArchive": "resets to actual playback anchor on same channel; another channel opens at live time",
+    "archiveOnOpen": "Existing playback-archive restoration test passes, including delayed EPG"
+  },
+  "kinopoiskDefault": {
+    "providedKeyEmbeddedInApk": true,
+    "plaintextKeyAddedToTrackedSources": false,
+    "availableBeforeSettings": true,
+    "manualSavedKeyHasPriority": true,
+    "emptySavedKeyUsesBuildDefault": true,
+    "requestHeaderStoreRecreationTestPassed": true,
+    "buildInputs": [
+      "tvnext.kinopoisk.defaultKey Gradle property",
+      "TVNEXT_KINOPOISK_DEFAULT_KEY environment variable"
+    ],
+    "liveApiTested": false,
+    "liveApiLimitation": "Environment network policy blocks live Kinopoisk API. This release verifies key delivery and automatic availability, not live service responses."
+  },
+  "physicalTV": false,
+  "emulator": {
+    "apiLevel": 28,
+    "hardwareAcceleration": false,
+    "updatedFromVersionCode": 533,
+    "versionInstalled": 534,
+    "installedSha256MatchesRelease": true,
+    "fixture": "Synthetic 30-channel cached guide with 2160 programmes and no saved Kinopoisk key; unavailable synthetic video stream.",
+    "bottomDescriptionChannelRows": 7,
+    "bottomDescriptionProgrammeRows": 14,
+    "settingsKeyConfiguredWithoutManualEntry": true,
+    "applicationFatalExceptions": 0,
+    "applicationAnrs": 0,
+    "limitation": "Software emulator without KVM. System UI ANR during OS boot was resumed before app checks; physical TV playback performance is not measured."
+  }
+}

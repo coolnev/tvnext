@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideClampedEdgeAndAlignmentTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-06T09:16:44.312Z" hostname="9c2a62439f9c" time="0.001">
+  <properties/>
+  <testcase name="lastChannelUsesBottomOfVisibleRows[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="programmeAndDayHighlightMatchesChannelRowInMiddle[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="firstChannelStartsAtTopWithoutEmptySlots[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="channelsNearTopDoNotHaveGapsAboveThem[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="programmeAndDayHighlightMatchesChannelRowAtTop[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="middleChannelRemainsCentred[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="denseProgrammesRetainAllTenSlotsAroundTheChannelAnchor[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <testcase name="emptyOrSmallListsNeverGenerateInvalidIndices[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideClampedEdgeAndAlignmentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

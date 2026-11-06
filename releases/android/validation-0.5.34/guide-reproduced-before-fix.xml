@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideRemoteUiTest[desktop]" tests="4" skipped="0" failures="4" errors="0" timestamp="2026-11-06T09:11:35.190Z" hostname="9c2a62439f9c" time="5.393">
+  <properties/>
+  <testcase name="bottomDescriptionShowsTenProgrammesBesideFiveChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="1.235">
+    <failure message="java.lang.AssertionError: Failed to assert count of nodes.&#10;Reason: Expected '10' nodes but found '5' nodes that satisfy: (TestTag = 'guide-programme-row')&#10;Nodes found:&#10;1) Node #76 at (l=413.0, t=56.0, r=890.0, b=118.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 4 siblings&#10;2) Node #78 at (l=413.0, t=120.0, r=890.0, b=182.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 4 siblings&#10;3) Node #80 at (l=413.0, t=184.0, r=890.0, b=246.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 4 siblings&#10;4) Node #82 at (l=413.0, t=248.0, r=890.0, b=310.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 4 siblings&#10;5) Node #84 at (l=413.0, t=312.0, r=890.0, b=374.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 4 siblings&#10;" type="java.lang.AssertionError">java.lang.AssertionError: Failed to assert count of nodes.
+Reason: Expected '10' nodes but found '5' nodes that satisfy: (TestTag = 'guide-programme-row')
+Nodes found:
+1) Node #76 at (l=413.0, t=56.0, r=890.0, b=118.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+2) Node #78 at (l=413.0, t=120.0, r=890.0, b=182.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+3) Node #80 at (l=413.0, t=184.0, r=890.0, b=246.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+4) Node #82 at (l=413.0, t=248.0, r=890.0, b=310.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+5) Node #84 at (l=413.0, t=312.0, r=890.0, b=374.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+
+	at androidx.compose.ui.test.AssertionsKt.assertCountEquals(Assertions.kt:282)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.bottomDescriptionShowsTenProgrammesBesideFiveChannels(GuideRemoteUiTest.kt:98)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+Caused by: java.lang.AssertionError: Failed to assert count of nodes.
+Reason: Expected '10' nodes but found '5' nodes that satisfy: (TestTag = 'guide-programme-row')
+Nodes found:
+1) Node #76 at (l=413.0, t=56.0, r=890.0, b=118.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+2) Node #78 at (l=413.0, t=120.0, r=890.0, b=182.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+3) Node #80 at (l=413.0, t=184.0, r=890.0, b=246.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+4) Node #82 at (l=413.0, t=248.0, r=890.0, b=310.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+5) Node #84 at (l=413.0, t=312.0, r=890.0, b=374.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 4 siblings
+
+	at androidx.compose.ui.test.AssertionsKt.assertCountEquals(Assertions.kt:282)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.bottomDescriptionShowsTenProgrammesBesideFiveChannels(GuideRemoteUiTest.kt:98)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+	at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+	at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+	at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at androidx.compose.ui.test.SkikoComposeUiTest.runTest(ComposeUiTest.skiko.kt:261)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1.evaluate(DesktopComposeTestRule.desktop.kt:89)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="rightDescriptionShowsTwiceAsManyProgrammesAsChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.302">
+    <failure message="java.lang.AssertionError: Failed to assert count of nodes.&#10;Reason: Expected '18' nodes but found '9' nodes that satisfy: (TestTag = 'guide-programme-row')&#10;Nodes found:&#10;1) Node #207 at (l=330.0, t=81.0, r=709.0, b=143.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;2) Node #209 at (l=330.0, t=145.0, r=709.0, b=207.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;3) Node #211 at (l=330.0, t=209.0, r=709.0, b=271.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;4) Node #213 at (l=330.0, t=273.0, r=709.0, b=335.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;5) Node #215 at (l=330.0, t=337.0, r=709.0, b=399.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;6) Node #217 at (l=330.0, t=401.0, r=709.0, b=463.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;7) Node #219 at (l=330.0, t=465.0, r=709.0, b=527.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;8) Node #221 at (l=330.0, t=529.0, r=709.0, b=591.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;9) Node #223 at (l=330.0, t=593.0, r=709.0, b=655.0)px, Tag: 'guide-programme-row'&#10;Focused = 'false'&#10;Shape = 'RectangleShape'&#10;Actions = [RequestFocus]&#10;Has 1 child, 8 siblings&#10;" type="java.lang.AssertionError">java.lang.AssertionError: Failed to assert count of nodes.
+Reason: Expected '18' nodes but found '9' nodes that satisfy: (TestTag = 'guide-programme-row')
+Nodes found:
+1) Node #207 at (l=330.0, t=81.0, r=709.0, b=143.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+2) Node #209 at (l=330.0, t=145.0, r=709.0, b=207.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+3) Node #211 at (l=330.0, t=209.0, r=709.0, b=271.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+4) Node #213 at (l=330.0, t=273.0, r=709.0, b=335.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+5) Node #215 at (l=330.0, t=337.0, r=709.0, b=399.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+6) Node #217 at (l=330.0, t=401.0, r=709.0, b=463.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+7) Node #219 at (l=330.0, t=465.0, r=709.0, b=527.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+8) Node #221 at (l=330.0, t=529.0, r=709.0, b=591.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+9) Node #223 at (l=330.0, t=593.0, r=709.0, b=655.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+
+	at androidx.compose.ui.test.AssertionsKt.assertCountEquals(Assertions.kt:282)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.rightDescriptionShowsTwiceAsManyProgrammesAsChannels(GuideRemoteUiTest.kt:105)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+Caused by: java.lang.AssertionError: Failed to assert count of nodes.
+Reason: Expected '18' nodes but found '9' nodes that satisfy: (TestTag = 'guide-programme-row')
+Nodes found:
+1) Node #207 at (l=330.0, t=81.0, r=709.0, b=143.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+2) Node #209 at (l=330.0, t=145.0, r=709.0, b=207.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+3) Node #211 at (l=330.0, t=209.0, r=709.0, b=271.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+4) Node #213 at (l=330.0, t=273.0, r=709.0, b=335.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+5) Node #215 at (l=330.0, t=337.0, r=709.0, b=399.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+6) Node #217 at (l=330.0, t=401.0, r=709.0, b=463.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+7) Node #219 at (l=330.0, t=465.0, r=709.0, b=527.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+8) Node #221 at (l=330.0, t=529.0, r=709.0, b=591.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+9) Node #223 at (l=330.0, t=593.0, r=709.0, b=655.0)px, Tag: 'guide-programme-row'
+Focused = 'false'
+Shape = 'RectangleShape'
+Actions = [RequestFocus]
+Has 1 child, 8 siblings
+
+	at androidx.compose.ui.test.AssertionsKt.assertCountEquals(Assertions.kt:282)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.rightDescriptionShowsTwiceAsManyProgrammesAsChannels(GuideRemoteUiTest.kt:105)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+	at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+	at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+	at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at androidx.compose.ui.test.SkikoComposeUiTest.runTest(ComposeUiTest.skiko.kt:261)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1.evaluate(DesktopComposeTestRule.desktop.kt:89)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="1.706">
+    <failure message="java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;" type="java.lang.AssertionError">java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel(GuideRemoteUiTest.kt:134)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+Caused by: java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel(GuideRemoteUiTest.kt:134)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+	at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+	at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+	at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at androidx.compose.ui.test.SkikoComposeUiTest.runTest(ComposeUiTest.skiko.kt:261)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1.evaluate(DesktopComposeTestRule.desktop.kt:89)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <testcase name="anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.143">
+    <failure message="java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;" type="java.lang.AssertionError">java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme(GuideRemoteUiTest.kt:161)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+Caused by: java.lang.AssertionError: expected:&lt;1800014400000&gt; but was:&lt;1799881200000&gt;
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)
+	at com.tvnext.app.feature.channels.ui.GuideRemoteUiTest.anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme(GuideRemoteUiTest.kt:161)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.internal.runners.statements.RunAfters.evaluate(RunAfters.java:27)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invokeSuspend(DesktopComposeTestRule.desktop.kt:90)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1$evaluate$1.invoke(DesktopComposeTestRule.desktop.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invokeSuspend(ComposeUiTest.skiko.kt:274)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1$1$1$1$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invokeSuspend(BaseComposeScene.skiko.kt:293)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.scene.BaseComposeScene$withMonotonicFrameClock$2.invoke(BaseComposeScene.skiko.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatched(Undispatched.kt:66)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:43)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:497)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock$suspendImpl(BaseComposeScene.skiko.kt:292)
+	at androidx.compose.ui.scene.BaseComposeScene.withMonotonicFrameClock(BaseComposeScene.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invokeSuspend(ComposeUiTest.skiko.kt:273)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at androidx.compose.ui.test.SkikoComposeUiTest$runTest$1.invoke(ComposeUiTest.skiko.kt)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$1.invokeSuspend(TestBuilders.kt:317)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:98)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:256)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:54)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingImpl(Builders.kt:30)
+	at kotlinx.coroutines.BuildersKt.runBlockingImpl(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK(Builders.concurrent.kt:172)
+	at kotlinx.coroutines.BuildersKt.runBlockingK(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__Builders_concurrentKt.runBlockingK$default(Builders.concurrent.kt:157)
+	at kotlinx.coroutines.BuildersKt.runBlockingK$default(Unknown Source)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:1)
+	at androidx.compose.ui.test.SkikoComposeUiTest.runTest(ComposeUiTest.skiko.kt:261)
+	at androidx.compose.ui.test.junit4.DesktopComposeTestRule$apply$1.evaluate(DesktopComposeTestRule.desktop.kt:89)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.runRequest(JUnitTestExecutor.java:175)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:84)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor.accept(JUnitTestExecutor.java:47)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor.processTestDefinition(AbstractJUnitTestDefinitionProcessor.java:65)
+	at org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor.processTestDefinition(SuiteTestDefinitionProcessor.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.gradle.internal.dispatch.MethodInvocation.invokeOn(MethodInvocation.java:77)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:28)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:19)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:88)
+	at jdk.proxy1/jdk.proxy1.$Proxy4.processTestDefinition(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:178)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:126)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:122)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:72)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)
+</failure>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
