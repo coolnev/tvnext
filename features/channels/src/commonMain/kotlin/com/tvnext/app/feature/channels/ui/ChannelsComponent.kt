@@ -229,7 +229,11 @@ class DefaultChannelsComponent(
     override fun setScreenVisible(visible: Boolean) {
         screenVisible = visible
         resumeChannelJob?.cancel()
-        if (!visible) return
+        if (!visible) {
+            // Do not carry an unplayed programme/channel preview into the next visit.
+            dispatch(ChannelsIntent.HideChannelTimeline)
+            return
+        }
         resumeChannelJob = launch {
             val channels = state.map { it.channels }.first { it.isNotEmpty() }
             val current = playbackController.state.value.item

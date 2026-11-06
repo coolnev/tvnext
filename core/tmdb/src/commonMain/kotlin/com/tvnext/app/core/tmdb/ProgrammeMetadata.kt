@@ -9,17 +9,10 @@ import io.ktor.client.request.parameter
 import io.ktor.client.plugins.timeout
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -68,9 +61,10 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
         } ?: false
     }
 
-    suspend fun lookup(name: String): ProgrammeMetadata? {
+    suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
+        val query = cleanProgrammeTitle(name)
         val token = keys.getKey().trim()
-        if (token.isEmpty() || currentTimeMillis() < backoffUntil) return null
+        if (query.isBlank() || token.isEmpty() || currentTimeMillis() < backoffUntil) return null
         return permits.withPermit {
             if (currentTimeMillis() < backoffUntil) return@withPermit null
             var serviceResponded = false
@@ -84,8 +78,8 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         val response = client.get("https://api.poiskkino.dev/v1.5/movie/search") {
                             header("X-API-KEY", token)
                             parameter("page", 1)
-                            parameter("limit", 5)
-                            parameter("query", name)
+                            parameter("limit", 20)
+                            parameter("query", query)
                             timeout {
                                 requestTimeoutMillis = 7_000
                                 connectTimeoutMillis = 3_000
@@ -118,6 +112,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                     val card = parseKinopoiskSearch(responseBody, name)
                         ?: return@withTimeoutOrNull null
                     best = card
+                    onUpdate?.invoke(card)
                     if (!card.overview.isNullOrBlank() && card.overview.length >= 120 &&
                         card.frameUrl != null && card.posterUrl != null)
                         return@withTimeoutOrNull card
@@ -135,12 +130,13 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         } catch (_: Exception) { null }
                     }
                     val combined = card.copy(
-                        overview = details?.overview?.takeIf { it.isNotBlank() }
-                            ?: card.overview?.takeIf { it.isNotBlank() },
+                        overview = details?.overview?.takeIf(::hasProgrammeSynopsis)
+                            ?: card.overview?.takeIf(::hasProgrammeSynopsis),
                         frameUrl = details?.frameUrl ?: card.frameUrl,
                         posterUrl = details?.posterUrl ?: card.posterUrl,
                     )
                     best = combined
+                    onUpdate?.invoke(combined)
                     if (movieId != null && (combined.frameUrl == null || combined.posterUrl == null)) {
                         try {
                             val images = client.get("https://api.poiskkino.dev/v1.5/image") {
@@ -153,6 +149,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                                 val artwork = parseKinopoiskImages(images.bodyAsText())
                                 best = combined.copy(frameUrl = combined.frameUrl ?: artwork.frameUrl,
                                     posterUrl = combined.posterUrl ?: artwork.posterUrl)
+                                best?.let { onUpdate?.invoke(it) }
                             }
                         } catch (cancelled: CancellationException) { throw cancelled }
                         catch (_: Exception) { /* Keep the real search/details card. */ }
@@ -174,14 +171,25 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
     }
 }
 
-/** A search hit is not necessarily a full card; use its id for a synopsis fallback. */
-internal fun kinopoiskMatchedId(body: String, name: String): Int? {
+/** Search and detail requests must use the same ranked hit and movie id. */
+private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
     val docs = Json.parseToJsonElement(body).jsonObject["docs"]?.jsonArray ?: return null
-    return docs.mapNotNull { it as? JsonObject }.firstOrNull { entry ->
-        listOf("name", "alternativeName", "enName")
-            .any { field -> similarProgrammeTitle(entry[field]?.jsonPrimitive?.content, name) }
-    }?.get("id")?.jsonPrimitive?.content?.toIntOrNull()
+    val year = programmeReleaseYear(name)
+    return docs.mapNotNull { it as? JsonObject }.mapNotNull { entry ->
+        val titles = listOf("name", "alternativeName", "enName").mapNotNull { entry[it]?.jsonPrimitive?.content } +
+            (entry["names"] as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull {
+                (it as? JsonObject)?.get("name")?.jsonPrimitive?.content
+            }
+        if (titles.none { similarProgrammeTitle(it, name) }) null
+        else entry to (if (year != null && entry["year"]?.jsonPrimitive?.content?.toIntOrNull() == year) 10 else 0)
+    }.maxByOrNull { it.second }?.first
 }
+
+internal fun kinopoiskMatchedId(body: String, name: String): Int? =
+    matchedKinopoiskMovie(body, name)?.get("id")?.jsonPrimitive?.content?.toIntOrNull()
+
+private fun kinopoiskOverview(full: String?, short: String?): String? =
+    full?.takeIf(::hasProgrammeSynopsis) ?: short?.takeIf(::hasProgrammeSynopsis) ?: full ?: short
 
 internal fun parseKinopoiskDetails(body: String): ProgrammeMetadata {
     val item = Json.parseToJsonElement(body).jsonObject
@@ -190,7 +198,7 @@ internal fun parseKinopoiskDetails(body: String): ProgrammeMetadata {
     fun image(key: String) = (item[key] as? JsonObject)?.get("url")
         ?.jsonPrimitive?.content?.takeIf { it.startsWith("https://") }
     return ProgrammeMetadata(
-        overview = field("description") ?: field("shortDescription"),
+        overview = kinopoiskOverview(field("description"), field("shortDescription")),
         frameUrl = image("backdrop"),
         posterUrl = image("poster"),
     )
@@ -211,43 +219,19 @@ internal fun parseKinopoiskImages(body: String): ProgrammeMetadata {
 
 /** Kept separate from the network call for deterministic fixture tests. */
 internal fun parseKinopoiskSearch(body: String, name: String): ProgrammeMetadata? {
-    val root = Json.parseToJsonElement(body).jsonObject
-    val movies = root["docs"]?.jsonArray ?: return null
-    val match = movies.mapNotNull { it as? JsonObject }.firstOrNull { entry ->
-        listOf("name", "alternativeName", "enName")
-            .any { field -> similarProgrammeTitle(entry[field]?.jsonPrimitive?.content, name) }
-    } ?: return null
+    val match = matchedKinopoiskMovie(body, name) ?: return null
     fun text(key: String): String? = match[key]?.jsonPrimitive?.content
         ?.takeIf { it != "null" && it.isNotBlank() }
     fun imageUrl(key: String): String? = (match[key] as? JsonObject)?.get("url")
         ?.jsonPrimitive?.content?.takeIf { it.startsWith("https://") }
     return ProgrammeMetadata(
-        overview = text("description") ?: text("shortDescription"),
+        overview = kinopoiskOverview(text("description"), text("shortDescription")),
         frameUrl = imageUrl("backdrop"),
         posterUrl = imageUrl("poster"),
     )
 }
 
-/** Avoid an unrelated programme with an overlapping word being mistaken for a movie. */
-internal fun cleanProgrammeTitle(raw: String): String = raw.trim()
-    // XMLTV often prepends the content type to the actual film name.
-    .replace(Regex("""^(?:х/ф|т/с|м/ф|д/ф|фильм|сериал)(?:\s+|[:.—-]\s*)""", RegexOption.IGNORE_CASE), "")
-    .replace(Regex("""\s*\(?(?:19|20)\d{2}\)?\s*$"""), "")
-    // EPG programme titles often append season/episode numbers to a series.
-    // Strip only known technical suffixes, never arbitrary subtitles.
-    .replace(Regex("""(?:[\s,;:.—-]+)(?:(?:сезон|сез\.)\s*\d+\s*[,;:.—-]*\s*)?(?:серия|сер\.)\s*\d+\s*$""", RegexOption.IGNORE_CASE), "")
-    .replace(Regex("""\s+S\d{1,2}E\d{1,3}\s*$""", RegexOption.IGNORE_CASE), "")
-    .trim(' ', '«', '»', '\"')
-
-/** Do not substitute an unrelated film when a query matches only one word. */
-internal fun similarProgrammeTitle(candidate: String?, requested: String): Boolean {
-    if (candidate.isNullOrBlank()) return false
-    fun norm(s: String) = cleanProgrammeTitle(s).lowercase().replace('ё', 'е')
-        .replace(Regex("""[^\p{L}\p{N}]+"""), " ").trim()
-    return norm(candidate) == norm(requested)
-}
-
-/** One shared cache for channel changes; no remote request is made when an EPG title is empty. */
+/** One cache per application; partial descriptions are published before artwork completes. */
 class ProgrammeMetadataRepository(
     private val tmdb: TmdbRepository,
     private val kinopoisk: KinopoiskProgrammeLookup,
@@ -255,101 +239,147 @@ class ProgrammeMetadataRepository(
 ) {
     private data class Cached(val result: ProgrammeMetadata?, val time: Long)
     private val cache = LinkedHashMap<String, Cached>()
+    private val cacheGuard = Any()
+    private var cacheRevision = 0L
     private val mutex = Mutex()
-    private class Lookup(val lock: Mutex = Mutex(), var readers: Int = 0)
+    private class Lookup(val lock: Mutex = Mutex(), var readers: Int = 0,
+        val updates: MutableStateFlow<ProgrammeMetadata?> = MutableStateFlow(null))
     private val lookups = hashMapOf<String, Lookup>()
     private val networkSlots = Semaphore(2)
 
-    suspend fun clearCache() = mutex.withLock { cache.clear() }
+    suspend fun clearCache() { synchronized(cacheGuard) { cache.clear(); cacheRevision++ } }
 
-    suspend fun find(title: String): ProgrammeMetadata? {
-        val clean = title.trim().take(180)
-        if (clean.length < 3) return null
-        val query = cleanProgrammeTitle(clean)
+    fun observe(title: String): Flow<ProgrammeMetadata?> = channelFlow {
+        val result = find(title) { trySend(it) }
+        trySend(result)
+    }
+
+    suspend fun find(title: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
+        val raw = title.trim().take(180)
+        val query = cleanProgrammeTitle(raw)
         if (query.length < 3) return null
-        val year = Regex("(?:19|20)\\d{2}").find(clean)?.value
-        val key = query.lowercase().replace('ё', 'е') + "|" + year.orEmpty()
+        val year = programmeReleaseYear(raw)?.toString()
+        val key = normalizedProgrammeTitle(query) + "|" + year.orEmpty()
         val flight = mutex.withLock { lookups.getOrPut(key) { Lookup() }.also { it.readers++ } }
         return try {
-            flight.lock.withLock { networkSlots.withPermit {
-                withContext(Dispatchers.IO) { lookup(clean, query, year, key) }
-            } }
+            coroutineScope {
+                val updates = onUpdate?.let { callback -> launch(start = CoroutineStart.UNDISPATCHED) {
+                    flight.updates.filterNotNull().collect { callback(it) }
+                } }
+                try {
+                    flight.lock.withLock { networkSlots.withPermit {
+                        withContext(Dispatchers.IO) { lookup(raw, query, year, key) { flight.updates.value = it } }
+                    } }
+                } finally { updates?.cancelAndJoin() }
+            }
         } finally { withContext(NonCancellable) {
             mutex.withLock { if (--flight.readers == 0 && lookups[key] === flight) lookups.remove(key) }
         } }
     }
 
-    private suspend fun lookup(clean: String, query: String, year: String?, key: String): ProgrammeMetadata? {
+    private suspend fun lookup(raw: String, query: String, year: String?, key: String,
+        publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
         val now = currentTimeMillis()
-        mutex.withLock {
-            cache[key]?.takeIf { now - it.time < (when {
+        val revision = synchronized(cacheGuard) {
+            cache[key]?.takeIf { now - it.time < when {
                 it.result == null -> 20_000L
-                it.result.overview.isNullOrBlank() || it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
+                !hasProgrammeSynopsis(it.result.overview) || it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
                 else -> 24 * 60 * 60_000L
-            }) }
-                ?.let { return it.result }
+            } }?.let { return it.result }
+            cacheRevision
         }
-        var searchCard: ProgrammeMetadata? = null
-        val tmdbResult = (if (runCatching { tmdbSettings.isEnabled() }.getOrDefault(false)) withTimeoutOrNull(12_000L) {
-            try {
-                val results = tmdb.searchMovie(query)
-                val movie = results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) &&
-                    (year == null || (it.release_date ?: it.first_air_date)?.startsWith(year) == true) }
-                    ?: results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) }
-                    ?: results.firstOrNull { similarProgrammeTitle(it.original_title ?: it.original_name, clean) }
-                val details: TmdbDetails?
-                val englishDescription: String?
-                if (movie != null) {
-                    searchCard = ProgrammeMetadata(movie.overview, tmdbImageUrl(movie.backdrop_path, "w780"), tmdbImageUrl(movie.poster_path, "w342"))
-                    details = safeDetails(movie, false)
-                    englishDescription = if (details.overview.isNullOrBlank())
-                        runCatching { tmdb.getMovieDetails(movie.id, "en-US").overview }.getOrNull() else null
-                } else {
-                    val series = tmdb.searchTv(query)
-                    val show = series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) &&
-                        (year == null || (it.first_air_date ?: it.release_date)?.startsWith(year) == true) }
-                        ?: series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) }
-                        ?: series.firstOrNull { similarProgrammeTitle(it.original_name, clean) }
-                    if (show != null) searchCard = ProgrammeMetadata(show.overview, tmdbImageUrl(show.backdrop_path, "w780"), tmdbImageUrl(show.poster_path, "w342"))
-                    details = show?.let { safeDetails(it, true) }
-                    englishDescription = if (show != null && details?.overview.isNullOrBlank())
-                        runCatching { tmdb.getTvDetails(show.id, "en-US").overview }.getOrNull() else null
-                }
-                details?.let {
-                    ProgrammeMetadata(
-                        overview = it.overview?.takeIf(String::isNotBlank)
-                            ?: englishDescription?.takeIf(String::isNotBlank),
-                        frameUrl = tmdbImageUrl(it.backdrop_path, "w780"),
-                        posterUrl = tmdbImageUrl(it.poster_path, "w342"),
-                    )
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (_: Exception) {
-                null
-            }
-        } else null) ?: searchCard
-        // Fill *each* missing field separately: having a TMDB poster must not suppress
-        // the backup service when TMDB has no synopsis or backdrop.
-        val backup = if (tmdbResult?.overview.isNullOrBlank() ||
-            tmdbResult?.frameUrl == null || tmdbResult?.posterUrl == null) {
-            kinopoisk.lookup(query)
-        } else null
-        val result = if (tmdbResult == null && backup == null) null else ProgrammeMetadata(
-            overview = tmdbResult?.overview?.takeIf { it.isNotBlank() && it != "null" }
-                ?: backup?.overview?.takeIf { it.isNotBlank() && it != "null" },
-            frameUrl = tmdbResult?.frameUrl ?: backup?.frameUrl,
-            posterUrl = tmdbResult?.posterUrl ?: backup?.posterUrl,
-        )
-        mutex.withLock {
-            // Network and quota failures are temporary; do not cache them as
-            // "this film has no description" when only TMDB was available.
-            if (!kinopoisk.temporaryFailureRecently() || !result?.overview.isNullOrBlank()) {
-                if (cache.size >= 256) cache.remove(cache.keys.first())
-                cache[key] = Cached(result, now)
+        val progressGuard = Any()
+        var tmdbCard: ProgrammeMetadata? = null
+        var kinoCard: ProgrammeMetadata? = null
+        fun combine(): ProgrammeMetadata? {
+            if (tmdbCard == null && kinoCard == null) return null
+            return ProgrammeMetadata(
+                overview = kinoCard?.overview?.takeIf(::hasProgrammeSynopsis)
+                    ?: tmdbCard?.overview?.takeIf(::hasProgrammeSynopsis),
+                frameUrl = tmdbCard?.frameUrl ?: kinoCard?.frameUrl,
+                posterUrl = tmdbCard?.posterUrl ?: kinoCard?.posterUrl,
+            ).takeIf { it.overview != null || it.frameUrl != null || it.posterUrl != null }
+        }
+        fun cacheResult(result: ProgrammeMetadata?) = synchronized(cacheGuard) {
+            if (revision == cacheRevision) {
+                if (cache.size >= 256 && key !in cache) cache.remove(cache.keys.first())
+                cache[key] = Cached(result, currentTimeMillis())
             }
         }
+        fun progress(kino: Boolean, card: ProgrammeMetadata?) {
+            if (card == null) return
+            synchronized(progressGuard) {
+                val previous = if (kino) kinoCard else tmdbCard
+                val improved = card.copy(
+                    overview = card.overview?.takeIf(::hasProgrammeSynopsis) ?: previous?.overview,
+                    frameUrl = card.frameUrl ?: previous?.frameUrl,
+                    posterUrl = card.posterUrl ?: previous?.posterUrl,
+                )
+                if (kino) kinoCard = improved else tmdbCard = improved
+                combine()?.let { cacheResult(it); publish(it) }
+            }
+        }
+        // A slow/unavailable TMDB must not delay a configured Kinopoisk source.
+        coroutineScope {
+            launch {
+                try {
+                    if (tmdbSettings.isEnabled()) {
+                        val card = withTimeoutOrNull(12_000L) { lookupTmdb(raw, query, year) { progress(false, it) } }
+                        progress(false, card)
+                    }
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { /* The other provider can still supply a real card. */ }
+            }
+            launch {
+                try { progress(true, kinopoisk.lookup(raw) { progress(true, it) }) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { /* Keep already published metadata. */ }
+            }
+        }
+        val result = synchronized(progressGuard) { combine() }
+        if (result != null || !kinopoisk.temporaryFailureRecently()) cacheResult(result)
         return result
+    }
+
+    private suspend fun lookupTmdb(clean: String, query: String, year: String?,
+        publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
+        var searchCard: ProgrammeMetadata? = null
+        return try {
+            val results = tmdb.searchMovie(query)
+            val movie = results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) &&
+                (year == null || (it.release_date ?: it.first_air_date)?.startsWith(year) == true) }
+                ?: results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) }
+                ?: results.firstOrNull { similarProgrammeTitle(it.original_title ?: it.original_name, clean) }
+            val details: TmdbDetails?
+            val englishDescription: String?
+            if (movie != null) {
+                searchCard = ProgrammeMetadata(movie.overview, tmdbImageUrl(movie.backdrop_path, "w780"), tmdbImageUrl(movie.poster_path, "w342"))
+                publish(searchCard)
+                details = safeDetails(movie, false)
+                publish(ProgrammeMetadata(details.overview, tmdbImageUrl(details.backdrop_path, "w780"), tmdbImageUrl(details.poster_path, "w342")))
+                englishDescription = if (!hasProgrammeSynopsis(details.overview))
+                    runCatching { tmdb.getMovieDetails(movie.id, "en-US").overview }.getOrNull() else null
+            } else {
+                val series = tmdb.searchTv(query)
+                val show = series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) &&
+                    (year == null || (it.first_air_date ?: it.release_date)?.startsWith(year) == true) }
+                    ?: series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) }
+                    ?: series.firstOrNull { similarProgrammeTitle(it.original_name, clean) }
+                if (show != null) {
+                    searchCard = ProgrammeMetadata(show.overview, tmdbImageUrl(show.backdrop_path, "w780"), tmdbImageUrl(show.poster_path, "w342"))
+                    publish(searchCard)
+                }
+                details = show?.let { safeDetails(it, true) }
+                if (details != null) publish(ProgrammeMetadata(details.overview, tmdbImageUrl(details.backdrop_path, "w780"), tmdbImageUrl(details.poster_path, "w342")))
+                englishDescription = if (show != null && !hasProgrammeSynopsis(details?.overview))
+                    runCatching { tmdb.getTvDetails(show.id, "en-US").overview }.getOrNull() else null
+            }
+            details?.let {
+                ProgrammeMetadata(it.overview?.takeIf(::hasProgrammeSynopsis) ?: englishDescription?.takeIf(::hasProgrammeSynopsis),
+                    tmdbImageUrl(it.backdrop_path, "w780"), tmdbImageUrl(it.poster_path, "w342"))
+            } ?: searchCard
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { searchCard }
     }
 
     private suspend fun safeDetails(hit: TmdbSearchResult, tv: Boolean): TmdbDetails {
@@ -358,7 +388,7 @@ class ProgrammeMetadataRepository(
         } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { TmdbDetails(hit.id) }
         return details.copy(title = details.title ?: hit.title, name = details.name ?: hit.name,
-            overview = details.overview?.takeIf { it.isNotBlank() } ?: hit.overview,
+            overview = details.overview?.takeIf(::hasProgrammeSynopsis) ?: hit.overview,
             poster_path = details.poster_path?.takeIf { it.isNotBlank() } ?: hit.poster_path,
             backdrop_path = details.backdrop_path?.takeIf { it.isNotBlank() } ?: hit.backdrop_path)
     }

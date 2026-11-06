@@ -68,7 +68,7 @@ class ChannelsComponentTest {
         override fun release() = Unit
     }
 
-    private class FakeChannelsRepository : ChannelsRepository {
+    private class FakeChannelsRepository(private val extra: List<Channel> = emptyList()) : ChannelsRepository {
         private val favorites = mutableSetOf<String>()
         private val channels = listOf(
             Channel(
@@ -80,7 +80,7 @@ class ChannelsComponentTest {
             ),
         )
 
-        override suspend fun getChannels(): List<Channel> = channels.map {
+        override suspend fun getChannels(): List<Channel> = (channels + extra).map {
             if (favorites.contains(it.id)) it.copy(isFavorite = true) else it
         }
 
@@ -193,6 +193,7 @@ class ChannelsComponentTest {
         settings: SettingsRepository = FakeSettingsRepository(),
         history: HistoryRepository = FakeHistoryRepository(),
         channelNameTimeoutMs: Long = 3_000L,
+        repository: ChannelsRepository = FakeChannelsRepository(),
     ): ChannelsComponent {
         val lifecycle = LifecycleRegistry().apply {
             create()
@@ -201,7 +202,7 @@ class ChannelsComponentTest {
         val context = DefaultComponentContext(lifecycle = lifecycle)
         val component = DefaultChannelsComponent(
             componentContext = context,
-            repository = FakeChannelsRepository(),
+            repository = repository,
             playbackController = controller,
             settingsRepository = settings,
             historyRepository = history,
@@ -222,6 +223,39 @@ class ChannelsComponentTest {
             }
         }
         return component
+    }
+
+    @Test fun reopeningChannelsDropsUnplayedTimelineAndReturnsFocusToPlayback() = runBlocking<Unit> {
+        val controller = FakePlaybackController()
+        val other = Channel("8", "Другой канал", 2, "Другая категория", "https://example.com/8")
+        val component = createComponent(controller, repository = FakeChannelsRepository(listOf(other)))
+        component.dispatch(ChannelsIntent.SelectChannel("7"))
+        component.setScreenVisible(true)
+        component.dispatch(ChannelsIntent.FocusChannel("8"))
+        component.dispatch(ChannelsIntent.ShowChannelTimeline("8"))
+        withTimeout(5_000) { component.timeline.first { it.channelId == "8" } }
+        component.setScreenVisible(false)
+        assertNull(component.timeline.value.channelId)
+        component.setScreenVisible(true)
+        withTimeout(5_000) { component.state.first { it.focusedChannelId == "7" } }
+        assertEquals("7", controller.state.value.item?.id)
+        assertEquals("7", component.state.value.selectedChannelId)
+        assertNull(component.timeline.value.channelId)
+    }
+
+    @Test fun reopeningChannelsKeepsTheArchiveThatIsActuallyPlaying() = runBlocking<Unit> {
+        val controller = FakePlaybackController()
+        val component = createComponent(controller)
+        val archive = PlaybackItem("7", "Архив", "https://example.com/archive",
+            com.tvnext.app.core.player.PlaybackContentKind.ARCHIVE, 1_800_000_000_000L)
+        controller.play(archive)
+        component.setScreenVisible(true)
+        component.dispatch(ChannelsIntent.ShowChannelTimeline("7"))
+        component.setScreenVisible(false)
+        component.setScreenVisible(true)
+        withTimeout(5_000) { component.state.first { it.focusedChannelId == "7" } }
+        assertEquals(archive, controller.state.value.item)
+        assertNull(component.timeline.value.channelId)
     }
 
     @Test

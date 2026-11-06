@@ -49,6 +49,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
         }
         getByName("desktopTest").dependencies {
+            implementation("io.ktor:ktor-client-mock:3.5.2")
+            implementation(libs.ktor.client.core)
             implementation(compose.desktop.uiTestJUnit4)
             implementation(compose.desktop.currentOs)
         }

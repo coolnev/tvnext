@@ -11,6 +11,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kotlin.test.*
 
@@ -151,4 +152,51 @@ class MetadataNetworkTest {
             assertEquals(TmdbCacheStatus.FOUND, f.tmdb.enrich(item).status)
         } finally { f.close() }
     }
+    @Test fun kholopSequelDescriptionArrivesWhileTmdbIsStillWaiting() = runBlocking<Unit> {
+        var queries = 0
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") {
+                delay(20_000)
+                200 to """{"results":[]}"""
+            } else {
+                queries++
+                assertEquals("Холоп 2", request.url.parameters["query"])
+                200 to """{"docs":[{"id":1,"name":"Холоп","description":"Не тот фильм"},
+                  {"id":2,"name":"Холоп 2","description":"$synopsis","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
+            }
+        }
+        try {
+            val repository = f.programme("test-key")
+            val first = withTimeout(2_000) { repository.observe("Х/ф «Холоп2» (2024) 16+").first { hasProgrammeSynopsis(it?.overview) } }
+            assertEquals(synopsis, first?.overview)
+            assertEquals(synopsis, repository.find("Х/ф «Холоп2» (2024) 16+")?.overview)
+            assertEquals(1, queries)
+        } finally { f.close() }
+    }
+
+    @Test fun synopsisIsPublishedBeforeSlowKinopoiskDetailsAndImages() = runBlocking<Unit> {
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search"))
+                200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}"""
+            else { delay(20_000); 200 to "{}" }
+        }
+        try {
+            val first = withTimeout(2_000) { f.programme("test-key").observe("Холоп 2").first { hasProgrammeSynopsis(it?.overview) } }
+            assertEquals(synopsis, first?.overview)
+        } finally { f.close() }
+    }
+
+    @Test fun placeholderInFullCardCannotEraseASearchSynopsis() = runBlocking<Unit> {
+        val f = Fixture { request ->
+            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search"))
+                200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}"""
+            else 200 to """{"description":"Описание передачи отсутствует","poster":{"url":"https://example.org/p.jpg"}}"""
+        }
+        try {
+            assertEquals(synopsis, f.programme("test-key").find("Холоп 2")?.overview)
+        } finally { f.close() }
+    }
+
 }

@@ -24,6 +24,16 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
+import com.tvnext.app.core.common.util.formatDate
+import com.tvnext.app.core.common.util.formatTimeOfDay
+import com.tvnext.app.core.tmdb.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.http.*
+import org.koin.core.context.loadKoinModules
+import org.koin.dsl.module
 import androidx.compose.ui.platform.testTag
 import com.tvnext.app.core.ui.component.AndroidPlaybackControls
 import androidx.compose.ui.unit.dp
@@ -60,6 +70,56 @@ class GuideRemoteUiTest {
             ui.onRoot().performKeyInput { pressKey(key) }
             ui.waitForIdle()
         }
+    }
+
+    @Test fun programmeRowsDoNotRepeatTheSeparateDateColumn() {
+        ui.setContent {
+            MaterialTheme {
+                AndroidWideGuide(channels = listOf(channel), playingChannelId = channel.id, focusedChannelId = channel.id,
+                    timeline = ChannelTimelineState(channel.id, false, programmes), nowPlaying = emptyMap(), now = now,
+                    showNumbers = false, showCategories = false, descriptionOnRight = false,
+                    categories = emptyList(), selectedCategory = null, onToggleCategories = {}, onChooseCategory = {},
+                    onChannelFocus = {}, onVisibleChannelsChanged = {}, onPlayChannel = {}, onPlayArchive = { _, _ -> },
+                    onClose = {}, modifier = Modifier.size(1100.dp, 700.dp))
+            }
+        }
+        ui.waitForIdle()
+        val current = programmes.first { it.start <= now && it.stop > now }
+        ui.onNodeWithText("${formatTimeOfDay(current.start)}  ${current.title}").assertIsDisplayed()
+        ui.onNodeWithText("${guideWeekday(today)}\n${formatDate(today)}").assertIsDisplayed()
+    }
+
+    @Test fun kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence() {
+        val synopsis = "История героев второй части комедии, найденная по названию фильма Холоп 2."
+        val client = HttpClient(MockEngine { request ->
+            val body = if (request.url.encodedPath.endsWith("/search"))
+                """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}""" else "{}"
+            respond(body, headers = headersOf("Content-Type", "application/json"))
+        }) { install(HttpTimeout) }
+        val key = object : KinopoiskKeyStore {
+            override suspend fun getKey() = "test-key"
+            override suspend fun setKey(value: String) = Unit
+        }
+        val settings = object : TmdbSettingsStore {
+            override suspend fun isEnabled() = false
+            override suspend fun setEnabled(enabled: Boolean) = Unit
+            override suspend fun getApiKey() = ""
+            override suspend fun setApiKey(apiKey: String) = Unit
+        }
+        val tmdb = java.lang.reflect.Proxy.newProxyInstance(TmdbRepository::class.java.classLoader,
+            arrayOf(TmdbRepository::class.java)) { _, _, _ -> error("TMDB is disabled") } as TmdbRepository
+        val repository = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, key), settings)
+        loadKoinModules(module { single { repository } })
+        try {
+            ui.setContent {
+                MaterialTheme { Box(Modifier.size(700.dp, 500.dp)) {
+                    ProgrammeRichDetails(EpgProgramme(channel.id, now, now + hour, "Холоп 2", "Описание передачи отсутствует"))
+                } }
+            }
+            ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
+            ui.onNodeWithText(synopsis).assertIsDisplayed()
+            ui.onNodeWithText("Описание передачи отсутствует").assertDoesNotExist()
+        } finally { client.close() }
     }
 
     @Test fun remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection() {

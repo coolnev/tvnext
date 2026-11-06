@@ -51,4 +51,34 @@ class ProgrammeMetadataTest {
         assertEquals("https://example.org/f.jpg", full.frameUrl)
     }
 
+    @Test fun broadcastWrappersAreRemovedWithoutLosingTheSequelNumber() {
+        assertEquals("Холоп 2", cleanProgrammeTitle("Х/ф «Холоп2» (2024) 16+"))
+        assertEquals("Холоп 2", cleanProgrammeTitle("Премьера! Фильм \"Холоп 2\". (2024). 16+"))
+        assertTrue(similarProgrammeTitle("Холоп-2", "Х/ф «Холоп 2» (2024) 16+"))
+        assertTrue(!similarProgrammeTitle("Холоп", "Холоп 2"))
+        assertEquals("Бегущий по лезвию 2049", cleanProgrammeTitle("Бегущий по лезвию 2049"))
+        assertEquals("1917", cleanProgrammeTitle("1917"))
+    }
+
+    @Test fun kinopoiskAliasesAndReleaseYearSelectOneConsistentMovie() {
+        val body = """{"docs":[
+            {"id":1,"name":"Холоп","year":2019,"description":"Первый фильм"},
+            {"id":2,"name":"Холоп 2","year":2023,"description":"Версия 2023"},
+            {"id":3,"name":"Serf 2","names":[{"name":"Холоп 2"}],"year":2024,"description":"Нужная версия"}
+        ]}"""
+        assertEquals(3, kinopoiskMatchedId(body, "Х/ф Холоп2 (2024) 16+"))
+        assertEquals("Нужная версия", parseKinopoiskSearch(body, "Х/ф Холоп2 (2024) 16+")?.overview)
+    }
+
+    @Test fun missingDescriptionSentencesAreNotTreatedAsEpgSynopses() {
+        for (text in listOf("Описание передачи отсутствует", "Описание программы недоступно.", "Нет описания передачи", "No description available"))
+            assertTrue(!hasProgrammeSynopsis(text), text)
+        assertTrue(hasProgrammeSynopsis("Герой возвращается домой и встречает старого друга."))
+    }
+
+    @Test fun realShortSynopsisWinsOverAPlaceholderInTheFullDescription() {
+        val card = parseKinopoiskDetails("""{"description":"Описание передачи отсутствует","shortDescription":"Герои продолжают приключения во второй части фильма."}""")
+        assertEquals("Герои продолжают приключения во второй части фильма.", card.overview)
+    }
+
 }

@@ -451,15 +451,16 @@ private fun WatchingLayout(
 
     fun openDrawer() {
         drawerCloseJob?.cancel()
+        if (drawerOpen) return
         drawerOpen = true
         if (isAndroidPlatform()) {
             val playback = controller.state.value
             guidePlaybackTimeMs = playback.item?.takeIf { it.kind == PlaybackContentKind.ARCHIVE }
                 ?.archiveEpgAnchorMs?.plus(playback.positionMs)
-            if (guidePlaybackTimeMs != null) {
-                highlightedChannelId = selectedChannel.id
-                if (state.filteredChannels.none { it.id == selectedChannel.id }) onCategorySelected(null)
-            }
+            // A new browsing session starts at playback, never at an unplayed preview.
+            highlightedChannelId = selectedChannel.id
+            archivePreview = null
+            if (state.filteredChannels.none { it.id == selectedChannel.id }) onCategorySelected(null)
             // Reset any pending "focus the TOP of the chosen category" /
             // "focus on return" request from the previous session — otherwise
             // focusTopNonce > 0 would re-run its LaunchedEffect when the
@@ -467,7 +468,7 @@ private fun WatchingLayout(
             // channel" we are about to do here.
             focusTopNonce = 0
             focusReturnNonce = 0
-            // Reopening preserves the browsing category and its last focused channel.
+            // Preview focus belongs only to this open drawer session.
             categoriesOpen = false
             // Рядом со списком каналов (справа от него) показываем программу
             // текущего канала: текущая передача + весь день = архив. Открываем

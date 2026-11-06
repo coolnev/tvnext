@@ -52,6 +52,7 @@ import com.tvnext.app.core.common.util.startOfDay
 import com.tvnext.app.core.iptv.domain.Channel
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import com.tvnext.app.core.tmdb.ProgrammeMetadata
+import com.tvnext.app.core.tmdb.hasProgrammeSynopsis
 import com.tvnext.app.core.tmdb.ProgrammeMetadataRepository
 import com.tvnext.app.core.ui.component.AutoScrollText
 import com.tvnext.app.core.ui.component.TvCardButton
@@ -92,9 +93,9 @@ internal fun AndroidWideGuide(
     modifier: Modifier = Modifier,
 ) {
     val activeId = focusedChannelId?.takeIf { id -> channels.any { it.id == id } }
-        // A category reset rebuilds filtered channels asynchronously. Keep the
-        // archive channel/clock while that list catches up with the playing item.
-        ?: playingChannelId.takeIf { initialProgrammeTimeMs != null && focusedChannelId == playingChannelId }
+        // Reopening may reset a category asynchronously. Hold playback focus
+        // while the filtered list catches up, for both live TV and archive.
+        ?: playingChannelId.takeIf { focusedChannelId == playingChannelId }
         ?: channels.firstOrNull { it.id == playingChannelId }?.id
         ?: channels.firstOrNull()?.id ?: playingChannelId
     val programmeList = remember(timeline.channelId, timeline.programmes, activeId) {
@@ -174,7 +175,7 @@ internal fun AndroidWideGuide(
         // Cancel stale searches on rapid D-pad input. Cached cards appear without network.
         delay(280)
         try {
-            remoteInfo = finder.find(title)
+            finder.observe(title).collect { remoteInfo = it }
         } catch (cancelled: CancellationException) {
             throw cancelled // Preserve structured cancellation when focus changes quickly.
         } catch (_: Exception) {
@@ -420,7 +421,7 @@ internal fun AndroidWideGuide(
                 ) { programme ->
                         val selected = programme == highlighted && activeColumn == GuideFocusColumn.PROGRAMMES
                         GuideRow(
-                            "${formatDate(programme.start)}  ${formatTimeOfDay(programme.start)}  ${programme.title}", selected,
+                            "${formatTimeOfDay(programme.start)}  ${programme.title}", selected,
                             currentBroadcast = programme.start <= now && now < programme.stop,
                             onClick = {
                                 selectedStartMs = programme.start
@@ -482,8 +483,8 @@ internal fun AndroidWideGuide(
         }
     }
     // Artwork is only allocated after a decoded bitmap exists; absent images leave zero gap.
-    val description = highlighted?.description?.takeIf(::isUsefulProgrammeDescription)
-            ?: remoteInfo?.overview?.takeIf(::isUsefulProgrammeDescription)
+    val description = highlighted?.description?.takeIf(::hasProgrammeSynopsis)
+            ?: remoteInfo?.overview?.takeIf(::hasProgrammeSynopsis)
             ?: "Описание передачи отсутствует"
     val info: @Composable (Modifier) -> Unit = { infoModifier ->
         if (descriptionOnRight) Column(
@@ -739,15 +740,15 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
         val title = programme?.title?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
         delay(150)
         try {
-            remote = finder?.find(title)
+            finder?.observe(title)?.collect { remote = it }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
             remote = null
         }
     }
-    val description = programme?.description?.takeIf(::isUsefulProgrammeDescription)
-        ?: remote?.overview?.takeIf(::isUsefulProgrammeDescription)
+    val description = programme?.description?.takeIf(::hasProgrammeSynopsis)
+        ?: remote?.overview?.takeIf(::hasProgrammeSynopsis)
         ?: "Описание передачи недоступно"
     val loader = LocalLogoImageLoader.current
     var picture by remember(remote?.frameUrl, remote?.posterUrl, loader) { mutableStateOf<ImageBitmap?>(null) }
@@ -833,13 +834,4 @@ private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum
             }
         }
     }
-}
-
-/** Missing XMLTV synopsis placeholders must not suppress TMDB/Kinopoisk fallback. */
-private fun isUsefulProgrammeDescription(text: String): Boolean {
-    val normalized = text.trim().lowercase().trim('.', ' ', '…')
-    return normalized.length > 12 && normalized !in setOf(
-        "нет описания", "описание отсутствует", "описание недоступно",
-        "нет данных", "нет информации", "no description available",
-    )
 }
