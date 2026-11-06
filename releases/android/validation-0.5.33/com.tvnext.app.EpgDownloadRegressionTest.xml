@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.EpgDownloadRegressionTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-06T07:05:08.152Z" hostname="9c2a62439f9c" time="0.99">
+  <properties/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.11"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.09"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.104"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.05"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.089"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.068"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.03"/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.101"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.061"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.037"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.071"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.035"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.067"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.029"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.33-recovery-preview",
+  "versionCode": 533,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "37f004632d089a217b8e9abefe96de28a78ef7e11ae0e55a0464d59979feabb8",
+  "sourceCommit": "ec0490c",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity"
+  ],
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 213,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 59,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 323,
+  "reproducedBeforeFix": [
+    "Overnight 13-hour restart triggered HTTP despite a complete future guide",
+    "Cosmetic channel rename triggered HTTP",
+    "1533 primary + 267 backup channels displayed 1533 instead of 1800"
+  ],
+  "nativeAndroidSqlite": {
+    "apiLevels": [
+      28,
+      35
+    ],
+    "largeGuideChannels": 1800,
+    "largeGuideProgrammes": 86400,
+    "rollingRefreshRetainedProgrammes": 45000,
+    "benchmarksOnHost": [
+      "ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=4855",
+      "ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=3698"
+    ]
+  },
+  "descriptionChecks": [
+    "decoded poster is visible before the delayed full-card synopsis",
+    "synopsis arrives in windowed details and full guide (right and bottom)",
+    "multiline/NBSP/HTML placeholder does not hide real synopsis",
+    "full-card 503 is retried without erasing the poster"
+  ],
+  "cachePolicy": "A source with current coverage stays fresh for 24h. At 24h–7d it is retained while current and >12h future coverage remain. Channel names/order/categories do not invalidate a downloaded URL. Missing coverage or manual refresh can update it.",
+  "importPolicy": "20min total timeout per source; phase/processed count visible; archive copied per channel; inactive rows purged separately in 4096-row transactions; complete guides emit a version once after commit; failed import retains last active guide.",
+  "liveMetadataServiceTested": false,
+  "metadataNetworkLimitation": "Environment policy blocks live Kinopoisk/TMDB API hosts. Controlled API responses and decoded-image Compose tests passed; live user key/service availability is not confirmed.",
+  "physicalTV": false,
+  "emulator": {
+    "apiLevel": 28,
+    "hardwareAcceleration": false,
+    "updatedFromVersionCode": 532,
+    "versionInstalled": 533,
+    "installedSha256MatchesRelease": true,
+    "syntheticCachedGuideAgeHours": 37,
+    "epgHttpRequestsAcrossTwoStarts": 0,
+    "cachedCurrentAndArchiveDisplayed": true,
+    "settingsOpened": true,
+    "applicationFatalExceptions": 0,
+    "applicationAnrs": 0,
+    "limitation": "AOSP emulator without KVM. System UI showed an ANR during OS boot before the app and was resumed; physical TV playback smoothness is not measured. Synthetic live.ts deliberately returns 503."
+  }
+}

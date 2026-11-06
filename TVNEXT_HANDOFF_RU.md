@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.32-recovery-preview`, versionCode 532, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.31.
+Текущая версия TVNextR: `0.5.33-recovery-preview`, versionCode 533, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.32.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.32.apk`.
-Описание: `RELEASE_ANDROID_0.5.32_RU.md`.
-Сводка: `releases/android/validation-0.5.32.json`.
+APK: `releases/android/TVNextR-0.5.33.apk`.
+Описание: `RELEASE_ANDROID_0.5.33_RU.md`.
+Сводка: `releases/android/validation-0.5.33.json`.
+
+В 0.5.33 пригодный EPG не скачивается из-за переименования/порядка/категории каналов и ночного перезапуска. cacheUsable использует текущее покрытие, первые 24ч и будущее >12ч до возраста 7д; каналы, которых нет в свежем источнике, не вызывают повтор того же файла. При обновлении полного кэша публикация версии одна после коммита; ChannelsComponent сохраняет видимый timeline при повторном чтении. Корневая индикация показывает notice, а не только число каналов. Счётчик — объединение coverage по источникам. Индекс имеет дополнительную таблицу epg_index_channel(source,generation,channel_key); не использовать epg_channel для поколений, её PK не включает batch! Генерация выбирается по индексному последнему batch. Архив переносится по каналам; purgeInactive удаляет только batch < active порциями 4096 отдельно от завершения. Это не удаляет более новую незавершённую загрузку. Общий предел import — 20мин, повторы после ошибки 15мин, источник без совпадений — 12ч. Успех подтверждает staged ready только после коммита. Старые данные сохраняются при ошибке. Metаdata: ограниченный повтор ошибки полной карточки Kino, заглушки с HTML/пробелами/жанром не перекрывают сюжет. Проверены 213 IPTV + 27 metadata + 59 channels/UI + 24 Android native = 323. API 28/35: 1800 каналов/86400 передач, rolling refresh сохраняет 45000 с архивом; 3.7–4.9с на host native sqlite, не оценка скорости ТВ. APK 533 установлен поверх 532, кэш 37ч открыт за два запуска с 0 EPG HTTP, настройки и передачи открываются, FATAL/ANR приложения нет. System UI при загрузке программного AVD имел ANR до старта приложения. Live metadata запрещены сетью; подтверждены fixtures + Compose с декодированным постером и задержанным сюжетом во всех 3 видах описания. Исходники ec0490c уже на GitHub. SHA APK 37f004632d089a217b8e9abefe96de28a78ef7e11ae0e55a0464d59979feabb8.
 
 В 0.5.32 убрана дата из строк полноэкранного списка с отдельной колонкой дат (оконный список без такой колонки не менялся). core/tmdb/ProgrammeTitle.kt содержит очистку служебных пометок и hasProgrammeSynopsis, который отбрасывает «Описание передачи отсутствует». ProgrammeMetadataRepository.observe публикует частичный сюжет сразу; TMDB и Kinopoisk работают параллельно, поиск учитывает aliases/names и сохраняет номер части. При уходе ChannelsScreen в фон/другой экран DefaultChannelsComponent.setScreenVisible(false) сбрасывает timeline; при openDrawer фокус всегда возвращается к реально играющему каналу, архив использует актуальные anchor+position. Не возвращать незапущенный предпросмотр. Проверки: 26 metadata + 55 channels/UI + 22 Android native, release/lint/signature/zipalign. APK 532 проверен в Android 9 эмуляторе: дата отдельно, просмотрены другой канал и прошлая передача без OK; после закрытия/открытия выбран «Холоп 2» реального текущего канала. Живые API сетевой политикой запрещены; проверка описания — MockEngine и Compose с подставленными ответами, без реальных ключей. Исходники f8ed8df, APK/сводка в releases/android.
 
@@ -18,7 +20,7 @@ APK: `releases/android/TVNextR-0.5.32.apk`.
 
 Критическая регрессия 0.5.29 исправлена: `driver.execute(PRAGMA busy_timeout=3000)` в AndroidSqliteDriver вызывал SQLiteException (PRAGMA возвращает строку, драйвер использует executeUpdateDelete). EPG не открывался, вход в настройки завершал процесс. Подтверждено на реальном APK 0.5.29 в эмуляторе и native Android SQLite в Robolectric. В 0.5.30 PRAGMA удалены, WAL/пул соединений настраивает FrameworkSQLite. Настройки безопасно обрабатывают ошибку чтения кэша. Не выдавать 0.5.29 как актуальную версию. Формат кэша и данные сохранены.
 
-Android EPG реализует IndexedEpgRepository и IndexedEpgStore. Adapter AndroidEpgRepository создаёт отдельный WAL SQLite index в noBackupFilesDir/epg-index-v1.db. Прежние компактные файлы импортируются потоково. UI читает индекс без HTTP и без гидрации полного EPG; видимые каналы задают приоритет, свежесть источника постоянная (12ч), публикация постепенная, старая программа сохраняется при сбоях. Desktop остаётся на LiteEpgRepository. EpgStore основного приложения не участвует в новом импорте.
+Android EPG реализует IndexedEpgRepository и IndexedEpgStore. Adapter AndroidEpgRepository создаёт отдельный WAL SQLite index в noBackupFilesDir/epg-index-v1.db. Прежние компактные файлы импортируются потоково. UI читает индекс без HTTP и без гидрации полного EPG; видимые каналы задают приоритет; в 0.5.33 свежесть учитывает покрытие, постепенная публикация только для первого импорта, старая программа сохраняется при сбоях. Desktop остаётся на LiteEpgRepository. EpgStore основного приложения не участвует в новом импорте.
 
 Стартовая вкладка задаётся сразу по сохранённым настройкам. Нет ложного приглашения добавить плейлист во время первичной подготовки. Home/VOD и профильные проекции вынесены с UI. Соотношение сторон — «Авто».
 
