@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.32-recovery-preview",
+  "versionCode": 532,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "536202217283c66f714ac15405424217959ea886407ee8613cf508a0b7be6165",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity"
+  ],
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 26,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 55,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "liveMetadataServiceTested": false,
+  "metadataNetworkLimitation": "The executor HTTP policy blocks live Kinopoisk/TMDB API hosts. MockEngine tests exercise their request/response behavior; Compose tests verify displayed fallback text.",
+  "physicalTV": false,
+  "emulator": {
+    "apiLevel": 28,
+    "hardwareAcceleration": false,
+    "versionInstalled": 532,
+    "guideChecks": {
+      "passed": true,
+      "data": "Synthetic two-channel offline playlist and eight cached programmes; no real API credentials used.",
+      "programmeRowsOmitDuplicateDate": true,
+      "rightDateColumnPresent": true,
+      "previewedChannel": "Другой канал",
+      "previewedProgramme": "Прошлая передача",
+      "confirmedPlaybackSwitch": false,
+      "programmeAfterClosingAndReopening": "Холоп 2",
+      "playingChannelAfterReopening": "Тестовый канал",
+      "metadataLiveNetworkEnabled": false
+    },
+    "limitation": "Software emulation without KVM; System UI showed an ANR during cold boot and was resumed. Tests do not measure physical TV playback smoothness.",
+    "installedSha256MatchesRelease": true,
+    "applicationFatalExceptions": 0,
+    "applicationAnrs": 0
+  }
+}

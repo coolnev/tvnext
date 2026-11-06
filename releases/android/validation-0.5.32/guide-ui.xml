@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideRemoteUiTest[desktop]" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-06T05:45:53.041Z" hostname="9c2a62439f9c" time="4.005">
+  <properties/>
+  <testcase name="remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.728"/>
+  <testcase name="narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.143"/>
+  <testcase name="windowedProgrammeCursorSurvivesAsyncDataAndMovesAcrossMidnight[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.101"/>
+  <testcase name="programmeRowsDoNotRepeatTheSeparateDateColumn[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.126"/>
+  <testcase name="kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.31"/>
+  <testcase name="windowedRightSelectsProgrammesThenVideoAndOkOpensFullscreenOnRelease[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.351"/>
+  <testcase name="openingArchiveFocusesItsProgrammeEvenWhenEpgArrivesAfterOpening[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.245"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

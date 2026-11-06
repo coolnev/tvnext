@@ -1,8 +1,8 @@
 # Последние изменения Android
 
-Актуальная версия: **0.5.31-recovery-preview**. APK: [TVNextR-0.5.31.apk](releases/android/TVNextR-0.5.31.apk).
+Актуальная версия: **0.5.32-recovery-preview**. APK: [TVNextR-0.5.32.apk](releases/android/TVNextR-0.5.32.apk).
 
-Загрузка EPG отделена от обработки: добавлены докачка после обрыва, сохранение файла до коммита базы и ускоренная запись SQLite. Исправление вылета настроек сохранено. Описание: [RELEASE_ANDROID_0.5.31_RU.md](RELEASE_ANDROID_0.5.31_RU.md). Контекст: [TVNEXT_HANDOFF_RU.md](TVNEXT_HANDOFF_RU.md).
+Убрана повторная дата из строк списка с колонкой дат. Исправлены подстановка описаний, поиск названий и возврат к реально воспроизводимой передаче после закрытия списка. Механизм EPG 0.5.31 сохранён. Описание: [RELEASE_ANDROID_0.5.32_RU.md](RELEASE_ANDROID_0.5.32_RU.md). Контекст: [TVNEXT_HANDOFF_RU.md](TVNEXT_HANDOFF_RU.md).
 
 Предыдущие изменения: **ANDROID_REVIEW_13_RU.md**.
 

@@ -1,6 +1,6 @@
-# TVNext — актуальный контекст, 2026-11-05
+# TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.31-recovery-preview`, versionCode 531, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.30.
+Текущая версия TVNextR: `0.5.32-recovery-preview`, versionCode 532, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.31.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.31.apk`.
-Описание: `RELEASE_ANDROID_0.5.31_RU.md`.
-Сводка: `releases/android/validation-0.5.31.json`.
+APK: `releases/android/TVNextR-0.5.32.apk`.
+Описание: `RELEASE_ANDROID_0.5.32_RU.md`.
+Сводка: `releases/android/validation-0.5.32.json`.
+
+В 0.5.32 убрана дата из строк полноэкранного списка с отдельной колонкой дат (оконный список без такой колонки не менялся). core/tmdb/ProgrammeTitle.kt содержит очистку служебных пометок и hasProgrammeSynopsis, который отбрасывает «Описание передачи отсутствует». ProgrammeMetadataRepository.observe публикует частичный сюжет сразу; TMDB и Kinopoisk работают параллельно, поиск учитывает aliases/names и сохраняет номер части. При уходе ChannelsScreen в фон/другой экран DefaultChannelsComponent.setScreenVisible(false) сбрасывает timeline; при openDrawer фокус всегда возвращается к реально играющему каналу, архив использует актуальные anchor+position. Не возвращать незапущенный предпросмотр. Проверки: 26 metadata + 55 channels/UI + 22 Android native, release/lint/signature/zipalign. APK 532 проверен в Android 9 эмуляторе: дата отдельно, просмотрены другой канал и прошлая передача без OK; после закрытия/открытия выбран «Холоп 2» реального текущего канала. Живые API сетевой политикой запрещены; проверка описания — MockEngine и Compose с подставленными ответами, без реальных ключей. Исходники f8ed8df, APK/сводка в releases/android.
 
 В 0.5.31 Android HTTP отделён от разбора/SQLite: EpgSourceDownload сохраняет исходник в noBackupFilesDir/epg-downloads-v1 (частичный файл + валидатор HTTP для Range/If-Range). После успешной загрузки HTTP закрывается; XMLTV/gzip читается из файла. Файл сохраняется до коммита базы, затем удаляется. Уход Activity в фон и общий порог heap не обрывают ограниченный по памяти импорт; новые задачи ждут foreground. Повторы временных ошибок ограничены четырьмя попытками, без повтора 401/403/404. SQLite пишет до 512 строк/256 КиБ на транзакцию и до 64 строк на SQL; два лишних индекса удалены только в отдельной EPG-базе. Резервные источники проверяются после основного и не скачиваются при обеспеченных видимых каналах. notice показывает скачивание в МБ отдельно от обработки передач. Набор: 205 IPTV + 4 Settings + 22 Android native проверки API 28/35; большой Android импорт 20 000 передач, XML парсер 64,8 МБ / 50 000 передач. Полные исходники уже сохранены коммитом 9a4d654.
 
