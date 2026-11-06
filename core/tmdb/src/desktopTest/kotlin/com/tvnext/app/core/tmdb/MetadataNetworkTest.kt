@@ -57,8 +57,8 @@ class MetadataNetworkTest {
         val enteredDetails = CompletableDeferred<Unit>()
         var requests = 0
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search")) 200 to
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword")) 200 to
                 """{"docs":[{"id":5928,"name":"Один дома 2: Затерянный в Нью-Йорке","poster":{"url":"https://example.org/p.jpg"}}]}"""
             else {
                 requests++
@@ -80,8 +80,8 @@ class MetadataNetworkTest {
 
     @Test fun aNumberedSequelWithASubtitleCanBeFoundByItsBroadcastShortName() = runBlocking<Unit> {
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search")) 200 to """{"docs":[${userFullCard()}]}"""
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword")) 200 to """{"docs":[${userFullCard()}]}"""
             else 200 to userFullCard()
         }
         try {
@@ -93,8 +93,8 @@ class MetadataNetworkTest {
     @Test fun aVisiblePosterOnlyCardRetriesTheSynopsisWithoutAnotherSearch() = runBlocking<Unit> {
         var searches = 0; var detailsCalls = 0
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search")) {
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword")) {
                 searches++
                 200 to """{"docs":[{"id":5928,"name":"Один дома 2: Затерянный в Нью-Йорке","poster":{"url":"https://example.org/p.jpg"}}]}"""
             } else {
@@ -114,7 +114,7 @@ class MetadataNetworkTest {
         var expected = "build-default"
         var calls = 0
         val f = Fixture { request ->
-            assertEquals("api.poiskkino.dev", request.url.host)
+            assertEquals("kinopoiskapiunofficial.tech", request.url.host)
             assertTrue(request.headers["X-API-KEY"] == expected, "The request must use the effective configured key")
             calls++
             200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
@@ -137,8 +137,8 @@ class MetadataNetworkTest {
     @Test fun kinopoiskRetriesTheFullCardAfterAnImageOnlySearchResult() = runBlocking<Unit> {
         var detailsCalls = 0
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search")) 200 to
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword")) 200 to
                 """{"docs":[{"id":2,"name":"Холоп 2","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
             else {
                 detailsCalls++
@@ -186,9 +186,9 @@ class MetadataNetworkTest {
     @Test fun kinopoiskFillsMissingFrameEvenWhenTmdbHasSynopsisAndPoster() = runBlocking<Unit> {
         var kinoDetails = 0
         val f = Fixture { request ->
-            if (request.url.host == "api.poiskkino.dev") {
+            if (request.url.host == "kinopoiskapiunofficial.tech") {
                 assertEquals("test-key", request.headers["X-API-KEY"])
-                if (request.url.encodedPath.endsWith("/search")) 200 to
+                if (request.url.encodedPath.endsWith("/search-by-keyword")) 200 to
                     """{"docs":[{"id":9,"name":"Хитровка","description":"$synopsis","poster":{"url":"https://example.org/kp-p.jpg"}}]}"""
                 else { kinoDetails++; 200 to """{"description":"$synopsis","backdrop":{"url":"https://example.org/kp-frame.jpg"}}""" }
             } else if (request.url.encodedPath.contains("search")) 200 to search.replace("\"backdrop_path\":\"/f.jpg\"", "\"backdrop_path\":null")
@@ -220,13 +220,14 @@ class MetadataNetworkTest {
     @Test fun kinopoiskDownloadsStillFromImageEndpointWhenBackdropIsAbsent() = runBlocking<Unit> {
         var images = 0
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") {
+            if (request.url.host != "kinopoiskapiunofficial.tech") {
                 if (request.url.encodedPath.contains("search")) 200 to """{"results":[]}""" else 404 to "{}"
-            } else if (request.url.encodedPath.endsWith("/image")) {
+            } else if (request.url.encodedPath.endsWith("/images")) {
                 images++
-                assertEquals("9", request.url.parameters["movieId"])
+                assertEquals("/api/v2.2/films/9/images", request.url.encodedPath)
+                assertEquals("STILL", request.url.parameters["type"])
                 200 to """{"docs":[{"type":"still","url":"https://example.org/full.jpg","previewUrl":"https://example.org/still.jpg"}]}"""
-            } else if (request.url.encodedPath.endsWith("/search")) 200 to
+            } else if (request.url.encodedPath.endsWith("/search-by-keyword")) 200 to
                 """{"docs":[{"id":9,"name":"Хитровка","description":"$synopsis","poster":{"url":"https://example.org/poster.jpg"}}]}"""
             else 200 to """{"description":"$synopsis","poster":{"url":"https://example.org/poster.jpg"}}"""
         }
@@ -266,12 +267,12 @@ class MetadataNetworkTest {
     @Test fun kholopSequelDescriptionArrivesWhileTmdbIsStillWaiting() = runBlocking<Unit> {
         var queries = 0
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") {
+            if (request.url.host != "kinopoiskapiunofficial.tech") {
                 delay(20_000)
                 200 to """{"results":[]}"""
             } else {
                 queries++
-                assertEquals("Холоп 2", request.url.parameters["query"])
+                assertEquals("Холоп 2", request.url.parameters["keyword"])
                 200 to """{"docs":[{"id":1,"name":"Холоп","description":"Не тот фильм"},
                   {"id":2,"name":"Холоп 2","description":"$synopsis","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
             }
@@ -287,8 +288,8 @@ class MetadataNetworkTest {
 
     @Test fun synopsisIsPublishedBeforeSlowKinopoiskDetailsAndImages() = runBlocking<Unit> {
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search"))
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword"))
                 200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}"""
             else { delay(20_000); 200 to "{}" }
         }
@@ -300,8 +301,8 @@ class MetadataNetworkTest {
 
     @Test fun placeholderInFullCardCannotEraseASearchSynopsis() = runBlocking<Unit> {
         val f = Fixture { request ->
-            if (request.url.host != "api.poiskkino.dev") 401 to "{}"
-            else if (request.url.encodedPath.endsWith("/search"))
+            if (request.url.host != "kinopoiskapiunofficial.tech") 401 to "{}"
+            else if (request.url.encodedPath.endsWith("/search-by-keyword"))
                 200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}"""
             else 200 to """{"description":"Описание передачи отсутствует","poster":{"url":"https://example.org/p.jpg"}}"""
         }

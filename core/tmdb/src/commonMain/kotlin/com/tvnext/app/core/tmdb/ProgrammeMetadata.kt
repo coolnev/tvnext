@@ -32,9 +32,24 @@ interface KinopoiskKeyStore {
 
 class SqlDelightKinopoiskKeyStore(private val meta: AppMetaRepository,
     private val defaultKey: String = "") : KinopoiskKeyStore {
-    override suspend fun getKey(): String = meta.getValue("settings.kinopoisk_backup_key")
+    override suspend fun getKey(): String = meta.getValue("settings.kinopoisk_unofficial_key")
         ?.trim()?.takeIf { it.isNotEmpty() } ?: defaultKey.trim()
-    override suspend fun setKey(value: String) { meta.setValue("settings.kinopoisk_backup_key", value.trim()) }
+    override suspend fun setKey(value: String) { meta.setValue("settings.kinopoisk_unofficial_key", value.trim()) }
+}
+
+private const val KINOPOISK_API = "https://kinopoiskapiunofficial.tech"
+
+data class KinopoiskConnectionResult(val kind: Kind, val httpStatus: Int? = null) {
+    enum class Kind { SUCCESS, KEY_MISSING, INVALID_KEY, LIMIT_REACHED, NO_CONNECTION, SERVER_ERROR, INVALID_RESPONSE }
+    val message: String get() = when (kind) {
+        Kind.SUCCESS -> "Кинопоиск: соединение установлено"
+        Kind.KEY_MISSING -> "Кинопоиск: ключ не задан"
+        Kind.INVALID_KEY -> "Кинопоиск: ключ отклонён (HTTP $httpStatus)"
+        Kind.LIMIT_REACHED -> "Кинопоиск: лимит запросов исчерпан (HTTP $httpStatus)"
+        Kind.NO_CONNECTION -> "Кинопоиск: нет ответа от сервера — проверьте подключение"
+        Kind.SERVER_ERROR -> "Кинопоиск: ошибка сервера (HTTP $httpStatus)"
+        Kind.INVALID_RESPONSE -> "Кинопоиск: некорректный ответ сервера"
+    }
 }
 
 /** Uses the configured key store; credential values are never logged. */
@@ -55,19 +70,36 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
         currentTimeMillis() - temporaryFailureAt in 0L..60_000L
     suspend fun hasKey(): Boolean = keys.getKey().isNotBlank()
 
-    suspend fun testConnection(): Boolean {
+    suspend fun checkConnection(): KinopoiskConnectionResult {
         val token = keys.getKey().trim()
-        if (token.isEmpty()) return false
+        if (token.isEmpty()) return KinopoiskConnectionResult(KinopoiskConnectionResult.Kind.KEY_MISSING)
         return withTimeoutOrNull(5_000L) {
-            runCatching {
-                client.get("https://api.poiskkino.dev/v1.5/movie") {
+            try {
+                val response = client.get("$KINOPOISK_API/api/v2.2/films/301") {
                     header("X-API-KEY", token)
-                    parameter("limit", 1)
-                    timeout { requestTimeoutMillis = 4_000; connectTimeoutMillis = 2_000 }
-                }.status.isSuccess()
-            }.getOrDefault(false)
-        } ?: false
+                    timeout { requestTimeoutMillis = 4_000; connectTimeoutMillis = 2_000; socketTimeoutMillis = 4_000 }
+                }
+                val code = response.status.value
+                val kind = when {
+                    code == 401 || code == 403 -> KinopoiskConnectionResult.Kind.INVALID_KEY
+                    code == 402 || code == 429 -> KinopoiskConnectionResult.Kind.LIMIT_REACHED
+                    !response.status.isSuccess() -> KinopoiskConnectionResult.Kind.SERVER_ERROR
+                    else -> {
+                        val body = runCatching { Json.parseToJsonElement(response.bodyAsText()).jsonObject }.getOrNull()
+                        if (body?.get("kinopoiskId")?.jsonPrimitive?.content?.toIntOrNull() != null &&
+                            listOf("nameRu", "nameEn", "nameOriginal").any { key -> body[key]?.jsonPrimitive?.content?.let { it.isNotBlank() && it != "null" } == true }) {
+                            backoffUntil = 0L; temporaryFailureAt = 0L
+                            KinopoiskConnectionResult.Kind.SUCCESS
+                        } else KinopoiskConnectionResult.Kind.INVALID_RESPONSE
+                    }
+                }
+                KinopoiskConnectionResult(kind, code)
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { KinopoiskConnectionResult(KinopoiskConnectionResult.Kind.NO_CONNECTION) }
+        } ?: KinopoiskConnectionResult(KinopoiskConnectionResult.Kind.NO_CONNECTION)
     }
+
+    suspend fun testConnection(): Boolean = checkConnection().kind == KinopoiskConnectionResult.Kind.SUCCESS
 
     suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
         val query = cleanProgrammeTitle(name)
@@ -87,11 +119,10 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                     // or a rate-limited account in a tight loop.
                     var body: String? = null
                     if (known == null) for (attempt in 0..1) {
-                        val response = client.get("https://api.poiskkino.dev/v1.5/movie/search") {
+                        val response = client.get("$KINOPOISK_API/api/v2.1/films/search-by-keyword") {
                             header("X-API-KEY", token)
                             parameter("page", 1)
-                            parameter("limit", 20)
-                            parameter("query", query)
+                            parameter("keyword", query)
                             timeout {
                                 requestTimeoutMillis = 7_000
                                 connectTimeoutMillis = 3_000
@@ -104,7 +135,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                             body = response.bodyAsText()
                             break
                         }
-                        if (code == 401 || code == 403 || code == 429) {
+                        if (code == 401 || code == 403 || code == 402 || code == 429) {
                             // 403 may mean daily quota exceeded (not just bad key).
                             backoffUntil = currentTimeMillis() + when (code) {
                                 429 -> 60_000L
@@ -137,7 +168,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                             var detail: ProgrammeMetadata? = null
                             for (attempt in 0..1) {
                                 val response = try {
-                                    client.get("https://api.poiskkino.dev/v1.5/movie/$id") {
+                                    client.get("$KINOPOISK_API/api/v2.2/films/$id") {
                                         header("X-API-KEY", token)
                                         timeout { requestTimeoutMillis = 4_000; connectTimeoutMillis = 2_000; socketTimeoutMillis = 4_000 }
                                     }
@@ -173,10 +204,10 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                     onUpdate?.invoke(combined)
                     if (movieId != null && hasProgrammeSynopsis(combined.overview) && (combined.frameUrl == null || combined.posterUrl == null)) {
                         try {
-                            val images = client.get("https://api.poiskkino.dev/v1.5/image") {
+                            val images = client.get("$KINOPOISK_API/api/v2.2/films/$movieId/images") {
                                 header("X-API-KEY", token)
-                                parameter("movieId", movieId)
-                                parameter("limit", 12)
+                                parameter("type", "STILL")
+                                parameter("page", 1)
                                 timeout { requestTimeoutMillis = 4_000; connectTimeoutMillis = 2_000 }
                             }
                             if (images.status.isSuccess()) {
@@ -207,10 +238,11 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
 
 /** Search and detail requests must use the same ranked hit and movie id. */
 private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
-    val docs = Json.parseToJsonElement(body).jsonObject["docs"]?.jsonArray ?: return null
+    val root = Json.parseToJsonElement(body).jsonObject
+    val docs = (root["films"] ?: root["items"] ?: root["docs"])?.jsonArray ?: return null
     val year = programmeReleaseYear(name)
     return docs.mapNotNull { it as? JsonObject }.mapNotNull { entry ->
-        val titles = listOf("name", "alternativeName", "enName").mapNotNull { entry[it]?.jsonPrimitive?.content } +
+        val titles = listOf("nameRu", "nameEn", "nameOriginal", "name", "alternativeName", "enName").mapNotNull { entry[it]?.jsonPrimitive?.content } +
             (entry["names"] as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull {
                 (it as? JsonObject)?.get("name")?.jsonPrimitive?.content
             }
@@ -224,8 +256,10 @@ private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
     }.maxByOrNull { it.second }?.first
 }
 
-internal fun kinopoiskMatchedId(body: String, name: String): Int? =
-    matchedKinopoiskMovie(body, name)?.get("id")?.jsonPrimitive?.content?.toIntOrNull()
+internal fun kinopoiskMatchedId(body: String, name: String): Int? {
+    val movie = matchedKinopoiskMovie(body, name) ?: return null
+    return listOf("kinopoiskId", "filmId", "id").firstNotNullOfOrNull { movie[it]?.jsonPrimitive?.content?.toIntOrNull() }
+}
 
 private fun kinopoiskOverview(full: String?, short: String?): String? =
     full?.takeIf(::hasProgrammeSynopsis) ?: short?.takeIf(::hasProgrammeSynopsis) ?: full ?: short
@@ -238,22 +272,23 @@ internal fun parseKinopoiskDetails(body: String): ProgrammeMetadata {
         ?.jsonPrimitive?.content?.takeIf { it.startsWith("https://") }
     return ProgrammeMetadata(
         overview = kinopoiskOverview(field("description"), field("shortDescription")),
-        frameUrl = image("backdrop"),
-        posterUrl = image("poster"),
+        frameUrl = field("coverUrl")?.takeIf { it.startsWith("https://") } ?: image("backdrop"),
+        posterUrl = listOf("posterUrlPreview", "posterUrl").firstNotNullOfOrNull { field(it)?.takeIf { url -> url.startsWith("https://") } } ?: image("poster"),
     )
 }
 
 /** The image endpoint includes stills even when the film has no backdrop field. */
 internal fun parseKinopoiskImages(body: String): ProgrammeMetadata {
-    val docs = Json.parseToJsonElement(body).jsonObject["docs"]?.jsonArray.orEmpty()
-        .mapNotNull { it as? JsonObject }
-    fun url(item: JsonObject): String? = listOf("previewUrl", "url").firstNotNullOfOrNull { key ->
+    val root = Json.parseToJsonElement(body).jsonObject
+    val stills = root["items"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
+    val docs = root["docs"]?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
+    fun url(item: JsonObject): String? = listOf("previewUrl", "imageUrl", "url").firstNotNullOfOrNull { key ->
         item[key]?.jsonPrimitive?.content?.takeIf { it.startsWith("https://") }
     }
     fun type(item: JsonObject) = item["type"]?.jsonPrimitive?.content?.lowercase().orEmpty()
     val frame = docs.firstOrNull { type(it) in setOf("still", "stills", "frame", "screenshot", "backdrop", "backdrops") && url(it) != null }
     val poster = docs.firstOrNull { type(it) in setOf("poster", "posters", "cover") && url(it) != null }
-    return ProgrammeMetadata(frameUrl = frame?.let(::url), posterUrl = poster?.let(::url))
+    return ProgrammeMetadata(frameUrl = stills.firstNotNullOfOrNull(::url) ?: frame?.let(::url), posterUrl = poster?.let(::url))
 }
 
 /** Kept separate from the network call for deterministic fixture tests. */
@@ -266,7 +301,7 @@ internal fun parseKinopoiskSearch(body: String, name: String): ProgrammeMetadata
     return ProgrammeMetadata(
         overview = kinopoiskOverview(text("description"), text("shortDescription")),
         frameUrl = imageUrl("backdrop"),
-        posterUrl = imageUrl("poster"),
+        posterUrl = listOf("posterUrlPreview", "posterUrl").firstNotNullOfOrNull { text(it)?.takeIf { url -> url.startsWith("https://") } } ?: imageUrl("poster"),
     )
 }
 

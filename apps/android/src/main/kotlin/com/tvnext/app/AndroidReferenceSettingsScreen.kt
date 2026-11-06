@@ -66,6 +66,7 @@ internal fun AndroidReferenceSettingsScreen(
     var showKinopoiskKey by remember { mutableStateOf(false) }
     var kinopoiskConfigured by remember { mutableStateOf(false) }
     var kinopoiskMessage by remember { mutableStateOf("") }
+    var kinopoiskTesting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val kinopoiskStore = remember { GlobalContext.get().get<KinopoiskKeyStore>() }
     val kinopoiskLookup = remember { GlobalContext.get().get<KinopoiskProgrammeLookup>() }
@@ -354,16 +355,18 @@ internal fun AndroidReferenceSettingsScreen(
                                 onClick = { showTmdbKey = true })
                             ReferenceRow("Очистить кэш TMDB", height = entryHeight,
                                 onClick = { component.dispatch(SettingsIntent.TmdbClearCache) })
-                            ReferenceRow("Kinopoisk.dev · резерв",
+                            ReferenceRow("Кинопоиск · Unofficial",
                                 if (kinopoiskConfigured) "Ключ задан" else "Добавить ключ",
                                 height = entryHeight, onClick = { showKinopoiskKey = true })
-                            ReferenceRow("Проверить Kinopoisk.dev", height = entryHeight,
+                            ReferenceRow("Проверить Кинопоиск", height = entryHeight,
                                 onClick = {
-                                    kinopoiskMessage = "Проверка соединения…"
-                                    scope.launch {
-                                        kinopoiskMessage = if (kinopoiskLookup.testConnection())
-                                            "Kinopoisk.dev: соединение установлено" else
-                                            "Kinopoisk.dev: недоступен или ключ неверен"
+                                    if (!kinopoiskTesting) {
+                                        kinopoiskTesting = true
+                                        kinopoiskMessage = "Проверка соединения…"
+                                        scope.launch {
+                                            try { kinopoiskMessage = kinopoiskLookup.checkConnection().message }
+                                            finally { kinopoiskTesting = false }
+                                        }
                                     }
                                 })
                             if (kinopoiskMessage.isNotEmpty()) {
@@ -595,7 +598,7 @@ internal fun AndroidReferenceSettingsScreen(
     if (showKinopoiskKey) {
         var key by remember { mutableStateOf("") }
         AlertDialog(onDismissRequest = { showKinopoiskKey = false },
-            title = { Text("Kinopoisk.dev — резервный API-ключ") },
+            title = { Text("Кинопоиск · Unofficial — резервный API-ключ") },
             text = {
                 Column {
                     Text("Можно задать другой API-ключ. Пустое поле использует ключ по умолчанию.",

@@ -199,7 +199,7 @@ class GuideRemoteUiTest {
     @Test fun kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence() {
         val synopsis = "История героев второй части комедии, найденная по названию фильма Холоп 2."
         val client = HttpClient(MockEngine { request ->
-            val body = if (request.url.encodedPath.endsWith("/search"))
+            val body = if (request.url.encodedPath.endsWith("/search-by-keyword"))
                 """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}""" else "{}"
             respond(body, headers = headersOf("Content-Type", "application/json"))
         }) { install(HttpTimeout) }
@@ -245,7 +245,7 @@ class GuideRemoteUiTest {
         val pictures = java.util.concurrent.atomic.AtomicInteger()
         val client = HttpClient(MockEngine { request ->
             val body = when {
-                request.url.encodedPath.endsWith("/search") ->
+                request.url.encodedPath.endsWith("/search-by-keyword") ->
                     """{"docs":[{"id":2,"name":"Холоп 2","poster":{"url":"https://example.org/poster.png"}}]}"""
                 request.url.encodedPath.endsWith("/2") -> { release.await(); """{"description":"$synopsis"}""" }
                 else -> "{}"
