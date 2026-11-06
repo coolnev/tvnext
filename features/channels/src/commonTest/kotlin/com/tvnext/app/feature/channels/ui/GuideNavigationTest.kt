@@ -94,3 +94,11 @@ class GuideClampedEdgeAndAlignmentTest {
         assertEquals(0..6, guideClampedChannelWindow(2, 0, 7))
     }
 }
+
+class GuideFilledProgrammeWindowTest {
+    @Test fun beginningFillsAllEvenSlots() = assertEquals(0..15, guideFilledWindow(100, 0, 16))
+    @Test fun endFillsAllEvenSlots() = assertEquals(84..99, guideFilledWindow(100, 99, 16))
+    @Test fun middleKeepsSelectionNearCentre() = assertEquals(43..58, guideFilledWindow(100, 50, 16))
+    @Test fun shortGuideContainsOnlyRealRows() = assertEquals(0..2, guideFilledWindow(3, 2, 16))
+    @Test fun emptyGuideNeverRequestsRows() = assertEquals(0..-1, guideFilledWindow(0, 0, 16))
+}

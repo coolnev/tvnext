@@ -3152,6 +3152,10 @@ private fun ChannelRow(
         com.tvnext.app.core.common.log.AndroidPerformanceCounters.increment("compose.channelRows")
     }
 
+    val parentalAccess by com.tvnext.app.core.iptv.domain.ParentalChannelGate.session.collectAsState()
+    val locked = isAndroidPlatform() && parentalAccess.restrictionsActive &&
+        com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)
+
     // Rectangular list rows on Android TV (the panels are rectangular too);
     // desktop keeps the rounded card look.
     val rowShape = if (isAndroidPlatform()) {
@@ -3285,12 +3289,10 @@ private fun ChannelRow(
                             // indicator, keeping the row clean and leaving no extra
                             // star button on the right. Desktop retains the separate
                             // favorite control below.
-                            text = (if (isAndroidPlatform() &&
-                                com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) "🔒 " else "") +
+                            text = (if (locked) "🔒 " else "") +
                                 if (isAndroidPlatform() && channel.isFavorite) "★ ${channel.name}" else channel.name,
                             style = MaterialTheme.typography.titleMedium,
-                            color = if (isAndroidPlatform() &&
-                                com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)) {
+                            color = if (locked) {
                                 androidx.compose.ui.graphics.Color(0xFFFF6767)
                             } else if (selected) {
                                 MaterialTheme.colorScheme.primary

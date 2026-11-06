@@ -234,8 +234,13 @@ class GuideRemoteUiTest {
     @Test fun descriptionArrivesAfterThePosterBelowTheFullGuide() = descriptionAfterPoster(1)
     @Test fun descriptionArrivesAfterThePosterBesideTheFullGuide() = descriptionAfterPoster(2)
 
-    private fun descriptionAfterPoster(mode: Int) {
-        val synopsis = "Найденный сюжет о возвращении героя домой."
+    @Test fun landscapeTextWrapHasUniformBaselines() = descriptionAfterPoster(0, wrapped = true, landscape = true)
+    @Test fun portraitTextWrapHasUniformBaselines() = descriptionAfterPoster(0, wrapped = true)
+    @Test fun compactLandscapeTextWrapHasUniformBaselines() = descriptionAfterPoster(3, wrapped = true, landscape = true)
+    @Test fun compactPortraitTextWrapHasUniformBaselines() = descriptionAfterPoster(3, wrapped = true)
+
+    private fun descriptionAfterPoster(mode: Int, wrapped: Boolean = false, landscape: Boolean = false) {
+        val synopsis = "Найденный сюжет о возвращении героя домой.".let { if (wrapped) (it + " ").repeat(45) else it }
         val release = kotlinx.coroutines.CompletableDeferred<Unit>()
         val pictures = java.util.concurrent.atomic.AtomicInteger()
         val client = HttpClient(MockEngine { request ->
@@ -261,7 +266,7 @@ class GuideRemoteUiTest {
             arrayOf(TmdbRepository::class.java)) { _, _, _ -> error("TMDB is disabled") } as TmdbRepository
         val repository = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, key), settings)
         loadKoinModules(module { single { repository } })
-        val image = androidx.compose.ui.graphics.ImageBitmap(80, 120)
+        val image = if (landscape) androidx.compose.ui.graphics.ImageBitmap(160, 90) else androidx.compose.ui.graphics.ImageBitmap(80, 120)
         val loader = object : com.tvnext.app.core.ui.image.LogoImageLoader {
             override suspend fun load(url: String): androidx.compose.ui.graphics.ImageBitmap {
                 pictures.incrementAndGet(); return image
@@ -287,8 +292,29 @@ class GuideRemoteUiTest {
             }
             ui.waitUntil(5_000) { pictures.get() > 0 }
             release.complete(Unit)
-            ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
-            ui.onNodeWithText(synopsis).assertIsDisplayed()
+            if (wrapped) {
+                ui.waitUntil(5_000) { ui.onAllNodesWithText("Найденный сюжет", substring = true).fetchSemanticsNodes().isNotEmpty() }
+                ui.waitUntil(5_000) { ui.onAllNodesWithTag("programme-description-beside").fetchSemanticsNodes().isNotEmpty() }
+                ui.waitForIdle()
+                val top = ui.onNodeWithTag("programme-description-beside")
+                val bottom = ui.onNodeWithTag("programme-description-text")
+                val leading = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+                val trailing = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+                top.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(leading) }
+                bottom.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(trailing) }
+                val first = leading.single()
+                val tail = trailing.single()
+                val topY = top.fetchSemanticsNode().boundsInRoot.top
+                val bottomY = bottom.fetchSemanticsNode().boundsInRoot.top
+                val expected = if (first.lineCount > 1) first.getLineBaseline(1) - first.getLineBaseline(0)
+                    else tail.getLineBaseline(1) - tail.getLineBaseline(0)
+                val actual = bottomY + tail.getLineBaseline(0) - topY - first.getLineBaseline(first.lineCount - 1)
+                assertTrue(kotlin.math.abs(expected - actual) <= 1.1f, "Wrapped baseline: expected $expected, actual $actual")
+                saveValidationScreenshot("description-wrap-$mode-$landscape.png")
+            } else {
+                ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
+                ui.onNodeWithText(synopsis).assertIsDisplayed()
+            }
             ui.onNodeWithText(programme.description!!).assertDoesNotExist()
         } finally { release.complete(Unit); client.close() }
     }
@@ -411,17 +437,77 @@ class GuideRemoteUiTest {
         assertFalse(epgOpen.value)
     }
 
-    @Test fun windowedListHasFourteenUndatedProgrammesInsteadOfSeven() {
+    @Test fun windowedListUsesAllSixteenSlotsWithoutSubtitleOrDates() {
         ui.setContent { MaterialTheme {
             AndroidWindowedProgrammeList(channel, programmes, false, now, null, null, true,
                 {}, {}, Modifier.size(400.dp, 600.dp))
         } }
         ui.waitForIdle()
-        ui.onAllNodesWithTag("windowed-programme-row").assertCountEquals(14)
+        ui.onAllNodesWithTag("windowed-programme-row").assertCountEquals(16)
+        ui.onNodeWithText("Программа передач").assertDoesNotExist()
         val current = programmes.first { it.start <= now && now < it.stop }
         ui.onNodeWithText("${formatTimeOfDay(current.start)}  ${current.title}").assertIsDisplayed()
         ui.onNodeWithText("${formatDate(current.start)}  ${formatTimeOfDay(current.start)}  ${current.title}").assertDoesNotExist()
-        saveValidationScreenshot("windowed-fourteen-programmes-no-date.png")
+        saveValidationScreenshot("windowed-sixteen-programmes-no-date.png")
+    }
+
+    @Test fun windowedListFillsAllSlotsAtBothArchiveEdges() {
+        ui.setContent { MaterialTheme {
+            AndroidWindowedProgrammeList(channel, programmes, false, now, programmes.first().start, null, true,
+                {}, {}, Modifier.size(400.dp, 600.dp))
+        } }
+        ui.waitForIdle()
+        ui.onAllNodesWithTag("windowed-programme-row").assertCountEquals(16)
+        ui.onNodeWithText("${formatTimeOfDay(programmes.first().start)}  ${programmes.first().title}").assertIsDisplayed()
+        repeat(programmes.size + 1) { ui.onNodeWithTag("windowed-programmes").performKeyInput { pressKey(Key.DirectionDown) } }
+        ui.onAllNodesWithTag("windowed-programme-row").assertCountEquals(16)
+        ui.onNodeWithText("${formatTimeOfDay(programmes.last().start)}  ${programmes.last().title}").assertIsDisplayed()
+    }
+
+    @Test fun successfulPinImmediatelyRemovesChannelLockUntilSessionCloses() {
+        val gate = com.tvnext.app.core.iptv.domain.ParentalChannelGate
+        gate.setEnabled(true); gate.lock()
+        val adult = channel.copy(name = "Закрытый канал", category = "18+")
+        try {
+            ui.setContent { MaterialTheme {
+                AndroidWideGuide(listOf(adult), adult.id, adult.id, ChannelTimelineState(adult.id, false, programmes),
+                    emptyMap(), now, false, false, false, listOf("18+"), "18+", {}, {}, {}, {}, {}, { _, _ -> }, {},
+                    modifier = Modifier.size(1100.dp, 700.dp))
+            } }
+            ui.onNodeWithText("🔒 ${adult.name}").assertIsDisplayed()
+            ui.runOnIdle { gate.unlock() }
+            ui.onAllNodesWithText(adult.name).assertCountEquals(2)
+            ui.onNodeWithText("🔒 ${adult.name}").assertDoesNotExist()
+            ui.runOnIdle { gate.lock() }
+            ui.onNodeWithText("🔒 ${adult.name}").assertIsDisplayed()
+        } finally { gate.lock() }
+    }
+
+    @Test fun bottomOverlayChannelIsLargerAndProgressPrecedesProgramme() {
+        val playback = kotlinx.coroutines.flow.MutableStateFlow(com.tvnext.app.core.player.PlayerState())
+        val controller = java.lang.reflect.Proxy.newProxyInstance(
+            com.tvnext.app.core.player.PlaybackController::class.java.classLoader,
+            arrayOf(com.tvnext.app.core.player.PlaybackController::class.java)) { _, method, _ ->
+                if (method.name == "getState") playback else error("Unexpected ${method.name}")
+            } as com.tvnext.app.core.player.PlaybackController
+        val programme = programmes.first { it.start <= now && now < it.stop }
+        ui.setContent { MaterialTheme {
+            AndroidProgrammeOverlay(channel, ChannelEpg(current = programme), controller, false, {}, {},
+                modifier = Modifier.size(700.dp, 400.dp))
+        } }
+        val name = ui.onNodeWithTag("overlay-channel-name")
+        val progress = ui.onNodeWithTag("overlay-programme-progress")
+        val title = ui.onNodeWithTag("overlay-programme-title")
+        val names = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        val titles = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        name.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(names) }
+        title.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titles) }
+        assertTrue(names.single().layoutInput.style.fontSize.value > titles.single().layoutInput.style.fontSize.value)
+        assertEquals(androidx.compose.ui.text.font.FontWeight.SemiBold, names.single().layoutInput.style.fontWeight)
+        assertEquals(androidx.compose.ui.graphics.Color.White, names.single().layoutInput.style.color)
+        assertTrue(name.fetchSemanticsNode().boundsInRoot.bottom <= progress.fetchSemanticsNode().boundsInRoot.top)
+        assertTrue(progress.fetchSemanticsNode().boundsInRoot.bottom <= title.fetchSemanticsNode().boundsInRoot.top)
+        saveValidationScreenshot("bottom-overlay-channel-progress-programme.png")
     }
 
     @Test fun narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus() {

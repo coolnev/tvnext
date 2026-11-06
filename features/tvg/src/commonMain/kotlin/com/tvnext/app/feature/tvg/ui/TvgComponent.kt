@@ -96,6 +96,7 @@ data class TvgState(
 ) : MviState
 
 sealed interface TvgIntent : MviIntent {
+    data object Activated : TvgIntent
     data object Load : TvgIntent
     data object Refresh : TvgIntent
     /** Фильтр по категории каналов. */
@@ -169,6 +170,21 @@ class DefaultTvgComponent(
         scope = componentContext.coroutineScope(mainContext),
     ) {
 
+    // Main.immediate/cache hits can run loadGrid before the constructor returns.
+    // Create every state/query field before starting any coroutine.
+    private val _focusState = MutableStateFlow(TvgFocusState())
+    private var focusChannelCacheId: String? = null
+    private var focusChannelCache: Channel? = null
+    override val focusState: StateFlow<TvgFocusState> = _focusState.asStateFlow()
+
+    private var gridJob: kotlinx.coroutines.Job? = null
+    private var visibleLoadJob: kotlinx.coroutines.Job? = null
+    private var priorityVisibleLoadJob: kotlinx.coroutines.Job? = null
+    private var epgRefreshJob: kotlinx.coroutines.Job? = null
+    private var lastVisibleChannelIds: Set<String> = emptySet()
+    private var categoryAutoSelected = false
+    private val androidRowVersions = mutableMapOf<String, Long>()
+
     init {
         // The component loads the grid ONCE at creation; the screen must NOT
         // re-dispatch Load on every mount (a fullscreen F11 window switch
@@ -231,6 +247,7 @@ class DefaultTvgComponent(
     }
 
     override fun reduce(state: TvgState, intent: TvgIntent): TvgState = when (intent) {
+        TvgIntent.Activated -> state
         TvgIntent.Load -> state.copy(isLoading = true, error = null)
         TvgIntent.Refresh -> state.copy(isRefreshing = true, error = null)
         is TvgIntent.CategorySelected -> state.copy(
@@ -310,10 +327,14 @@ class DefaultTvgComponent(
 
     override fun handle(intent: TvgIntent) {
         when (intent) {
+            TvgIntent.Activated -> {
+                categoryAutoSelected = false
+                loadGrid(forceRefresh = false, refreshEpg = false)
+            }
             TvgIntent.Load -> loadGrid(forceRefresh = false)
             TvgIntent.Refresh -> loadGrid(forceRefresh = true)
             is TvgIntent.CategorySelected -> {
-                loadGrid(forceRefresh = false)
+                loadGrid(forceRefresh = false, refreshEpg = false)
             }
             is TvgIntent.DayDelta,
             is TvgIntent.DaySet,
@@ -368,10 +389,7 @@ class DefaultTvgComponent(
             if (isAndroidPlatform()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET)
     }
 
-    private val _focusState = MutableStateFlow(TvgFocusState())
-    private var focusChannelCacheId: String? = null
-    private var focusChannelCache: Channel? = null
-    override val focusState: StateFlow<TvgFocusState> = _focusState.asStateFlow()
+
 
     companion object {
         const val TAG = "Tvg"
@@ -395,13 +413,7 @@ class DefaultTvgComponent(
         const val MAX_VISIBLE_QUERY_CHANNELS = 16
     }
 
-    private var gridJob: kotlinx.coroutines.Job? = null
-    private var visibleLoadJob: kotlinx.coroutines.Job? = null
-    private var priorityVisibleLoadJob: kotlinx.coroutines.Job? = null
-    private var epgRefreshJob: kotlinx.coroutines.Job? = null
-    private var lastVisibleChannelIds: Set<String> = emptySet()
-    private var categoryAutoSelected = false
-    private val androidRowVersions = mutableMapOf<String, Long>()
+
 
     private fun startEpgRefresh(force: Boolean) {
         // A running import is NonCancellable inside the repository. Never start
@@ -443,6 +455,8 @@ class DefaultTvgComponent(
                             isLoading = false,
                             isRefreshing = false,
                             channels = emptyList(),
+                            filteredChannels = emptyList(),
+                            selectedCategory = null,
                             programmes = emptyMap(),
                             archiveStatus = emptyMap(),
                         )
@@ -467,6 +481,8 @@ class DefaultTvgComponent(
                             isLoading = false,
                             isRefreshing = false,
                             channels = emptyList(),
+                            filteredChannels = emptyList(),
+                            selectedCategory = null,
                             programmes = emptyMap(),
                             archiveStatus = emptyMap(),
                             error = AppError.InvalidData("Нет LIVE-каналов для ТВ-гида."),
@@ -474,6 +490,36 @@ class DefaultTvgComponent(
                     }
                     return@launch
                 }
+                // On first open, scope the Guide to the category of the LIVE
+                // channel the user is currently watching. Without this the guide
+                // opens on "all channels" (2000+ rows) and the auto-scroll to the
+                // watched channel crawls across everything (and fights the focus
+                // logic, which pulls back to the first row).
+                if (!categoryAutoSelected) {
+                    categoryAutoSelected = true
+                    val playingId = playbackController.state.value.item?.id
+                    if (playingId != null) {
+                        channels.firstOrNull { it.id == playingId }?.category
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { category ->
+                                setState {
+                                    it.copy(
+                                        selectedCategory = category,
+                                        filteredChannels = channels.filter { c -> c.category == category },
+                                    )
+                                }
+                            }
+                    }
+                }
+                // Используем отфильтрованные по категории каналы для сетки.
+                // A retained category can disappear after editing/profile changes.
+                // Recompute from the same fresh channel snapshot on every platform.
+                val category = state.value.selectedCategory?.takeIf { selected -> channels.any { it.category == selected } }
+                val allChannels = channels.filter { category == null || it.category == category }
+                // Publish channels before any EPG index query. A missing/slow
+                // programme cache must never look like an empty category.
+                setState { it.copy(channels = channels, filteredChannels = allChannels,
+                    selectedCategory = category, playlistNames = playlistNames, error = null) }
                 val now = currentTimeMillis()
                 // Use only REAL cached EPG history; the user setting narrows the
                 // archive, and provider-declared catchup-days narrows it when
@@ -500,30 +546,6 @@ class DefaultTvgComponent(
                 if (offset != state.value.selectedDayOffset) persistDayOffset(offset)
                 val from = startOfLocalDayOffset(now, offset)
                 val to = if (isAndroidPlatform()) startOfLocalDayOffset(now, offset + 1) else from + DAY_MS
-                // On first open, scope the Guide to the category of the LIVE
-                // channel the user is currently watching. Without this the guide
-                // opens on "all channels" (2000+ rows) and the auto-scroll to the
-                // watched channel crawls across everything (and fights the focus
-                // logic, which pulls back to the first row).
-                if (!categoryAutoSelected) {
-                    categoryAutoSelected = true
-                    val playingId = playbackController.state.value.item?.id
-                    if (playingId != null) {
-                        channels.firstOrNull { it.id == playingId }?.category
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { category ->
-                                setState {
-                                    it.copy(
-                                        selectedCategory = category,
-                                        filteredChannels = channels.filter { c -> c.category == category },
-                                    )
-                                }
-                            }
-                    }
-                }
-                // Используем отфильтрованные по категории каналы для сетки.
-                val allChannels = if (isAndroidPlatform()) channels.filter { state.value.selectedCategory == null || it.category == state.value.selectedCategory }
-                    else state.value.filteredChannels.ifEmpty { channels }
                 // Android TV: paint the guide shell immediately and let the
                 // LazyColumn viewport request only the rows actually visible.
                 // The old 24-channel warm-up still queried a full day of EPG
@@ -568,6 +590,7 @@ class DefaultTvgComponent(
                         isLoading = false,
                         isRefreshing = false,
                         channels = channels,
+                        selectedCategory = category,
                         filteredChannels = allChannels,
                         playlistNames = playlistNames,
                         programmes = programmes,

@@ -2,9 +2,7 @@ package com.tvnext.app
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import com.tvnext.app.core.iptv.domain.ParentalChannelGate
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -22,15 +22,17 @@ import java.security.SecureRandom
 /** PIN is salted and hashed on-device. Unlock is memory-only and never persisted. */
 internal class ParentalProtection(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("parental_access_v1", Context.MODE_PRIVATE)
-    companion object {
-        @Volatile private var unlockedInProcess = false
-    }
+    init { ParentalChannelGate.setEnabled(enabled) }
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", true)
-        set(value) { prefs.edit().putBoolean("enabled", value).apply(); if (!value) lock() }
-    val unlocked: Boolean get() = unlockedInProcess
-    fun unlock() { unlockedInProcess = true }
-    fun lock() { unlockedInProcess = false }
+        set(value) {
+            prefs.edit().putBoolean("enabled", value).apply()
+            ParentalChannelGate.setEnabled(value)
+            if (!value) lock()
+        }
+    val unlocked: Boolean get() = ParentalChannelGate.session.value.unlocked
+    fun unlock() { ParentalChannelGate.unlock() }
+    fun lock() { ParentalChannelGate.lock() }
 
     fun verify(pin: String): Boolean {
         if (pin.length !in 4..8 || !pin.all(Char::isDigit)) return false
@@ -52,7 +54,7 @@ internal class ParentalProtection(context: Context) {
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }
 
-/** Numeric IME opens automatically; the on-screen keypad is a TV-remote fallback. */
+/** Use the Android numeric password IME, including its Done action. */
 @Composable
 internal fun ParentalPinEntryDialog(
     title: String,
@@ -74,10 +76,13 @@ internal fun ParentalPinEntryDialog(
         } else {
             incorrect = true
             pin = ""
+            focus.requestFocus()
+            keyboard?.show()
         }
     }
     AlertDialog(
-        onDismissRequest = onCancel,
+        modifier = Modifier.widthIn(max = 340.dp),
+        onDismissRequest = { keyboard?.hide(); onCancel() },
         title = { Text(title, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -86,33 +91,16 @@ internal fun ParentalPinEntryDialog(
                     value = pin,
                     onValueChange = { new -> pin = new.filter(Char::isDigit).take(8); incorrect = false },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (pin.length >= 4) submit() }),
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
                 if (incorrect) Text("Неверный PIN-код", color = MaterialTheme.colorScheme.error)
-                listOf("123", "456", "789", "⌫0✓").forEach { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        row.forEach { digit ->
-                            OutlinedButton(
-                                onClick = {
-                                    when (digit) {
-                                        '⌫' -> pin = pin.dropLast(1)
-                                        '✓' -> submit()
-                                        else -> if (pin.length < 8) pin += digit
-                                    }
-                                    if (digit != '✓') incorrect = false
-                                },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(1.dp),
-                            ) { Text(digit.toString()) }
-                        }
-                    }
-                }
             }
         },
         confirmButton = { TextButton(onClick = { submit() }, enabled = pin.length >= 4) { Text("Открыть") } },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = { keyboard?.hide(); onCancel() }) { Text("Отмена") } },
         containerColor = MaterialTheme.colorScheme.surface,
     )
 }

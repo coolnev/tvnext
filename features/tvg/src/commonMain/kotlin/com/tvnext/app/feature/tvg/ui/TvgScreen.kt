@@ -136,6 +136,7 @@ fun TvgScreen(
     onBackHome: (() -> Unit)? = null,
 ) {
     if (isAndroidPlatform()) {
+        LaunchedEffect(component) { component.dispatch(TvgIntent.Activated) }
         AndroidTvgScreen(component, modifier, onBackHome)
         return
     }

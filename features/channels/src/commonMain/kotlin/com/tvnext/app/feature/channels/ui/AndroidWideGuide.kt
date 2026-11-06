@@ -93,6 +93,7 @@ internal fun AndroidWideGuide(
     initialProgrammeTimeMs: Long? = null,
     modifier: Modifier = Modifier,
 ) {
+    val parentalAccess by com.tvnext.app.core.iptv.domain.ParentalChannelGate.session.collectAsState()
     val activeId = focusedChannelId?.takeIf { id -> channels.any { it.id == id } }
         // Reopening may reset a category asynchronously. Hold playback focus
         // while the filtered list catches up, for both live TV and archive.
@@ -342,7 +343,7 @@ internal fun AndroidWideGuide(
                                     }
                                     Spacer(Modifier.width(6.dp))
                                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                        val adult = com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)
+                                        val adult = parentalAccess.restrictionsActive && com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)
                                         Text((if (adult) "🔒 " else "") + channel.name,
                                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                                             color = if (adult) Color(0xFFFF6767) else Color.White,
@@ -552,11 +553,10 @@ internal fun AndroidWindowedProgrammeList(
         }
     }
     LaunchedEffect(highlighted) { highlighted?.let(onProgrammeHighlighted) }
-    Column(modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.80f)).padding(18.dp)) {
+    Column(modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.80f)).padding(horizontal = 18.dp, vertical = 8.dp)) {
         Text(channel.name, maxLines = 1, overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleLarge)
-        Text("Программа передач", style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
         BoxWithConstraints(
             Modifier.weight(1f).fillMaxWidth().testTag("windowed-programmes").focusRequester(hostFocus)
                     .onFocusChanged { focused = it.isFocused }
@@ -577,10 +577,10 @@ internal fun AndroidWindowedProgrammeList(
                         }
                     }.focusable()
         ) {
-            val capacity = guideOddCapacity(((maxHeight + 4.dp) / 66.dp).toInt()) * 2
+            val capacity = ((maxHeight + 4.dp) / 33.dp).toInt().coerceAtLeast(1)
             CentredGuideRows(
                 values = values, selectedIndex = index, rowHeight = 29.dp, rowSpacing = 4.dp,
-                viewportCapacity = capacity, anchorSlot = (capacity - 1) / 2,
+                viewportCapacity = capacity, fillViewport = true,
                 modifier = Modifier.fillMaxSize(),
                 emptyLabel = if (loading) "Загрузка телепрограммы…" else "Программа передач недоступна",
             ) { programme ->
@@ -610,6 +610,7 @@ private fun <T> CentredGuideRows(
     modifier: Modifier = Modifier,
     viewportCapacity: Int? = null,
     clampChannelEdges: Boolean = false,
+    fillViewport: Boolean = false,
     anchorSlot: Int? = null,
     emptyLabel: String = "Нет элементов",
     onVisibleChanged: ((List<T>) -> Unit)? = null,
@@ -625,6 +626,7 @@ private fun <T> CentredGuideRows(
             val capacity = viewportCapacity?.coerceAtLeast(1) ?: guideOddCapacity(
                 ((maxHeight + rowSpacing) / (rowHeight + rowSpacing)).toInt())
             val window = when {
+                fillViewport -> guideFilledWindow(values.size, selectedIndex, capacity)
                 clampChannelEdges -> guideClampedChannelWindow(values.size, selectedIndex, capacity)
                 anchorSlot != null -> guideAlignedWindow(values.size, selectedIndex, capacity, anchorSlot)
                 else -> guideCentredIndexWindow(values.size, selectedIndex, capacity)
@@ -638,7 +640,7 @@ private fun <T> CentredGuideRows(
                 }
             }
             Column(
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier.align(if (fillViewport) Alignment.TopCenter else Alignment.Center),
                 verticalArrangement = Arrangement.spacedBy(rowSpacing),
             ) {
                 for (index in window) {
@@ -779,7 +781,11 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
             picture = load(remote?.frameUrl) ?: load(remote?.posterUrl)
         }
     }
-    val style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+    val style = (if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium).copy(
+        lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+            androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+            androidx.compose.ui.text.style.LineHeightStyle.Trim.None),
+    )
     val measure = rememberTextMeasurer()
     val density = LocalDensity.current
     BoxWithConstraints(modifier.fillMaxWidth().padding(start = if (compact) 0.dp else 12.dp,
@@ -799,7 +805,9 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
                 else if (style.fontSize.isSpecified) style.fontSize.toPx() * 1.25f
                 else 19.dp.toPx()
             }
-            val lines = (with(density) { pictureHeight.toPx() } / linePixels).toInt().coerceAtLeast(1)
+            // Round UP to a full line box: the next full-width line then follows
+            // the last narrow line without waiting for the taller image + a gap.
+            val lines = kotlin.math.ceil(with(density) { pictureHeight.toPx() } / linePixels).toInt().coerceAtLeast(1)
             // Measure actual line breaks at the width beside the image. Once the
             // image ends, the remainder continues across the full panel width.
             val layout = measure.measure(AnnotatedString(description), style = style,
@@ -810,18 +818,19 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
                 else 0
             val topText = description.take(split).trimEnd()
             val remainingText = description.drop(split).trimStart()
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val leadingHeight = maxOf(pictureHeight, with(density) { layout.size.height.toDp() })
+            Column(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                     Image(bitmap = art, contentDescription = null,
                         contentScale = ContentScale.Fit, alignment = Alignment.TopStart,
                         modifier = Modifier.size(pictureWidth, pictureHeight).clip(RoundedCornerShape(7.dp)))
                     Spacer(Modifier.width(10.dp))
-                    Text(topText, modifier = Modifier.weight(1f), style = style,
+                    Text(topText, modifier = Modifier.weight(1f).testTag("programme-description-beside"), style = style,
                         color = MaterialTheme.colorScheme.onSurface)
                 }
                 if (remainingText.isNotEmpty()) {
                     ExpandableGuideDescription(remainingText, Modifier.fillMaxWidth(),
-                        (maxTextHeight - pictureHeight - 4.dp).coerceAtLeast(if (compact) 1.dp else 65.dp), style)
+                        (maxTextHeight - leadingHeight).coerceAtLeast(if (compact) 1.dp else 65.dp), style)
                 }
             }
         }
@@ -835,7 +844,7 @@ private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     Column(modifier.heightIn(max = maximum).verticalScroll(scroll)) {
-        Text(text, color = MaterialTheme.colorScheme.onSurface, style = style)
+        Text(text, modifier = Modifier.testTag("programme-description-text"), color = MaterialTheme.colorScheme.onSurface, style = style)
     }
     LaunchedEffect(text, scroll.maxValue) {
         scroll.scrollTo(0)

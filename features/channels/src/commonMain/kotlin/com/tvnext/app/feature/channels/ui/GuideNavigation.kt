@@ -94,3 +94,12 @@ internal fun guideOddCapacity(capacity: Int): Int {
     val positive = capacity.coerceAtLeast(1)
     return if (positive % 2 == 0) positive - 1 else positive
 }
+
+/** A standalone programme pane uses every real row, including both list edges. */
+internal fun guideFilledWindow(size: Int, selectedIndex: Int, capacity: Int): IntRange {
+    if (size <= 0) return 0..-1
+    val count = capacity.coerceAtLeast(1).coerceAtMost(size)
+    val selected = selectedIndex.coerceIn(0, size - 1)
+    val first = (selected - (count - 1) / 2).coerceIn(0, size - count)
+    return first until first + count
+}

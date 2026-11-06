@@ -30,8 +30,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 536
-        versionName = "0.5.36-recovery"
+        versionCode = 537
+        versionName = "0.5.37-recovery"
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
     }

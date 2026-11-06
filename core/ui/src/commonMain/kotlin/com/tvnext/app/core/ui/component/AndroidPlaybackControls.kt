@@ -41,6 +41,7 @@ fun AndroidPlaybackControls(
     onDetails: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
     compact: Boolean = false,
+    showProgress: Boolean = true,
 ) {
     val aspectTitle by PlaybackUiRequests.aspectLabel.collectAsState()
     val pauseFocus = remember { FocusRequester() }
@@ -63,7 +64,7 @@ fun AndroidPlaybackControls(
     val compactText = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.sp)
     Column(modifier.focusGroup(), verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 6.dp)) {
         if (compact) {
-            if (durationMs > 0) SeekBarTrack(
+            if (durationMs > 0 && showProgress) SeekBarTrack(
                 fraction = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f), enabled = false,
                 modifier = Modifier.fillMaxWidth().height(9.dp), onScrub = {}, onScrubEnd = {},
                 liveEdgeFraction = liveEdgeFraction,
@@ -83,7 +84,7 @@ fun AndroidPlaybackControls(
             }
         } else {
             if (durationMs > 0) {
-                SeekBarTrack(
+                if (showProgress) SeekBarTrack(
                     fraction = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f),
                     enabled = false,
                     modifier = Modifier.fillMaxWidth().height(16.dp),

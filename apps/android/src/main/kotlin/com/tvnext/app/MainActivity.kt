@@ -460,6 +460,7 @@ class MainActivity : ComponentActivity() {
             when (val tab = child.instance) {
                 is AppTabComponent.Home -> tab.component.dispatch(HomeIntent.Load)
                 is AppTabComponent.Channels -> tab.component.dispatch(ChannelsIntent.Load)
+                is AppTabComponent.Tvg -> tab.component.dispatch(com.tvnext.app.feature.tvg.ui.TvgIntent.Activated)
                 else -> Unit
             }
         }
