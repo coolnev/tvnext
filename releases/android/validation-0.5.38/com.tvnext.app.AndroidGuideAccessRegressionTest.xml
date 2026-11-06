@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.AndroidGuideAccessRegressionTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-06T14:54:56.231Z" hostname="9c2a62439f9c" time="0.795">
+  <properties/>
+  <testcase name="guideReentryReadsChannelsAfterInitialEmptyStartupWithoutAnotherEpgRefresh[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.068"/>
+  <testcase name="reopeningKeepsLoadedRowsBeyondWarmupEvenIfReadIsTemporarilyEmpty[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.087"/>
+  <testcase name="repeatedAbsoluteCursorDoesNotSkipSeveralDates[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.031"/>
+  <testcase name="reopeningDuringArchiveUsesActualPlaybackDay[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.024"/>
+  <testcase name="unlockingNotifiesAllViewsWithoutPersistingAccess[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.058"/>
+  <testcase name="emptyArchiveDayAndReentryCannotHideTodaysProgrammes[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.03"/>
+  <testcase name="missingEpgCannotHideFreshChannels[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.05"/>
+  <testcase name="removedCategoryCannotLeaveGuideEmpty[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.027"/>
+  <testcase name="latePreviousDayResultCannotOverwriteReturnToCurrentDay[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.024"/>
+  <testcase name="guideReentryReadsChannelsAfterInitialEmptyStartupWithoutAnotherEpgRefresh" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.067"/>
+  <testcase name="reopeningKeepsLoadedRowsBeyondWarmupEvenIfReadIsTemporarilyEmpty" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.042"/>
+  <testcase name="repeatedAbsoluteCursorDoesNotSkipSeveralDates" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.052"/>
+  <testcase name="reopeningDuringArchiveUsesActualPlaybackDay" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.03"/>
+  <testcase name="unlockingNotifiesAllViewsWithoutPersistingAccess" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.028"/>
+  <testcase name="emptyArchiveDayAndReentryCannotHideTodaysProgrammes" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.052"/>
+  <testcase name="missingEpgCannotHideFreshChannels" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.029"/>
+  <testcase name="removedCategoryCannotLeaveGuideEmpty" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.049"/>
+  <testcase name="latePreviousDayResultCannotOverwriteReturnToCurrentDay" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

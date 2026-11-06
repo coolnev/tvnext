@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidGuideTimelineUiTest[desktop]" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-06T14:41:59.015Z" hostname="9c2a62439f9c" time="2.14">
+  <properties/>
+  <testcase name="rapidLeftAcrossMidnightThenRightRestoresVisibleProgrammes[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="1.747"/>
+  <testcase name="reverseBeforeDayQueryFinishesKeepsCurrentGridAndCursor[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.388"/>
+  <system-out><![CDATA[FocusRelatedWarning: 
+   FocusRequester is not initialized. Here are some possible fixes:
+
+   1. Remember the FocusRequester: val focusRequester = remember { FocusRequester() }
+   2. Did you forget to add a Modifier.focusRequester() ?
+   3. Are you attempting to request focus during composition? Focus requests should be made in
+   response to some event. Eg Modifier.clickable { focusRequester.requestFocus() }
+
+FocusRelatedWarning: 
+   FocusRequester is not initialized. Here are some possible fixes:
+
+   1. Remember the FocusRequester: val focusRequester = remember { FocusRequester() }
+   2. Did you forget to add a Modifier.focusRequester() ?
+   3. Are you attempting to request focus during composition? Focus requests should be made in
+   response to some event. Eg Modifier.clickable { focusRequester.requestFocus() }
+
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

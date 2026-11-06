@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.38-recovery-preview",
+  "versionCode": 538,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "9bb698f88d564fa9d1d0e197f265f08a447ab24125a42ab595b8a8add601c0f4",
+  "sourceCommit": "716b9090ffb68d54ed8de960a774cc56af0015a1",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 39,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 78,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 163,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "new embedded API key verified in DEX; absent from tracked text"
+  ],
+  "guide": {
+    "rapidMidnightKeys": true,
+    "returnBeforePreviousDayQueryCompletes": true,
+    "lateCancellationInsensitiveReplyRejected": true,
+    "emptyDayAndReentryRecovery": true,
+    "loadedRowsBeyondWarmupRetained": true,
+    "archiveEntryUsesActualPlaybackDay": true,
+    "dayNavigationStartsXmltvDownload": false
+  },
+  "description": {
+    "singleScrollForArtworkAndAllText": true,
+    "baselineSpacingPreserved": true,
+    "portraitAndLandscape": true,
+    "normalAndCompact": true
+  },
+  "metadata": {
+    "activeHost": "kinopoiskapiunofficial.tech",
+    "devProviderDisabled": true,
+    "searchPath": "/api/v2.1/films/search-by-keyword",
+    "detailsPath": "/api/v2.2/films/{id}",
+    "stillsPath": "/api/v2.2/films/{id}/images?type=STILL&page=1",
+    "providerSpecificKeyNamespace": "settings.kinopoisk_unofficial_key",
+    "legacyDevKeyDoesNotOverrideDefault": true,
+    "settingsConnectionDiagnostics": [
+      "success",
+      "missing key",
+      "401/403 rejected key",
+      "402/429 quota",
+      "5xx server",
+      "invalid JSON response",
+      "network failure",
+      "cancellation"
+    ]
+  },
+  "caption": {
+    "liveLabelRemoved": true,
+    "archiveLabel": "Архив"
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "liveMetadataApiTested": false,
+  "limitation": "Network policy blocks the live Kinopoisk/TMDB hosts; provider contract checked with controlled responses. No physical TV or real IPTV stream validation for this release."
+}

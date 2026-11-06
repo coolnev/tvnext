@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.37-recovery-preview`, versionCode 537, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.36.
+Текущая версия TVNextR: `0.5.38-recovery-preview`, versionCode 538, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.37.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.37.apk`.
-Описание: `RELEASE_ANDROID_0.5.37_RU.md`.
-Сводка: `releases/android/validation-0.5.37.json`.
+APK: `releases/android/TVNextR-0.5.38.apk`.
+Описание: `RELEASE_ANDROID_0.5.38_RU.md`.
+Сводка: `releases/android/validation-0.5.38.json`.
+
+В 0.5.38 TV Guide использует TimelineCursorMoved(timeMs), requestedDayOffset и gridRevision: быстрые LEFT/RIGHT через полночь и поздний ответ старого дня не портят текущую сетку. Activated открывает реальную дату playing LIVE/archive; день читается из локального EPG без refreshEpg. Warm-up включает viewport/playing + первые 8, известные строки того же дня сохраняются при пустом transient. ScrollableProgrammeDescription содержит изображение, узкий верхний текст и продолжение в одном scroll; ceil/Trim.None без вертикального разрыва сохранены. У имени канала убран LIVE, архив подписан «Архив». По новой просьбе пользователя Кинопоиск ПОЛНОСТЬЮ переключён на kinopoiskapiunofficial.tech (не kinopoisk.dev): v2.1 films/search-by-keyword?keyword=..., v2.2 films/id и films/id/images?type=STILL. Парсер принимает films/items, filmId/kinopoiskId, nameRu/nameEn/nameOriginal, posterUrl(Preview), кадры items.imageUrl/previewUrl. checkConnection использует авторизованную карточку 301 с timeout5s, typed-диагностикой HTTP/auth/quota/network/JSON; кнопка Android settings обновлена, повторный запуск защищён, отмена сохраняется. KeyStore теперь settings.kinopoisk_unofficial_key; прежний settings.kinopoisk_backup_key НЕ читать как ключ нового сервиса. Новый UUID ключ передан пользователем и записан ТОЛЬКО в локальный /workspace/.tools/gradle-home/gradle.properties (tvnext.kinopoisk.defaultKey), включён в BuildConfig/DEX; не переносить значение в текст GitHub и не возвращать старый dev default. 163 проверки: 39 metadata, 2 AndroidTvgScreen desktop UI, 78 channels/UI, 44 Android native API28/35. Живой API и физический ТВ не проверены, host сети запрещён; APK этой версии в эмуляторе не запускался. Исходники 716b909; SHA 9bb698f88d564fa9d1d0e197f265f08a447ab24125a42ab595b8a8add601c0f4.
 
 В 0.5.37 исправлен TV Guide: все поля, используемые стартовой корутиной, инициализированы до init; hot-cache/Main.immediate больше не обращается к null androidRowVersions/_focusState и не отменяет scope. Activated по входу Android перечитывает локальные каналы без refreshEpg; устаревшая категория проверяется, каналы публикуются до EPG. ParentalChannelGate.session (StateFlow) связывает PIN и цвет/замки в списках; unlock только в памяти, onDestroy(isFinishing) сбрасывает. Из PIN EntryDialog удалён keypad, остался NumberPassword+IME Done. Windowed: без подзаголовка, capacity=floor((height+4)/33), guideFilledWindow без placeholder-строк и без нечётного округления; фокус на прежнем внешнем host. ProgrammeRichDetails использует ceil строк, LineHeightStyle.Trim.None, без 4dp-разрыва; 4 baseline-теста для poster/frame+compact/normal. Нижняя панель: имя белое 20sp/SemiBold, progress под ним перед временем/передачей; showProgress=false скрывает дубль в controls. Пройдено 78 channels/UI + 34 Android native API28/35 =112; release/lint/encoding/sign/zipalign/ZIP/key. Исходники f2e6e9a, SHA 12e41ca2e2b8f0081860107971f3552ce7be0b480d9ed3a65fccf199eddec81f. Runtime: см. validation-0.5.37.json.
 

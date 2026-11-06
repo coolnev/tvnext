@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideRemoteUiTest[desktop]" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-11-06T14:53:46.099Z" hostname="9c2a62439f9c" time="20.624">
+  <properties/>
+  <testcase name="bottomDescriptionShowsTenProgrammesBesideFiveChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.797"/>
+  <testcase name="rightDescriptionShowsTwiceAsManyProgrammesAsChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.84"/>
+  <testcase name="remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="4.71"/>
+  <testcase name="descriptionArrivesAfterThePosterInWindowedDetails[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.792"/>
+  <testcase name="narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.354"/>
+  <testcase name="leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.802"/>
+  <testcase name="windowedProgrammeCursorSurvivesAsyncDataAndMovesAcrossMidnight[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.133"/>
+  <testcase name="windowedListFillsAllSlotsAtBothArchiveEdges[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="3.117"/>
+  <testcase name="successfulPinImmediatelyRemovesChannelLockUntilSessionCloses[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.174"/>
+  <testcase name="windowedListUsesAllSixteenSlotsWithoutSubtitleOrDates[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.114"/>
+  <testcase name="descriptionArrivesAfterThePosterBesideTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.25"/>
+  <testcase name="descriptionArrivesAfterThePosterBelowTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.241"/>
+  <testcase name="inlineWindowedSynopsisArrivesAfterThePoster[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.093"/>
+  <testcase name="programmeRowsDoNotRepeatTheSeparateDateColumn[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.116"/>
+  <testcase name="portraitTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.248"/>
+  <testcase name="bottomOverlayChannelIsLargerAndProgressPrecedesProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.174"/>
+  <testcase name="kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.059"/>
+  <testcase name="landscapeTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.22"/>
+  <testcase name="compactPortraitTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.107"/>
+  <testcase name="windowedRightSelectsProgrammesThenVideoAndOkOpensFullscreenOnRelease[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.288"/>
+  <testcase name="openingArchiveFocusesItsProgrammeEvenWhenEpgArrivesAfterOpening[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.229"/>
+  <testcase name="compactLandscapeTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.146"/>
+  <testcase name="anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.613"/>
+  <system-out><![CDATA[Suspicious! waitForIdle has not finished after 1 seconds.
+]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>
