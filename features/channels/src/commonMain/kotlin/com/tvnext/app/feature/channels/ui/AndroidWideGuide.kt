@@ -557,33 +557,41 @@ internal fun AndroidWindowedProgrammeList(
             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleLarge)
         Text("Программа передач", style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(12.dp))
-        CentredGuideRows(
-            values = values, selectedIndex = index, rowHeight = 62.dp, rowSpacing = 4.dp,
-            modifier = Modifier.weight(1f).fillMaxWidth().focusRequester(hostFocus)
-                .onFocusChanged { focused = it.isFocused }
-                .onPreviewKeyEvent { event ->
-                    when (event.key) {
-                        Key.DirectionUp, Key.DirectionDown -> {
-                            if (event.type == KeyEventType.KeyDown) {
-                                guideAdjacentIndex(values.size, index, if (event.key == Key.DirectionUp) -1 else 1)
-                                    ?.let { selectedStartMs = values[it].start }
+        BoxWithConstraints(
+            Modifier.weight(1f).fillMaxWidth().testTag("windowed-programmes").focusRequester(hostFocus)
+                    .onFocusChanged { focused = it.isFocused }
+                    .onPreviewKeyEvent { event ->
+                        when (event.key) {
+                            Key.DirectionUp, Key.DirectionDown -> {
+                                if (event.type == KeyEventType.KeyDown) {
+                                    guideAdjacentIndex(values.size, index, if (event.key == Key.DirectionUp) -1 else 1)
+                                        ?.let { selectedStartMs = values[it].start }
+                                }
+                                true
                             }
-                            true
+                            Key.DirectionCenter, Key.Enter -> {
+                                if (event.type == KeyEventType.KeyUp) highlighted?.let(onPlayProgramme)
+                                true
+                            }
+                            else -> false
                         }
-                        Key.DirectionCenter, Key.Enter -> {
-                            if (event.type == KeyEventType.KeyUp) highlighted?.let(onPlayProgramme)
-                            true
-                        }
-                        else -> false
-                    }
-                }.focusable(),
-            emptyLabel = if (loading) "Загрузка телепрограммы…" else "Программа передач недоступна",
-        ) { programme ->
-            GuideRow("${formatDate(programme.start)}  ${formatTimeOfDay(programme.start)}  ${programme.title}",
-                selected = programme == highlighted && focused,
-                currentBroadcast = programme.start <= now && now < programme.stop,
-                height = 62.dp,
-                onClick = { selectedStartMs = programme.start; onPlayProgramme(programme) })
+                    }.focusable()
+        ) {
+            val capacity = guideOddCapacity(((maxHeight + 4.dp) / 66.dp).toInt()) * 2
+            CentredGuideRows(
+                values = values, selectedIndex = index, rowHeight = 29.dp, rowSpacing = 4.dp,
+                viewportCapacity = capacity, anchorSlot = (capacity - 1) / 2,
+                modifier = Modifier.fillMaxSize(),
+                emptyLabel = if (loading) "Загрузка телепрограммы…" else "Программа передач недоступна",
+            ) { programme ->
+                GuideRow("${formatTimeOfDay(programme.start)}  ${programme.title}",
+                    selected = programme == highlighted && focused,
+                    currentBroadcast = programme.start <= now && now < programme.stop,
+                    height = 29.dp,
+                    maxLines = 1,
+                    modifier = Modifier.testTag("windowed-programme-row"),
+                    onClick = { selectedStartMs = programme.start; onPlayProgramme(programme) })
+            }
         }
     }
 }
@@ -739,7 +747,7 @@ internal fun guideWeekday(epochMillis: Long): String {
 
 /** Reusable detailed programme view; avoids a text-only dialog when artwork is cached. */
 @Composable
-internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
+internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier = Modifier, compact: Boolean = false) {
     val finder = remember { GlobalContext.get().getOrNull<ProgrammeMetadataRepository>() }
     var remote by remember(programme?.title) { mutableStateOf<ProgrammeMetadata?>(null) }
     LaunchedEffect(programme?.title, finder) {
@@ -771,17 +779,19 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
             picture = load(remote?.frameUrl) ?: load(remote?.posterUrl)
         }
     }
-    val style = MaterialTheme.typography.bodyMedium
+    val style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
     val measure = rememberTextMeasurer()
     val density = LocalDensity.current
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 4.dp)) {
-        val maxTextHeight = (maxHeight * 0.64f).coerceIn(190.dp, 430.dp)
+    BoxWithConstraints(modifier.fillMaxWidth().padding(start = if (compact) 0.dp else 12.dp,
+        end = if (compact) 0.dp else 10.dp, top = 4.dp)) {
+        val maxTextHeight = if (compact) maxHeight.coerceAtMost(430.dp) else (maxHeight * 0.64f).coerceIn(190.dp, 430.dp)
         if (picture == null) {
-            ExpandableGuideDescription(description, Modifier.fillMaxWidth(), maxTextHeight)
+            ExpandableGuideDescription(description, Modifier.fillMaxWidth(), maxTextHeight, style)
         } else {
             val art = picture!!
             val aspect = art.width.toFloat() / art.height.coerceAtLeast(1)
-            val pictureWidth = minOf(190.dp, 142.dp * aspect)
+            val pictureLimit = if (compact) minOf(80.dp, maxHeight * 0.55f) else 142.dp
+            val pictureWidth = minOf(if (compact) 92.dp else 190.dp, pictureLimit * aspect)
             val pictureHeight = pictureWidth / aspect.coerceAtLeast(0.01f)
             val textWidth = (maxWidth - pictureWidth - 10.dp).coerceAtLeast(80.dp)
             val linePixels = with(density) {
@@ -811,7 +821,7 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
                 }
                 if (remainingText.isNotEmpty()) {
                     ExpandableGuideDescription(remainingText, Modifier.fillMaxWidth(),
-                        (maxTextHeight - pictureHeight).coerceAtLeast(65.dp))
+                        (maxTextHeight - pictureHeight - 4.dp).coerceAtLeast(if (compact) 1.dp else 65.dp), style)
                 }
             }
         }
@@ -820,12 +830,12 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?) {
 
 /** Content grows with text until a TV-safe maximum; overflow scrolls back/forth. */
 @Composable
-private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum: Dp) {
+private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum: Dp,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium) {
     val scroll = rememberScrollState()
     val density = LocalDensity.current
     Column(modifier.heightIn(max = maximum).verticalScroll(scroll)) {
-        Text(text, color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyMedium)
+        Text(text, color = MaterialTheme.colorScheme.onSurface, style = style)
     }
     LaunchedEffect(text, scroll.maxValue) {
         scroll.scrollTo(0)

@@ -100,7 +100,6 @@ import com.tvnext.app.core.ui.component.TvCardButton
 import com.tvnext.app.core.ui.component.TvPlayerPanel
 import com.tvnext.app.core.ui.component.TvPlayPauseIcon
 import com.tvnext.app.core.ui.component.TvSeekButton
-import com.tvnext.app.core.ui.component.AndroidPlaybackControls
 import com.tvnext.app.core.ui.component.PlayerSeekBar
 import com.tvnext.app.core.ui.component.TvProgressBar
 import com.tvnext.app.core.ui.component.TvSearchField
@@ -333,7 +332,6 @@ private fun WatchingLayout(
     val channelEpg by component.channelEpg.collectAsState()
     val playingEpg by component.playingEpg.collectAsState()
     var infoPanelFocused by remember { mutableStateOf(false) }
-    var windowedDescriptionVisible by remember { mutableStateOf(false) }
     var archivePreview by remember { mutableStateOf<EpgProgramme?>(null) }
     val channelNameVisible by component.channelNameVisible.collectAsState()
     // Long-press OK on the VIDEO opens the TV Guide; short OK opens the browse
@@ -1136,16 +1134,16 @@ private fun WatchingLayout(
                             .then(if (!immersive && isAndroidPlatform()) Modifier.height(windowedVideoHeight) else Modifier.weight(1f)),
                     )
                     Column(
-                        if (!immersive && isAndroidPlatform()) Modifier.weight(1f).fillMaxWidth()
-                            .verticalScroll(rememberScrollState()) else Modifier,
+                        if (!immersive && isAndroidPlatform()) Modifier.weight(1f).fillMaxWidth() else Modifier,
                     ) {
                         if (!immersive && isAndroidPlatform()) {
                             val programme = playingEpg.current
                             val at = if (playerItemKind == PlaybackContentKind.ARCHIVE)
                                 (playerState.item?.archiveEpgAnchorMs ?: now) + playerState.positionMs else now
                             val duration = programme?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0L
-                            AndroidPlaybackControls(
-                                requestInitialFocus = false,
+                            AndroidWindowedPlaybackInfo(
+                                programme = if (timelineState.channelId != null && archivePreview != null)
+                                    archivePreview else channelEpg.current ?: playingEpg.current,
                                 paused = playerState.state == PlaybackState.PAUSED,
                                 positionMs = programme?.let { (at - it.start).coerceAtLeast(0) } ?: 0L,
                                 durationMs = if (androidHasArchive(selectedChannel)) duration else 0L,
@@ -1155,38 +1153,21 @@ private fun WatchingLayout(
                                 canPause = playerItemKind == PlaybackContentKind.ARCHIVE,
                                 isLiveChannel = playerItemKind == PlaybackContentKind.LIVE,
                                 diagnostics = playerState.diagnostics,
-                                onDetails = { windowedDescriptionVisible = true },
                                 onLive = if (playerItemKind == PlaybackContentKind.ARCHIVE)
                                     ({ (controller as? TimeShiftController)?.returnToLive(); Unit }) else null,
                                 liveEdgeFraction = if (playerItemKind == PlaybackContentKind.ARCHIVE &&
                                     programme != null && now in programme.start..programme.stop && duration > 0)
                                     ((now - programme.start).toFloat() / duration).coerceIn(0f, 1f) else null,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                                modifier = Modifier.weight(1f).fillMaxWidth()
                                     .onFocusChanged { infoPanelFocused = it.hasFocus },
                             )
                         }
-                        if (!immersive && isAndroidPlatform() && windowedDescriptionVisible) {
-                            androidx.compose.material3.AlertDialog(
-                                onDismissRequest = { windowedDescriptionVisible = false },
-                                title = { Text(playingEpg.current?.title ?: selectedChannel.name) },
-                                text = { ProgrammeRichDetails(playingEpg.current) },
-                                confirmButton = {
-                                    androidx.compose.material3.TextButton(onClick = { windowedDescriptionVisible = false }) {
-                                        Text("Закрыть")
-                                    }
-                                },
-                            )
-                        }
-                        if (!immersive) {
+                        if (!immersive && !isAndroidPlatform()) {
                             EpgPanel(
-                                epg = if (isAndroidPlatform() && timelineState.channelId != null && archivePreview != null)
-                                    ChannelEpg(current = archivePreview, channelId = timelineState.channelId) else channelEpg,
+                                epg = channelEpg,
                                 isArchive = playerItemKind == PlaybackContentKind.ARCHIVE,
-                                archiveAvailable = if (isAndroidPlatform()) state.channels.firstOrNull { it.id == channelEpg.channelId }?.let { androidHasArchive(it) } == true else selectedChannel.hasCatchupMechanism,
-                                onArchiveProgramme = { programme ->
-                                    if (isAndroidPlatform()) component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, if (timelineState.channelId != null && archivePreview != null) timelineState.channelId else channelEpg.channelId))
-                                    else onArchiveProgramme(programme)
-                                },
+                                archiveAvailable = selectedChannel.hasCatchupMechanism,
+                                onArchiveProgramme = onArchiveProgramme,
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }

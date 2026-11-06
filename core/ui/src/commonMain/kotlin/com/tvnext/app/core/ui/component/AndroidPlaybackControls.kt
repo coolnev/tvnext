@@ -2,6 +2,8 @@ package com.tvnext.app.core.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +12,12 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import com.tvnext.app.core.ui.theme.TVNextDimens
 import com.tvnext.app.core.player.PlayerDiagnostics
 import com.tvnext.app.core.common.util.PlaybackUiRequests
 
@@ -32,6 +40,7 @@ fun AndroidPlaybackControls(
     onLive: (() -> Unit)? = null,
     onDetails: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
+    compact: Boolean = false,
 ) {
     val aspectTitle by PlaybackUiRequests.aspectLabel.collectAsState()
     val pauseFocus = remember { FocusRequester() }
@@ -47,75 +56,99 @@ fun AndroidPlaybackControls(
             }
         }
     }
-    Column(modifier.focusGroup(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (durationMs > 0) {
-            SeekBarTrack(
-                fraction = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f),
-                enabled = false,
-                modifier = Modifier.fillMaxWidth().height(16.dp),
-                onScrub = {}, onScrubEnd = {},
+    val badges = remember(diagnostics?.resolution, diagnostics?.audio) {
+        playbackFormatBadges(diagnostics?.resolution, diagnostics?.audio)
+    }
+    val buttonSize = if (compact) 28.dp else 52.dp
+    val compactText = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.sp)
+    Column(modifier.focusGroup(), verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 6.dp)) {
+        if (compact) {
+            if (durationMs > 0) SeekBarTrack(
+                fraction = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f), enabled = false,
+                modifier = Modifier.fillMaxWidth().height(9.dp), onScrub = {}, onScrubEnd = {},
                 liveEdgeFraction = liveEdgeFraction,
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(playbackTime(positionMs), color = MaterialTheme.colorScheme.onSurface)
-                Text(playbackTime(durationMs), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (liveEdgeFraction != null) {
-                Text("Белая метка — начало прямого эфира", style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        // Technical facts come from the selected Media3 tracks, not channel names
-        // or the configured output resolution. Do not show unverified values.
-        val badges = remember(diagnostics?.resolution, diagnostics?.audio) {
-            playbackFormatBadges(diagnostics?.resolution, diagnostics?.audio)
-        }
-        if (badges.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(5.dp, androidx.compose.ui.Alignment.End),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            if (durationMs > 0 || badges.isNotEmpty()) Row(
+                Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                badges.forEach { label ->
-                    Box(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-                            .padding(horizontal = 7.dp, vertical = 3.dp),
-                        contentAlignment = androidx.compose.ui.Alignment.Center,
-                    ) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
+                if (durationMs > 0) Text("${playbackTime(positionMs)} / ${playbackTime(durationMs)}",
+                    style = compactText.copy(fontSize = 10.sp, lineHeight = 12.sp), maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.End)) {
+                    badges.forEach { badge -> Text(badge,
+                        style = compactText.copy(fontSize = 9.sp, lineHeight = 11.sp), maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+            }
+        } else {
+            if (durationMs > 0) {
+                SeekBarTrack(
+                    fraction = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f),
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth().height(16.dp),
+                    onScrub = {}, onScrubEnd = {},
+                    liveEdgeFraction = liveEdgeFraction,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(playbackTime(positionMs), color = MaterialTheme.colorScheme.onSurface)
+                    Text(playbackTime(durationMs), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (liveEdgeFraction != null) {
+                    Text("Белая метка — начало прямого эфира", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            // Technical facts come from the selected Media3 tracks, not channel names
+            // or the configured output resolution. Do not show unverified values.
+            if (badges.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp, androidx.compose.ui.Alignment.End),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    badges.forEach { label ->
+                        Box(
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }
         }
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
+        val buttons: @Composable () -> Unit = {
             TvCardButton(
                 onClick = { PlaybackUiRequests.chooseAspect() },
                 enabled = interactive,
-                modifier = Modifier.focusRequester(aspectFocus),
-                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 6.dp),
-            ) { Text("Формат: $aspectTitle", color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelMedium, maxLines = 1) }
+                modifier = Modifier.focusRequester(aspectFocus)
+                    .then(if (compact) Modifier.height(buttonSize).widthIn(max = 76.dp) else Modifier)
+                    .semantics { contentDescription = "Формат: $aspectTitle" },
+                contentPadding = PaddingValues(horizontal = if (compact) 4.dp else 9.dp, vertical = if (compact) 2.dp else 6.dp),
+            ) { Text(if (compact) aspectTitle else "Формат: $aspectTitle", color = MaterialTheme.colorScheme.onSurface,
+                style = if (compact) compactText else MaterialTheme.typography.labelMedium, maxLines = 1) }
             TvCardButton(
                 onClick = { PlaybackUiRequests.previousChannel() },
                 enabled = interactive,
-                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 6.dp),
+                modifier = if (compact) Modifier.size(buttonSize) else Modifier,
+                contentPadding = if (compact) PaddingValues(0.dp) else PaddingValues(horizontal = 9.dp, vertical = 6.dp),
             ) { Text("↶", color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge) }
+                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge) }
             TvSeekButton(
                 direction = TvSeekDirection.BACKWARD,
                 onSeek = { onSeekBy(-seekStepMs) },
                 enabled = interactive && durationMs > 0L,
                 focusRequester = rewindFocus,
+                buttonSize = buttonSize,
+                modifier = Modifier.testTag("playback-rewind"),
             )
             if (canPause) {
                 TvCardButton(
@@ -123,12 +156,12 @@ fun AndroidPlaybackControls(
                     enabled = interactive,
                     containerAlpha = 0f,
                     contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.size(52.dp).focusRequester(pauseFocus),
+                    modifier = Modifier.size(buttonSize).focusRequester(pauseFocus).testTag("playback-pause"),
                 ) {
                     TvPlayPauseIcon(
                         paused = paused,
                         modifier = Modifier.fillMaxSize(),
-                        circleSize = 52.dp,
+                        circleSize = buttonSize,
                         backgroundAlpha = 0f,
                     )
                 }
@@ -137,18 +170,35 @@ fun AndroidPlaybackControls(
                 direction = TvSeekDirection.FORWARD,
                 onSeek = { onSeekBy(seekStepMs) },
                 enabled = interactive && durationMs > 0L,
+                buttonSize = buttonSize,
+                modifier = Modifier.testTag("playback-forward"),
             )
-            onLive?.let { TvCardButton(onClick = it, enabled = interactive) { Text("LIVE", color = MaterialTheme.colorScheme.onSurface) } }
-            onDetails?.let { TvCardButton(onClick = it, enabled = interactive) { Text("Описание", color = MaterialTheme.colorScheme.onSurface) } }
-            onClose?.let { TvCardButton(onClick = it, enabled = interactive) { Text("Закрыть", color = MaterialTheme.colorScheme.onSurface) } }
+            val captionPadding = if (compact) PaddingValues(horizontal = 4.dp, vertical = 2.dp) else PaddingValues(TVNextDimens.ScreenPaddingCompact)
+            val captionModifier = if (compact) Modifier.height(buttonSize) else Modifier
+            onLive?.let { TvCardButton(onClick = it, enabled = interactive, modifier = captionModifier,
+                contentPadding = captionPadding) { Text("LIVE", color = MaterialTheme.colorScheme.onSurface,
+                    style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
+            onDetails?.let { TvCardButton(onClick = it, enabled = interactive, modifier = captionModifier,
+                contentPadding = captionPadding) { Text("Описание", color = MaterialTheme.colorScheme.onSurface,
+                    style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
+            onClose?.let { TvCardButton(onClick = it, enabled = interactive, modifier = captionModifier,
+                contentPadding = captionPadding) { Text("Закрыть", color = MaterialTheme.colorScheme.onSurface,
+                    style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
             if (isLiveChannel) {
                 TvCardButton(onClick = { PlaybackUiRequests.toggleRecording() }, enabled = interactive,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)) {
-                    Text("● Записать эфир", color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    modifier = (if (compact) Modifier.height(buttonSize) else Modifier)
+                        .semantics { contentDescription = "Записать эфир" },
+                    contentPadding = PaddingValues(horizontal = if (compact) 4.dp else 12.dp, vertical = if (compact) 2.dp else 6.dp)) {
+                    Text(if (compact) "● Запись" else "● Записать эфир", color = MaterialTheme.colorScheme.onSurface,
+                        style = if (compact) compactText else MaterialTheme.typography.labelMedium, maxLines = 1)
                 }
             }
         }
+        if (compact) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            buttons()
+        } else FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) { buttons() }
     }
 }
 

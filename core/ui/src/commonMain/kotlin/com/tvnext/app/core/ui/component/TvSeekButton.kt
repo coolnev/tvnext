@@ -23,6 +23,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,6 +47,7 @@ fun TvSeekButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     focusRequester: FocusRequester? = null,
+    buttonSize: Dp = 52.dp,
 ) {
     val scope = rememberCoroutineScope()
     var held by remember { mutableStateOf(false) }
@@ -56,7 +58,7 @@ fun TvSeekButton(
         onClick = onSeek,
         enabled = enabled,
         modifier = modifier
-            .size(52.dp)
+            .size(buttonSize)
             .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
             .onPreviewKeyEvent { event ->
                 val activation = event.key == Key.DirectionCenter ||
@@ -90,8 +92,8 @@ fun TvSeekButton(
         contentPadding = PaddingValues(0.dp),
         containerAlpha = 0f,
     ) {
-        Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.size(27.dp)) {
+        Box(Modifier.size(buttonSize), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.size(buttonSize * (27f / 52f))) {
                 // Two simple arrowheads follow theme tint; never platform emoji-yellow.
                 val sign = if (direction == TvSeekDirection.BACKWARD) 1f else -1f
                 for (n in 0..1) {

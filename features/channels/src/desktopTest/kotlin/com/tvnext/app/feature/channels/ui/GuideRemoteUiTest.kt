@@ -1,6 +1,9 @@
 package com.tvnext.app.feature.channels.ui
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -18,6 +21,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
@@ -224,6 +229,7 @@ class GuideRemoteUiTest {
         } finally { client.close() }
     }
 
+    @Test fun inlineWindowedSynopsisArrivesAfterThePoster() = descriptionAfterPoster(3)
     @Test fun descriptionArrivesAfterThePosterInWindowedDetails() = descriptionAfterPoster(0)
     @Test fun descriptionArrivesAfterThePosterBelowTheFullGuide() = descriptionAfterPoster(1)
     @Test fun descriptionArrivesAfterThePosterBesideTheFullGuide() = descriptionAfterPoster(2)
@@ -267,6 +273,9 @@ class GuideRemoteUiTest {
                 androidx.compose.runtime.CompositionLocalProvider(com.tvnext.app.core.ui.image.LocalLogoImageLoader provides loader) {
                     MaterialTheme {
                         if (mode == 0) Box(Modifier.size(700.dp, 500.dp)) { ProgrammeRichDetails(programme) }
+                        else if (mode == 3) AndroidWindowedPlaybackInfo(
+                            programme, false, 0, hour, {}, {}, 60_000, false, true,
+                            modifier = Modifier.size(240.dp, 170.dp))
                         else AndroidWideGuide(channels = listOf(channel), playingChannelId = channel.id, focusedChannelId = channel.id,
                             timeline = ChannelTimelineState(channel.id, false, listOf(programme)), nowPlaying = emptyMap(), now = now,
                             showNumbers = false, showCategories = false, descriptionOnRight = mode == 2,
@@ -346,6 +355,7 @@ class GuideRemoteUiTest {
             }
         }
         ui.waitForIdle()
+        ui.onNodeWithTag("windowed-programmes").assertIsFocused()
         ui.runOnIdle { epg.value = programmes }
         ui.waitForIdle()
         assertEquals(today, highlighted?.start)
@@ -401,18 +411,35 @@ class GuideRemoteUiTest {
         assertFalse(epgOpen.value)
     }
 
+    @Test fun windowedListHasFourteenUndatedProgrammesInsteadOfSeven() {
+        ui.setContent { MaterialTheme {
+            AndroidWindowedProgrammeList(channel, programmes, false, now, null, null, true,
+                {}, {}, Modifier.size(400.dp, 600.dp))
+        } }
+        ui.waitForIdle()
+        ui.onAllNodesWithTag("windowed-programme-row").assertCountEquals(14)
+        val current = programmes.first { it.start <= now && now < it.stop }
+        ui.onNodeWithText("${formatTimeOfDay(current.start)}  ${current.title}").assertIsDisplayed()
+        ui.onNodeWithText("${formatDate(current.start)}  ${formatTimeOfDay(current.start)}  ${current.title}").assertDoesNotExist()
+        saveValidationScreenshot("windowed-fourteen-programmes-no-date.png")
+    }
+
     @Test fun narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus() {
         val archived = mutableStateOf(false)
+        val synopsis = "Сюжет фильма уже под видео."
+        val programme = EpgProgramme(channel.id, now, now + hour, "Фильм эфира", synopsis)
+        var sought = 0L
         ui.setContent {
             val videoFocus = remember { FocusRequester() }
             MaterialTheme {
-                Column(Modifier.size(420.dp, 700.dp)) {
-                    Box(Modifier.size(420.dp, 240.dp).testTag("video").focusRequester(videoFocus).focusable())
-                    AndroidPlaybackControls(
-                        paused = false, positionMs = 0, durationMs = hour,
-                        onTogglePlayback = {}, onSeekBy = {}, requestInitialFocus = false,
+                Column(Modifier.size(240.dp, 305.dp)) {
+                    Box(Modifier.fillMaxWidth().height(135.dp).testTag("video").focusRequester(videoFocus).focusable())
+                    AndroidWindowedPlaybackInfo(
+                        programme = programme, paused = false, positionMs = 0, durationMs = hour,
+                        onTogglePlayback = {}, onSeekBy = { sought += it }, seekStepMs = 60_000,
                         canPause = archived.value, isLiveChannel = !archived.value,
-                        onLive = if (archived.value) ({}) else null, onDetails = {},
+                        onLive = if (archived.value) ({}) else null,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                     )
                 }
                 LaunchedEffect(Unit) { videoFocus.requestFocus() }
@@ -420,12 +447,25 @@ class GuideRemoteUiTest {
         }
         ui.waitForIdle()
         ui.onNodeWithTag("video").assertIsFocused()
-        ui.onNodeWithText("Описание").assertIsDisplayed()
-        ui.onNodeWithText("Записать эфир", substring = true).assertIsDisplayed()
+        ui.onNodeWithText("Описание").assertDoesNotExist()
+        ui.onNodeWithText("Телепрограмма").assertDoesNotExist()
+        ui.onNodeWithText("● Запись").assertIsDisplayed()
+        ui.onNodeWithText(synopsis).assertIsDisplayed()
+        val controls = ui.onNodeWithTag("windowed-controls").fetchSemanticsNode().boundsInRoot
+        assertTrue(controls.height <= 64, "Compact controls must leave room for the inline synopsis")
+        val rewind = ui.onNodeWithTag("playback-rewind").fetchSemanticsNode().boundsInRoot
+        val recording = ui.onNodeWithText("● Запись").fetchSemanticsNode().boundsInRoot
+        assertTrue(kotlin.math.abs(rewind.center.y-recording.center.y) <= 2, "Recording must remain in the same button row")
+        saveValidationScreenshot("windowed-compact-live-with-description.png")
         ui.runOnIdle { archived.value = true }
         ui.waitForIdle()
         ui.onNodeWithTag("video").assertIsFocused()
         ui.onNodeWithText("LIVE").assertIsDisplayed()
-        ui.onNodeWithText("Описание").assertIsDisplayed()
+        ui.onNodeWithText("Описание").assertDoesNotExist()
+        ui.onNodeWithText(synopsis).assertIsDisplayed()
+        ui.onNodeWithTag("playback-rewind").performSemanticsAction(SemanticsActions.RequestFocus) { it() }
+        press(Key.Enter)
+        assertEquals(-60_000L, sought)
+        saveValidationScreenshot("windowed-compact-archive-with-description.png")
     }
 }
