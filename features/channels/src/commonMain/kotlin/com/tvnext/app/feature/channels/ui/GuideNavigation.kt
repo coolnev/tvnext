@@ -83,7 +83,7 @@ internal fun guideChannelAnchorSlot(size: Int, selectedIndex: Int, capacity: Int
  */
 internal fun guideAlignedWindow(size: Int, selectedIndex: Int, capacity: Int, anchorSlot: Int): IntRange {
     if (size <= 0) return 0..-1
-    val slots = guideOddCapacity(capacity)
+    val slots = capacity.coerceAtLeast(1)
     val selected = selectedIndex.coerceIn(0, size - 1)
     val anchor = anchorSlot.coerceIn(0, slots - 1)
     val first = selected - anchor

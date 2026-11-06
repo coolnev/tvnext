@@ -82,6 +82,12 @@ class GuideClampedEdgeAndAlignmentTest {
         assertEquals(-1..5, guideAlignedWindow(7, 2, 7, 3))
     }
 
+    @Test fun denseProgrammesRetainAllTenSlotsAroundTheChannelAnchor() {
+        assertEquals(16..25, guideAlignedWindow(100, 20, 10, 4))
+        assertEquals(0..9, guideAlignedWindow(100, 0, 10, 0))
+        assertEquals(92..109, guideAlignedWindow(100, 99, 18, 7))
+    }
+
     @Test fun emptyOrSmallListsNeverGenerateInvalidIndices() {
         assertEquals(0..-1, guideClampedChannelWindow(0, -1, 7))
         assertEquals(0..-1, guideAlignedWindow(0, -1, 7, 3))

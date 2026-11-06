@@ -16,10 +16,14 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.printToString
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsFocused
@@ -70,6 +74,104 @@ class GuideRemoteUiTest {
             ui.onRoot().performKeyInput { pressKey(key) }
             ui.waitForIdle()
         }
+    }
+
+    private fun showDensityGuide(right: Boolean): List<Channel> {
+        val roster = (0 until 30).map { channel.copy(id = "density-$it", name = "Канал $it") }
+        val selected = roster[12]
+        val entries = programmes.map { it.copy(channelId = selected.id) }
+        ui.setContent {
+            MaterialTheme {
+                AndroidWideGuide(channels = roster, playingChannelId = selected.id, focusedChannelId = selected.id,
+                    timeline = ChannelTimelineState(selected.id, false, entries), nowPlaying = emptyMap(), now = now,
+                    showNumbers = false, showCategories = false, descriptionOnRight = right,
+                    categories = emptyList(), selectedCategory = null, onToggleCategories = {}, onChooseCategory = {},
+                    onChannelFocus = {}, onVisibleChannelsChanged = {}, onPlayChannel = {}, onPlayArchive = { _, _ -> },
+                    onClose = {}, modifier = Modifier.size(1100.dp, if (right) 700.dp else 540.dp))
+            }
+        }
+        ui.waitForIdle()
+        return roster
+    }
+
+    @Test fun bottomDescriptionShowsTenProgrammesBesideFiveChannels() {
+        showDensityGuide(false)
+        ui.onAllNodesWithTag("guide-channel-row").assertCountEquals(5)
+        ui.onAllNodesWithTag("guide-programme-row").assertCountEquals(10)
+        assertProgrammeIsBesideSelectedChannel(2)
+        saveValidationScreenshot("bottom-5-channels-10-programmes.png")
+    }
+
+    @Test fun rightDescriptionShowsTwiceAsManyProgrammesAsChannels() {
+        showDensityGuide(true)
+        ui.onAllNodesWithTag("guide-channel-row").assertCountEquals(9)
+        ui.onAllNodesWithTag("guide-programme-row").assertCountEquals(18)
+        assertProgrammeIsBesideSelectedChannel(4)
+        saveValidationScreenshot("right-9-channels-18-programmes.png")
+    }
+
+    private fun saveValidationScreenshot(name: String) {
+        val directory = System.getenv("TVNEXT_VALIDATION_DIR")?.takeIf { it.isNotBlank() } ?: return
+        val target = java.io.File(directory, name)
+        target.parentFile.mkdirs()
+        val image = org.jetbrains.skia.Image.makeFromBitmap(ui.onRoot().captureToImage().asSkiaBitmap())
+        image.encodeToData(org.jetbrains.skia.EncodedImageFormat.PNG)!!.use { target.writeBytes(it.bytes) }
+        image.close()
+    }
+
+    private fun assertProgrammeIsBesideSelectedChannel(channelSlot: Int) {
+        val channelBounds = ui.onAllNodesWithTag("guide-channel-row")[channelSlot].fetchSemanticsNode().boundsInRoot
+        val current = programmes.first { it.start <= now && now < it.stop }
+        val programmeBounds = ui.onNodeWithText("${formatTimeOfDay(current.start)}  ${current.title}").fetchSemanticsNode().boundsInRoot
+        assertTrue(kotlin.math.abs(channelBounds.center.y-programmeBounds.center.y) <= channelBounds.height/3,
+            "The live programme must remain beside its selected channel")
+    }
+
+    @Test fun leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel() {
+        var played: EpgProgramme? = null
+        ui.setContent { MaterialTheme {
+            AndroidWideGuide(channels = listOf(channel), playingChannelId = channel.id, focusedChannelId = channel.id,
+                timeline = ChannelTimelineState(channel.id, false, programmes), nowPlaying = emptyMap(), now = now,
+                showNumbers = false, showCategories = false, descriptionOnRight = false,
+                categories = emptyList(), selectedCategory = null, onToggleCategories = {}, onChooseCategory = {},
+                onChannelFocus = {}, onVisibleChannelsChanged = {}, onPlayChannel = {}, onPlayArchive = { _, p -> played = p },
+                onClose = {}, modifier = Modifier.size(1100.dp, 540.dp))
+        } }
+        ui.waitForIdle()
+        press(Key.DirectionRight)
+        press(Key.DirectionUp, 37)
+        assertEquals(null, played)
+        press(Key.DirectionLeft)
+        press(Key.DirectionRight)
+        press(Key.Enter)
+        assertEquals(today + 12 * hour, played?.start)
+    }
+
+    @Test fun anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme() {
+        var played: EpgProgramme? = null
+        val other = channel.copy(id = "other", name = "Другой канал")
+        val focused = mutableStateOf(channel.id)
+        ui.setContent { MaterialTheme {
+            val selected = focused.value
+            AndroidWideGuide(channels = listOf(channel, other), playingChannelId = channel.id, focusedChannelId = selected,
+                timeline = ChannelTimelineState(selected, false, programmes.map { it.copy(channelId = selected) }),
+                nowPlaying = emptyMap(), now = now,
+                showNumbers = false, showCategories = false, descriptionOnRight = true,
+                categories = emptyList(), selectedCategory = null, onToggleCategories = {}, onChooseCategory = {},
+                onChannelFocus = { focused.value = it }, onVisibleChannelsChanged = {}, onPlayChannel = {},
+                onPlayArchive = { _, p -> played = p }, onClose = {}, modifier = Modifier.size(1100.dp, 700.dp))
+        } }
+        ui.waitForIdle()
+        press(Key.DirectionRight)
+        press(Key.DirectionUp, 37)
+        assertEquals(null, played)
+        press(Key.DirectionLeft)
+        press(Key.DirectionDown)
+        assertEquals(other.id, focused.value)
+        press(Key.DirectionRight)
+        press(Key.Enter)
+        assertEquals(other.id, played?.channelId)
+        assertEquals(today + 12 * hour, played?.start)
     }
 
     @Test fun programmeRowsDoNotRepeatTheSeparateDateColumn() {

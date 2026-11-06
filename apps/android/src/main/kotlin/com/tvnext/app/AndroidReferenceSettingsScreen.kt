@@ -598,7 +598,7 @@ internal fun AndroidReferenceSettingsScreen(
             title = { Text("Kinopoisk.dev — резервный API-ключ") },
             text = {
                 Column {
-                    Text("Ключ хранится только в данных приложения и не выводится в журналах.",
+                    Text("Можно задать другой API-ключ. Пустое поле использует ключ по умолчанию.",
                         style = MaterialTheme.typography.bodySmall)
                     OutlinedTextField(value = key, onValueChange = { key = it },
                         label = { Text("Полный API-ключ") }, singleLine = true,
@@ -609,7 +609,7 @@ internal fun AndroidReferenceSettingsScreen(
                     kinopoiskStore.setKey(key)
                     kinopoiskLookup.resetAfterKeyChange()
                     GlobalContext.get().get<ProgrammeMetadataRepository>().clearCache()
-                    kinopoiskConfigured = key.isNotBlank()
+                    kinopoiskConfigured = kinopoiskStore.getKey().isNotBlank()
                     kinopoiskMessage = ""
                 }
                 showKinopoiskKey = false

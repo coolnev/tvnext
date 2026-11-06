@@ -7,6 +7,11 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Supply locally through Gradle properties or the build environment.
+val kinopoiskDefaultKey = providers.gradleProperty("tvnext.kinopoisk.defaultKey")
+    .orElse(providers.environmentVariable("TVNEXT_KINOPOISK_DEFAULT_KEY"))
+    .orElse("")
+
 android {
     namespace = "com.tvnext.app"
     compileSdk = 36
@@ -25,8 +30,10 @@ android {
         minSdk = 24
         targetSdk = 36
         // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 533
-        versionName = "0.5.33-recovery"
+        versionCode = 534
+        versionName = "0.5.34-recovery"
+        buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
+            "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
     }
 
     buildTypes {
@@ -54,6 +61,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {

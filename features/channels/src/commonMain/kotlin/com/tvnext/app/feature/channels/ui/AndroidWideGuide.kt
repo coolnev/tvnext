@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.Constraints
@@ -104,9 +105,9 @@ internal fun AndroidWideGuide(
     val days = remember(programmeList) {
         programmeList.map { startOfDay(it.start) }.distinct()
     }
-    // Capture the clock once when opening the guide. EPG can arrive in two
-    // stages; do not persist the temporary live-only row as the user's choice.
-    var playbackTime by remember { mutableLongStateOf(initialProgrammeTimeMs ?: now) }
+    // An unconfirmed EPG cursor never changes the real playback anchor.
+    // Archive time belongs only to the playing channel; other channels open at live time.
+    val playbackTime = if (activeId == playingChannelId) initialProgrammeTimeMs ?: now else now
     var selectedStartMs by remember(activeId) { mutableStateOf<Long?>(null) }
     val highlightedIndex = guideProgrammeIndex(programmeList, selectedStartMs, playbackTime)
     val highlighted = programmeList.getOrNull(highlightedIndex)
@@ -116,6 +117,8 @@ internal fun AndroidWideGuide(
     // bottom and competed with focus/EPG re-composition on every D-pad press.
     val rowHeight = 62.dp
     val rowSpacing = 2.dp
+    // Two programme rows (including their gap) occupy one channel-row stride.
+    val programmeRowHeight = (rowHeight - rowSpacing) / 2
     val categoryScroll = rememberLazyListState()
     val channelFocus = remember { FocusRequester() }
     val categoryFocus = remember { FocusRequester() }
@@ -152,12 +155,10 @@ internal fun AndroidWideGuide(
         val next = guideAdjacentIndex(programmeList.size, highlightedIndex, delta)
         if (next != null) {
             selectedStartMs = programmeList[next].start
-            playbackTime = programmeList[next].start
         }
     }
     fun selectDay(day: Long) {
         selectedStartMs = guideProgrammeOnDay(programmeList, day, now)?.start
-        selectedStartMs?.let { playbackTime = it }
     }
     fun selectAdjacentDay(delta: Int) {
         val next = guideAdjacentIndex(days.size, displayedDay?.let(days::indexOf) ?: -1, delta)
@@ -200,8 +201,8 @@ internal fun AndroidWideGuide(
                     }
                 }
             }
-            // All three columns use the same number of slots and channel-selected
-            // vertical anchor. The first channel starts at the TOP (no fake rows).
+            // Channels/dates retain their row count; programmes use twice as many
+            // compact slots with their live/archive anchor beside the selected channel.
             val availableRowsHeight = (maxHeight - 35.dp - 12.dp).coerceAtLeast(rowHeight)
             val viewportCapacity = guideOddCapacity(
                 ((availableRowsHeight + rowSpacing) / (rowHeight + rowSpacing)).toInt()
@@ -302,7 +303,10 @@ internal fun AndroidWideGuide(
                                     else -> false
                                 }
                             }
-                            .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.CHANNELS }
+                            .onFocusChanged { if (it.isFocused) {
+                                selectedStartMs = null
+                                activeColumn = GuideFocusColumn.CHANNELS
+                            } }
                             .focusable(),
                         // Debounce EPG refresh while a user holds DOWN/UP.
                         onVisibleChanged = { visible ->
@@ -322,7 +326,7 @@ internal fun AndroidWideGuide(
                                 onClick = { onPlayChannel(channel.id) },
                                 selected = current && activeColumn == GuideFocusColumn.CHANNELS,
                                 // Only the stable list host takes D-pad focus; rows remain touch-clickable.
-                                modifier = Modifier.fillMaxWidth().height(rowHeight)
+                                modifier = Modifier.testTag("guide-channel-row").fillMaxWidth().height(rowHeight)
                                     .focusProperties { canFocus = false },
                                 containerAlpha = if (current) 0.24f else 0.08f,
                                 shape = RoundedCornerShape(6.dp),
@@ -378,10 +382,10 @@ internal fun AndroidWideGuide(
                 CentredGuideRows(
                     values = programmeList,
                     selectedIndex = highlightedIndex,
-                    rowHeight = rowHeight,
+                    rowHeight = programmeRowHeight,
                     rowSpacing = rowSpacing,
-                    viewportCapacity = viewportCapacity,
-                    anchorSlot = channelAnchorSlot,
+                    viewportCapacity = viewportCapacity * 2,
+                    anchorSlot = channelAnchorSlot * 2,
                     modifier = Modifier.weight(1f).fillMaxWidth()
                         .focusRequester(programmeFocus)
                         .onPreviewKeyEvent { event ->
@@ -425,12 +429,13 @@ internal fun AndroidWideGuide(
                             currentBroadcast = programme.start <= now && now < programme.stop,
                             onClick = {
                                 selectedStartMs = programme.start
-                                playbackTime = programme.start
                                 if (programme.start <= now && channels.firstOrNull { it.id == activeId }?.hasCatchupMechanism == true) {
                                     onPlayArchive(activeId, programme)
                                 }
                             },
-                            height = rowHeight,
+                            height = programmeRowHeight,
+                            modifier = Modifier.testTag("guide-programme-row"),
+                            maxLines = 1,
                         )
                 }
             }
@@ -607,10 +612,10 @@ private fun <T> CentredGuideRows(
             Text(emptyLabel, color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.align(Alignment.Center).padding(8.dp))
         } else {
-            // Always an odd number of full rows; the middle row is exactly
-            // the viewport centre, regardless of the selected index.
-            val capacity = guideOddCapacity(viewportCapacity ?: ((maxHeight + rowSpacing) / (rowHeight + rowSpacing))
-                .toInt().coerceAtLeast(1))
+            // Explicit capacities may be even: dense EPG has two slots per channel.
+            // Standalone/windowed lists retain their centred odd-row layout.
+            val capacity = viewportCapacity?.coerceAtLeast(1) ?: guideOddCapacity(
+                ((maxHeight + rowSpacing) / (rowHeight + rowSpacing)).toInt())
             val window = when {
                 clampChannelEdges -> guideClampedChannelWindow(values.size, selectedIndex, capacity)
                 anchorSlot != null -> guideAlignedWindow(values.size, selectedIndex, capacity, anchorSlot)
@@ -705,12 +710,14 @@ private fun GuideRow(
     centerContent: Boolean = false,
     underline: Boolean = false,
     currentBroadcast: Boolean = false,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 2,
 ) {
     TvCardButton(onClick = onClick, selected = selected,
-        modifier = Modifier.fillMaxWidth().height(height)
+        modifier = modifier.fillMaxWidth().height(height)
             .background(if (currentBroadcast) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else Color.Transparent)
             .focusProperties { canFocus = false },
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = if (maxLines == 1) 2.dp else 5.dp),
         containerAlpha = if (selected) 0.23f else if (currentBroadcast) 0.16f else 0.05f,
         shape = RoundedCornerShape(6.dp),
         contentAlignment = if (centerContent) Alignment.Center else Alignment.CenterStart) {
@@ -718,7 +725,7 @@ private fun GuideRow(
             textDecoration = if (underline) TextDecoration.Underline else TextDecoration.None,
             textAlign = if (centerContent) TextAlign.Center else TextAlign.Start,
             modifier = if (centerContent) Modifier.fillMaxWidth() else Modifier,
-            maxLines = 2, overflow = TextOverflow.Ellipsis)
+            maxLines = maxLines, overflow = TextOverflow.Ellipsis)
     }
 }
 

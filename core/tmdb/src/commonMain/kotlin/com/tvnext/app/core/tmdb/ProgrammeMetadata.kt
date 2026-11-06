@@ -30,12 +30,14 @@ interface KinopoiskKeyStore {
     suspend fun setKey(value: String)
 }
 
-class SqlDelightKinopoiskKeyStore(private val meta: AppMetaRepository) : KinopoiskKeyStore {
-    override suspend fun getKey(): String = meta.getValue("settings.kinopoisk_backup_key").orEmpty()
+class SqlDelightKinopoiskKeyStore(private val meta: AppMetaRepository,
+    private val defaultKey: String = "") : KinopoiskKeyStore {
+    override suspend fun getKey(): String = meta.getValue("settings.kinopoisk_backup_key")
+        ?.trim()?.takeIf { it.isNotEmpty() } ?: defaultKey.trim()
     override suspend fun setKey(value: String) { meta.setValue("settings.kinopoisk_backup_key", value.trim()) }
 }
 
-/** Only activated when a user explicitly enters a key. No key is embedded or logged. */
+/** Uses the configured key store; credential values are never logged. */
 class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys: KinopoiskKeyStore) {
     // A channel grid can request many distinct films simultaneously. Limit
     // competing API requests to avoid exhausting the service or TV sockets.

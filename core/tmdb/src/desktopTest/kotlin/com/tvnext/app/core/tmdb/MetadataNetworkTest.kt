@@ -42,6 +42,30 @@ class MetadataNetworkTest {
         fun programme(kinoKey: String = "") = ProgrammeMetadataRepository(tmdb, KinopoiskProgrammeLookup(client, Key(kinoKey)), Settings())
         fun close() { client.close(); driver.close() }
     }
+    @Test fun buildDefaultKeyWorksBeforeSettingsAndManualKeysSurviveStoreRecreation() = runBlocking<Unit> {
+        var expected = "build-default"
+        var calls = 0
+        val f = Fixture { request ->
+            assertEquals("api.poiskkino.dev", request.url.host)
+            assertTrue(request.headers["X-API-KEY"] == expected, "The request must use the effective configured key")
+            calls++
+            200 to """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis","poster":{"url":"https://example.org/p.jpg"},"backdrop":{"url":"https://example.org/f.jpg"}}]}"""
+        }
+        try {
+            val meta = com.tvnext.app.core.database.SqlDelightAppMetaRepository(f.database)
+            suspend fun lookup() = KinopoiskProgrammeLookup(f.client, SqlDelightKinopoiskKeyStore(meta, "build-default")).lookup("Холоп 2")
+            assertEquals(synopsis, lookup()?.overview)
+            SqlDelightKinopoiskKeyStore(meta, "build-default").setKey("  manual-key  ")
+            expected = "manual-key"
+            assertEquals(synopsis, lookup()?.overview)
+            SqlDelightKinopoiskKeyStore(meta, "build-default").setKey(" ")
+            expected = "build-default"
+            assertEquals(synopsis, lookup()?.overview)
+            assertEquals(3, calls)
+            assertEquals("", SqlDelightKinopoiskKeyStore(meta).getKey())
+        } finally { f.close() }
+    }
+
     @Test fun kinopoiskRetriesTheFullCardAfterAnImageOnlySearchResult() = runBlocking<Unit> {
         var detailsCalls = 0
         val f = Fixture { request ->

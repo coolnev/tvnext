@@ -69,6 +69,10 @@ class TVNextApplication : Application() {
 
     /** Channel-logo loader: memory + disk cache, Ktor fetch. Errors are local. */
     private val logoKoinModule: Module = module {
+        // Immediately available on clean install/update, before asynchronous startup work.
+        single<com.tvnext.app.core.tmdb.KinopoiskKeyStore> {
+            com.tvnext.app.core.tmdb.SqlDelightKinopoiskKeyStore(get(), BuildConfig.DEFAULT_KINOPOISK_API_KEY)
+        }
         // Android source isolation; desktop retains its existing repository binding.
         single<com.tvnext.app.core.iptv.data.EpgRepository> {
             // EPG must match provider metadata, including channels hidden/renamed
