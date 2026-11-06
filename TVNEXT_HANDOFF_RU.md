@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.35-recovery-preview`, versionCode 535, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.34.
+Текущая версия TVNextR: `0.5.36-recovery-preview`, versionCode 536, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.35.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.35.apk`.
-Описание: `RELEASE_ANDROID_0.5.35_RU.md`.
-Сводка: `releases/android/validation-0.5.35.json`.
+APK: `releases/android/TVNextR-0.5.36.apk`.
+Описание: `RELEASE_ANDROID_0.5.36_RU.md`.
+Сводка: `releases/android/validation-0.5.36.json`.
+
+В 0.5.36 на пользовательском JSON Home Alone 2 исправлены частичный кэш описания после отмены и поиск сокращённого названия нумерованного сиквела перед двоеточием. Cached.complete отличает промежуточные картинки от завершённого ответа; неполная карточка без сюжета не блокирует новый запрос. Kinopoisk хранит 128 matched id/card, привязанных к ключу, до 24ч; resetAfterKeyChange очищает их. observe делает до двух повторов через 2100мс для poster-only результата; готовый сюжет повторно не запрашивается. В IndexedEpgRepository автоматический fresh-cache проход не загружает новые резервные источники только из-за missing viewport. Резервы доступны из кэша и скачиваются при cold import, попытке обновления primary, force=true; старые резервные источники с fetchedAt>0 обновляются при исчерпании покрытия даже при fresh primary. Progress.resumed отражает реальный appendAt, attempt>1 больше не считается докачкой. Connect 10с, socket 15с, две ошибки без байтов прекращают источник; для partial остаётся 4. Проверены 216 IPTV + 32 metadata + 66 channels/UI + 26 Android native = 340. APK собран, подпись/ZIP/zipalign проверены; ключ сохранён. Живые API запрещены сетью, физический ТВ/эмулятор APK этой версии не проверялись. Исходники 9d5e461; SHA cb6236c73b1f8e6dc4a2e95418cd780f33f5c3f9374df35121808eb59b58e1a8.
 
 В 0.5.35 доработан Android windowed: AndroidWindowedProgrammeList убирает date-prefix, rowHeight 29dp + spacing 4dp вместо 62+4; explicit capacity = прежняя нечётная capacity * 2, anchor=(capacity-1)/2. Фокус/клавиши находятся на внешнем стабильном BoxWithConstraints, не на вложенном subcompose: это сохраняет фокус при empty→loaded EPG. AndroidWindowedPlaybackInfo заменяет нижний EpgPanel: компактные controls + постоянно видимое описание текущей/подсвеченной передачи; onDetails не передаётся, windowedDescriptionVisible/dialog удалены. Размер видео остался фиксированным; нижняя панель получает remaining weight без общего verticalScroll. AndroidPlaybackControls.compact=true использует 28dp кнопки, одну строку с записью, маленькую шкалу/время; остальные вызовы используют default=false. TvSeekButton принимает buttonSize с default 52dp. ProgrammeRichDetails принимает modifier/compact, подстраивает миниатюру и прокрутку текста под ограниченную высоту. Ключ Кинопоиска включён из прежнего локального Gradle input и подтверждён в DEX, не копировать значение в GitHub-текст. Проверено 66 channels/UI, release/lint/encoding/signature/zipalign. APK 535 установлен поверх 534: сюжет виден под видео, запись в одной строке, кнопки «Описание» и upcoming-блока нет; 14 строк без даты, UP без OK обновляет сюжет до «Передача -01» при том же видеоокне. Приложение без FATAL/ANR; видео синтетическое/недоступно. Исходники 636eb96; SHA APK b2fc10780e747b0d8c134a945203a3551195ac7ff03faae4a3582cf9598511b3.
 

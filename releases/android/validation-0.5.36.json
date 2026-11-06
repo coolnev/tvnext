@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.36-recovery-preview",
+  "versionCode": 536,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "cb6236c73b1f8e6dc4a2e95418cd780f33f5c3f9374df35121808eb59b58e1a8",
+  "sourceCommit": "9d5e461",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 216,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 32,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 66,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 26,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "totalTests": 340,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "embedded user key retained"
+  ],
+  "metadata": {
+    "fixture": "User-supplied Home Alone 2 JSON retained as desktop test resource",
+    "before": {
+      "sampleParserPassed": true,
+      "cancelledPosterOnlyReopeningFailed": true,
+      "shortNumberedTitleFailed": true
+    },
+    "after": [
+      "description and shortDescription both read",
+      "interrupted poster-only cache resumes immediately",
+      "full card retried by matched ID without repeated search",
+      "visible poster-only card has two bounded retries",
+      "numbered sequel may omit colon subtitle; exact matches rank first"
+    ]
+  },
+  "epg": {
+    "cachedGuideBrowsingDoesNotDownloadUncachedBackups": true,
+    "backupsStillUsed": "cold import, primary-source update, forced refresh; previously cached backup independently refreshes when coverage expires",
+    "resumeLabelOnlyForRetainedBytes": true,
+    "smallTransfersUseBytesOrKiB": true,
+    "zeroByteFailuresStopAfterTwoAttempts": true,
+    "connectTimeoutMs": 10000,
+    "socketTimeoutMs": 15000,
+    "partialDownloadAttempts": 4,
+    "cachedBackupsRefreshIndependentlyWhenCoverageEnds": true
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "physicalTV": false,
+  "liveMetadataApiTested": false,
+  "limitation": "Live provider/API hosts are blocked by environment policy. Controlled requests, user JSON, desktop UI and native Android SQLite/download regressions passed; this release was not run on a physical TV."
+}

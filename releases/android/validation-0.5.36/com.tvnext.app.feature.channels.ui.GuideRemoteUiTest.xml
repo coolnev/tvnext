@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideRemoteUiTest[desktop]" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-06T10:54:37.410Z" hostname="9c2a62439f9c" time="21.002">
+  <properties/>
+  <testcase name="bottomDescriptionShowsTenProgrammesBesideFiveChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.097"/>
+  <testcase name="rightDescriptionShowsTwiceAsManyProgrammesAsChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.516"/>
+  <testcase name="remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="4.826"/>
+  <testcase name="descriptionArrivesAfterThePosterInWindowedDetails[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.858"/>
+  <testcase name="narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.323"/>
+  <testcase name="leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="3.562"/>
+  <testcase name="windowedProgrammeCursorSurvivesAsyncDataAndMovesAcrossMidnight[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.163"/>
+  <testcase name="descriptionArrivesAfterThePosterBesideTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.492"/>
+  <testcase name="descriptionArrivesAfterThePosterBelowTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.543"/>
+  <testcase name="inlineWindowedSynopsisArrivesAfterThePoster[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.305"/>
+  <testcase name="windowedListHasFourteenUndatedProgrammesInsteadOfSeven[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.201"/>
+  <testcase name="programmeRowsDoNotRepeatTheSeparateDateColumn[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.428"/>
+  <testcase name="kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.125"/>
+  <testcase name="windowedRightSelectsProgrammesThenVideoAndOkOpensFullscreenOnRelease[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.502"/>
+  <testcase name="openingArchiveFocusesItsProgrammeEvenWhenEpgArrivesAfterOpening[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.481"/>
+  <testcase name="anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="5.579"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>
