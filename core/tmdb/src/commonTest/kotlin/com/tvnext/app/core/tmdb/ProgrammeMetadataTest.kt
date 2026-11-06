@@ -82,3 +82,28 @@ class ProgrammeMetadataTest {
     }
 
 }
+
+class ProgrammeSynopsisSelectionTest {
+    @Test fun missingEpgVariantsCannotOverrideTheRemoteStory() {
+        val plot = "Койот помогает герою спасти семью и раскрыть опасный заговор."
+        for (stub in listOf("Описание нет", "Описания нет", "Нет описания фильма", "Нет информации о передаче",
+            "Описание пока недоступно", "Описание не доступно", "Информация о фильме отсутствует",
+            "Описание: Нет описания.", "<p>Описания нет.</p>", "ОПИСАНИЯ\nНЕТ", "Нет описания")) {
+            assertTrue(!hasProgrammeSynopsis(stub), stub)
+            assertEquals(plot, programmeSynopsis(stub, plot), stub)
+        }
+    }
+    @Test fun fullRemotePlotExpandsABriefEpgEntry() {
+        val brief = "Койот спасает семью."
+        val full = "Хитрый койот помогает герою спасти семью и раскрывает опасный заговор."
+        assertEquals(full, programmeSynopsis(brief, full))
+        assertEquals(full, programmeSynopsis(full, brief))
+    }
+    @Test fun partialUpdatesAndErrorsCannotEraseARealSynopsis() {
+        val epg = "Койот возвращается домой и встречает старого друга."
+        assertEquals(epg, programmeSynopsis(epg, "Описание отсутствует"))
+        assertEquals(epg, programmeSynopsis(epg, null))
+        assertNull(programmeSynopsis("Описания нет", "Нет описания фильма"))
+        assertTrue(hasProgrammeSynopsis("Описание героя отсутствует в досье, и сыщик начинает расследование."))
+    }
+}

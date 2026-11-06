@@ -7,7 +7,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
-import kotlinx.coroutines.flow.collect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -52,15 +51,12 @@ import com.tvnext.app.core.common.util.formatTimeOfDay
 import com.tvnext.app.core.common.util.startOfDay
 import com.tvnext.app.core.iptv.domain.Channel
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
-import com.tvnext.app.core.tmdb.ProgrammeMetadata
-import com.tvnext.app.core.tmdb.hasProgrammeSynopsis
-import com.tvnext.app.core.tmdb.ProgrammeMetadataRepository
+import com.tvnext.app.core.tmdb.programmeSynopsis
 import com.tvnext.app.core.ui.component.AutoScrollText
 import com.tvnext.app.core.ui.component.TvCardButton
 import com.tvnext.app.core.ui.image.ChannelLogo
 import com.tvnext.app.core.ui.image.LocalLogoImageLoader
 import kotlinx.coroutines.CancellationException
-import org.koin.core.context.GlobalContext
 
 private enum class GuideFocusColumn { CHANNELS, PROGRAMMES, DAYS, CATEGORIES }
 
@@ -168,22 +164,7 @@ internal fun AndroidWideGuide(
         }
     }
 
-    val finder = remember { GlobalContext.get().getOrNull<ProgrammeMetadataRepository>() }
-    var remoteInfo by remember { mutableStateOf<ProgrammeMetadata?>(null) }
-    LaunchedEffect(highlighted?.title, finder) {
-        remoteInfo = null
-        val title = highlighted?.title?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
-        if (finder == null) return@LaunchedEffect
-        // Cancel stale searches on rapid D-pad input. Cached cards appear without network.
-        delay(280)
-        try {
-            finder.observe(title).collect { remoteInfo = it }
-        } catch (cancelled: CancellationException) {
-            throw cancelled // Preserve structured cancellation when focus changes quickly.
-        } catch (_: Exception) {
-            remoteInfo = null // Network/API errors must not terminate the UI coroutine.
-        }
-    }
+    val remoteInfo = rememberProgrammeMetadata(highlighted?.title, debounceMs = 280)
     val grid: @Composable (Modifier) -> Unit = { gridModifier ->
         BoxWithConstraints(gridModifier) {
             // Focus never follows recycled row children. The focused element is the
@@ -489,9 +470,8 @@ internal fun AndroidWideGuide(
         }
     }
     // Artwork is only allocated after a decoded bitmap exists; absent images leave zero gap.
-    val description = highlighted?.description?.takeIf(::hasProgrammeSynopsis)
-            ?: remoteInfo?.overview?.takeIf(::hasProgrammeSynopsis)
-            ?: "Описание передачи отсутствует"
+    val description = programmeSynopsis(highlighted?.description, remoteInfo?.overview)
+        ?: "Описание передачи отсутствует"
     val info: @Composable (Modifier) -> Unit = { infoModifier ->
         if (descriptionOnRight) Column(
             modifier = infoModifier.background(Color.Black.copy(alpha = 0.50f))
@@ -750,22 +730,8 @@ internal fun guideWeekday(epochMillis: Long): String {
 /** Reusable detailed programme view; avoids a text-only dialog when artwork is cached. */
 @Composable
 internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier = Modifier, compact: Boolean = false) {
-    val finder = remember { GlobalContext.get().getOrNull<ProgrammeMetadataRepository>() }
-    var remote by remember(programme?.title) { mutableStateOf<ProgrammeMetadata?>(null) }
-    LaunchedEffect(programme?.title, finder) {
-        remote = null
-        val title = programme?.title?.takeIf { it.isNotBlank() } ?: return@LaunchedEffect
-        delay(150)
-        try {
-            finder?.observe(title)?.collect { remote = it }
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (_: Exception) {
-            remote = null
-        }
-    }
-    val description = programme?.description?.takeIf(::hasProgrammeSynopsis)
-        ?: remote?.overview?.takeIf(::hasProgrammeSynopsis)
+    val remote = rememberProgrammeMetadata(programme?.title)
+    val description = programmeSynopsis(programme?.description, remote?.overview)
         ?: "Описание передачи недоступно"
     val loader = LocalLogoImageLoader.current
     var picture by remember(remote?.frameUrl, remote?.posterUrl, loader) { mutableStateOf<ImageBitmap?>(null) }

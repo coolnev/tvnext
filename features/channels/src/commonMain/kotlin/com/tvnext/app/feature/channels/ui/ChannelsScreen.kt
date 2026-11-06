@@ -1142,8 +1142,9 @@ private fun WatchingLayout(
                                 (playerState.item?.archiveEpgAnchorMs ?: now) + playerState.positionMs else now
                             val duration = programme?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0L
                             AndroidWindowedPlaybackInfo(
-                                programme = if (timelineState.channelId != null && archivePreview != null)
-                                    archivePreview else channelEpg.current ?: playingEpg.current,
+                                programme = windowedDescriptionProgramme(
+                                    selectedChannel.id, highlightedChannelId ?: state.focusedChannelId,
+                                    timelineState, archivePreview, channelEpg, playingEpg),
                                 paused = playerState.state == PlaybackState.PAUSED,
                                 positionMs = programme?.let { (at - it.start).coerceAtLeast(0) } ?: 0L,
                                 durationMs = if (androidHasArchive(selectedChannel)) duration else 0L,
@@ -1443,7 +1444,9 @@ private fun WatchingLayout(
                     if (immersive && !categoriesOpen && (!isAndroidPlatform() || !drawerOpen) &&
                         (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible)) {
                         if (isAndroidPlatform()) AndroidProgrammeOverlay(
-                            channel = selectedChannel, epg = playingEpg, controller = controller, seekStepMs = archiveSeekStepMs,
+                            channel = selectedChannel,
+                            epg = playingEpg.takeIf { it.channelId == selectedChannel.id } ?: ChannelEpg(channelId = selectedChannel.id),
+                            controller = controller, seekStepMs = archiveSeekStepMs,
                             interactive = transportControlsVisible,
                             detailsVisible = rightDetailsVisible,
                             onShowDetails = {

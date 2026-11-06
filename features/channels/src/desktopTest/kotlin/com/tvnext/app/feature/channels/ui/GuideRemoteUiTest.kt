@@ -239,14 +239,22 @@ class GuideRemoteUiTest {
     @Test fun compactLandscapeTextWrapHasUniformBaselines() = descriptionAfterPoster(3, wrapped = true, landscape = true)
     @Test fun compactPortraitTextWrapHasUniformBaselines() = descriptionAfterPoster(3, wrapped = true)
 
-    private fun descriptionAfterPoster(mode: Int, wrapped: Boolean = false, landscape: Boolean = false) {
+    @Test fun coyoteMissingEpgTextCannotHideSynopsisInDetails() = descriptionAfterPoster(0, epgDescription = "Описание нет", filmName = "Хитрый койот")
+    @Test fun coyoteMissingEpgTextCannotHideSynopsisBelowGuide() = descriptionAfterPoster(1, epgDescription = "Описания нет", filmName = "Хитрый койот")
+    @Test fun coyoteMissingEpgTextCannotHideSynopsisBesideGuide() = descriptionAfterPoster(2, epgDescription = "Нет описания фильма", filmName = "Хитрый койот")
+    @Test fun coyoteMissingEpgTextCannotHideSynopsisInWindowedPane() = descriptionAfterPoster(3, epgDescription = "Описание: Нет описания.", filmName = "Хитрый койот")
+    @Test fun briefEpgExpandsWhenSynopsisArrivesInWindowedPane() = descriptionAfterPoster(3, epgDescription = "Койот спасает семью.", filmName = "Хитрый койот")
+    @Test fun briefEpgExpandsWhenSynopsisArrivesBelowGuide() = descriptionAfterPoster(1, epgDescription = "Койот спасает семью.", filmName = "Хитрый койот")
+
+    private fun descriptionAfterPoster(mode: Int, wrapped: Boolean = false, landscape: Boolean = false,
+        epgDescription: String = "Описание\nпередачи\u00a0отсутствует", filmName: String = "Холоп 2") {
         val synopsis = "Найденный сюжет о возвращении героя домой.".let { if (wrapped) (it + " ").repeat(45) else it }
         val release = kotlinx.coroutines.CompletableDeferred<Unit>()
         val pictures = java.util.concurrent.atomic.AtomicInteger()
         val client = HttpClient(MockEngine { request ->
             val body = when {
                 request.url.encodedPath.endsWith("/search-by-keyword") ->
-                    """{"docs":[{"id":2,"name":"Холоп 2","poster":{"url":"https://example.org/poster.png"}}]}"""
+                    """{"films":[{"filmId":2,"nameRu":"$filmName","posterUrlPreview":"https://example.org/poster.png"}]}"""
                 request.url.encodedPath.endsWith("/2") -> { release.await(); """{"description":"$synopsis"}""" }
                 else -> "{}"
             }
@@ -272,7 +280,7 @@ class GuideRemoteUiTest {
                 pictures.incrementAndGet(); return image
             }
         }
-        val programme = EpgProgramme(channel.id, now - hour / 2, now + hour / 2, "Холоп 2", "Описание\nпередачи\u00a0отсутствует")
+        val programme = EpgProgramme(channel.id, now - hour / 2, now + hour / 2, filmName, epgDescription)
         try {
             ui.setContent {
                 androidx.compose.runtime.CompositionLocalProvider(com.tvnext.app.core.ui.image.LocalLogoImageLoader provides loader) {

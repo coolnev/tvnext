@@ -323,6 +323,17 @@ class ProgrammeMetadataRepository(
 
     suspend fun clearCache() { synchronized(cacheGuard) { cache.clear(); cacheRevision++ } }
 
+    /** A synchronous, title/year-specific snapshot for first-frame rendering; refresh stays asynchronous. */
+    fun cached(title: String): ProgrammeMetadata? {
+        val raw = title.trim().take(180)
+        val query = cleanProgrammeTitle(raw)
+        val year = programmeReleaseYear(raw)?.toString().orEmpty()
+        val key = normalizedProgrammeTitle(query) + "|" + year
+        return synchronized(cacheGuard) {
+            cache[key]?.takeIf { currentTimeMillis() - it.time in 0 until 24 * 60 * 60_000L }?.result
+        }
+    }
+
     fun observe(title: String): Flow<ProgrammeMetadata?> = channelFlow {
         var result = find(title) { trySend(it) }
         trySend(result)

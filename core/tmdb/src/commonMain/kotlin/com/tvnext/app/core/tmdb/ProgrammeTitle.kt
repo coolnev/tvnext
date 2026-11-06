@@ -34,9 +34,14 @@ internal fun similarProgrammeTitle(candidate: String?, requested: String): Boole
 fun hasProgrammeSynopsis(text: String?): Boolean {
     val value = text?.replace(Regex("<[^>]+>"), " ")?.trim()?.lowercase()
         ?.replace(Regex("[\\s\\u00a0]+"), " ")?.trim('.', ' ', '…', '!') ?: return false
+    val withoutLabel = value.replace(Regex("^(?:описание|информация)\\s*[:—-]\\s*"), "")
+    if (withoutLabel.length < 3) return false
+    val subject = "(?:описани[ея]|информаци[яи]|данны[ех])(?: (?:о |об )?(?:передаче|передачи|программе|программы|фильме|фильма|сюжете|сюжета))?"
+    val missing = "(?:нет|отсутству(?:ет|ют)|(?:пока )?не ?доступн[аоы]|не (?:предоставлен[аоы]|найден[аоы]|указан[аоы]))"
+    if (Regex("^(?:$subject $missing|(?:пока )?нет $subject)$").matches(withoutLabel)) return false
     if (value.length < 3) return false
     if (Regex("^(?:описание|информация)(?: (?:передачи|программы|фильма))? (?:отсутствует|недоступн[ао]|не предоставлен[ао]).*$").matches(value)) return false
-    return value !in setOf(
+    return withoutLabel !in setOf(
         "фильм", "художественный фильм", "сериал", "х/ф", "т/с", "комедия", "драма", "боевик", "триллер",
         "описание", "нет описания", "описание отсутствует", "описание недоступно", "описание не предоставлено",
         "описание передачи отсутствует", "описание передачи недоступно", "описание программы отсутствует",
@@ -45,3 +50,8 @@ fun hasProgrammeSynopsis(text: String?): Boolean {
         "no description", "no description available", "description not available", "null",
     )
 }
+
+/** Use the most informative usable synopsis; an EPG stub must not mask a full film story. */
+fun programmeSynopsis(epg: String?, remote: String?): String? =
+    listOfNotNull(epg?.trim()?.takeIf(::hasProgrammeSynopsis), remote?.trim()?.takeIf(::hasProgrammeSynopsis))
+        .maxByOrNull { it.replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim().length }
