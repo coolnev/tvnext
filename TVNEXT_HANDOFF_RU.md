@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.34-recovery-preview`, versionCode 534, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.33.
+Текущая версия TVNextR: `0.5.35-recovery-preview`, versionCode 535, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.34.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.34.apk`.
-Описание: `RELEASE_ANDROID_0.5.34_RU.md`.
-Сводка: `releases/android/validation-0.5.34.json`.
+APK: `releases/android/TVNextR-0.5.35.apk`.
+Описание: `RELEASE_ANDROID_0.5.35_RU.md`.
+Сводка: `releases/android/validation-0.5.35.json`.
+
+В 0.5.35 доработан Android windowed: AndroidWindowedProgrammeList убирает date-prefix, rowHeight 29dp + spacing 4dp вместо 62+4; explicit capacity = прежняя нечётная capacity * 2, anchor=(capacity-1)/2. Фокус/клавиши находятся на внешнем стабильном BoxWithConstraints, не на вложенном subcompose: это сохраняет фокус при empty→loaded EPG. AndroidWindowedPlaybackInfo заменяет нижний EpgPanel: компактные controls + постоянно видимое описание текущей/подсвеченной передачи; onDetails не передаётся, windowedDescriptionVisible/dialog удалены. Размер видео остался фиксированным; нижняя панель получает remaining weight без общего verticalScroll. AndroidPlaybackControls.compact=true использует 28dp кнопки, одну строку с записью, маленькую шкалу/время; остальные вызовы используют default=false. TvSeekButton принимает buttonSize с default 52dp. ProgrammeRichDetails принимает modifier/compact, подстраивает миниатюру и прокрутку текста под ограниченную высоту. Ключ Кинопоиска включён из прежнего локального Gradle input и подтверждён в DEX, не копировать значение в GitHub-текст. Проверено 66 channels/UI, release/lint/encoding/signature/zipalign. APK 535 установлен поверх 534: сюжет виден под видео, запись в одной строке, кнопки «Описание» и upcoming-блока нет; 14 строк без даты, UP без OK обновляет сюжет до «Передача -01» при том же видеоокне. Приложение без FATAL/ANR; видео синтетическое/недоступно. Исходники 636eb96; SHA APK b2fc10780e747b0d8c134a945203a3551195ac7ff03faae4a3582cf9598511b3.
 
 В 0.5.34 AndroidWideGuide показывает вдвое больше передач, чем каналов, при описании и снизу, и справа: channel stride 64dp, programme stride 32dp, capacity C*2, anchor channelSlot*2. Явная ёмкость CentredGuideRows может быть чётной; guideAlignedWindow не округляет её до нечётной. Каналы и даты сохраняют прежнюю плотность. selectedStartMs — только курсор просмотра. playbackTime вычисляется из реального archive anchor только для playingChannelId, для других каналов используется now. При получении фокуса колонкой каналов selectedStartMs сбрасывается. Не возвращать глобальную изменяемую playbackTime, которая переносила незапущенный архив на другие каналы. Ключ Кинопоиска передан пользователем для включения в APK: хранить значение локально, не копировать в текст GitHub. BuildConfig.DEFAULT_KINOPOISK_API_KEY берётся из Gradle property tvnext.kinopoisk.defaultKey (задано в /workspace/.tools/gradle-home/gradle.properties) либо env TVNEXT_KINOPOISK_DEFAULT_KEY. Android DI переопределяет KinopoiskKeyStore с этим default; сохранённый непустой ключ приоритетен, пустой использует default. Перед будущей release-сборкой сохранить этот build input, иначе default будет пуст. Проверки: 28 metadata + 64 channels/UI + 24 Android native = 116; четыре новых UI-регрессии воспроизведены до исправления. APK 534 установлен поверх 533, Android-гид 7/14 строк, настройки «Ключ задан» без сохранённого ключа в БД. Подпись прежняя. Исходники 9c1e0b0; SHA APK 24eb276e8733b2d321707008302e9f6556f9a0d7d6d926db5e901d3c4038ef08.
 
