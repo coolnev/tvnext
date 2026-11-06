@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeDescriptionStateUiTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-06T16:44:40.036Z" hostname="9c2a62439f9c" time="0.084">
+  <properties/>
+  <testcase name="switchingFilmsNeverRendersThePreviousSynopsisAndCachedReturnHasNoBlankFrame[desktop]" classname="com.tvnext.app.feature.channels.ui.ProgrammeDescriptionStateUiTest" time="0.084"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

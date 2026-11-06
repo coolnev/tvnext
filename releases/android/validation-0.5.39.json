@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.39-recovery-preview",
+  "versionCode": 539,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "f99c667d43b5a4b8ec0c658fb4e12e8475cf4c76c9aa10895c4a6f8499e697de",
+  "sourceCommit": "abb0b67b2c13f54470adb491b949eb0b9e7c2d43",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 42,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 89,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 175,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Unofficial API key retained in DEX; not in tracked text"
+  ],
+  "metadata": {
+    "activeHost": "kinopoiskapiunofficial.tech",
+    "devProviderDisabled": true,
+    "userReportsConnectionCheckSuccessful": true,
+    "synopsisSelection": "longest usable EPG/remote synopsis; missing-text labels are rejected",
+    "snapshotByTitleAndYear": true,
+    "titleScopedUiState": true,
+    "cacheReturnDoesNotRenderAnEmptyFrame": true,
+    "oldDescriptionDoesNotFlashForNewTitle": true,
+    "otherChannelEpgNotUsedAsFallback": true,
+    "coyoteExampleTestedIn": [
+      "windowed inline",
+      "fullscreen details",
+      "guide bottom",
+      "guide right"
+    ],
+    "imageAndWholeTextScrollRegressionRetained": true
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "liveFilmResponseTested": false,
+  "limitation": "The TV connection check is successful according to the user. The live film response cannot be fetched under the environment network policy; metadata/presentation verified with controlled responses and real Compose rendering."
+}
