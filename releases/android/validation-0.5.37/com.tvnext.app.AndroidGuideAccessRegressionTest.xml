@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.AndroidGuideAccessRegressionTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-06T12:36:17.027Z" hostname="9c2a62439f9c" time="10.32">
+  <properties/>
+  <testcase name="guideReentryReadsChannelsAfterInitialEmptyStartupWithoutAnotherEpgRefresh[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="4.373"/>
+  <testcase name="unlockingNotifiesAllViewsWithoutPersistingAccess[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.416"/>
+  <testcase name="missingEpgCannotHideFreshChannels[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.109"/>
+  <testcase name="removedCategoryCannotLeaveGuideEmpty[28]" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.124"/>
+  <testcase name="guideReentryReadsChannelsAfterInitialEmptyStartupWithoutAnotherEpgRefresh" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="3.772"/>
+  <testcase name="unlockingNotifiesAllViewsWithoutPersistingAccess" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.15"/>
+  <testcase name="missingEpgCannotHideFreshChannels" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.09"/>
+  <testcase name="removedCategoryCannotLeaveGuideEmpty" classname="com.tvnext.app.AndroidGuideAccessRegressionTest" time="0.044"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

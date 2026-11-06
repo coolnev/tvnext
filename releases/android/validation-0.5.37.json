@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-06",
+  "versionName": "0.5.37-recovery-preview",
+  "versionCode": 537,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "12e41ca2e2b8f0081860107971f3552ce7be0b480d9ed3a65fccf199eddec81f",
+  "sourceCommit": "f2e6e9abe38dc5a86c688f6027dd7591fac83e27",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 78,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 112,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "embedded user key retained; no key in tracked text"
+  ],
+  "runtime": {
+    "completed": false,
+    "apkInstalled": true,
+    "emulatorAndroidApi": 28,
+    "emulatorHasKvm": false,
+    "windowedProgrammeRows": 16,
+    "windowedProgrammeSubtitleAbsent": true,
+    "windowedProgrammeDatePrefixesAbsent": true,
+    "windowedRightToProgrammesThenVideoAndOkFullscreen": true,
+    "lowerOverlayChannelNameAndProgrammeObserved": true,
+    "tvGuideRemoteScenarioCompleted": false,
+    "nativePinKeyboardRuntimeVerified": false,
+    "appFatalOrAnrInCapturedLog": false,
+    "limitations": "UIAutomator repeatedly returned a null root; the emulator session ended before guide long-OK and native PIN keyboard scenarios completed. Guide/cache/category/PIN session regressions passed on native Android API 28 and 35; no physical TV or real stream tested."
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "physicalTV": false,
+  "liveMetadataApiTested": false
+}

@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-06
 
-Текущая версия TVNextR: `0.5.36-recovery-preview`, versionCode 536, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.35.
+Текущая версия TVNextR: `0.5.37-recovery-preview`, versionCode 537, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.36.
 
 Актуальный checkout: `/workspace/work/tvnext-current`.
 GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-20261105
@@ -8,9 +8,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.36.apk`.
-Описание: `RELEASE_ANDROID_0.5.36_RU.md`.
-Сводка: `releases/android/validation-0.5.36.json`.
+APK: `releases/android/TVNextR-0.5.37.apk`.
+Описание: `RELEASE_ANDROID_0.5.37_RU.md`.
+Сводка: `releases/android/validation-0.5.37.json`.
+
+В 0.5.37 исправлен TV Guide: все поля, используемые стартовой корутиной, инициализированы до init; hot-cache/Main.immediate больше не обращается к null androidRowVersions/_focusState и не отменяет scope. Activated по входу Android перечитывает локальные каналы без refreshEpg; устаревшая категория проверяется, каналы публикуются до EPG. ParentalChannelGate.session (StateFlow) связывает PIN и цвет/замки в списках; unlock только в памяти, onDestroy(isFinishing) сбрасывает. Из PIN EntryDialog удалён keypad, остался NumberPassword+IME Done. Windowed: без подзаголовка, capacity=floor((height+4)/33), guideFilledWindow без placeholder-строк и без нечётного округления; фокус на прежнем внешнем host. ProgrammeRichDetails использует ceil строк, LineHeightStyle.Trim.None, без 4dp-разрыва; 4 baseline-теста для poster/frame+compact/normal. Нижняя панель: имя белое 20sp/SemiBold, progress под ним перед временем/передачей; showProgress=false скрывает дубль в controls. Пройдено 78 channels/UI + 34 Android native API28/35 =112; release/lint/encoding/sign/zipalign/ZIP/key. Исходники f2e6e9a, SHA 12e41ca2e2b8f0081860107971f3552ce7be0b480d9ed3a65fccf199eddec81f. Runtime: см. validation-0.5.37.json.
 
 В 0.5.36 на пользовательском JSON Home Alone 2 исправлены частичный кэш описания после отмены и поиск сокращённого названия нумерованного сиквела перед двоеточием. Cached.complete отличает промежуточные картинки от завершённого ответа; неполная карточка без сюжета не блокирует новый запрос. Kinopoisk хранит 128 matched id/card, привязанных к ключу, до 24ч; resetAfterKeyChange очищает их. observe делает до двух повторов через 2100мс для poster-only результата; готовый сюжет повторно не запрашивается. В IndexedEpgRepository автоматический fresh-cache проход не загружает новые резервные источники только из-за missing viewport. Резервы доступны из кэша и скачиваются при cold import, попытке обновления primary, force=true; старые резервные источники с fetchedAt>0 обновляются при исчерпании покрытия даже при fresh primary. Progress.resumed отражает реальный appendAt, attempt>1 больше не считается докачкой. Connect 10с, socket 15с, две ошибки без байтов прекращают источник; для partial остаётся 4. Проверены 216 IPTV + 32 metadata + 66 channels/UI + 26 Android native = 340. APK собран, подпись/ZIP/zipalign проверены; ключ сохранён. Живые API запрещены сетью, физический ТВ/эмулятор APK этой версии не проверялись. Исходники 9d5e461; SHA cb6236c73b1f8e6dc4a2e95418cd780f33f5c3f9374df35121808eb59b58e1a8.
 
