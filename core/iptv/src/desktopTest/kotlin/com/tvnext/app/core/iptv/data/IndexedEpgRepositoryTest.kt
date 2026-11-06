@@ -85,6 +85,28 @@ class IndexedEpgRepositoryTest {
         } finally { f.close() }
     }
 
+    @Test fun anAlreadyCachedBackupRefreshesWhenItsCoverageEndsWithAFreshPrimary() = runBlocking<Unit> {
+        val f = Fixture()
+        val missing = channel("missing").copy(name = "Резервный канал", tvgId = "missing")
+        f.roster = f.roster + missing
+        try {
+            val requests = arrayListOf<String>()
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { url, consume ->
+                requests.add(url)
+                val content = if (url.endsWith("backup.xml")) programme(id = "missing", start = f.time-hour)
+                    else (0..48).joinToString("") { programme(start = now+(it-1)*hour) }
+                StringEpgTextSource("<tv>$content</tv>").use { consume(it) }; true
+            }
+            r.getNowPlaying(listOf(missing), now)
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            f.time += 2*hour
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
+            assertEquals(3, requests.size)
+            assertTrue(requests.last().endsWith("backup.xml"))
+            assertNotNull(r.getNowPlaying(listOf(missing), f.time)[missing.id])
+        } finally { f.close() }
+    }
+
     @Test fun connectionRetriesAreNotCalledResumeAndSmallTransfersDoNotShowZeroMegabytes() = runBlocking<Unit> {
         val f = Fixture()
         try {

@@ -148,7 +148,7 @@ class IndexedEpgRepository(
                     val fresh = old != null && cacheUsable(source, old)
                     if (!force && (fresh || (old?.retryAt ?: 0L) > clock())) continue
                     // Do not fetch unrelated backup feeds when the visible channels have EPG.
-                    if (!source.primary && !force && hasCompleteGuide && !primaryAttempted) continue
+                    if (!source.primary && !force && hasCompleteGuide && !primaryAttempted && (old?.fetchedAt ?: 0L) <= 0L) continue
                     if (!source.primary && !needsBackup(cfg, source)) continue
                     if (source.primary) primaryAttempted = true
                     awaitImport()
