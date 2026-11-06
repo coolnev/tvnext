@@ -96,6 +96,7 @@ data class TvgState(
 ) : MviState
 
 sealed interface TvgIntent : MviIntent {
+    data class TimelineCursorMoved(val timeMs: Long) : TvgIntent
     data object Activated : TvgIntent
     data object Load : TvgIntent
     data object Refresh : TvgIntent
@@ -177,6 +178,8 @@ class DefaultTvgComponent(
     private var focusChannelCache: Channel? = null
     override val focusState: StateFlow<TvgFocusState> = _focusState.asStateFlow()
 
+    private var gridRevision = 0L
+    private var requestedDayOffset: Int? = null
     private var gridJob: kotlinx.coroutines.Job? = null
     private var visibleLoadJob: kotlinx.coroutines.Job? = null
     private var priorityVisibleLoadJob: kotlinx.coroutines.Job? = null
@@ -247,7 +250,12 @@ class DefaultTvgComponent(
     }
 
     override fun reduce(state: TvgState, intent: TvgIntent): TvgState = when (intent) {
-        TvgIntent.Activated -> state
+        TvgIntent.Activated -> state.copy(selectedDayOffset = guideDayOffsetAt(
+            currentTimeMillis(), guidePlaybackTime(playbackController.state.value, currentTimeMillis()),
+            (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
+        is TvgIntent.TimelineCursorMoved -> state.copy(selectedDayOffset = guideDayOffsetAt(
+            currentTimeMillis(), intent.timeMs,
+            (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
         TvgIntent.Load -> state.copy(isLoading = true, error = null)
         TvgIntent.Refresh -> state.copy(isRefreshing = true, error = null)
         is TvgIntent.CategorySelected -> state.copy(
@@ -328,6 +336,8 @@ class DefaultTvgComponent(
     override fun handle(intent: TvgIntent) {
         when (intent) {
             TvgIntent.Activated -> {
+                _focusState.value = TvgFocusState()
+                persistDayOffset(state.value.selectedDayOffset)
                 categoryAutoSelected = false
                 loadGrid(forceRefresh = false, refreshEpg = false)
             }
@@ -336,13 +346,16 @@ class DefaultTvgComponent(
             is TvgIntent.CategorySelected -> {
                 loadGrid(forceRefresh = false, refreshEpg = false)
             }
+            is TvgIntent.TimelineCursorMoved,
             is TvgIntent.DayDelta,
             is TvgIntent.DaySet,
             -> {
                 // `state.value` already holds the reduced offset (dispatch runs
                 // reduce before handle): persist it for tab switches.
                 persistDayOffset(state.value.selectedDayOffset)
-                loadGrid(forceRefresh = false)
+                if (intent !is TvgIntent.TimelineCursorMoved || requestedDayOffset != state.value.selectedDayOffset) {
+                    loadGrid(forceRefresh = false, refreshEpg = false)
+                }
             }
             is TvgIntent.ChannelClicked -> openChannel(intent.channelId)
             is TvgIntent.VisibleChannelsChanged -> {
@@ -441,7 +454,11 @@ class DefaultTvgComponent(
         // Cancel the previous load: fast repeated clicks must not run parallel
         // grid queries whose late results would overwrite the day the user
         // finally landed on.
+        val revision = ++gridRevision
+        requestedDayOffset = state.value.selectedDayOffset
         gridJob?.cancel()
+        visibleLoadJob?.cancel()
+        priorityVisibleLoadJob?.cancel()
         gridJob = launch {
             // Load the grid from the local DB immediately — the EPG refresh
             // (a large XMLTV re-import) must never block the TV Guide from
@@ -449,6 +466,7 @@ class DefaultTvgComponent(
             // grid simply shows fresher data on the next reload.
             try {
                 val all = channelsRepository.getChannels()
+                if (revision != gridRevision) return@launch
                 if (all.isEmpty()) {
                     setState {
                         it.copy(
@@ -475,6 +493,7 @@ class DefaultTvgComponent(
                 } else {
                     all
                 }
+                if (revision != gridRevision) return@launch
                 if (channels.isEmpty()) {
                     setState {
                         it.copy(
@@ -560,7 +579,9 @@ class DefaultTvgComponent(
                     // fired), so do not depend on it for the initial paint. The
                     // viewport loader keeps refilling rows as the user scrolls.
                     epgRepository.getProgrammesInRange(
-                        allChannels.take(FIRST_ROWS_WARMUP),
+                        (allChannels.filter { it.id in lastVisibleChannelIds || it.id == playbackController.state.value.item?.id } +
+                            allChannels.take(FIRST_ROWS_WARMUP)).distinctBy { it.id }
+                            .take(MAX_VISIBLE_QUERY_CHANNELS + FIRST_ROWS_WARMUP + 1),
                         from,
                         to,
                     )
@@ -578,10 +599,13 @@ class DefaultTvgComponent(
                     emptyMap()
                 }
 
+                if (revision != gridRevision) return@launch
                 if (isAndroidPlatform()) {
                     androidRowVersions.clear()
                     programmes.keys.forEach { androidRowVersions[it] = currentEpgVersion }
                 }
+                if (revision != gridRevision) return@launch
+                val validChannelIds = channels.mapTo(HashSet()) { it.id }
                 // Paint the guide immediately. Cache-only archive capability
                 // lookup for hundreds/thousands of channels must never delay the
                 // first frame of the Guide. It is loaded independently below.
@@ -593,7 +617,12 @@ class DefaultTvgComponent(
                         selectedCategory = category,
                         filteredChannels = allChannels,
                         playlistNames = playlistNames,
-                        programmes = programmes,
+                        programmes = if (it.from == from && it.to == to) {
+                            // Reopening/refreshing the same day must keep already read rows.
+                            val kept = it.programmes.filterKeys { id -> id in validChannelIds }.toMutableMap()
+                            programmes.forEach { (id, values) -> if (values.isNotEmpty() || kept[id].isNullOrEmpty()) kept[id] = values }
+                            kept
+                        } else programmes,
                         programmesEpgVersion = currentEpgVersion,
                         currentProgrammes = currentProgrammes,
                         from = from,
@@ -626,7 +655,7 @@ class DefaultTvgComponent(
             } catch (error: Exception) {
                 error.rethrowAndroidCancellation()
                 Logger.e(TAG, "Failed to load TV guide", error)
-                setState { it.copy(isLoading = false, isRefreshing = false, error = AppError.Database(error)) }
+                if (revision == gridRevision) setState { it.copy(isLoading = false, isRefreshing = false, error = AppError.Database(error)) }
             }
             // IMPORTANT: never make the long EPG import a child of gridJob.
             // A multi-minute import used to keep this coroutine alive and made
@@ -647,6 +676,7 @@ class DefaultTvgComponent(
         forceReload: Boolean = false,
         epgVersion: Long = state.value.programmesEpgVersion,
     ) {
+        val revision = gridRevision
         val snapshot = state.value
         if (snapshot.channels.isEmpty() || snapshot.from >= snapshot.to) return
 
@@ -680,7 +710,7 @@ class DefaultTvgComponent(
                     snapshot.to,
                 )
                 val current = state.value
-                if (current.from != snapshot.from || current.to != snapshot.to ||
+                if (revision != gridRevision || current.from != snapshot.from || current.to != snapshot.to ||
                     (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
                 if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
                 setState { latest ->
@@ -717,7 +747,7 @@ class DefaultTvgComponent(
                         snapshot.to,
                     )
                     val current = state.value
-                    if (current.from != snapshot.from || current.to != snapshot.to ||
+                    if (revision != gridRevision || current.from != snapshot.from || current.to != snapshot.to ||
                     (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
                 if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
                     setState { latest ->

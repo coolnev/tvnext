@@ -58,7 +58,7 @@ internal fun AndroidProgrammeOverlay(
                         true
                     } else false
                 }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("${channel.name} • ${if (archived) "АРХИВ" else "LIVE"}",
+                Text(channel.name + if (archived) " • Архив" else "",
                     modifier = Modifier.padding(horizontal = 10.dp).testTag("overlay-channel-name"),
                     color = Color.White, style = MaterialTheme.typography.titleLarge.copy(
                         fontSize = 20.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold),

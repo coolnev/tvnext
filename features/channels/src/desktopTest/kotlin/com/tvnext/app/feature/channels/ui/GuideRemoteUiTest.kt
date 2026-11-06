@@ -311,6 +311,19 @@ class GuideRemoteUiTest {
                 val actual = bottomY + tail.getLineBaseline(0) - topY - first.getLineBaseline(first.lineCount - 1)
                 assertTrue(kotlin.math.abs(expected - actual) <= 1.1f, "Wrapped baseline: expected $expected, actual $actual")
                 saveValidationScreenshot("description-wrap-$mode-$landscape.png")
+                val art = ui.onNodeWithTag("programme-description-artwork")
+                val artY = art.fetchSemanticsNode().positionInRoot.y
+                val beforeTop = top.fetchSemanticsNode().positionInRoot.y
+                val beforeBottom = bottom.fetchSemanticsNode().positionInRoot.y
+                ui.onNodeWithTag("programme-description-scroll").performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 12f) }
+                ui.waitForIdle()
+                val shiftArt = artY - art.fetchSemanticsNode().positionInRoot.y
+                val shiftTop = beforeTop - top.fetchSemanticsNode().positionInRoot.y
+                val shiftBottom = beforeBottom - bottom.fetchSemanticsNode().positionInRoot.y
+                assertTrue(shiftArt > 0f, "Artwork must scroll with the entire description")
+                assertTrue(shiftTop > 0f, "Text beside the image must scroll too")
+                assertTrue(kotlin.math.abs(shiftArt - shiftTop) <= 1.1f && kotlin.math.abs(shiftTop - shiftBottom) <= 1.1f,
+                    "Artwork/top/bottom must move together: $shiftArt / $shiftTop / $shiftBottom")
             } else {
                 ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
                 ui.onNodeWithText(synopsis).assertIsDisplayed()
@@ -498,6 +511,8 @@ class GuideRemoteUiTest {
         val name = ui.onNodeWithTag("overlay-channel-name")
         val progress = ui.onNodeWithTag("overlay-programme-progress")
         val title = ui.onNodeWithTag("overlay-programme-title")
+        ui.onNodeWithText(channel.name).assertIsDisplayed()
+        ui.onNodeWithText("${channel.name} • LIVE").assertDoesNotExist()
         val names = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         val titles = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         name.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(names) }

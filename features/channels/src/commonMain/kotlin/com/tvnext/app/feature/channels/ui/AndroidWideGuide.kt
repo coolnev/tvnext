@@ -791,46 +791,48 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
     BoxWithConstraints(modifier.fillMaxWidth().padding(start = if (compact) 0.dp else 12.dp,
         end = if (compact) 0.dp else 10.dp, top = 4.dp)) {
         val maxTextHeight = if (compact) maxHeight.coerceAtMost(430.dp) else (maxHeight * 0.64f).coerceIn(190.dp, 430.dp)
-        if (picture == null) {
-            ExpandableGuideDescription(description, Modifier.fillMaxWidth(), maxTextHeight, style)
-        } else {
-            val art = picture!!
-            val aspect = art.width.toFloat() / art.height.coerceAtLeast(1)
-            val pictureLimit = if (compact) minOf(80.dp, maxHeight * 0.55f) else 142.dp
-            val pictureWidth = minOf(if (compact) 92.dp else 190.dp, pictureLimit * aspect)
-            val pictureHeight = pictureWidth / aspect.coerceAtLeast(0.01f)
-            val textWidth = (maxWidth - pictureWidth - 10.dp).coerceAtLeast(80.dp)
-            val linePixels = with(density) {
-                if (style.lineHeight.isSpecified) style.lineHeight.toPx()
-                else if (style.fontSize.isSpecified) style.fontSize.toPx() * 1.25f
-                else 19.dp.toPx()
-            }
-            // Round UP to a full line box: the next full-width line then follows
-            // the last narrow line without waiting for the taller image + a gap.
-            val lines = kotlin.math.ceil(with(density) { pictureHeight.toPx() } / linePixels).toInt().coerceAtLeast(1)
-            // Measure actual line breaks at the width beside the image. Once the
-            // image ends, the remainder continues across the full panel width.
-            val layout = measure.measure(AnnotatedString(description), style = style,
-                maxLines = lines, overflow = TextOverflow.Clip,
-                constraints = Constraints(maxWidth = with(density) { textWidth.roundToPx() }))
-            val split = if (layout.lineCount > 0)
-                layout.getLineEnd(layout.lineCount - 1, visibleEnd = true).coerceIn(0, description.length)
-                else 0
-            val topText = description.take(split).trimEnd()
-            val remainingText = description.drop(split).trimStart()
-            val leadingHeight = maxOf(pictureHeight, with(density) { layout.size.height.toDp() })
-            Column(Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                    Image(bitmap = art, contentDescription = null,
-                        contentScale = ContentScale.Fit, alignment = Alignment.TopStart,
-                        modifier = Modifier.size(pictureWidth, pictureHeight).clip(RoundedCornerShape(7.dp)))
-                    Spacer(Modifier.width(10.dp))
-                    Text(topText, modifier = Modifier.weight(1f).testTag("programme-description-beside"), style = style,
-                        color = MaterialTheme.colorScheme.onSurface)
+        ScrollableProgrammeDescription(description, Modifier.fillMaxWidth(), maxTextHeight) {
+            if (picture == null) {
+                Text(description, modifier = Modifier.testTag("programme-description-text"),
+                    color = MaterialTheme.colorScheme.onSurface, style = style)
+            } else {
+                val art = picture!!
+                val aspect = art.width.toFloat() / art.height.coerceAtLeast(1)
+                val pictureLimit = if (compact) minOf(80.dp, maxHeight * 0.55f) else 142.dp
+                val pictureWidth = minOf(if (compact) 92.dp else 190.dp, pictureLimit * aspect)
+                val pictureHeight = pictureWidth / aspect.coerceAtLeast(0.01f)
+                val textWidth = (maxWidth - pictureWidth - 10.dp).coerceAtLeast(80.dp)
+                val linePixels = with(density) {
+                    if (style.lineHeight.isSpecified) style.lineHeight.toPx()
+                    else if (style.fontSize.isSpecified) style.fontSize.toPx() * 1.25f
+                    else 19.dp.toPx()
                 }
-                if (remainingText.isNotEmpty()) {
-                    ExpandableGuideDescription(remainingText, Modifier.fillMaxWidth(),
-                        (maxTextHeight - leadingHeight).coerceAtLeast(if (compact) 1.dp else 65.dp), style)
+                // Round UP to a full line box: the next full-width line then follows
+                // the last narrow line without waiting for the taller image + a gap.
+                val lines = kotlin.math.ceil(with(density) { pictureHeight.toPx() } / linePixels).toInt().coerceAtLeast(1)
+                // Measure actual line breaks at the width beside the image. Once the
+                // image ends, the remainder continues across the full panel width.
+                val layout = measure.measure(AnnotatedString(description), style = style,
+                    maxLines = lines, overflow = TextOverflow.Clip,
+                    constraints = Constraints(maxWidth = with(density) { textWidth.roundToPx() }))
+                val split = if (layout.lineCount > 0)
+                    layout.getLineEnd(layout.lineCount - 1, visibleEnd = true).coerceIn(0, description.length)
+                    else 0
+                val topText = description.take(split).trimEnd()
+                val remainingText = description.drop(split).trimStart()
+                Column(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Image(bitmap = art, contentDescription = null,
+                            contentScale = ContentScale.Fit, alignment = Alignment.TopStart,
+                            modifier = Modifier.size(pictureWidth, pictureHeight).clip(RoundedCornerShape(7.dp)).testTag("programme-description-artwork"))
+                        Spacer(Modifier.width(10.dp))
+                        Text(topText, modifier = Modifier.weight(1f).testTag("programme-description-beside"), style = style,
+                            color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    if (remainingText.isNotEmpty()) {
+                        Text(remainingText, modifier = Modifier.testTag("programme-description-text"),
+                            color = MaterialTheme.colorScheme.onSurface, style = style)
+                    }
                 }
             }
         }
@@ -839,12 +841,12 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
 
 /** Content grows with text until a TV-safe maximum; overflow scrolls back/forth. */
 @Composable
-private fun ExpandableGuideDescription(text: String, modifier: Modifier, maximum: Dp,
-    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyMedium) {
+private fun ScrollableProgrammeDescription(text: String, modifier: Modifier, maximum: Dp,
+    content: @Composable () -> Unit) {
     val scroll = rememberScrollState()
     val density = LocalDensity.current
-    Column(modifier.heightIn(max = maximum).verticalScroll(scroll)) {
-        Text(text, modifier = Modifier.testTag("programme-description-text"), color = MaterialTheme.colorScheme.onSurface, style = style)
+    Column(modifier.heightIn(max = maximum).testTag("programme-description-scroll").verticalScroll(scroll)) {
+        content()
     }
     LaunchedEffect(text, scroll.maxValue) {
         scroll.scrollTo(0)

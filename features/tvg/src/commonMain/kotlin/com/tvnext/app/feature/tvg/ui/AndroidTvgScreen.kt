@@ -27,11 +27,13 @@ import kotlinx.coroutines.Job
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.tvnext.app.core.common.result.toUserMessage
 import com.tvnext.app.core.common.input.OkInputGate
+import com.tvnext.app.core.common.util.startOfLocalDayOffset
 import com.tvnext.app.core.common.util.currentTimeMillis
 import com.tvnext.app.core.common.util.formatDateTime
 import com.tvnext.app.core.common.util.formatTimeOfDay
@@ -72,10 +74,11 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     var okJob by remember { mutableStateOf<Job?>(null) }
     DisposableEffect(Unit) { onDispose { okJob?.cancel() } }
     var channelId by remember { mutableStateOf<String?>(null) }
-    var cursorTime by remember { mutableLongStateOf(currentTimeMillis()) }
+    val entryTime = remember(component) { guidePlaybackTime(component.playbackController.state.value, currentTimeMillis()) }
+    var cursorTime by remember { mutableLongStateOf(entryTime) }
     // When LEFT crosses midnight, keep the target in the preceding day rather
     // than resetting the cursor to 00:00 (which traps archive navigation).
-    var pendingDayCursor by remember { mutableStateOf<Long?>(null) }
+    var pendingDayCursor by remember { mutableStateOf<Long?>(entryTime) }
     var now by remember { mutableLongStateOf(currentTimeMillis()) }
     var nowRequest by remember { mutableIntStateOf(0) }
     var categoriesOpen by remember { mutableStateOf(false) }
@@ -106,8 +109,11 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     }
     LaunchedEffect(state.from, state.to) {
         if (state.to > state.from) {
-            cursorTime = pendingDayCursor?.takeIf { it in state.from until state.to }
-                ?: now.takeIf { it in state.from until state.to } ?: state.from
+            val pending = pendingDayCursor
+            // A newer absolute cursor may still be waiting for its own day.
+            // An intermediate result must not reset it back to this grid's midnight.
+            if (pending != null && pending !in state.from until state.to) return@LaunchedEffect
+            cursorTime = pending ?: now.takeIf { it in state.from until state.to } ?: state.from
             pendingDayCursor = null
             withFrameNanos { }
             timeScroll.scrollTo(((cursorTime - state.from) / GUIDE_HOUR.toFloat() * hourPx - hourPx / 4).toInt().coerceAtLeast(0))
@@ -152,9 +158,9 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 } else false
             }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(modifier = Modifier.focusRequester(toolbarFocus), onClick = { categoriesOpen = true }) { Text(state.selectedCategory ?: "Все каналы") }
-            Button(onClick = { component.dispatch(TvgIntent.DayDelta(-1)) }) { Text("− День") }
-            Button(onClick = { component.dispatch(TvgIntent.DaySet(0)); cursorTime = now; nowRequest++ }) { Text("Сейчас") }
-            Button(onClick = { component.dispatch(TvgIntent.DayDelta(1)) }) { Text("+ День") }
+            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(-1)) }) { Text("− День") }
+            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DaySet(0)); cursorTime = now; nowRequest++ }) { Text("Сейчас") }
+            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(1)) }) { Text("+ День") }
             Button(onClick = { component.dispatch(TvgIntent.Refresh) }) { Text("Обновить") }
         }
         Text(formatDateTime(if (state.from > 0) state.from else now), modifier = Modifier.padding(vertical = 6.dp))
@@ -168,7 +174,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             val visibleStart = state.from + (timeScroll.value / hourPx * GUIDE_HOUR).toLong()
             val visibleEnd = visibleStart + (viewportPx / hourPx * GUIDE_HOUR).toLong()
             LaunchedEffect(cursorTime, state.from, viewportPx, nowRequest) {
-                if (state.to <= state.from) return@LaunchedEffect
+                if (state.to <= state.from || cursorTime !in state.from until state.to) return@LaunchedEffect
                 val x = (cursorTime - state.from) / GUIDE_HOUR.toFloat() * hourPx
                 val left = timeScroll.value.toFloat()
                 val target = when {
@@ -199,7 +205,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                         .height(fiveRowsHeight)
                         .fillMaxWidth()
                         .clipToBounds()
-                        .focusRequester(gridFocus)
+                        .testTag("tvg-grid").focusRequester(gridFocus)
                         .onPreviewKeyEvent { event ->
                             val navigation = event.key in listOf(Key.DirectionUp, Key.DirectionDown, Key.DirectionLeft, Key.DirectionRight)
                             val ok = event.key == Key.Enter || event.key == Key.DirectionCenter
@@ -231,21 +237,14 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                                     Key.DirectionDown -> rows.getOrNull(index + 1)?.let { select(it, cursorTime) }
                                     else -> {
                                         val forward = event.key == Key.DirectionRight
-                                        val programmes = channelId?.let { state.programmes[it] }.orEmpty()
-                                        val next = if (forward) programmes.firstOrNull { it.start > cursorTime }
-                                            else programmes.lastOrNull { it.stop <= cursorTime || it.start < (selectedProgramme?.start ?: cursorTime) }
-                                        val target = next?.start ?: (cursorTime + if (forward) GUIDE_HOUR / 2 else -GUIDE_HOUR / 2)
-                                        if (target < state.from) {
-                                            // LEFT always navigates the timeline. Categories
-                                            // are opened only by the explicit toolbar button.
-                                            if (state.selectedDayOffset > state.minArchiveDayOffset) {
-                                                pendingDayCursor = target
-                                                component.dispatch(TvgIntent.DayDelta(-1))
-                                            } else cursorTime = state.from
-                                        } else if (target >= state.to) {
-                                            pendingDayCursor = target
-                                            component.dispatch(TvgIntent.DayDelta(1))
-                                        } else cursorTime = target
+                                        val programmes = if (cursorTime in state.from until state.to)
+                                            channelId?.let { state.programmes[it] }.orEmpty() else emptyList()
+                                        val target = guideProgrammeTarget(programmes, cursorTime, forward).coerceIn(
+                                            startOfLocalDayOffset(now, state.minArchiveDayOffset.coerceIn(-365, 0)),
+                                            startOfLocalDayOffset(now, 8) - 1)
+                                        cursorTime = target
+                                        pendingDayCursor = target.takeUnless { it in state.from until state.to }
+                                        component.dispatch(TvgIntent.TimelineCursorMoved(target))
                                     }
                                 }
                                 true
@@ -273,7 +272,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                                         val highlighted = selected && programme == selectedProgramme
                                         val x = GuideHourWidth * ((start - state.from).toFloat() / GUIDE_HOUR) - offsetDp
                                         val width = GuideHourWidth * ((stop - start).toFloat() / GUIDE_HOUR)
-                                        Column(Modifier.offset(x = x).width(width).fillMaxHeight().padding(end = 2.dp)
+                                        Column(Modifier.testTag("tvg-programme").offset(x = x).width(width).fillMaxHeight().padding(end = 2.dp)
                                             .background(if (active) accent.copy(alpha = .24f) else foreground.copy(alpha = .08f))
                                             .border(if (highlighted) 2.dp else 0.dp, if (highlighted) accent else Color.Transparent)
                                             .guideTap { select(channel, programme.start); showDetails(channel, programme) }.padding(8.dp)) {

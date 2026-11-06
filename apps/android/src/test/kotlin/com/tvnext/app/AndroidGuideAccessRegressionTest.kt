@@ -7,7 +7,11 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.create
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.destroy
+import com.tvnext.app.core.common.util.startOfLocalDayOffset
 import com.tvnext.app.core.common.result.AppResult
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import com.tvnext.app.core.iptv.archive.ArchiveRepository
 import com.tvnext.app.core.iptv.data.*
 import com.tvnext.app.core.iptv.domain.*
@@ -83,9 +87,75 @@ class AndroidGuideAccessRegressionTest {
         assertNotNull(fixture.component.state.value.error)
     }
 
+    @Test fun emptyArchiveDayAndReentryCannotHideTodaysProgrammes() = guide(null) { f ->
+        f.emptyFrom = startOfLocalDayOffset(f.now, -2)
+        f.component.dispatch(TvgIntent.DaySet(-2))
+        assertTrue(f.component.state.value.programmes.values.all { it.isEmpty() })
+        f.component.dispatch(TvgIntent.DaySet(0))
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
+        f.component.dispatch(TvgIntent.DaySet(-2))
+        f.component.dispatch(TvgIntent.Activated)
+        assertEquals(0, f.component.state.value.selectedDayOffset)
+        assertEquals(startOfLocalDayOffset(f.now, 0), f.component.state.value.from)
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
+    }
+
+    @Test fun latePreviousDayResultCannotOverwriteReturnToCurrentDay() = guide(null) { f ->
+        val yesterday = startOfLocalDayOffset(f.now, -1)
+        f.deferFrom = yesterday
+        f.component.dispatch(TvgIntent.TimelineCursorMoved(yesterday + 23 * 3_600_000L))
+        assertTrue(f.pending.isNotEmpty())
+        // Returning to a day whose grid is still displayed must cancel the older request too.
+        f.component.dispatch(TvgIntent.TimelineCursorMoved(f.now))
+        val pending = f.pending.toList();f.pending.clear();f.deferFrom = null
+        pending.forEach { (continuation, rows) -> continuation.resume(rows) }
+        assertEquals(0, f.component.state.value.selectedDayOffset)
+        assertEquals(startOfLocalDayOffset(f.now, 0), f.component.state.value.from)
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
+        assertNull(f.component.state.value.error)
+    }
+
+    @Test fun repeatedAbsoluteCursorDoesNotSkipSeveralDates() = guide(null) { f ->
+        val yesterday = startOfLocalDayOffset(f.now, -1)
+        f.deferFrom = yesterday
+        repeat(12) { f.component.dispatch(TvgIntent.TimelineCursorMoved(yesterday + 23 * 3_600_000L)) }
+        assertEquals(-1, f.component.state.value.selectedDayOffset)
+        assertEquals(1, f.pending.size)
+        val pending = f.pending.toList();f.pending.clear();f.deferFrom = null
+        pending.forEach { (continuation, rows) -> continuation.resume(rows) }
+        assertEquals(yesterday, f.component.state.value.from)
+        f.component.dispatch(TvgIntent.TimelineCursorMoved(f.now))
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
+    }
+
+    @Test fun reopeningKeepsLoadedRowsBeyondWarmupEvenIfReadIsTemporarilyEmpty() = guide(null) { f ->
+        f.channels = listOf(f.channel) + (1..30).map { f.channel.copy(id = "channel-$it") }
+        f.component.dispatch(TvgIntent.Activated)
+        val id = f.channels.last().id
+        f.component.dispatch(TvgIntent.VisibleChannelsChanged(setOf(id)))
+        assertFalse(f.component.state.value.programmes[id].isNullOrEmpty())
+        f.emptyChannels = setOf(id)
+        f.component.dispatch(TvgIntent.Activated)
+        assertFalse(f.component.state.value.programmes[id].isNullOrEmpty())
+    }
+
+    @Test fun reopeningDuringArchiveUsesActualPlaybackDay() = guide(null) { f ->
+        f.player.value = f.player.value.copy(item = f.player.value.item!!.copy(
+            kind = PlaybackContentKind.ARCHIVE, archiveEpgAnchorMs = startOfLocalDayOffset(f.now, -2) + 12 * 3_600_000L), positionMs = 300_000)
+        f.component.dispatch(TvgIntent.Activated)
+        assertEquals(-2, f.component.state.value.selectedDayOffset)
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
+    }
+
     private class Fixture {
         var rangeFails = false
+        val now = System.currentTimeMillis()
+        var deferFrom: Long? = null
+        var emptyFrom: Long? = null
+        var emptyChannels: Set<String> = emptySet()
+        val pending = mutableListOf<Pair<Continuation<Any?>, Map<String, List<EpgProgramme>>>>()
         val channel = Channel("live", "Кино", 1, "Кино", "https://unused.invalid/live", playlistId = "playlist")
+        val player = MutableStateFlow(PlayerState(item = PlaybackItem(channel.id, channel.name, channel.streamUrl)))
         var channels: List<Channel> = listOf(channel)
         lateinit var component: DefaultTvgComponent
     }
@@ -99,7 +169,7 @@ class AndroidGuideAccessRegressionTest {
         val fixture = Fixture().also { if (initial != null) it.channels = initial }
         val failures = mutableListOf<Throwable>()
         val lifecycle = LifecycleRegistry().apply { create(); resume() }
-        val now = System.currentTimeMillis()
+        val now = fixture.now
         var refreshes = 0
         val playlist = Playlist("playlist", "Тест", "https://unused.invalid/list")
         val channels = fake<ChannelsRepository> { name, _ -> when (name) {
@@ -113,8 +183,23 @@ class AndroidGuideAccessRegressionTest {
         val epg = fake<EpgRepository> { name, args -> when (name) {
             "observeVersion" -> MutableStateFlow(1L)
             "observeState" -> MutableStateFlow(EpgState())
-            "getAvailableProgrammeRange" -> { if (fixture.rangeFails) error("Missing test EPG index"); (now - 3_600_000)..(now + 3_600_000) }
-            "getProgrammesInRange" -> (args[0] as List<Channel>).associate { c -> c.id to listOf(EpgProgramme(c.id, now - 3_600_000, now + 3_600_000, "Текущий фильм")) }
+            "getAvailableProgrammeRange" -> { if (fixture.rangeFails) error("Missing test EPG index"); (now - 3 * 86_400_000L)..(now + 2 * 86_400_000L) }
+            "getProgrammesInRange" -> {
+                val from = args[1] as Long
+                val to = args[2] as Long
+                val rows = (args[0] as List<Channel>).associate { c -> c.id to
+                    if (fixture.emptyFrom == from || c.id in fixture.emptyChannels) emptyList()
+                    else (-72..72).map { hour ->
+                        val start = startOfLocalDayOffset(now, 0) + hour * 3_600_000L
+                        EpgProgramme(c.id, start, start + 3_600_000L, "Передача $hour")
+                    }.filter { it.start < to && it.stop > from }
+                }
+                if (fixture.deferFrom == from) {
+                    @Suppress("UNCHECKED_CAST")
+                    fixture.pending += (args.last() as Continuation<Any?>) to rows
+                    COROUTINE_SUSPENDED // A deliberately cancellation-insensitive repository response.
+                } else rows
+            }
             "getNowPlaying" -> (args[0] as List<Channel>).associate { c -> c.id to EpgProgramme(c.id, now - 3_600_000, now + 3_600_000, "Текущий фильм") }
             "refreshIfStale" -> { refreshes++; AppResult.Success(Unit) }
             else -> error("Unexpected epg.$name")
@@ -128,13 +213,15 @@ class AndroidGuideAccessRegressionTest {
             else -> error("Unexpected schedule.$name")
         } }
         val playback = fake<PlaybackController> { name, _ -> when (name) {
-            "getState" -> MutableStateFlow(PlayerState(item = PlaybackItem(fixture.channel.id, fixture.channel.name, fixture.channel.streamUrl)))
+            "getState" -> fixture.player
             else -> error("Unexpected playback.$name")
         } }
         try {
             fixture.component = DefaultTvgComponent(DefaultComponentContext(lifecycle), channels, playlists, epg, archive, scheduled,
                 playback, {}, mainContext = Dispatchers.Unconfined + CoroutineExceptionHandler { _, error -> failures += error })
             assertTrue("Initialization failures: $failures", failures.isEmpty())
+            // TV Guide remembers dates in-process; start each fixture via the real Today action.
+            fixture.component.dispatch(TvgIntent.DaySet(0))
             val before = refreshes
             block(fixture)
             assertEquals("Reentry must only read the cache", before, refreshes)
