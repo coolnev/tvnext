@@ -1,0 +1,231 @@
+{
+  "viewport": [
+    1920,
+    1080
+  ],
+  "variants": [
+    {
+      "variant": 1,
+      "panel": {
+        "y": 768,
+        "height": 312,
+        "width": 1920
+      },
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 992,
+          "w": 136,
+          "h": 60
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 992,
+          "w": 194.78125,
+          "h": 60
+        },
+        {
+          "action": "rewind",
+          "x": 832,
+          "y": 992,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "pause",
+          "x": 922,
+          "y": 992,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "forward",
+          "x": 1012,
+          "y": 992,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "live",
+          "x": 1354.75,
+          "y": 992,
+          "w": 155.734375,
+          "h": 60
+        },
+        {
+          "action": "details",
+          "x": 1522.484375,
+          "y": 992,
+          "w": 172.625,
+          "h": 60
+        },
+        {
+          "action": "close",
+          "x": 1707.109375,
+          "y": 992,
+          "w": 156.890625,
+          "h": 60
+        }
+      ],
+      "channelBottom": 831,
+      "progressTop": 850,
+      "progressBottom": 855,
+      "movieTop": 899
+    },
+    {
+      "variant": 2,
+      "panel": {
+        "y": 834,
+        "height": 246,
+        "width": 1920
+      },
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 1001,
+          "w": 136,
+          "h": 56
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 1001,
+          "w": 189.125,
+          "h": 56
+        },
+        {
+          "action": "rewind",
+          "x": 841,
+          "y": 1001,
+          "w": 70,
+          "h": 56
+        },
+        {
+          "action": "pause",
+          "x": 925,
+          "y": 1001,
+          "w": 70,
+          "h": 56
+        },
+        {
+          "action": "forward",
+          "x": 1009,
+          "y": 1001,
+          "w": 70,
+          "h": 56
+        },
+        {
+          "action": "live",
+          "x": 1367,
+          "y": 1001,
+          "w": 151.9375,
+          "h": 56
+        },
+        {
+          "action": "details",
+          "x": 1530.9375,
+          "y": 1001,
+          "w": 168.03125,
+          "h": 56
+        },
+        {
+          "action": "close",
+          "x": 1710.96875,
+          "y": 1001,
+          "w": 153.03125,
+          "h": 56
+        }
+      ],
+      "channelBottom": 893,
+      "progressTop": 909,
+      "progressBottom": 914,
+      "movieTop": 857
+    },
+    {
+      "variant": 3,
+      "panel": {
+        "y": 712,
+        "height": 368,
+        "width": 1920
+      },
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 995,
+          "w": 136,
+          "h": 60
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 995,
+          "w": 194.78125,
+          "h": 60
+        },
+        {
+          "action": "rewind",
+          "x": 832,
+          "y": 995,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "pause",
+          "x": 922,
+          "y": 995,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "forward",
+          "x": 1012,
+          "y": 995,
+          "w": 76,
+          "h": 60
+        },
+        {
+          "action": "live",
+          "x": 1354.75,
+          "y": 995,
+          "w": 155.734375,
+          "h": 60
+        },
+        {
+          "action": "details",
+          "x": 1522.484375,
+          "y": 995,
+          "w": 172.625,
+          "h": 60
+        },
+        {
+          "action": "close",
+          "x": 1707.109375,
+          "y": 995,
+          "w": 156.890625,
+          "h": 60
+        }
+      ],
+      "channelBottom": 774,
+      "progressTop": 793,
+      "progressBottom": 798,
+      "movieTop": 847
+    }
+  ],
+  "checks": [
+    "buttons in one row",
+    "equal button heights",
+    "focus does not shift controls",
+    "no screen overflow",
+    "progress below channel",
+    "RIGHT changes focus",
+    "description opens and closes",
+    "close and OK restore panel",
+    "live mode includes recording",
+    "variant/mode selectors work"
+  ],
+  "browserErrors": []
+}
