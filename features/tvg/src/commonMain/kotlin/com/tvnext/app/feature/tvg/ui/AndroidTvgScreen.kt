@@ -44,6 +44,7 @@ import com.tvnext.app.core.common.util.formatDate
 import com.tvnext.app.core.common.util.formatTimeOfDay
 import com.tvnext.app.core.ui.component.AutoScrollText
 import com.tvnext.app.core.iptv.domain.Channel
+import com.tvnext.app.core.iptv.domain.channelCategoriesInOrder
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -301,7 +302,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     if (categoriesOpen) AlertDialog(
         onDismissRequest = { categoriesOpen = false }, title = { Text("Категории") },
         text = {
-            val categories = listOf<String?>(null) + state.channels.map { it.category }.distinct().sorted()
+            val categories = remember(state.channels) { listOf<String?>(null) + channelCategoriesInOrder(state.channels) }
             val categoryList = rememberLazyListState(initialFirstVisibleItemIndex = categories.indexOf(state.selectedCategory).coerceAtLeast(0))
             val selectedFocus = remember { FocusRequester() }
             LaunchedEffect(Unit) { withFrameNanos { }; runCatching { selectedFocus.requestFocus() } }

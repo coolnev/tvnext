@@ -18,6 +18,7 @@ import com.tvnext.app.core.iptv.data.ChannelsRepository
 import com.tvnext.app.core.iptv.data.EpgRepository
 import com.tvnext.app.core.iptv.data.HistoryRepository
 import com.tvnext.app.core.iptv.domain.Channel
+import com.tvnext.app.core.iptv.domain.ChannelCategoryOrder
 import com.tvnext.app.core.iptv.domain.WatchContentType
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import com.tvnext.app.core.player.PlaybackContentKind
@@ -64,19 +65,15 @@ private fun buildChannelProjections(
     // playlist/filter snapshot changes. Sorting only the small category set is
     // much cheaper than repeatedly walking the full channel list.
     val categoryCounts = LinkedHashMap<String, Int>()
-    val categorySet = LinkedHashSet<String>()
-    val categoryMinNumber = mutableMapOf<String, Int>()  // Track min channel number per category
+    val categoryOrder = ChannelCategoryOrder()
     var favoritesCount = 0
     val normalizedQuery = query.trim()
     val hasQuery = normalizedQuery.isNotEmpty()
     val filtered = ArrayList<Channel>(channels.size)
 
     for (channel in channels) {
-        categorySet += channel.category
+        categoryOrder.add(channel)
         categoryCounts[channel.category] = (categoryCounts[channel.category] ?: 0) + 1
-        // Track minimum channel number for this category
-        categoryMinNumber[channel.category] = 
-            minOf(categoryMinNumber[channel.category] ?: Int.MAX_VALUE, channel.number)
         if (channel.isFavorite) favoritesCount++
 
         val matchesCategory = when (selectedCategory) {
@@ -93,7 +90,7 @@ private fun buildChannelProjections(
     }
 
     // Sort categories by minimum channel number in each category (ascending order)
-    val categories = categorySet.toMutableList().sortedBy { categoryMinNumber[it] ?: Int.MAX_VALUE }
+    val categories = categoryOrder.categories()
     return ChannelProjections(categories, categoryCounts, favoritesCount, filtered)
 }
 

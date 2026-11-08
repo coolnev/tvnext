@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +30,7 @@ import com.tvnext.app.core.player.displayName
 import com.tvnext.app.core.ui.component.TvCardButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import org.koin.core.context.GlobalContext
 
 /** Full-screen Android TV editor; IPTV sources and channel IDs are never mutated. */
@@ -53,6 +57,10 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
     var confirmReset by remember { mutableStateOf(false) }
     var changed by remember { mutableStateOf(false) }
     val firstChannelFocus = remember { FocusRequester() }
+    val resetProviderFocus = remember { FocusRequester() }
+    var returnChannelFocus by remember { mutableStateOf<FocusRequester?>(null) }
+    val channelList = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     val close = { onClose(changed) }
 
     LaunchedEffect(source) {
@@ -116,9 +124,15 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                 }
                 Text("Каналы: ${filtered.size}", style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                LazyColumn(Modifier.weight(1f).fillMaxWidth(),
+                LazyColumn(Modifier.weight(1f).fillMaxWidth().onPreviewKeyEvent { event ->
+                    if (event.key == Key.DirectionRight) {
+                        if (event.type == KeyEventType.KeyDown) resetProviderFocus.requestFocus()
+                        true
+                    } else false
+                }, state = channelList,
                     verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     itemsIndexed(filtered, key = { _, channel -> channel.id }) { index, channel ->
+                        val channelFocus = remember(channel.id) { FocusRequester() }
                         TvCardButton(
                             onClick = {
                                 selectedId = channel.id
@@ -133,6 +147,8 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                             },
                             selected = channel.id == selectedId,
                             modifier = Modifier.fillMaxWidth().height(43.dp)
+                                .focusRequester(channelFocus)
+                                .onFocusChanged { if (it.hasFocus) returnChannelFocus = channelFocus }
                                 .then(if (index == 0) Modifier.focusRequester(firstChannelFocus) else Modifier),
                             contentPadding = PaddingValues(horizontal = 11.dp, vertical = 3.dp),
                         ) {
@@ -142,12 +158,30 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                         }
                     }
                 }
-                TvActionButton(onClick = { confirmReset = true }) { Text("Вернуть список провайдера") }
             }
             Column(Modifier.weight(0.54f).fillMaxHeight()
                 .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface)
-                .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                TvActionButton(onClick = { confirmReset = true }, modifier = Modifier.align(Alignment.End)
+                    .focusRequester(resetProviderFocus).onPreviewKeyEvent { event ->
+                        when (event.key) {
+                            Key.DirectionLeft -> {
+                                if (event.type == KeyEventType.KeyDown &&
+                                    runCatching { returnChannelFocus?.requestFocus() }.getOrNull() != true) {
+                                    scope.launch {
+                                        channelList.scrollToItem(0)
+                                        withFrameNanos { }
+                                        runCatching { firstChannelFocus.requestFocus() }
+                                    }
+                                }
+                                true
+                            }
+                            Key.DirectionRight -> true
+                            else -> false
+                        }
+                    }) { Text("Вернуть список провайдера") }
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 val selected = channels.firstOrNull { it.id == selectedId }
                 if (selected == null) {
                     Text("Выбери канал слева", style = MaterialTheme.typography.titleMedium)
@@ -220,6 +254,7 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                     }) { Text("Сохранить настройки канала") }
                 }
                 if (message.isNotBlank()) Text(message, color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
     }

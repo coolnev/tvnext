@@ -28,6 +28,25 @@ class AndroidGuideTimelineUiTest {
     private fun guideTest(width: Int = 1100, height: Int = 700, body: ComposeUiTest.() -> Unit) =
         runDesktopComposeUiTest(width=width,height=height) {ui=this;body()}
 
+    @Test fun categoryPickerMatchesChannelNumberOrderInsteadOfAlphabet() = guideTest(960,540) {
+        val component=Guide()
+        val channels=listOf(component.channel.copy(id="news20",number=20,category="Я Новости"),
+            component.channel.copy(id="film",number=50,category="А Кино"),
+            component.channel.copy(id="news1",number=1,category="Я Новости"),
+            component.channel.copy(id="kids",number=3,category="М Детские"))
+        component.state.value=component.state.value.copy(channels=channels,filteredChannels=channels)
+        setContent {MaterialTheme(colorScheme=darkColorScheme()) {AndroidTvgScreen(component,Modifier,{})}}
+        waitForIdle()
+        onNodeWithTag("tvg-grid").performKeyInput {pressKey(Key.DirectionUp)}
+        onNodeWithTag("tvg-categories").performKeyInput {pressKey(Key.Enter)}
+        waitForIdle()
+        val positions=listOf("Я Новости","М Детские","А Кино").map {onNodeWithText(it).fetchSemanticsNode().boundsInRoot.top}
+        assertTrue(positions.zipWithNext().all {(a,b)->a<b})
+        onNodeWithText("М Детские").performClick();waitForIdle()
+        assertEquals("М Детские",(component.intents.last {it is TvgIntent.CategorySelected} as TvgIntent.CategorySelected).category)
+        onNodeWithTag("tvg-grid").assertIsFocused()
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test fun compactGuideKeepsPlayingPreviewStableWhileBrowsingAndLoading() = guideTest(960,540) {
         val component = Guide()
