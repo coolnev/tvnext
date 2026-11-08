@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.45-recovery-preview",
+  "versionCode": 545,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "0066ad9d4279fa1397c34d7c6f2bfbea2c8a3405",
+  "sha256": "38435cce951295fc6913c2996240323f8c295b2f0b687acf3ced4c29575e0cc6",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "wake": {
+    "default": false,
+    "setting": "Общие → Запускать TVNext при включении",
+    "trigger": "Real standby screen-off/screen-on cycle",
+    "boot": "Arms observer only; never starts the Activity on Android boot",
+    "permission": "Android 10+: display over other apps",
+    "implementation": "Foreground specialUse service + dynamic broadcast receiver; no polling or wake lock",
+    "duplicateWakeLaunchesSuppressed": true,
+    "lockedDeviceWaitsForUnlock": true
+  },
+  "animation": {
+    "default": false,
+    "setting": "Оформление → Анимация",
+    "durationMs": 420,
+    "destinations": [
+      "fullscreen",
+      "windowed channels",
+      "TV Guide top-right preview",
+      "Home current channel/movie preview"
+    ],
+    "sharedPlayer": true,
+    "retainedNativeView": true,
+    "textureViewWhenEnabled": true,
+    "surfaceViewWhenDisabled": true
+  },
+  "tests": [
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 72,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 182,
+  "nativeAndroidTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Default API key retained in DEX, absent from tracked plain text",
+    "All packaged PNG resources unchanged from 0.5.44",
+    "Compose animation midpoint and Home preview screenshots inspected"
+  ],
+  "physicalTV": false,
+  "releaseApkRunOnEmulator": true,
+  "limitation": "Android 9 software emulator without KVM, generated local H.264/AAC and software decoder. Physical Google TV wake policy and smoothness are unverified; Robolectric wake lifecycle/permission tests cover APIs 28/35. System UI had a boot ANR before application validation.",
+  "emulator": {
+    "androidApi": 28,
+    "softwareEmulation": true,
+    "generatedLocalH264Aac": true,
+    "nativeTextureRetainedAcross": [
+      "fullscreen",
+      "Home",
+      "TV Guide",
+      "fullscreen return"
+    ],
+    "continuousPlaybackPositionsMs": [
+      5098,
+      11072,
+      16797,
+      20972
+    ],
+    "standbyWakeReturnedFromAndroidLauncher": true,
+    "guideDataValidation": "Native run checks the retained video preview; populated guide data/navigation are covered by the five common guide UI tests."
+  }
+}

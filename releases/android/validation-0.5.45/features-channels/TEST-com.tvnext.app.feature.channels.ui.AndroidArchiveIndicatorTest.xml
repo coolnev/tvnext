@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidArchiveIndicatorTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-08T15:56:40.947Z" hostname="fbd2d42f1624" time="0.114">
+  <properties/>
+  <testcase name="archiveDoesNotRequireCurrentProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidArchiveIndicatorTest" time="0.109"/>
+  <testcase name="channelWithoutArchiveHasNoClock[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidArchiveIndicatorTest" time="0.0"/>
+  <testcase name="disabledProviderFlagsHaveNoClock[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidArchiveIndicatorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

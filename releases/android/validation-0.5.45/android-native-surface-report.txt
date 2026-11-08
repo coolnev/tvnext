@@ -1,0 +1,30 @@
+INSTRUMENTATION_RESULT: report=FULL
+androidx.compose.ui.platform.AndroidComposeView size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+com.tvnext.app.core.player.AndroidVideoViewport size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+PlayerView player=true
+state=2 playing=false video=Format(1/256, null, video/mp2t, video/avc, avc1.42C00B, -1, null, [320, 180, -1.0, ColorInfo(Unset color space, Unset color range, Unset color transfer, false, 8bit Luma, 8bit Chroma)], [-1, -1, -1]) position=5098
+android.view.TextureView size=568x320 xy=36,0 shown=true attached=true hardware=true alpha=1.0
+textureAvailable=true surface=android.graphics.SurfaceTexture@cf347f6
+HOME
+androidx.compose.ui.platform.AndroidComposeView size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+com.tvnext.app.core.player.AndroidVideoViewport size=176x99 xy=432,172 shown=true attached=true hardware=true alpha=1.0
+PlayerView player=true
+state=3 playing=true video=Format(1/256, null, video/mp2t, video/avc, avc1.42C00B, -1, null, [320, 180, -1.0, ColorInfo(Unset color space, Unset color range, Unset color transfer, false, 8bit Luma, 8bit Chroma)], [-1, -1, -1]) position=11072
+android.view.TextureView size=176x99 xy=432,172 shown=true attached=true hardware=true alpha=1.0
+textureAvailable=true surface=android.graphics.SurfaceTexture@cf347f6
+GUIDE
+androidx.compose.ui.platform.AndroidComposeView size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+com.tvnext.app.core.player.AndroidVideoViewport size=176x99 xy=448,16 shown=true attached=true hardware=true alpha=1.0
+PlayerView player=true
+state=3 playing=true video=Format(1/256, null, video/mp2t, video/avc, avc1.42C00B, -1, null, [320, 180, -1.0, ColorInfo(Unset color space, Unset color range, Unset color transfer, false, 8bit Luma, 8bit Chroma)], [-1, -1, -1]) position=16797
+android.view.TextureView size=176x99 xy=448,16 shown=true attached=true hardware=true alpha=1.0
+textureAvailable=true surface=android.graphics.SurfaceTexture@cf347f6
+RETURN
+androidx.compose.ui.platform.AndroidComposeView size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+com.tvnext.app.core.player.AndroidVideoViewport size=640x320 xy=0,0 shown=true attached=true hardware=true alpha=1.0
+PlayerView player=true
+state=3 playing=true video=Format(1/256, null, video/mp2t, video/avc, avc1.42C00B, -1, null, [320, 180, -1.0, ColorInfo(Unset color space, Unset color range, Unset color transfer, false, 8bit Luma, 8bit Chroma)], [-1, -1, -1]) position=20972
+android.view.TextureView size=568x320 xy=36,0 shown=true attached=true hardware=true alpha=1.0
+textureAvailable=true surface=android.graphics.SurfaceTexture@cf347f6
+
+INSTRUMENTATION_CODE: -1

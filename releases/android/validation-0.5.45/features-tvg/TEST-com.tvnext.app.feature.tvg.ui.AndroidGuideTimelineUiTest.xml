@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidGuideTimelineUiTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-08T15:57:05.159Z" hostname="fbd2d42f1624" time="4.101">
+  <properties/>
+  <testcase name="compactGuideKeepsPlayingPreviewStableWhileBrowsingAndLoading[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="1.688"/>
+  <testcase name="categoryPickerMatchesChannelNumberOrderInsteadOfAlphabet[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.714"/>
+  <testcase name="outlinedToolbarNavigatesBothRowsAndReturnsToGridAndVideo[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.507"/>
+  <testcase name="rapidLeftAcrossMidnightThenRightRestoresVisibleProgrammes[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.763"/>
+  <testcase name="reverseBeforeDayQueryFinishesKeepsCurrentGridAndCursor[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.424"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

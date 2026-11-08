@@ -1,0 +1,10 @@
+    mResumedActivity: ActivityRecord{f1aef60 u0 com.android.launcher3/.Launcher t2}
+  mWakefulness=Asleep
+Display Power: state=ON
+    mResumedActivity: ActivityRecord{f1aef60 u0 com.android.launcher3/.Launcher t2}
+    mResumedActivity: ActivityRecord{7e77c4a u0 com.tvnext.app.recovery/com.tvnext.app.MainActivity t24}
+  mWakefulness=Awake
+Display Power: state=ON
+    mResumedActivity: ActivityRecord{7e77c4a u0 com.tvnext.app.recovery/com.tvnext.app.MainActivity t24}
+  mWakefulness=Awake
+Display Power: state=ON
