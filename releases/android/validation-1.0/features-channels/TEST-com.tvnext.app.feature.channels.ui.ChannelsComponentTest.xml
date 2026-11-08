@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChannelsComponentTest[desktop]" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-08T19:17:22.474Z" hostname="fbd2d42f1624" time="0.688">
+  <properties/>
+  <testcase name="reopeningChannelsKeepsTheArchiveThatIsActuallyPlaying[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.045"/>
+  <testcase name="searchIntentUpdatesQuery[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.004"/>
+  <testcase name="selectingChannelSetsSelectedChannelIdAndStartsPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.004"/>
+  <testcase name="refreshingAnOpenTimelineNeverPublishesAnEmptyOrSingleRowPlaceholder[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.006"/>
+  <testcase name="closingPlayerClearsSelectedChannelAndStopsPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.016"/>
+  <testcase name="closingPlayerHidesChannelName[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.002"/>
+  <testcase name="openLastChannelStartsPlaybackOfLastChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="selectingChannelShowsChannelNameOverlay[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="repeatedSwitchRestartsTheTimer[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.392"/>
+  <testcase name="reopeningChannelsDropsUnplayedTimelineAndReturnsFocusToPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.004"/>
+  <testcase name="selectingChannelRecordsHistory[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="selectingChannelPersistsLastChannelId[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="lastChannelIsSelectedWithoutStartingPlaybackWhenAutoOpenIsDisabled[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.0"/>
+  <testcase name="channelNameHidesAfterTimeout[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.202"/>
+  <testcase name="favoriteTogglePersistsToRepository[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

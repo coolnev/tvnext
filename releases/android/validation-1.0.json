@@ -1,0 +1,152 @@
+{
+  "date": "2026-11-08",
+  "versionName": "1.0",
+  "versionCode": 1000,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "44560326ed3c179866b983404f173ece029b3b0f",
+  "sha256": "60db42fc923316c95d7e168416a3b84ba585afc06dcea633e0d52df3ddca677e",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "branch": "main",
+  "previousRecoveryArchivedTag": "archive-android-recovery-0.5.45",
+  "identity": {
+    "originalPackageAndSignatureRestored": true,
+    "original0521VersionCode": 35,
+    "recoveryAppDataAutomaticallyTransferred": false,
+    "desktopCommonVersion": "1.0",
+    "desktopPackageVersion": "1.0.0",
+    "windowsInstallerBuilt": false
+  },
+  "home": {
+    "oneFocusableCurrentBlock": true,
+    "okOpensFullscreen": true,
+    "duplicateCaptionRemoved": true,
+    "nowPlayingShelfRemoved": true,
+    "smallScreenLayoutKeepsChannelTitleReadable": true,
+    "videoUnobscuredByFocusContainer": true
+  },
+  "languages": [
+    "Русский",
+    "English",
+    "中文（简体）"
+  ],
+  "uiTranslationEntries": 590,
+  "providerContentTranslated": false,
+  "removedAndroidSettings": [
+    "Общие → Запускать на весь экран",
+    "Оформление → Акцентный цвет",
+    "Обслуживание → Мои записи"
+  ],
+  "recordings": {
+    "scheduledRecordingCanBeStoppedFromRecordButton": true,
+    "anotherChannelIsNotSilentlyReplaced": true,
+    "repeatedStartsGuarded": true,
+    "startedNoticeRequiresActualServiceState": true,
+    "stopButtonInLibrary": true,
+    "activeDeletionStopsAndWaitsForFinalization": true,
+    "stalePersistedFlagsDoNotPreventDeletion": true,
+    "stopIntentScopedToRecordingId": true,
+    "statusLabelsLocalized": true,
+    "failures": [
+      "TVNext aggregate recording limit",
+      "insufficient disk space",
+      "storage unavailable",
+      "file write failure",
+      "network/stream read",
+      "source unavailable"
+    ],
+    "freeSpaceReserveBytes": 16777216,
+    "freeSpaceCheckIntervalBytes": 1048576,
+    "finalizedHlsSegmentsRetainedOnQuotaError": true,
+    "historicalGenericErrorsCannotBeReclassified": true
+  },
+  "clock": {
+    "fontScale": 1.3,
+    "crispShadowOnlyWithoutBackground": true,
+    "shadowOffsetDp": [
+      2,
+      2
+    ],
+    "blur": 0,
+    "recBadgeAndLeftChannelTitleMovedToAvoidOverlap": true
+  },
+  "tests": [
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 99,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 82,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 197,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "Android assembleRelease",
+    "Android lintVitalRelease",
+    "Desktop compileKotlin",
+    "APK signature matches original 0.5.21",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "all packaged PNG resources unchanged"
+  ],
+  "releaseApkRunOnEmulator": true,
+  "physicalTV": false,
+  "emulator": {
+    "api": 28,
+    "hardwareAcceleration": false,
+    "source": "generated local H.264/AAC",
+    "softwareDecoderInFixtureOnly": true,
+    "playbackPausedForSettingsAndRecordingLibraryUiChecks": true,
+    "scheduledRecordButtonStopPassed": true,
+    "activeStopAndDeletePassed": true
+  },
+  "githubDefaultBranchChange": {
+    "applied": false,
+    "reason": "Executor GitHub API access returned Forbidden; default-branch setting is not exposed by the connected GitHub tools. Canonical working source branch is main."
+  },
+  "limitations": [
+    "Physical Google TV not used",
+    "Original .recovery private app data does not transfer automatically across Android package IDs",
+    "Historical generic recording errors contain insufficient diagnostics to infer their original cause"
+  ]
+}

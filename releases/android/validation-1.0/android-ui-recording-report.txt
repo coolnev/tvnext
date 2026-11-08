@@ -1,0 +1,29 @@
+UI language/clock and record-button phase:
+INSTRUMENTATION_RESULT: report=PASS Activity opened
+HOME_EN
+Home footer captured for visual review
+GENERAL_EN
+APPEARANCE_EN
+APPEARANCE_ZH
+Chinese labels captured for visual review
+APPEARANCE_RU
+Russian appearance captured for visual review
+CLOCK_CLEAR
+CLOCK_BACKGROUND
+PASS Scheduled recording started
+PASS Record button stopped scheduled recording on current channel
+PASS Stopped capture finalized in library
+PASS Second scheduled recording started
+RECORDING_ACTIVE_RU
+
+Remote-controlled library deletion phase:
+INSTRUMENTATION_RESULT: report=PASS Activity opened
+PASS Scheduled recording started
+ACTIVE_LIBRARY
+CONFIRM_DELETE
+PASS Recording stopped after remote confirmation
+PASS Recording removed after finalization
+DELETED_LIBRARY
+EXIT_HINT
+
+INSTRUMENTATION_CODE: -1

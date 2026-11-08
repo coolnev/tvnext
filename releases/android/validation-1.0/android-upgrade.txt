@@ -1,0 +1,17 @@
+Performing Streamed Install
+Success
+Starting: Intent { cmp=com.tvnext.app/.MainActivity }
+    userId=10069
+    versionCode=35 minSdk=24 targetSdk=36
+    versionName=0.5.21
+Performing Streamed Install
+Success
+    userId=10069
+    versionCode=1000 minSdk=24 targetSdk=36
+    versionName=1.0
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
