@@ -68,8 +68,10 @@ fun RecordingPlaybackScreen(controller: PlaybackController, onBack: () -> Unit, 
                     TvCardButton(onClick = {
                         if (state.state == PlaybackState.PAUSED) controller.resume() else controller.pause()
                     }, modifier = Modifier.size(52.dp).focusRequester(pause).testTag("recording-pause")
-                        .recordingDirections(rewind, forward), contentPadding = PaddingValues(0.dp)) {
-                        TvPlayPauseIcon(paused = state.state == PlaybackState.PAUSED, modifier = Modifier.size(40.dp), circleSize = 40.dp)
+                        .recordingDirections(rewind, forward), contentPadding = PaddingValues(0.dp),
+                        contentAlignment = Alignment.Center) {
+                        TvPlayPauseIcon(paused = state.state == PlaybackState.PAUSED, modifier = Modifier.size(40.dp),
+                            circleSize = 40.dp, backgroundAlpha = 0f)
                     }
                     TvSeekButton(TvSeekDirection.FORWARD, { controller.seekBy(60_000) }, Modifier.testTag("recording-forward")
                         .recordingDirections(pause, if (state.state == PlaybackState.ERROR) retry else close), focusRequester = forward)
