@@ -1,0 +1,200 @@
+{
+  "viewport": [
+    1920,
+    1080
+  ],
+  "variants": [
+    {
+      "variant": 1,
+      "height": 316,
+      "y": 764,
+      "text": "К\nКИНО ТВ\nАрхив\nДо конца 65 мин\n19:45\n35:00 / 1:40:00\n21:25\nТекущая\nХолоп 2\nСледующая\nСуперБобровы\n21:25 — 23:00\nАвто\nПред. канал\n1 мин\n1 мин\nК эфиру\nЗакрыть",
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 992,
+          "width": 136,
+          "height": 60
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 992,
+          "width": 194.78125,
+          "height": 60
+        },
+        {
+          "action": "rewind",
+          "x": 832,
+          "y": 992,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "pause",
+          "x": 922,
+          "y": 992,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "forward",
+          "x": 1012,
+          "y": 992,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "live",
+          "x": 1539.375,
+          "y": 992,
+          "width": 155.734375,
+          "height": 60
+        },
+        {
+          "action": "close",
+          "x": 1707.109375,
+          "y": 992,
+          "width": 156.890625,
+          "height": 60
+        }
+      ],
+      "forbidden": 0,
+      "channelBottom": 827,
+      "progressTop": 846
+    },
+    {
+      "variant": 2,
+      "height": 254,
+      "y": 826,
+      "text": "К\nКИНО ТВ\nАрхив\nХолоп 2\nДо конца 65 мин\n19:45\n35:00 / 1:40:00\n21:25\nСледующая\nСуперБобровы\n21:25 — 23:00\nАвто\nПред. канал\n1 мин\n1 мин\nК эфиру\nЗакрыть",
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 1001,
+          "width": 136,
+          "height": 56
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 1001,
+          "width": 189.125,
+          "height": 56
+        },
+        {
+          "action": "rewind",
+          "x": 841,
+          "y": 1001,
+          "width": 70,
+          "height": 56
+        },
+        {
+          "action": "pause",
+          "x": 925,
+          "y": 1001,
+          "width": 70,
+          "height": 56
+        },
+        {
+          "action": "forward",
+          "x": 1009,
+          "y": 1001,
+          "width": 70,
+          "height": 56
+        },
+        {
+          "action": "live",
+          "x": 1547.03125,
+          "y": 1001,
+          "width": 151.9375,
+          "height": 56
+        },
+        {
+          "action": "close",
+          "x": 1710.96875,
+          "y": 1001,
+          "width": 153.03125,
+          "height": 56
+        }
+      ],
+      "forbidden": 0,
+      "channelBottom": 885,
+      "progressTop": 901
+    },
+    {
+      "variant": 3,
+      "height": 330,
+      "y": 750,
+      "text": "К\nКИНО ТВ\nАрхив\nДо конца 65 мин\n19:45\n35:00 / 1:40:00\n21:25\nТекущая передача\nХолоп 2\nСледующая передача\n21:25 — 23:00\nСуперБобровы\nАвто\nПред. канал\n1 мин\n1 мин\nК эфиру\nЗакрыть",
+      "buttons": [
+        {
+          "action": "aspect",
+          "x": 56,
+          "y": 995,
+          "width": 136,
+          "height": 60
+        },
+        {
+          "action": "previous",
+          "x": 204,
+          "y": 995,
+          "width": 194.78125,
+          "height": 60
+        },
+        {
+          "action": "rewind",
+          "x": 832,
+          "y": 995,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "pause",
+          "x": 922,
+          "y": 995,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "forward",
+          "x": 1012,
+          "y": 995,
+          "width": 76,
+          "height": 60
+        },
+        {
+          "action": "live",
+          "x": 1539.375,
+          "y": 995,
+          "width": 155.734375,
+          "height": 60
+        },
+        {
+          "action": "close",
+          "x": 1707.109375,
+          "y": 995,
+          "width": 156.890625,
+          "height": 60
+        }
+      ],
+      "forbidden": 0,
+      "channelBottom": 812,
+      "progressTop": 831
+    }
+  ],
+  "checks": [
+    "no synopsis or frame",
+    "no description button",
+    "current and next programme visible",
+    "progress immediately after channel",
+    "aligned single-row buttons",
+    "focus does not move controls",
+    "remote RIGHT navigation",
+    "close and OK reopen",
+    "live recording"
+  ],
+  "browserErrors": []
+}
