@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-08
 
-Текущая версия TVNextR: `0.5.42-recovery-preview`, versionCode 542, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.41.
+Текущая версия TVNextR: `0.5.43-recovery-preview`, versionCode 543, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.42.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.42.apk`.
-Описание: `RELEASE_ANDROID_0.5.42_RU.md`.
-Сводка: `releases/android/validation-0.5.42.json`.
+APK: `releases/android/TVNextR-0.5.43.apk`.
+Описание: `RELEASE_ANDROID_0.5.43_RU.md`.
+Сводка: `releases/android/validation-0.5.43.json`.
+
+В 0.5.43 категории Android TVG берутся через общий core/iptv/domain/ChannelCategoryOrder (минимальный channel.number, стабильные равные номера), тот же accumulator используется buildChannelProjections в ChannelsComponent, один проход сохранён. Алфавитный distinct.sorted в AndroidTvgScreen заменён remember+channelCategoriesInOrder. ProfileChannelEditor: reset-кнопка закреплена в правом Column вне verticalScroll, внутренняя форма имеет weight1 и собственный scroll. LazyColumn перехватывает RIGHT→resetProviderFocus; per-row channelFocus/returnChannelFocus возвращает LEFT к прежней строке, fallback scrollTo0/firstFocus если target исчез. Каналы не нужно прокручивать до конца; подтверждение reset неизменно. Предыдущая правка центрирования паузы/удаления круга .42 включена. 3 category order +5 TVG Compose +96 channels/player=104, encoding/release/lint/sign/ZIP/zipalign/key; actual guide popup order/selection проверен, native editor interaction на ТВ/эмуляторе не запускался (код/Android build). Данные провайдера при проверке не сбрасывались. PNG/баннер неизменны, UUID default в APK сохранён через прежний локальный input. Исходники d4d8427, SHA ca8b507c361d97650ccc13510c9aa3212ac88a9732b0bcf0245769c075130dc4.
 
 В 0.5.42 точечная правка плеера записей: RecordingPlaybackScreen задаёт pause TvCardButton contentAlignment=Alignment.Center (прежде CenterStart), TvPlayPauseIcon backgroundAlpha=0f при прежнем circleSize40dp. Тёмный круг удалён, значок центрирован внутри52dp; общие defaults и другие плееры не менялись. Два существующих RecordingPlaybackUiTest прошли, снимок проверен; encoding/release/lint/sign/ZIP/zipalign/key. PNG/баннер совпадают с .41, встроенный UUID default сохранён из локального Gradle input. На физическом ТВ/эмуляторе APK не запускался. Исходники 96fd69c, SHA 6ef819a19b4f3cdb954333487593c469c122a79b9dd468a464c81e2c75ae001b.
 

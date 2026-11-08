@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideFilledProgrammeWindowTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-08T13:39:56.979Z" hostname="fbd2d42f1624" time="0.001">
+  <properties/>
+  <testcase name="beginningFillsAllEvenSlots[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideFilledProgrammeWindowTest" time="0.0"/>
+  <testcase name="endFillsAllEvenSlots[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideFilledProgrammeWindowTest" time="0.001"/>
+  <testcase name="emptyGuideNeverRequestsRows[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideFilledProgrammeWindowTest" time="0.0"/>
+  <testcase name="middleKeepsSelectionNearCentre[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideFilledProgrammeWindowTest" time="0.0"/>
+  <testcase name="shortGuideContainsOnlyRealRows[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideFilledProgrammeWindowTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.43-recovery-preview",
+  "versionCode": 543,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "d4d842781bcf59f65da0c35bf2f557204a48472d",
+  "sha256": "ca8b507c361d97650ccc13510c9aa3212ac88a9732b0bcf0245769c075130dc4",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest --tests *ChannelCategoryOrderTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 96,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 104,
+  "categoryOrder": "Shared ChannelCategoryOrder for channel list and Android TV guide; minimum channel number with stable ties",
+  "editor": {
+    "resetButtonFixedAboveRightPane": true,
+    "rightFromChannelListFocusesReset": true,
+    "leftReturnsToChannelRow": true,
+    "resetConfirmationPreserved": true,
+    "restorationNotExecutedDuringValidation": true
+  },
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Default API key retained in DEX",
+    "All packaged PNG resources unchanged from 0.5.42"
+  ],
+  "physicalTV": false,
+  "releaseApkRunOnEmulator": false,
+  "limitation": "Category order, actual guide popup and channel/player regressions verified with Compose tests. Android editor compiled and its focus/layout paths reviewed; not exercised on a physical TV or in an emulator."
+}
