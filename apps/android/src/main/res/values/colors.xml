@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light background makes the dark TVNext logo visible inside the
-         circular launcher badge on Android TV / Google TV (a near-black
-         background + dark logo rendered as an empty black circle). -->
-    <color name="ic_launcher_background">#E9EDF5</color>
+    <!-- Full-bleed dark backdrop: circular Google TV masks must not expose light arcs.
+         Logo foreground, legacy launcher PNGs and the Android TV banner are unchanged. -->
+    <color name="ic_launcher_background">#0C111B</color>
 </resources>

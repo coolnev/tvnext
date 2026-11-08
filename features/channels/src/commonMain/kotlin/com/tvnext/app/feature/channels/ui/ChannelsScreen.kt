@@ -1449,11 +1449,6 @@ private fun WatchingLayout(
                             controller = controller, seekStepMs = archiveSeekStepMs,
                             interactive = transportControlsVisible,
                             detailsVisible = rightDetailsVisible,
-                            onShowDetails = {
-                                rightDetailsVisible = true
-                                rightInfoVisible = false
-                                transportControlsVisible = false
-                            },
                             onTogglePlayback = {
                                 showPlayPauseIcon(playerState.state == PlaybackState.PLAYING)
                                 onTogglePlayback()
