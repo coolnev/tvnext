@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-08
 
-Текущая версия TVNextR: `0.5.41-recovery-preview`, versionCode 541, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.40.
+Текущая версия TVNextR: `0.5.42-recovery-preview`, versionCode 542, Android release, пакет `com.tvnext.app.recovery`. Подпись та же, что у 0.5.28–0.5.41.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/source/android-navigation-2026110
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNextR-0.5.41.apk`.
-Описание: `RELEASE_ANDROID_0.5.41_RU.md`.
-Сводка: `releases/android/validation-0.5.41.json`.
+APK: `releases/android/TVNextR-0.5.42.apk`.
+Описание: `RELEASE_ANDROID_0.5.42_RU.md`.
+Сводка: `releases/android/validation-0.5.42.json`.
+
+В 0.5.42 точечная правка плеера записей: RecordingPlaybackScreen задаёт pause TvCardButton contentAlignment=Alignment.Center (прежде CenterStart), TvPlayPauseIcon backgroundAlpha=0f при прежнем circleSize40dp. Тёмный круг удалён, значок центрирован внутри52dp; общие defaults и другие плееры не менялись. Два существующих RecordingPlaybackUiTest прошли, снимок проверен; encoding/release/lint/sign/ZIP/zipalign/key. PNG/баннер совпадают с .41, встроенный UUID default сохранён из локального Gradle input. На физическом ТВ/эмуляторе APK не запускался. Исходники 96fd69c, SHA 6ef819a19b4f3cdb954333487593c469c122a79b9dd468a464c81e2c75ae001b.
 
 В 0.5.41 TV-гид Android: ширина канала 216–260dp вместо190, maxLines1, row46 вместо64, gridweight1 вместо фиксированных5строк, footer2строки. AndroidGuideHeader: singleton PlayerSurface 16:9 справа вверху, подпись реального playing item, стабильная геометрия при loading; два ряда прозрачных outline-кнопок4dp, явные переходы пульта, видеоOK возвращает к текущему проигрыванию. gridReady из onGloballyPositioned исключает запрос фокуса до subcompose-монтажа. Движок EPG и midnight cursor guards сохранены. По дополнительной просьбе пользователя Android Material Button/TextButton/OutlinedButton заменены TvActionButton (4dp/transparent/border/focus), общий TvCardButton на Android использует4dp и слабый фон, Theme Android dialog radius8dp; Desktop style сохранён. Записи: «Смотреть» больше не закрывает библиотеку в HOME — новый RecoveryScreen.RECORDING_PLAYBACK + RecordingPlaybackScreen со своим PlayerSurface/transport; Back стопает файл и возвращает RECORDINGS. Реальная вторая ошибка: DefaultMediaSourceFactory был подключён к HTTP-only datasource и не мог открывать file://. AndroidPlaybackDataSources.factory теперь DefaultDataSource(context, прежний HTTP factory с теми же UA/timeouts/redirects). HLS capture пишет ENDLIST в finally при отмене/сбое, сохраняя полные сегменты. RecordingRuntime StateFlow управляет красным REC в AppShell; без polling и stale saved status, guarded finished(id). Native API28/35: настоящая RecordingService start/stop, локальный HLS, badge-state, ENDLIST, offline чтение через Media3 factory; TS/HLS пути с пробелами/кириллицей. 4 TVG UI +96 channels/UI +54 native =154, release/lint/encoding/sign/ZIP/zipalign/key; на физическом ТВ/видеодекодере/APK эмуляторе не запускалось. PNG/баннер неизменны. Встроенный UUID default сохранён через прежний локальный Gradle input. Исходники 846ca4b, SHA d0780bae1743364690dd78f8847a4cdac072e368b07240ad9c75896701aba5f1.
 

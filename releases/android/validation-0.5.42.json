@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.42-recovery-preview",
+  "versionCode": 542,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "96fd69c75746baf08fe35dad7a7f4d7810836adc",
+  "sha256": "6ef819a19b4f3cdb954333487593c469c122a79b9dd468a464c81e2c75ae001b",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "change": "Recording player pause/play button: centre alignment, transparent icon background",
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest --tests *RecordingPlaybackUiTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 2,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Default API key retained in DEX",
+    "All packaged PNG resources unchanged from 0.5.41",
+    "Compose screenshot visually inspected"
+  ],
+  "physicalTV": false,
+  "releaseApkRunOnEmulator": false,
+  "limitation": "Common Compose recording-player UI and remote actions verified with controlled playback; not run on a physical TV."
+}
