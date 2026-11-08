@@ -1,0 +1,103 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.41-recovery-preview",
+  "versionCode": 541,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "d0780bae1743364690dd78f8847a4cdac072e368b07240ad9c75896701aba5f1",
+  "sourceCommit": "846ca4b4ef6320c8e5541a2f5fd4a90ac1b9a0b6",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 96,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 54,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 154,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "User default API key retained in DEX; absent from source text"
+  ],
+  "tvGuide": {
+    "channelWidthDp": [
+      216,
+      260
+    ],
+    "previousChannelWidthDp": 190,
+    "rowHeightDp": 46,
+    "previousRowHeightDp": 64,
+    "gridFillsRemainingHeight": true,
+    "preview": "16:9, upper right, same playback controller",
+    "browsingDoesNotRestartPlayback": true,
+    "previewStableDuringLoading": true,
+    "initialFocusAfterGridLayout": true,
+    "dayBoundaryNavigationRegression": true,
+    "toolbarAndCategoryRemoteNavigation": true,
+    "screenshotViewport": [
+      960,
+      540
+    ]
+  },
+  "actions": {
+    "cornerDp": 4,
+    "transparentOutlinedActions": true,
+    "focusedBorder": true,
+    "includes": [
+      "aspect selection",
+      "settings",
+      "profiles",
+      "recordings",
+      "channel editor",
+      "PIN dialogs",
+      "backup",
+      "TV guide"
+    ],
+    "androidCardsUseCompactCorners": true,
+    "androidDialogCornerDp": 8
+  },
+  "recording": {
+    "dedicatedFullscreenPlayer": true,
+    "backReturnsToLibrary": true,
+    "localFileDataSource": true,
+    "iptvHttpSettingsRetained": true,
+    "hlsFinalizedOnCancellation": true,
+    "redRecIndicator": "AppShell top-right; service StateFlow, no polling",
+    "stoppedServiceAndOfflineRelativeHlsReadTested": true,
+    "lateCompletionCannotClearNewIndicator": true,
+    "errorRemainsInPlayerWithRetry": true
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "allIconArtworkUnchanged": true,
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitation": "Compose rendered with controlled playback. Real Android service capture/stop and Media3 reading local TS/HLS bytes tested on API 28/35. No real decoder/video playback or physical TV validation."
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideCentreWindowTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-08T13:16:34.562Z" hostname="fbd2d42f1624" time="0.003">
+  <properties/>
+  <testcase name="firstSelectedRowStaysInMiddleSlot[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideCentreWindowTest" time="0.002"/>
+  <testcase name="noProgrammesOrDatesNeverRequestRows[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideCentreWindowTest" time="0.0"/>
+  <testcase name="lastSelectedRowStaysInMiddleSlot[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideCentreWindowTest" time="0.0"/>
+  <testcase name="middleSelectedRowStaysInMiddleSlot[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideCentreWindowTest" time="0.0"/>
+  <testcase name="evenViewportCapacityUsesOddNumberOfFullRows[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideCentreWindowTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

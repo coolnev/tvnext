@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.RecordingPlaybackRegressionTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-08T13:20:50.733Z" hostname="fbd2d42f1624" time="0.583">
+  <properties/>
+  <testcase name="lateCompletionCannotClearANewerRecordingIndicator[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.022"/>
+  <testcase name="localTransportAndRelativeHlsMediaAreReadableWithoutHttp[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.043"/>
+  <testcase name="stoppedServiceClearsRecAndFinalizesPlayableOfflineHls[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.251"/>
+  <testcase name="lateCompletionCannotClearANewerRecordingIndicator" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.02"/>
+  <testcase name="localTransportAndRelativeHlsMediaAreReadableWithoutHttp" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.029"/>
+  <testcase name="stoppedServiceClearsRecAndFinalizesPlayableOfflineHls" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.208"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

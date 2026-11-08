@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ArtworkCacheTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-08T13:16:30.494Z" hostname="fbd2d42f1624" time="0.448">
+  <properties/>
+  <testcase name="posterIsDecodedAndReusedFromMemoryAndAfterRestartFromDisk[desktop]" classname="com.tvnext.app.feature.channels.ui.ArtworkCacheTest" time="0.356"/>
+  <testcase name="concurrentCardsDeduplicateTheSamePoster[desktop]" classname="com.tvnext.app.feature.channels.ui.ArtworkCacheTest" time="0.083"/>
+  <testcase name="brokenDiskEntryIsRedownloadedInsteadOfStayingBlank[desktop]" classname="com.tvnext.app.feature.channels.ui.ArtworkCacheTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
