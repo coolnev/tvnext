@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.44-recovery-preview",
+  "versionCode": 544,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "b780a2aa27d564f4cc2127f93a3c1d71aacf9c96",
+  "sha256": "9c2d1a4ce4729e3095be27ab38de23ae68ba85d3a4ad501c6dd259713be9378e",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "change": "Recording feedback uses a passive text-only in-app notice rather than Android Toast with a launcher icon",
+  "notice": {
+    "durationMs": 2800,
+    "noIcon": true,
+    "noKeyboardFocusTarget": true,
+    "repeatedMessagesRestartDuration": true,
+    "covers": [
+      "start",
+      "stop request",
+      "completed manual stop",
+      "start/stop errors",
+      "LIVE required",
+      "export result"
+    ],
+    "finalStopNoticeUsesRecordingRuntime": true
+  },
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest --tests *RecordingPlaybackUiTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 2,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Default API key retained in DEX",
+    "All packaged PNG resources unchanged from 0.5.43",
+    "Compose notice screenshot inspected"
+  ],
+  "physicalTV": false,
+  "releaseApkRunOnEmulator": false,
+  "limitation": "Actual common Compose notice rendered with controlled playback; keyboard focus checked during start/stop notices. Not run on a physical TV or emulator."
+}
