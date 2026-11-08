@@ -190,7 +190,7 @@ internal class StreamRecordingEngine(
         connection.connectTimeout = 10000
         connection.readTimeout = 15000
         connection.instanceFollowRedirects = true
-        connection.setRequestProperty("User-Agent", "TVNext/0.5.21-recovery")
+        connection.setRequestProperty("User-Agent", com.tvnext.app.core.common.AppVersion.USER_AGENT)
         if (byteRange != null) {
             val length = byteRange.substringBefore('@').toLongOrNull()
             val offset = byteRange.substringAfter('@', "").toLongOrNull()

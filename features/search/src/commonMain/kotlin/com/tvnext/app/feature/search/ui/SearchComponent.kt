@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.search.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.common.platform.isAndroidPlatform
 import com.tvnext.app.core.common.util.rethrowAndroidCancellation
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
@@ -298,23 +300,23 @@ class DefaultSearchComponent(
             if (capability == null || !capability.isPlayable) {
                 Logger.d(TAG, "Archive unavailable for ${channel.name} (${capability?.status})")
                 setState {
-                    it.copy(error = AppError.InvalidData("Архив передачи недоступен."))
+                    it.copy(error = AppError.InvalidData(uiText("Архив передачи недоступен.")))
                 }
                 return@launchPlayback
             }
             val url = archiveRepository.buildArchiveUrl(channel, hit.programme.start, hit.programme.stop)
             if (url == null) {
-                setState { it.copy(error = AppError.InvalidData("Архив передачи недоступен.")) }
+                setState { it.copy(error = AppError.InvalidData(uiText("Архив передачи недоступен."))) }
                 return@launchPlayback
             }
             // Pre-flight: some providers DECLARE catch-up but serve an empty
             // playlist — show an honest message instead of a broken player.
             if (!archiveRepository.isArchiveUrlPlayable(channel, hit.programme.start, hit.programme.stop)) {
-                setState { it.copy(error = AppError.InvalidData("Архив передачи недоступен.")) }
+                setState { it.copy(error = AppError.InvalidData(uiText("Архив передачи недоступен."))) }
                 return@launchPlayback
             }
             runCatching { historyRepository.add(channel.id, WatchContentType.LIVE) }
-            val title = "${channel.name} • Архив • ${formatDateTime(hit.programme.start)}"
+            val title = uiText("{0} • Архив • {1}", channel.name, formatDateTime(hit.programme.start))
             runCatching {
                 playbackController.play(
                     PlaybackItem(

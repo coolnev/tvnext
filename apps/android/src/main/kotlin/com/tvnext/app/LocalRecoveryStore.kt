@@ -25,6 +25,7 @@ internal data class ScheduledRecording(
     val streamUrl: String,
     val startAt: Long,
     val durationMs: Long,
+    val channelId: String = "",
 )
 
 /** All data belongs to this device, is written to private Android storage, and is never logged. */
@@ -173,7 +174,7 @@ internal class LocalRecoveryStore(context: Context) {
         val items = runCatching { JSONArray(prefs.getString("schedules", "[]")) }.getOrDefault(JSONArray())
         (0 until items.length()).mapNotNull { i -> runCatching { val x = items.getJSONObject(i)
             ScheduledRecording(x.getString("id"),x.getString("profileId"),x.getString("title"),
-                x.getString("streamUrl"),x.getLong("startAt"),x.getLong("durationMs")) }.getOrNull() }
+                x.getString("streamUrl"),x.getLong("startAt"),x.getLong("durationMs"),x.optString("channelId")) }.getOrNull() }
     }
     fun schedule(item: ScheduledRecording) = synchronized(lock) {
         saveSchedules(schedules().filterNot { it.id == item.id } + item)
@@ -182,7 +183,7 @@ internal class LocalRecoveryStore(context: Context) {
     private fun saveSchedules(list: List<ScheduledRecording>) {
         prefs.edit().putString("schedules", JSONArray().apply { list.forEach {
             put(JSONObject().put("id",it.id).put("profileId",it.profileId).put("title",it.title)
-                .put("streamUrl",it.streamUrl).put("startAt",it.startAt).put("durationMs",it.durationMs))
+                .put("streamUrl",it.streamUrl).put("startAt",it.startAt).put("durationMs",it.durationMs).put("channelId",it.channelId))
         } }.toString()).commit()
     }
 

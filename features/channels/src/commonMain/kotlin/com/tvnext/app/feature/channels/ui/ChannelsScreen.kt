@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -198,7 +200,7 @@ fun ChannelsScreen(
         // screen and the space is used for the list/video (dense 4K layout).
         if (!immersive && !isAndroidPlatform()) {
             ScreenHeader(
-                title = "Каналы",
+                title = uiText("Каналы"),
                 onBack = onBackHome,
                 trailing = {
                     if (state.isRefreshing) {
@@ -1702,7 +1704,7 @@ private fun ChannelListPanel(
                 text = if (androidCategory != null) {
                     "${state.channels.count { it.category == androidCategory }} · $androidCategory"
                 } else {
-                    "${state.channels.size} каналов"
+                    uiText("{0} каналов", state.channels.size)
                 },
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1716,7 +1718,7 @@ private fun ChannelListPanel(
                 value = state.query,
                 onValueChange = onSearch,
                 onClear = onSearchClear,
-                placeholder = "Поиск каналов",
+                placeholder = uiText("Поиск каналов"),
                 modifier = Modifier
                     .padding(bottom = TVNextDimens.ItemSpacingSmall)
                     .focusRequester(searchFocusRequester)
@@ -1801,7 +1803,7 @@ private fun ChannelListPanel(
                 if (state.filteredChannels.isEmpty()) {
                     item {
                         Text(
-                            text = "Ничего не найдено",
+                            text = uiText("Ничего не найдено"),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = TVNextDimens.SectionSpacing),
@@ -2028,7 +2030,7 @@ private fun ChannelImmersiveDrawer(
                 value = state.query,
                 onValueChange = onSearch,
                 onClear = onSearchClear,
-                placeholder = "Поиск каналов",
+                placeholder = uiText("Поиск каналов"),
                 modifier = Modifier
                     .focusRequester(searchFocusRequester)
                     .onFocusChanged { onSearchFocusChanged(it.isFocused) },
@@ -2218,7 +2220,7 @@ private fun buildChannelEntries(
     add(
         CategoryEntry(
             key = FAVORITES_CATEGORY,
-            title = "Избранное",
+            title = uiText("Избранное"),
             count = state.favoritesCount,
             expanded = expandedCategory == FAVORITES_CATEGORY,
         ),
@@ -2229,7 +2231,7 @@ private fun buildChannelEntries(
     add(
         CategoryEntry(
             key = ALL_CATEGORIES,
-            title = "Все каналы",
+            title = uiText("Все каналы"),
             count = state.channels.size,
             expanded = expandedCategory == ALL_CATEGORIES,
         ),
@@ -2394,7 +2396,7 @@ private fun RegularLayout(
 
             state.error != null && state.channels.isEmpty() -> {
                 EmptyStateBox(
-                    message = state.error?.toUserMessage().orEmpty().ifBlank { "Ошибка загрузки" },
+                    message = state.error?.toUserMessage().orEmpty().ifBlank { uiText("Ошибка загрузки") },
                     onRetry = onRefresh,
                     modifier = Modifier.weight(1f),
                 )
@@ -2403,9 +2405,9 @@ private fun RegularLayout(
             !state.isLoading && state.channels.isEmpty() -> {
                 EmptyStateBox(
                     message = if (state.hasPlaylist) {
-                        "Каналы не загружены. Нажмите «Обновить»."
+                        uiText("Каналы не загружены. Нажмите «Обновить».")
                     } else {
-                        "Добавьте M3U-плейлист в настройках."
+                        uiText("Добавьте M3U-плейлист в настройках.")
                     },
                     onRetry = onRefresh,
                     modifier = Modifier.weight(1f),
@@ -2419,7 +2421,7 @@ private fun RegularLayout(
                         value = state.query,
                         onValueChange = onSearch,
                         onClear = onSearchClear,
-                        placeholder = "Поиск каналов",
+                        placeholder = uiText("Поиск каналов"),
                         modifier = Modifier.focusRequester(searchFocusRequester),
                     )
                 }
@@ -2437,7 +2439,7 @@ private fun RegularLayout(
                 Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacing))
 
                 Text(
-                    text = "${state.filteredChannels.size} каналов",
+                    text = uiText("{0} каналов", state.filteredChannels.size),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -2469,7 +2471,7 @@ private fun RegularLayout(
                     if (state.filteredChannels.isEmpty()) {
                         item {
                             Text(
-                                text = "Ничего не найдено",
+                                text = uiText("Ничего не найдено"),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = TVNextDimens.SectionSpacing),
@@ -2509,7 +2511,7 @@ private fun EmptyStateBox(
             ),
         ) {
             Text(
-                text = "Обновить",
+                text = uiText("Обновить"),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -2566,7 +2568,7 @@ private fun ChannelCategoriesPanel(
             .padding(18.dp),
     ) {
         Text(
-            text = "Категории",
+            text = uiText("Категории"),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -2574,7 +2576,7 @@ private fun ChannelCategoriesPanel(
         LazyColumn(state = categoryListState, verticalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall)) {
             item {
                 CategoryListEntry(
-                    label = "Все",
+                    label = uiText("Все"),
                     count = state.channels.size,
                     selected = state.selectedCategory == null,
                     onClick = { onCategorySelected(null) },
@@ -2583,7 +2585,7 @@ private fun ChannelCategoriesPanel(
             }
             item {
                 CategoryListEntry(
-                    label = "Избранное",
+                    label = uiText("Избранное"),
                     count = state.favoritesCount,
                     selected = state.selectedCategory == FAVORITES_CATEGORY,
                     onClick = { onCategorySelected(FAVORITES_CATEGORY) },
@@ -2893,7 +2895,7 @@ private fun ChannelTimelinePanel(
                 overflow = TextOverflow.Ellipsis,
             )
             TimelineOutlinedText(
-                text = "Программа передач",
+                text = uiText("Программа передач"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -2906,7 +2908,7 @@ private fun ChannelTimelinePanel(
                 }
                 visibleProgrammes.isEmpty() -> {
                     Text(
-                        text = "Программа передач недоступна",
+                        text = uiText("Программа передач недоступна"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -3027,7 +3029,7 @@ private fun ChannelTimelinePanel(
                 Spacer(modifier = Modifier.height(4.dp))
                 TimelineOutlinedText(
                     text = "${formatTimeOfDay(detail.start)} — ${formatTimeOfDay(detail.stop)}" +
-                        " · ${((detail.stop - detail.start) / 60_000L).coerceAtLeast(0L)} мин",
+                        uiText(" · {0} мин", ((detail.stop - detail.start) / 60_000L).coerceAtLeast(0L)),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -3069,7 +3071,7 @@ private fun CategoryRow(
     ) {
         item {
             CategoryChip(
-                label = "Все",
+                label = uiText("Все"),
                 selected = selected == null && !favoritesSelected,
                 onClick = { onSelect(null) },
             )
@@ -3077,7 +3079,7 @@ private fun CategoryRow(
         if (onFavoritesSelect != null) {
             item {
                 CategoryChip(
-                    label = "Избранное",
+                    label = uiText("Избранное"),
                     selected = favoritesSelected,
                     onClick = onFavoritesSelect,
                 )
@@ -3469,7 +3471,7 @@ private fun EpgPanel(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = if (isArchive) "Телепрограмма · архив" else "Телепрограмма",
+            text = if (isArchive) uiText("Телепрограмма · архив") else uiText("Телепрограмма"),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -3508,7 +3510,7 @@ private fun EpgPanel(
         }
         epg.next?.let { programme ->
             Text(
-                text = "Далее: ${formatTimeOfDay(programme.start)} — ${formatTimeOfDay(programme.stop)} · ${programme.title}",
+                text = uiText("Далее: {0} — {1} · {2}", formatTimeOfDay(programme.start), formatTimeOfDay(programme.stop), programme.title),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -3631,7 +3633,7 @@ private fun ProgrammeChip(
             if (isArchive) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "▶ архив",
+                    text = uiText("▶ архив"),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -3745,7 +3747,7 @@ private fun EpgInfoOverlay(
                         }
                 } else {
                     Text(
-                        text = "Программа недоступна",
+                        text = uiText("Программа недоступна"),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -3756,17 +3758,17 @@ private fun EpgInfoOverlay(
             // Right: column of live video parameters (from the player diagnostics).
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Параметры видео",
+                    text = uiText("Параметры видео"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (diagnostics != null) {
-                    VideoParamRow(label = "Разрешение", value = diagnostics.resolution)
-                    VideoParamRow(label = "Кодек", value = diagnostics.codec ?: "—")
+                    VideoParamRow(label = uiText("Разрешение"), value = diagnostics.resolution)
+                    VideoParamRow(label = uiText("Кодек"), value = diagnostics.codec ?: "—")
                     VideoParamRow(label = "FPS", value = diagnostics.fps ?: "—")
-                    VideoParamRow(label = "Битрейт", value = diagnostics.bitrate ?: "—")
-                    VideoParamRow(label = "Декодирование", value = diagnostics.actualMode)
-                    VideoParamRow(label = "Аудио", value = diagnostics.audio ?: "—")
+                    VideoParamRow(label = uiText("Битрейт"), value = diagnostics.bitrate ?: "—")
+                    VideoParamRow(label = uiText("Декодирование"), value = diagnostics.actualMode)
+                    VideoParamRow(label = uiText("Аудио"), value = diagnostics.audio ?: "—")
                 } else {
                     Text(
                         text = "…",
@@ -3781,9 +3783,9 @@ private fun EpgInfoOverlay(
             Spacer(Modifier.height(8.dp))
             val archived = playerState.item?.kind == PlaybackContentKind.ARCHIVE
             val timestamp = if (archived) shift?.positionMs ?: clock else clock
-            Text(if (archived) "АРХИВ • ${formatDateTime(timestamp)}" else "LIVE • ← отмотать назад", color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
+            Text(if (archived) uiText("АРХИВ • {0}", formatDateTime(timestamp)) else uiText("LIVE • ← отмотать назад"), color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
             shift?.message?.let { Text(it, color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White) }
-            if (shift?.seeking == true) Text("Переход к выбранному времени…", color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
+            if (shift?.seeking == true) Text(uiText("Переход к выбранному времени…"), color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 TvSeekButton(direction = com.tvnext.app.core.ui.component.TvSeekDirection.BACKWARD, onSeek = { controller.seekBy(-seekStepMs) })
                 if (archived) {

@@ -50,6 +50,9 @@ class RecordingPlaybackUiTest {
         onNodeWithText("Сохранённая запись").assertIsDisplayed();onNodeWithText("REC").assertIsDisplayed()
         runOnIdle {notice.value="Запись начата"};waitForIdle()
         onNodeWithText("Запись начата").assertIsDisplayed();onNodeWithTag("recording-pause").assertIsFocused()
+        runOnIdle {notice.value="Еще раз нажмите Назад (Back), чтобы выйти из TVNext"};waitForIdle()
+        onNodeWithText("Еще раз нажмите Назад (Back), чтобы выйти из TVNext").assertIsDisplayed()
+        onNodeWithTag("recording-pause").assertIsFocused()
         System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
             val file=java.io.File(root,"recording-text-only-notice.png");file.parentFile.mkdirs()
             org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {file.writeBytes(it.bytes)}

@@ -9,6 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.test.*
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import com.tvnext.app.core.player.*
 import com.tvnext.app.core.ui.component.SharedVideoStage
 import com.tvnext.app.feature.home.domain.FeaturedChannel
@@ -46,18 +49,62 @@ class HomeVideoPreviewUiTest {
             HomeScreen(home,playbackController=player,onOpenPlayingVideo={opened++})
         }}}}
         waitForIdle();onNodeWithTag("home-current-video").assertIsDisplayed()
+        onNodeWithText("Сейчас идёт").assertDoesNotExist()
         val before=scene.viewport!!.bounds
         runOnIdle {home.state.value=HomeState(content=HomeContent(continueWatching=FeaturedChannel("channel","КИНО ТВ",1,"Кино")))}
         waitForIdle();assertEquals(before,scene.viewport!!.bounds)
-        onNodeWithTag("home-current-video").performClick();assertEquals(1,opened)
+        onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Focused)).assertCountEquals(1)
+        onNodeWithTag("home-current-block").performSemanticsAction(SemanticsActions.RequestFocus) {it()}
+        onNodeWithTag("home-current-block").assertIsFocused()
+        onNodeWithTag("home-current-block").performKeyInput {pressKey(Key.DirectionRight)}
+        onNodeWithTag("home-current-block").assertIsFocused()
+        onNodeWithTag("home-current-block").performKeyInput {pressKey(Key.Enter)}
+        assertEquals(1,opened)
+        onNodeWithTag("home-current-video").performTouchInput {click(center)}
+        onNodeWithText("КИНО ТВ").performTouchInput {click(center)}
+        assertEquals(3,opened)
         runOnIdle {player.state.value=player.state.value.copy(item=PlaybackItem("movie","Текущий фильм","unused",PlaybackContentKind.VOD))}
         waitForIdle();onNodeWithTag("home-current-video").assertIsDisplayed()
-        assertEquals(2,onAllNodesWithText("Текущий фильм").fetchSemanticsNodes().size)
+        assertEquals(1,onAllNodesWithText("Текущий фильм").fetchSemanticsNodes().size)
+        onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Focused)).assertCountEquals(1)
         assertEquals(1,mounts)
         System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
             val file=java.io.File(root,"home-current-movie-preview.png");file.parentFile.mkdirs()
             org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {file.writeBytes(it.bytes)}
         }
+    }
+
+    @Test fun languageChangesUpdateControlsWithoutTranslatingProviderTitlesOrRemountingVideo() = runDesktopComposeUiTest(width=960,height=540) {
+        val player=Player();val home=Home();val scene=VideoScene();var mounts=0
+        player.state.value=player.state.value.copy(item=PlaybackItem("channel","Настройки","unused"))
+        try {
+            setContent {MaterialTheme(colorScheme=darkColorScheme()) {CompositionLocalProvider(LocalVideoScene provides scene) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    SharedVideoStage(scene,player,true,surface={m,_ ->
+                        DisposableEffect(Unit){mounts++;onDispose {}}
+                        Box(m.background(Color(0xFF178A87)))
+                    })
+                    HomeScreen(home,playbackController=player)
+                }
+            }}}
+            for ((language,label) in listOf(
+                com.tvnext.app.core.common.UiLanguage.RUSSIAN to "Сейчас смотрите",
+                com.tvnext.app.core.common.UiLanguage.ENGLISH to "Now watching",
+                com.tvnext.app.core.common.UiLanguage.CHINESE to "正在观看",
+            )) {
+                runOnIdle {com.tvnext.app.core.ui.i18n.UiLocale.language=language}
+                waitForIdle();onNodeWithText(label).assertIsDisplayed()
+                onNodeWithText("Настройки").assertIsDisplayed()
+                onNodeWithTag("home-current-video").assertIsDisplayed()
+                System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+                    val file=java.io.File(root,"home-language-${language.code}.png");file.parentFile.mkdirs()
+                    org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {file.writeBytes(it.bytes)}
+                }
+            }
+            assertEquals(1,mounts)
+            assertEquals("Next: {1} — 12:00 · фильм", com.tvnext.app.core.ui.i18n.UiTranslations.text(
+                com.tvnext.app.core.common.UiLanguage.ENGLISH,"Далее: {0} — {1} · {2}","{1}","12:00","фильм"))
+        } finally {com.tvnext.app.core.ui.i18n.UiLocale.language=com.tvnext.app.core.common.UiLanguage.RUSSIAN}
     }
 
     @Test fun historyCardDoesNotPretendThatVideoIsPlayingAfterStop() = runDesktopComposeUiTest(width=960,height=540) {

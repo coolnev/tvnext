@@ -10,6 +10,7 @@ data class RecordingScheduleRequest(
     val streamUrl: String,
     val startAt: Long,
     val stopAt: Long,
+    val channelId: String = "",
 )
 
 object RecordingScheduleRequests {

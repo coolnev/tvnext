@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,18 +35,18 @@ internal fun RecoveryMainMenu(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Главное меню TVNext") },
+        title = { Text(uiText("Главное меню TVNext")) },
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 430.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Разделы TVNext")
+                Text(uiText("Разделы TVNext"))
                 listOf(
-                    AppTab.HOME to "Главная",
-                    AppTab.CHANNELS to "Каналы",
-                    AppTab.TV_GUIDE to "Телепрограмма",
-                    AppTab.MEDIA_LIBRARY to "Медиатека",
-                    AppTab.SEARCH to "Поиск",
-                    AppTab.SETTINGS to "Настройки",
+                    AppTab.HOME to uiText("Главная"),
+                    AppTab.CHANNELS to uiText("Каналы"),
+                    AppTab.TV_GUIDE to uiText("Телепрограмма"),
+                    AppTab.MEDIA_LIBRARY to uiText("Медиатека"),
+                    AppTab.SEARCH to uiText("Поиск"),
+                    AppTab.SETTINGS to uiText("Настройки"),
                 ).forEachIndexed { index, (tab, title) ->
                     TvActionButton(
                         onClick = { onSelectTab(tab) },
@@ -52,21 +54,21 @@ internal fun RecoveryMainMenu(
                             .then(if (index == 0) Modifier.focusRequester(initialFocus) else Modifier),
                     ) { Text(title) }
                 }
-                Text("Инструменты")
+                Text(uiText("Инструменты"))
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.CHANNEL_EDITOR) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Редактор каналов") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Редактор каналов")) }
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.RECORDINGS) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Мои записи") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Мои записи")) }
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.PROFILES) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Профили") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Профили")) }
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.RECORDING_SETTINGS) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Запись и расписание") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Запись и расписание")) }
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.VIDEO_ASPECT) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Формат видео") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Формат видео")) }
                 TvActionButton(onClick = { onNavigate(RecoveryScreen.BACKUP) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Резервная копия профилей") }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(uiText("Резервная копия профилей")) }
             }
         },
-        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Закрыть") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text(uiText("Закрыть")) } },
     )
 }

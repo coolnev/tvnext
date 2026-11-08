@@ -1,5 +1,7 @@
 package com.tvnext.app.core.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -112,6 +114,9 @@ fun AppShell(
     val childStack by component.childStack.subscribeAsState()
     val activeTab = childStack.active.configuration
     val settings by component.settings.collectAsState()
+    androidx.compose.runtime.SideEffect {
+        com.tvnext.app.core.ui.i18n.UiLocale.language = settings.language
+    }
     val reminder by component.reminder.collectAsState()
     LaunchedEffect(settings.clockWithoutBackground) {
         if (isAndroidPlatform()) PlayerClockStyle.withoutBackground.value = settings.clockWithoutBackground
@@ -197,7 +202,6 @@ fun AppShell(
                                 is AppTabComponent.Home -> HomeScreen(
                                     component = tab.component,
                                     homeCardLimit = settings.homeCardLimit,
-                                    showHomeNowPlaying = settings.showHomeNowPlaying,
                                     showHomeUpcoming = settings.showHomeUpcoming,
                                     showHomeRecent = settings.showHomeRecent,
                                     showHomeFavorites = settings.showHomeFavorites,
@@ -264,7 +268,7 @@ fun AppShell(
                     }
                 }
 
-                // Footer («TVNext v0.1.0»): desktop keeps it while the chrome is
+                // Desktop keeps the version footer while the chrome is
                 // shown; Android TV shows it only on the HOME tab.
                 val showFooter = if (isAndroidPlatform()) {
                     activeTab == AppTab.HOME
@@ -295,8 +299,8 @@ fun AppShell(
                     CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp,
                         color = Color.White)
                     Text(epgProgressText?.takeIf { it.isNotBlank() } ?: if (epgLoadedProgrammes > 0)
-                        "EPG: $epgLoadedChannels каналов · $epgLoadedProgrammes передач"
-                        else "Загрузка EPG…", color = Color.White,
+                        uiText("EPG: {0} каналов · {1} передач", epgLoadedChannels, epgLoadedProgrammes)
+                        else uiText("Загрузка EPG…"), color = Color.White,
                         style = MaterialTheme.typography.labelSmall)
                 }
             }
@@ -346,7 +350,7 @@ private fun ScheduledReminderBanner(
         Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacingSmall))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Скоро начнётся: ${scheduled.title}",
+                text = uiText("Скоро начнётся: {0}", scheduled.title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -365,7 +369,7 @@ private fun ScheduledReminderBanner(
             ),
         ) {
             Text(
-                text = "Понятно",
+                text = uiText("Понятно"),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -398,7 +402,7 @@ private fun AppTopBar(
                 modifier = Modifier.height(44.dp).padding(end = 12.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
             ) {
-                Text("☰  Меню", style = MaterialTheme.typography.titleMedium,
+                Text(uiText("☰  Меню"), style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -415,7 +419,7 @@ private fun AppTopBar(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = profileChoices.firstOrNull { it.first == activeProfileId }?.second ?: "Основной",
+                            text = profileChoices.firstOrNull { it.first == activeProfileId }?.second ?: uiText("Основной"),
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -551,8 +555,8 @@ private fun AppSidebar(
         // other entries; settings remains accessible only via the top-right gear.
         if (isAndroidPlatform() && onOpenRecoverySection != null) {
             listOf(
-                "editor" to "Редактор каналов",
-                "recordings" to "Мои записи",
+                "editor" to uiText("Редактор каналов"),
+                "recordings" to uiText("Мои записи"),
             ).forEach { (section, label) ->
                 AppSidebarItem(
                     label = label,
@@ -612,7 +616,7 @@ private fun AppFooter() {
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = if (isAndroidPlatform()) "Восстановительная сборка" else "v0.1.0 · Free",
+            text = "v${com.tvnext.app.core.common.AppVersion.NAME}",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -621,12 +625,12 @@ private fun AppFooter() {
 
 private val AppTab.label: String
     get() = when (this) {
-        AppTab.HOME -> "Главная"
-        AppTab.CHANNELS -> "Каналы"
-        AppTab.TV_GUIDE -> "ТВ-гид"
-        AppTab.MEDIA_LIBRARY -> "Медиатека"
-        AppTab.SEARCH -> "Поиск"
-        AppTab.SETTINGS -> "Настройки"
+        AppTab.HOME -> uiText("Главная")
+        AppTab.CHANNELS -> uiText("Каналы")
+        AppTab.TV_GUIDE -> uiText("ТВ-гид")
+        AppTab.MEDIA_LIBRARY -> uiText("Медиатека")
+        AppTab.SEARCH -> uiText("Поиск")
+        AppTab.SETTINGS -> uiText("Настройки")
     }
 
 @Composable

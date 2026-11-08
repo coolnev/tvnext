@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.settings.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -97,7 +99,7 @@ fun SettingsScreen(
         // settings; the header is kept on desktop only.
         if (!isAndroidPlatform()) {
             ScreenHeader(
-                title = "Настройки",
+                title = uiText("Настройки"),
                 onBack = onBackHome,
             )
         }
@@ -120,9 +122,9 @@ private fun ArchiveSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Архив каналов") {
+    SettingsSection(title = uiText("Архив каналов")) {
         Text(
-            text = "Максимальная глубина архива",
+            text = uiText("Максимальная глубина архива"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -135,9 +137,9 @@ private fun ArchiveSection(
             )
         }
         Text(
-            text = "Приложение показывает и индексирует только последние N дней. " +
-                "Это ограничение TVNext — реальная глубина архива провайдера не меняется. " +
-                "Если глубина провайдера неизвестна, она определяется автоматически.",
+            text = uiText("Приложение показывает и индексирует только последние N дней. ") +
+                uiText("Это ограничение TVNext — реальная глубина архива провайдера не меняется. ") +
+                uiText("Если глубина провайдера неизвестна, она определяется автоматически."),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -145,14 +147,16 @@ private fun ArchiveSection(
 }
 
 /** User-selectable archive depth limits (days); 0 = automatic / provider max. */
-private enum class ArchiveLimitOption(val days: Int, val label: String) {
+private enum class ArchiveLimitOption(val days: Int, private val rawLabel: String) {
     AUTO(0, "Автоматически (максимум провайдера)"),
     ONE_DAY(1, "1 день"),
     TWO_DAYS(2, "2 дня"),
     THREE_DAYS(3, "3 дня"),
     SEVEN_DAYS(7, "7 дней"),
     FOURTEEN_DAYS(14, "14 дней"),
-    THIRTY_DAYS(30, "30 дней"),
+    THIRTY_DAYS(30, "30 дней");
+
+    val label: String get() = uiText(rawLabel)
 }
 
 // ---------------------------------------------------------------- Playback --
@@ -162,23 +166,23 @@ private fun PlaybackSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Воспроизведение", initiallyExpanded = true) {
+    SettingsSection(title = uiText("Воспроизведение"), initiallyExpanded = true) {
         Text(
-            text = "Декодирование видео",
+            text = uiText("Декодирование видео"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
         )
         VideoDecodeMode.entries.forEach { mode ->
             SettingsSelectRow(
-                label = mode.displayName,
+                label = uiText(mode.displayName),
                 selected = mode == state.settings.videoDecodeMode,
                 onClick = { component.dispatch(SettingsIntent.VideoDecodeModeChanged(mode)) },
             )
         }
 
         Text(
-            text = "Буфер сети",
+            text = uiText("Буфер сети"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -191,14 +195,14 @@ private fun PlaybackSection(
             )
         }
         Text(
-            text = "Меньшее значение снижает задержку live и ускоряет старт, " +
-                "но может вызывать прерывания на слабых HLS-источниках.",
+            text = uiText("Меньшее значение снижает задержку live и ускоряет старт, ") +
+                uiText("но может вызывать прерывания на слабых HLS-источниках."),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Text(
-            text = "Шаг перемотки",
+            text = uiText("Шаг перемотки"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -215,11 +219,13 @@ private fun PlaybackSection(
 }
 
 /** Selectable network-buffer values (ms). */
-private enum class NetworkCachingOption(val ms: Int, val label: String) {
+private enum class NetworkCachingOption(val ms: Int, private val rawLabel: String) {
     ONE_SECOND(1000, "1 секунда"),
     THREE_SECONDS(3000, "3 секунды"),
     FIVE_SECONDS(5000, "5 секунд"),
-    EIGHT_SECONDS(8000, "8 секунд"),
+    EIGHT_SECONDS(8000, "8 секунд");
+
+    val label: String get() = uiText(rawLabel)
 }
 
 // --------------------------------------------------------------- Interface --
@@ -229,9 +235,14 @@ private fun InterfaceSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Интерфейс") {
+    SettingsSection(title = uiText("Интерфейс")) {
+        Text(uiText("Язык интерфейса"))
+        com.tvnext.app.core.common.UiLanguage.entries.forEach { language ->
+            SettingsSelectRow(label = language.nativeName, selected = state.settings.language == language,
+                onClick = { component.dispatch(SettingsIntent.LanguageChanged(language)) })
+        }
         Text(
-            text = "Тема",
+            text = uiText("Тема"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -245,7 +256,7 @@ private fun InterfaceSection(
         }
 
         Text(
-            text = "Акцентный цвет",
+            text = uiText("Акцентный цвет"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -259,7 +270,7 @@ private fun InterfaceSection(
         }
 
         Text(
-            text = "Часы на экране",
+            text = uiText("Часы на экране"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -274,14 +285,14 @@ private fun InterfaceSection(
 
         if (isAndroidPlatform()) {
             SettingsSelectRow(
-                label = "Часы без фона",
+                label = uiText("Часы без фона"),
                 selected = state.settings.clockWithoutBackground,
                 onClick = { component.dispatch(SettingsIntent.ClockWithoutBackgroundChanged(!state.settings.clockWithoutBackground)) },
             )
         }
         if (!isAndroidPlatform()) {
         Text(
-            text = "Разрешение окна (Windows)",
+            text = uiText("Разрешение окна (Windows)"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -297,7 +308,7 @@ private fun InterfaceSection(
         }
 
         Text(
-            text = "Блок «Телепрограмма» на полном экране",
+            text = uiText("Блок «Телепрограмма» на полном экране"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
@@ -311,36 +322,36 @@ private fun InterfaceSection(
         }
 
         SettingsToggleRow(
-            label = "Запускать приложение на весь экран",
+            label = uiText("Запускать приложение на весь экран"),
             checked = state.settings.startFullscreen,
             onToggle = { component.dispatch(SettingsIntent.StartFullscreenChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Показывать номера каналов",
+            label = uiText("Показывать номера каналов"),
             checked = state.settings.showChannelNumbers,
             onToggle = { component.dispatch(SettingsIntent.ShowChannelNumbersChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Автоматически открывать последний канал",
+            label = uiText("Автоматически открывать последний канал"),
             checked = state.settings.openLastChannel,
             onToggle = { component.dispatch(SettingsIntent.OpenLastChannelChanged(it)) },
         )
         if (!isAndroidPlatform()) {
             SettingsToggleRow(
-                label = "Запускать при загрузке Windows",
+                label = uiText("Запускать при загрузке Windows"),
                 checked = state.settings.launchOnWindowsStartup,
                 onToggle = { component.dispatch(SettingsIntent.LaunchOnWindowsStartupChanged(it)) },
             )
         }
 
         Text(
-            text = "Главный экран",
+            text = uiText("Главный экран"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacing, bottom = TVNextDimens.ItemSpacingSmall),
         )
         Text(
-            text = "Карточек в секции",
+            text = uiText("Карточек в секции"),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -359,32 +370,27 @@ private fun InterfaceSection(
             }
         }
         SettingsToggleRow(
-            label = "Сейчас идёт",
-            checked = state.settings.showHomeNowPlaying,
-            onToggle = { component.dispatch(SettingsIntent.ShowHomeNowPlayingChanged(it)) },
-        )
-        SettingsToggleRow(
-            label = "Ближайшие передачи",
+            label = uiText("Ближайшие передачи"),
             checked = state.settings.showHomeUpcoming,
             onToggle = { component.dispatch(SettingsIntent.ShowHomeUpcomingChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Недавно просмотренные",
+            label = uiText("Недавно просмотренные"),
             checked = state.settings.showHomeRecent,
             onToggle = { component.dispatch(SettingsIntent.ShowHomeRecentChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Избранное",
+            label = uiText("Избранное"),
             checked = state.settings.showHomeFavorites,
             onToggle = { component.dispatch(SettingsIntent.ShowHomeFavoritesChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Недавно просмотренные фильмы",
+            label = uiText("Недавно просмотренные фильмы"),
             checked = state.settings.showHomeRecentVod,
             onToggle = { component.dispatch(SettingsIntent.ShowHomeRecentVodChanged(it)) },
         )
         SettingsToggleRow(
-            label = "Избранные фильмы и сериалы",
+            label = uiText("Избранные фильмы и сериалы"),
             checked = state.settings.showHomeFavoriteVod,
             onToggle = { component.dispatch(SettingsIntent.ShowHomeFavoriteVodChanged(it)) },
         )
@@ -392,11 +398,13 @@ private fun InterfaceSection(
 }
 
 /** Remote seek step used while watching archived programmes. */
-private enum class ArchiveSeekStepOption(val ms: Long, val label: String) {
+private enum class ArchiveSeekStepOption(val ms: Long, private val rawLabel: String) {
     ONE_MINUTE(60_000L, "1 минута"),
     FIVE_MINUTES(5 * 60_000L, "5 минут"),
     TEN_MINUTES(10 * 60_000L, "10 минут"),
-    THIRTY_MINUTES(30 * 60_000L, "30 минут"),
+    THIRTY_MINUTES(30 * 60_000L, "30 минут");
+
+    val label: String get() = uiText(rawLabel)
 }
 
 /** Selectable Home section card limits. */
@@ -406,7 +414,7 @@ private val HomeCardLimitValues = listOf(4, 5, 6, 7, 8, 10, 12)
  * Full-screen «Телепрограмма» block visibility: disabled (`null`), always
  * visible (`0`) or a 1–7 second auto-hide timeout (default 3 s).
  */
-private enum class EpgInfoDurationOption(val seconds: Int?, val label: String) {
+private enum class EpgInfoDurationOption(val seconds: Int?, private val rawLabel: String) {
     DISABLED(null, "Выключено"),
     ALWAYS(0, "Всегда показывать"),
     ONE_SECOND(1, "1 секунда"),
@@ -415,7 +423,9 @@ private enum class EpgInfoDurationOption(val seconds: Int?, val label: String) {
     FOUR_SECONDS(4, "4 секунды"),
     FIVE_SECONDS(5, "5 секунд"),
     SIX_SECONDS(6, "6 секунд"),
-    SEVEN_SECONDS(7, "7 секунд"),
+    SEVEN_SECONDS(7, "7 секунд");
+
+    val label: String get() = uiText(rawLabel)
 }
 
 // --------------------------------------------------------------- Playlists --
@@ -425,9 +435,9 @@ private fun PlaylistsSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Плейлисты") {
+    SettingsSection(title = uiText("Плейлисты")) {
         Text(
-            text = "Добавить M3U/M3U8 источник",
+            text = uiText("Добавить M3U/M3U8 источник"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -443,7 +453,7 @@ private fun PlaylistsSection(
             value = state.playlistName,
             onValueChange = { component.dispatch(SettingsIntent.PlaylistNameChanged(it)) },
             onClear = { component.dispatch(SettingsIntent.PlaylistNameChanged("")) },
-            placeholder = "Название (необязательно)",
+            placeholder = uiText("Название (необязательно)"),
         )
         Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))
         Row(
@@ -452,7 +462,7 @@ private fun PlaylistsSection(
         ) {
             PlaylistType.entries.forEach { type ->
                 SettingsSelectRowInline(
-                    label = if (type == PlaylistType.LIVE) "Телеканалы" else "Медиатека / VOD",
+                    label = if (type == PlaylistType.LIVE) uiText("Телеканалы") else uiText("Медиатека / VOD"),
                     selected = type == state.playlistType,
                     onClick = { component.dispatch(SettingsIntent.PlaylistTypeChanged(type)) },
                     modifier = Modifier.weight(1f),
@@ -474,7 +484,7 @@ private fun PlaylistsSection(
                 ),
             ) {
                 Text(
-                    text = "Добавить",
+                    text = uiText("Добавить"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -488,7 +498,7 @@ private fun PlaylistsSection(
         }
         if (state.playlistError != null) {
             Text(
-                text = state.playlistError?.toUserMessage() ?: "Ошибка",
+                text = state.playlistError?.toUserMessage() ?: uiText("Ошибка"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.Start,
@@ -500,7 +510,7 @@ private fun PlaylistsSection(
 
         if (state.playlists.isEmpty()) {
             Text(
-                text = "Плейлисты не добавлены.",
+                text = uiText("Плейлисты не добавлены."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -562,21 +572,21 @@ private fun PlaylistRow(
                 )
                 if (playlist.isDefault) {
                     Text(
-                        text = "по умолчанию",
+                        text = uiText("по умолчанию"),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Text(
-                    text = if (playlist.type == PlaylistType.LIVE) " · каналы" else " · медиатека",
+                    text = if (playlist.type == PlaylistType.LIVE) uiText(" · каналы") else uiText(" · медиатека"),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Text(
-            text = "${playlist.channelCount} записей · обновлён: " +
-                (playlist.lastUpdated?.let { formatDateTime(it) } ?: "никогда"),
+            text = uiText("{0} записей · обновлён: ", playlist.channelCount) +
+                (playlist.lastUpdated?.let { formatDateTime(it) } ?: uiText("никогда")),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -595,13 +605,13 @@ private fun PlaylistRow(
             horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall),
             modifier = Modifier.padding(top = TVNextDimens.ItemSpacingSmall),
         ) {
-            SmallActionButton(label = "Обновить", onClick = onRefresh)
-            SmallActionButton(label = "Переименовать", onClick = onRenameStart)
+            SmallActionButton(label = uiText("Обновить"), onClick = onRefresh)
+            SmallActionButton(label = uiText("Переименовать"), onClick = onRenameStart)
             SmallActionButton(
-                label = if (playlist.isDefault) "Снять default" else "По умолчанию",
+                label = if (playlist.isDefault) uiText("Снять default") else uiText("По умолчанию"),
                 onClick = onSetDefault,
             )
-            SmallActionButton(label = "Удалить", onClick = onRemove)
+            SmallActionButton(label = uiText("Удалить"), onClick = onRemove)
         }
     }
 }
@@ -618,12 +628,12 @@ private fun RenamePlaylistField(
             value = name,
             onValueChange = { name = it },
             onClear = { name = "" },
-            placeholder = "Новое название",
+            placeholder = uiText("Новое название"),
         )
         Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))
         Row(horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall)) {
-            SmallActionButton(label = "Применить", onClick = { onApply(name) })
-            SmallActionButton(label = "Отмена", onClick = onCancel)
+            SmallActionButton(label = uiText("Применить"), onClick = { onApply(name) })
+            SmallActionButton(label = uiText("Отмена"), onClick = onCancel)
         }
     }
 }
@@ -653,14 +663,14 @@ private fun TmdbSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Медиатека · TMDB") {
+    SettingsSection(title = uiText("Медиатека · TMDB")) {
         SettingsToggleRow(
-            label = "Использовать TMDB",
+            label = uiText("Использовать TMDB"),
             checked = state.tmdbEnabled,
             onToggle = { component.dispatch(SettingsIntent.TmdbEnabledChanged(it)) },
         )
         Text(
-            text = "API-ключ The Movie Database",
+            text = uiText("API-ключ The Movie Database"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -671,7 +681,7 @@ private fun TmdbSection(
             onValueChange = { component.dispatch(SettingsIntent.TmdbApiKeyChanged(it)) },
             singleLine = true,
             visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
-            placeholder = { Text("Введите ключ TMDB") },
+            placeholder = { Text(uiText("Введите ключ TMDB")) },
             trailingIcon = {
                 TvCardButton(
                     onClick = { showKey = !showKey },
@@ -682,7 +692,7 @@ private fun TmdbSection(
                     ),
                 ) {
                     Text(
-                        text = if (showKey) "Скрыть" else "Показать",
+                        text = if (showKey) uiText("Скрыть") else uiText("Показать"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -705,7 +715,7 @@ private fun TmdbSection(
                 ),
             ) {
                 Text(
-                    text = "Проверить соединение",
+                    text = uiText("Проверить соединение"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -719,7 +729,7 @@ private fun TmdbSection(
                 ),
             ) {
                 Text(
-                    text = "Очистить кэш",
+                    text = uiText("Очистить кэш"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -740,8 +750,8 @@ private fun TmdbSection(
             )
         }
         Text(
-            text = "Постеры, рейтинг и описание берутся из TMDB, когда ключ настроен; " +
-                "данные IPTV-провайдера остаются основными.",
+            text = uiText("Постеры, рейтинг и описание берутся из TMDB, когда ключ настроен; ") +
+                uiText("данные IPTV-провайдера остаются основными."),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -749,10 +759,10 @@ private fun TmdbSection(
 }
 
 private fun TmdbConnectionResult.toUserMessage(): String = when (kind) {
-    TmdbConnectionResult.Kind.SUCCESS -> "Соединение успешно"
-    TmdbConnectionResult.Kind.INVALID_KEY -> "Неверный API-ключ"
-    TmdbConnectionResult.Kind.NO_CONNECTION -> "Нет соединения с TMDB"
-    TmdbConnectionResult.Kind.ERROR -> "Ошибка соединения"
+    TmdbConnectionResult.Kind.SUCCESS -> uiText("Соединение успешно")
+    TmdbConnectionResult.Kind.INVALID_KEY -> uiText("Неверный API-ключ")
+    TmdbConnectionResult.Kind.NO_CONNECTION -> uiText("Нет соединения с TMDB")
+    TmdbConnectionResult.Kind.ERROR -> uiText("Ошибка соединения")
 }
 
 // --------------------------------------------------------------------- EPG --
@@ -762,14 +772,14 @@ private fun EpgSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Телепрограмма (EPG)") {
+    SettingsSection(title = uiText("Телепрограмма (EPG)")) {
         SettingsToggleRow(
-            label = "Включить EPG",
+            label = uiText("Включить EPG"),
             checked = state.epgState.enabled,
             onToggle = { component.dispatch(SettingsIntent.EpgEnabledChanged(it)) },
         )
         Text(
-            text = "XMLTV URL (глобальный, переопределяет url-tvg каждого плейлиста)",
+            text = uiText("XMLTV URL (глобальный, переопределяет url-tvg каждого плейлиста)"),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
@@ -795,7 +805,7 @@ private fun EpgSection(
                 ),
             ) {
                 Text(
-                    text = "Обновить EPG",
+                    text = uiText("Обновить EPG"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -809,31 +819,31 @@ private fun EpgSection(
         }
         val epg = state.epgState
         SettingsInfoRow(
-            label = "Плейлист",
+            label = uiText("Плейлист"),
             value = epg.playlistName ?: "—",
         )
         SettingsInfoRow(
-            label = "Из плейлиста",
+            label = uiText("Из плейлиста"),
             value = epg.detectedUrl ?: "—",
         )
         SettingsInfoRow(
-            label = "Активный источник",
+            label = uiText("Активный источник"),
             value = epg.effectiveUrl ?: "—",
         )
         SettingsInfoRow(
-            label = "Обновлено",
-            value = epg.lastUpdated?.let { formatDateTime(it) } ?: "никогда",
+            label = uiText("Обновлено"),
+            value = epg.lastUpdated?.let { formatDateTime(it) } ?: uiText("никогда"),
         )
         SettingsInfoRow(
-            label = "Кэш",
-            value = "${epg.channelCount} каналов · ${epg.programmeCount} передач",
+            label = uiText("Кэш"),
+            value = uiText("{0} каналов · {1} передач", epg.channelCount, epg.programmeCount),
         )
         epg.diagnostics?.let { diagnostics ->
             SettingsInfoRow(
-                label = "Сопоставление",
+                label = uiText("Сопоставление"),
                 value = "M3U: ${diagnostics.m3uChannelCount} · XMLTV: ${diagnostics.epgChannelCount} · " +
-                    "по tvg-id: ${diagnostics.matchedByTvgId} · по имени: ${diagnostics.matchedByName} · " +
-                    "не сопоставлено: ${diagnostics.unmatchedM3u}",
+                    uiText("по tvg-id: {0} · по имени: {1} · ", diagnostics.matchedByTvgId, diagnostics.matchedByName) +
+                    uiText("не сопоставлено: {0}", diagnostics.unmatchedM3u),
             )
         }
         val lastEpgError = epg.lastError ?: state.epgStateError
@@ -866,15 +876,15 @@ private fun DataSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = "Данные") {
+    SettingsSection(title = uiText("Данные")) {
         if (isAndroidPlatform()) {
             var report by remember { mutableStateOf("") }
             TvCardButton(onClick = {
                 report = com.tvnext.app.core.common.log.AndroidPerformanceCounters.recentReport()
-                    .ifBlank { "Показатели появятся через 30 секунд работы приложения." }
-            }) { Text("Диагностика производительности", color = MaterialTheme.colorScheme.onSurface) }
+                    .ifBlank { uiText("Показатели появятся через 30 секунд работы приложения.") }
+            }) { Text(uiText("Диагностика производительности"), color = MaterialTheme.colorScheme.onSurface) }
             if (report.isNotBlank()) {
-                Text("Последние замеры: память, кадры, кеш логотипов и EPG. Повторное нажатие обновит данные.",
+                Text(uiText("Последние замеры: память, кадры, кеш логотипов и EPG. Повторное нажатие обновит данные."),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 com.tvnext.app.core.ui.component.AutoScrollText(report, MaterialTheme.typography.bodySmall,
                     MaterialTheme.colorScheme.onSurface, 8)
@@ -883,8 +893,8 @@ private fun DataSection(
 
         if (state.confirmDataReset) {
             Text(
-                text = "Будут удалены все плейлисты, история просмотров, прогресс " +
-                    "фильмов, настройки и кэш. Действие необратимо. Продолжить?",
+                text = uiText("Будут удалены все плейлисты, история просмотров, прогресс ") +
+                    uiText("фильмов, настройки и кэш. Действие необратимо. Продолжить?"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -902,7 +912,7 @@ private fun DataSection(
                     ),
                 ) {
                     Text(
-                        text = "Да, сбросить",
+                        text = uiText("Да, сбросить"),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -916,7 +926,7 @@ private fun DataSection(
                     ),
                 ) {
                     Text(
-                        text = "Отмена",
+                        text = uiText("Отмена"),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -934,14 +944,14 @@ private fun DataSection(
                 ),
             ) {
                 Text(
-                    text = "Сбросить все данные",
+                    text = uiText("Сбросить все данные"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
             Text(
-                text = "Удаляет плейлисты, историю просмотров, прогресс фильмов, " +
-                    "настройки и кэш логотипов, после чего приложение перезапустится.",
+                text = uiText("Удаляет плейлисты, историю просмотров, прогресс фильмов, ") +
+                    uiText("настройки и кэш логотипов, после чего приложение перезапустится."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -953,10 +963,10 @@ private fun DataSection(
 
 @Composable
 private fun AboutSection(state: SettingsState) {
-    SettingsSection(title = "О приложении") {
-        SettingsInfoRow(label = "Название", value = state.appInfo.name)
-        SettingsInfoRow(label = "Версия", value = state.appInfo.version)
-        SettingsInfoRow(label = "Лицензия", value = "TVNext Free")
+    SettingsSection(title = uiText("О приложении")) {
+        SettingsInfoRow(label = uiText("Название"), value = state.appInfo.name)
+        SettingsInfoRow(label = uiText("Версия"), value = state.appInfo.version)
+        SettingsInfoRow(label = uiText("Лицензия"), value = "TVNext Free")
         Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))
         Text(
             text = "TMDB\nThis product uses the TMDB API but is not endorsed or certified by TMDB.",
@@ -1146,27 +1156,27 @@ private fun SettingsInfoRow(
 
 private val ThemePreference.displayName: String
     get() = when (this) {
-        ThemePreference.DARK -> "Тёмная тема"
-        ThemePreference.LIGHT -> "Светлая тема"
-        ThemePreference.SYSTEM -> "Следить за системой"
+        ThemePreference.DARK -> uiText("Тёмная тема")
+        ThemePreference.LIGHT -> uiText("Светлая тема")
+        ThemePreference.SYSTEM -> uiText("Следить за системой")
     }
 
 private val AccentColor.displayName: String
     get() = when (this) {
-        AccentColor.GREEN -> "Зелёный"
-        AccentColor.BLUE -> "Синий"
-        AccentColor.ORANGE -> "Оранжевый"
-        AccentColor.PURPLE -> "Фиолетовый"
+        AccentColor.GREEN -> uiText("Зелёный")
+        AccentColor.BLUE -> uiText("Синий")
+        AccentColor.ORANGE -> uiText("Оранжевый")
+        AccentColor.PURPLE -> uiText("Фиолетовый")
     }
 
 private val ClockPosition.displayName: String    get() = when (this) {
-        ClockPosition.OFF -> "Выключены"
-        ClockPosition.TOP_LEFT -> "Верхний левый угол"
-        ClockPosition.TOP_RIGHT -> "Верхний правый угол"
+        ClockPosition.OFF -> uiText("Выключены")
+        ClockPosition.TOP_LEFT -> uiText("Верхний левый угол")
+        ClockPosition.TOP_RIGHT -> uiText("Верхний правый угол")
     }
 
 private val WindowResolution.displayName: String    get() = when (this) {
-        WindowResolution.AUTO -> "Авто (по разрешению монитора)"
+        WindowResolution.AUTO -> uiText("Авто (по разрешению монитора)")
         WindowResolution.HD -> "HD (1280×720)"
         WindowResolution.FULL_HD -> "FullHD (1920×1080)"
         WindowResolution.UHD_4K -> "4K UHD (3840×2160)"
@@ -1180,7 +1190,7 @@ private val TvRowPadding = PaddingValues(
 /** TV settings: stable section rail and one independently scrollable settings pane. */
 @Composable
 private fun AndroidSettingsLayout(state: SettingsState, component: SettingsComponent, modifier: Modifier, onBack: (() -> Unit)?) {
-    val titles = listOf("Воспроизведение", "Архив", "Интерфейс", "Плейлисты", "Фильмы / TMDB", "Телепрограмма", "Данные", "О приложении")
+    val titles = listOf(uiText("Воспроизведение"), uiText("Архив"), uiText("Интерфейс"), uiText("Плейлисты"), uiText("Фильмы / TMDB"), uiText("Телепрограмма"), uiText("Данные"), uiText("О приложении"))
     var selected by remember { mutableStateOf(0) }
     var inDetails by remember { mutableStateOf(false) }
     val railRequests = remember { List(titles.size) { FocusRequester() } }
@@ -1198,8 +1208,8 @@ private fun AndroidSettingsLayout(state: SettingsState, component: SettingsCompo
                         }; true
                     } else false
                 }) {
-                Text("Настройки", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("↑↓ разделы   OK / → открыть   Назад к разделам", style = MaterialTheme.typography.labelMedium)
+                Text(uiText("Настройки"), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(uiText("↑↓ разделы   OK / → открыть   Назад к разделам"), style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(6.dp))
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     LazyColumn(state = railState, modifier = Modifier.width(170.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1228,7 +1238,7 @@ private fun AndroidSettingsLayout(state: SettingsState, component: SettingsCompo
                             }.verticalScroll(scroll).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             // A real focusable entry also serves sections containing only informational text.
                             TvCardButton(onClick = { railRequests[selected].requestFocus() }, modifier = Modifier.height(32.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)) { Text("← Разделы", color = MaterialTheme.colorScheme.onSurface) }
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)) { Text(uiText("← Разделы"), color = MaterialTheme.colorScheme.onSurface) }
                             when (selected) {
                                 0 -> PlaybackSection(state, component)
                                 1 -> ArchiveSection(state, component)

@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.Lifecycle
@@ -1201,7 +1203,7 @@ class DefaultChannelsComponent(
                 playbackController.play(
                     PlaybackItem(
                         id = channel.id,
-                        title = "${channel.name} • Архив • ${formatDateTime(nextProgramme.start)}",
+                        title = uiText("{0} • Архив • {1}", channel.name, formatDateTime(nextProgramme.start)),
                         url = url,
                         kind = PlaybackContentKind.ARCHIVE,
                         archiveEpgAnchorMs = nextProgramme.start,
@@ -1254,7 +1256,7 @@ class DefaultChannelsComponent(
                 Logger.d(TAG, "Archive URL not playable for ${channel.name}")
                 return@launch
             }
-            val title = "${channel.name} • Архив • ${formatDateTime(programme.start)}"
+            val title = uiText("{0} • Архив • {1}", channel.name, formatDateTime(programme.start))
             handledArchiveEndAnchorMs = null
             if (isAndroidPlatform()) setState { it.copy(selectedChannelId = channel.id) }
             playbackController.play(

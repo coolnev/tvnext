@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.horizontalScroll
@@ -96,7 +98,7 @@ fun AndroidPlaybackControls(
                     Text(playbackTime(durationMs), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (liveEdgeFraction != null) {
-                    Text("Белая метка — начало прямого эфира", style = MaterialTheme.typography.labelSmall,
+                    Text(uiText("Белая метка — начало прямого эфира"), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -132,9 +134,9 @@ fun AndroidPlaybackControls(
                 enabled = interactive,
                 modifier = Modifier.focusRequester(aspectFocus)
                     .then(if (compact) Modifier.height(buttonSize).widthIn(max = 76.dp) else Modifier)
-                    .semantics { contentDescription = "Формат: $aspectTitle" },
+                    .semantics { contentDescription = uiText("Формат: {0}", aspectTitle) },
                 contentPadding = PaddingValues(horizontal = if (compact) 4.dp else 9.dp, vertical = if (compact) 2.dp else 6.dp),
-            ) { Text(if (compact) aspectTitle else "Формат: $aspectTitle", color = MaterialTheme.colorScheme.onSurface,
+            ) { Text(if (compact) aspectTitle else uiText("Формат: {0}", aspectTitle), color = MaterialTheme.colorScheme.onSurface,
                 style = if (compact) compactText else MaterialTheme.typography.labelMedium, maxLines = 1) }
             TvCardButton(
                 onClick = { PlaybackUiRequests.previousChannel() },
@@ -180,17 +182,17 @@ fun AndroidPlaybackControls(
                 contentPadding = captionPadding) { Text("LIVE", color = MaterialTheme.colorScheme.onSurface,
                     style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
             onDetails?.let { TvCardButton(onClick = it, enabled = interactive, modifier = captionModifier,
-                contentPadding = captionPadding) { Text("Описание", color = MaterialTheme.colorScheme.onSurface,
+                contentPadding = captionPadding) { Text(uiText("Описание"), color = MaterialTheme.colorScheme.onSurface,
                     style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
             onClose?.let { TvCardButton(onClick = it, enabled = interactive, modifier = captionModifier,
-                contentPadding = captionPadding) { Text("Закрыть", color = MaterialTheme.colorScheme.onSurface,
+                contentPadding = captionPadding) { Text(uiText("Закрыть"), color = MaterialTheme.colorScheme.onSurface,
                     style = if (compact) compactText else MaterialTheme.typography.bodyLarge) } }
             if (isLiveChannel) {
                 TvCardButton(onClick = { PlaybackUiRequests.toggleRecording() }, enabled = interactive,
                     modifier = (if (compact) Modifier.height(buttonSize) else Modifier)
-                        .semantics { contentDescription = "Записать эфир" },
+                        .semantics { contentDescription = uiText("Записать эфир") },
                     contentPadding = PaddingValues(horizontal = if (compact) 4.dp else 12.dp, vertical = if (compact) 2.dp else 6.dp)) {
-                    Text(if (compact) "● Запись" else "● Записать эфир", color = MaterialTheme.colorScheme.onSurface,
+                    Text(if (compact) uiText("● Запись") else uiText("● Записать эфир"), color = MaterialTheme.colorScheme.onSurface,
                         style = if (compact) compactText else MaterialTheme.typography.labelMedium, maxLines = 1)
                 }
             }

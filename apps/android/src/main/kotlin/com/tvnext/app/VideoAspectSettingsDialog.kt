@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,11 +43,11 @@ internal fun VideoAspectSettingsDialog(onDismiss: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        title = { Text("Формат видео") },
+        title = { Text(uiText("Формат видео")) },
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Общая настройка для каналов и фильмов. Для отдельного канала можно выбрать другой формат в редакторе.")
+                Text(uiText("Общая настройка для каналов и фильмов. Для отдельного канала можно выбрать другой формат в редакторе."))
                 VideoAspectMode.entries.filter { it != VideoAspectMode.INHERIT }.forEachIndexed { index, aspect ->
                     TvActionButton(
                         onClick = {
@@ -53,11 +55,11 @@ internal fun VideoAspectSettingsDialog(onDismiss: () -> Unit) {
                             if (!error) selected = aspect
                         },
                         modifier = Modifier.fillMaxWidth().then(if (index == 0) Modifier.focusRequester(initialFocus) else Modifier),
-                    ) { Text((if (selected == aspect) "✓ " else "") + aspect.displayName) }
+                    ) { Text((if (selected == aspect) "✓ " else "") + uiText(aspect.displayName)) }
                 }
-                if (error) Text("Не удалось сохранить настройку")
+                if (error) Text(uiText("Не удалось сохранить настройку"))
             }
         },
-        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Готово") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text(uiText("Готово")) } },
     )
 }

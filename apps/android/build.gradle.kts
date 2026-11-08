@@ -29,25 +29,17 @@ android {
         applicationId = "com.tvnext.app"
         minSdk = 24
         targetSdk = 36
-        // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 545
-        versionName = "0.5.45-recovery"
+        versionCode = 1000
+        versionName = project.version.toString()
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
     }
 
     buildTypes {
         debug {
-            // Safe parallel installation, never overwrite the reference 0.5.21.
-            applicationIdSuffix = ".recovery"
-            versionNameSuffix = "-debug"
+            applicationIdSuffix = ".debug"
         }
         release {
-            // Restoration is not 0.5.21 yet. Never overwrite the GOLD APK.
-            // applicationIdSuffix ".recovery" -> com.tvnext.app.recovery,
-            // so the recovery build installs NEXT TO the original 0.5.21.
-            applicationIdSuffix = ".recovery"
-            versionNameSuffix = "-preview"
             isMinifyEnabled = false
             isDebuggable = false
             signingConfig = signingConfigs.getByName("releaseSign")

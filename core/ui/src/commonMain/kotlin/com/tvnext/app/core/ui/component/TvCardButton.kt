@@ -56,6 +56,8 @@ fun TvCardButton(
      * the clock-icon button match their surrounding panel's translucency.
      */
     containerAlpha: Float = 0.72f,
+    /** Leaves shared video under the content unobscured while keeping the focus border. */
+    transparentContainer: Boolean = false,
     onFocus: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -71,6 +73,7 @@ fun TvCardButton(
     // Subtle glass treatment shared by cards/buttons: translucent surfaces,
     // animated hover/press transitions and a clear keyboard focus ring.
     val targetContainerColor = when {
+        transparentContainer -> Color.Transparent
         selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
         android && focused -> MaterialTheme.colorScheme.primary.copy(alpha = .18f)
         android && pressed -> MaterialTheme.colorScheme.primary.copy(alpha = .24f)

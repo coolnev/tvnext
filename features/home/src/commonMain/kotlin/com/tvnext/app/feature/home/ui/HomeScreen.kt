@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.home.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,13 +19,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.runtime.mutableStateOf
 import com.tvnext.app.core.player.PlaybackController
 import com.tvnext.app.core.player.PlaybackContentKind
 import com.tvnext.app.core.player.PlayerSurface
@@ -67,7 +64,6 @@ fun HomeScreen(
     component: HomeComponent,
     modifier: Modifier = Modifier,
     homeCardLimit: Int = 7,
-    showHomeNowPlaying: Boolean = true,
     showHomeUpcoming: Boolean = true,
     showHomeRecent: Boolean = true,
     showHomeFavorites: Boolean = true,
@@ -93,12 +89,11 @@ fun HomeScreen(
             .padding(TVNextDimens.ScreenPadding),
     ) {
         ScreenHeader(
-            title = "Главная",
+            title = uiText("Главная"),
             onBack = null,
         )
 
         val anyLive = state.content.continueWatching != null ||
-            (showHomeNowPlaying && state.content.nowPlaying.isNotEmpty()) ||
             (showHomeUpcoming && state.content.upcoming.isNotEmpty()) ||
             (showHomeRecent && state.content.recent.isNotEmpty()) ||
             (showHomeFavorites && state.content.favorites.isNotEmpty())
@@ -107,35 +102,35 @@ fun HomeScreen(
             (showHomeFavoriteVod && state.content.favoriteVod.isNotEmpty())
 
         if (anyLive || playing!=null) {
-            HomeGroupTitle(title = if(playing?.kind==PlaybackContentKind.VOD) "Сейчас смотрите" else "Каналы")
+            HomeGroupTitle(title = if(playing?.kind==PlaybackContentKind.VOD) uiText("Сейчас смотрите") else uiText("Каналы"))
         }
 
         val continuingChannel=state.content.continueWatching
         if(playbackController!=null && playing!=null) BoxWithConstraints(Modifier.fillMaxWidth()) {
             val previewWidth=(maxWidth*.35f).coerceIn(176.dp,288.dp)
-            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(16.dp),verticalAlignment=Alignment.Top) {
-                Column(Modifier.weight(1f)) {
-                    if(playing?.kind!=PlaybackContentKind.VOD && continuingChannel!=null && continuingChannel.id==playing?.id) ContinueWatchingCard(
-                        continuingChannel,now,onOpenPlayingVideo)
-                    else TvCardButton(onClick=onOpenPlayingVideo,modifier=Modifier.fillMaxWidth()) {
-                        Column {
-                            Text("Сейчас смотрите",color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.labelLarge)
-                            Text(playing?.title.orEmpty(),color=MaterialTheme.colorScheme.onSurface,
-                                style=MaterialTheme.typography.titleLarge,maxLines=2,overflow=TextOverflow.Ellipsis)
+            TvCardButton(
+                onClick = onOpenPlayingVideo,
+                modifier = Modifier.fillMaxWidth().testTag("home-current-block"),
+                transparentContainer = true,
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        if (playing?.kind != PlaybackContentKind.VOD && continuingChannel != null && continuingChannel.id == playing?.id) {
+                            ContinueWatchingChannelContent(continuingChannel, now)
+                        } else {
+                            Text(uiText("Сейчас смотрите"), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                            Text(playing?.title.orEmpty(), color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
-                }
-                Column(Modifier.width(previewWidth),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-                    var focused by remember {mutableStateOf(false)}
-                    Box(Modifier.fillMaxWidth().aspectRatio(16f/9).testTag("home-current-video")
-                        .background(videoSurfaceBackground(Color.Black))
-                        .border(if(focused)2.dp else .5.dp,if(focused)MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha=.25f),RoundedCornerShape(4.dp))
-                        .onFocusChanged {focused=it.hasFocus}.clickable(onClick=onOpenPlayingVideo)) {
-                        PlayerSurface(playbackController,Modifier.fillMaxSize())
+                    Box(Modifier.width(previewWidth).aspectRatio(16f / 9).testTag("home-current-video")
+                        .background(videoSurfaceBackground(Color.Black))) {
+                        PlayerSurface(playbackController, Modifier.fillMaxSize())
                     }
-                    Text(playing?.title.orEmpty(),maxLines=1,overflow=TextOverflow.Ellipsis,
-                        color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelMedium)
                 }
             }
         } else continuingChannel?.let { channel ->
@@ -146,23 +141,8 @@ fun HomeScreen(
             )
         }
 
-        if (showHomeNowPlaying && state.content.nowPlaying.isNotEmpty()) {
-            HomeSection(title = "Сейчас идёт") {
-                HomeCardRow(
-                    items = state.content.nowPlaying.take(homeCardLimit),
-                    content = { channel ->
-                        ChannelCard(
-                            channel = channel,
-                            now = now,
-                            onClick = { component.dispatch(HomeIntent.ChannelClicked(channel.id)) },
-                        )
-                    },
-                )
-            }
-        }
-
         if (showHomeUpcoming && state.content.upcoming.isNotEmpty()) {
-            HomeSection(title = "Ближайшие передачи") {
+            HomeSection(title = uiText("Ближайшие передачи")) {
                 HomeCardRow(
                     items = state.content.upcoming.take(homeCardLimit),
                     content = { upcoming ->
@@ -177,7 +157,7 @@ fun HomeScreen(
         }
 
         if (showHomeRecent && state.content.recent.isNotEmpty()) {
-            HomeSection(title = "Недавно просмотренные") {
+            HomeSection(title = uiText("Недавно просмотренные")) {
                 HomeCardRow(
                     items = state.content.recent.take(homeCardLimit),
                     content = { channel ->
@@ -192,7 +172,7 @@ fun HomeScreen(
         }
 
         if (showHomeFavorites && state.content.favorites.isNotEmpty()) {
-            HomeSection(title = "Избранное") {
+            HomeSection(title = uiText("Избранное")) {
                 HomeCardRow(
                     items = state.content.favorites.take(homeCardLimit),
                     content = { channel ->
@@ -207,7 +187,7 @@ fun HomeScreen(
         }
 
         if (anyVod) {
-            HomeGroupTitle(title = "Медиатека")
+            HomeGroupTitle(title = uiText("Медиатека"))
         }
 
         state.content.continueWatchingVod?.let { vod ->
@@ -218,7 +198,7 @@ fun HomeScreen(
         }
 
         if (showHomeRecentVod && state.content.recentVod.isNotEmpty()) {
-            HomeSection(title = "Недавно просмотренные фильмы") {
+            HomeSection(title = uiText("Недавно просмотренные фильмы")) {
                 HomeCardRow(
                     items = state.content.recentVod.take(homeCardLimit),
                     content = { vod ->
@@ -232,7 +212,7 @@ fun HomeScreen(
         }
 
         if (showHomeFavoriteVod && state.content.favoriteVod.isNotEmpty()) {
-            HomeSection(title = "Избранные фильмы и сериалы") {
+            HomeSection(title = uiText("Избранные фильмы и сериалы")) {
                 HomeCardRow(
                     items = state.content.favoriteVod.take(homeCardLimit),
                     content = { vod ->
@@ -343,12 +323,12 @@ private fun MediaCategoryChip(
 private fun startsInText(start: Long, now: Long): String {
     val minutes = ((start - now) / 60_000L).coerceAtLeast(0L)
     return when {
-        minutes <= 0L -> "начнётся сейчас"
-        minutes < 60L -> "через $minutes мин"
+        minutes <= 0L -> uiText("начнётся сейчас")
+        minutes < 60L -> uiText("через {0} мин", minutes)
         else -> {
             val hours = minutes / 60
             val rest = minutes % 60
-            if (rest == 0L) "через $hours ч" else "через $hours ч $rest мин"
+            if (rest == 0L) uiText("через {0} ч", hours) else uiText("через {0} ч {1} мин", hours, rest)
         }
     }
 }
@@ -378,7 +358,7 @@ private fun ContinueWatchingVodCard(
             Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Продолжить просмотр VOD",
+                    text = uiText("Продолжить просмотр VOD"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -465,48 +445,53 @@ private fun ContinueWatchingCard(
             .padding(bottom = TVNextDimens.SectionSpacing),
         contentPadding = PaddingValues(TVNextDimens.ScreenPaddingCompact),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ChannelLogo(
-                url = channel.logoUrl,
-                placeholderText = channel.name,
-                modifier = Modifier.size(TVNextDimens.IconSizeLarge * 2),
+        ContinueWatchingChannelContent(channel, now)
+    }
+}
+
+@Composable
+private fun ContinueWatchingChannelContent(channel: FeaturedChannel, now: Long) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ChannelLogo(
+            url = channel.logoUrl,
+            placeholderText = channel.name,
+            modifier = Modifier.size(TVNextDimens.IconSizeLarge * 2),
+        )
+        Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = uiText("Продолжить просмотр"),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
             )
-            Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
-            Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = channel.name,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "№ ${channel.number} · ${channel.category}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            channel.currentProgramme?.let { programme ->
+                CurrentProgramme(programme = programme, now = now)
+            }
+            channel.nextProgramme?.let { programme ->
                 Text(
-                    text = "Продолжить просмотр",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = channel.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "№ ${channel.number} · ${channel.category}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = uiText("Далее: {0} — {1} · {2}", formatTimeOfDay(programme.start), formatTimeOfDay(programme.stop), programme.title),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                channel.currentProgramme?.let { programme ->
-                    CurrentProgramme(programme = programme, now = now)
-                }
-                channel.nextProgramme?.let { programme ->
-                    Text(
-                        text = "Далее: ${formatTimeOfDay(programme.start)} — ${formatTimeOfDay(programme.stop)} · ${programme.title}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
         }
     }

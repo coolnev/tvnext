@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.tvg.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -401,7 +403,7 @@ fun TvgScreen(
         ) {
             if (!isAndroidPlatform()) {
                 ScreenHeader(
-                    title = "ТВ-гид",
+                    title = uiText("ТВ-гид"),
                     onBack = onBackHome,
                     trailing = {
                         if (state.isRefreshing) {
@@ -459,7 +461,7 @@ fun TvgScreen(
                     ) {
                         Text(
                             text = state.error?.toUserMessage()
-                                ?: "Добавьте M3U-плейлист, чтобы открыть ТВ-гид.",
+                                ?: uiText("Добавьте M3U-плейлист, чтобы открыть ТВ-гид."),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -516,7 +518,7 @@ fun TvgScreen(
 
                             if (!hasAnyProgramme) {
                                 Text(
-                                    text = "Нет данных EPG для этого дня. Обновите EPG в настройках или подождите импорта телепрограммы.",
+                                    text = uiText("Нет данных EPG для этого дня. Обновите EPG в настройках или подождите импорта телепрограммы."),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(
@@ -650,7 +652,7 @@ private fun CategoryChannelsPanel(
                     contentPadding = PaddingValues(horizontal = TVNextDimens.ItemSpacing),
                 ) {
                     Text(
-                        text = category ?: "Все",
+                        text = category ?: uiText("Все"),
                         style = MaterialTheme.typography.labelLarge,
                         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -720,7 +722,7 @@ private fun CategoryChannelsPanel(
 @Composable
 private fun TimeHeaderCell(modifier: Modifier = Modifier) {
     Text(
-        text = "Канал",
+        text = uiText("Канал"),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(vertical = 4.dp),
@@ -922,8 +924,8 @@ private fun ProgrammeCell(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (isCurrent) Text("Сейчас", style = MaterialTheme.typography.labelSmall, color = Color.White)
-            else if (isPast && archiveAvailable) Text("▶ Архив", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            if (isCurrent) Text(uiText("Сейчас"), style = MaterialTheme.typography.labelSmall, color = Color.White)
+            else if (isPast && archiveAvailable) Text(uiText("▶ Архив"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -977,20 +979,20 @@ private fun ExpandedProgrammeInfo(
         )
         Text(
             text = "${info.channel.name} · ${formatTimeOfDay(programme.start)} — " +
-                "${formatTimeOfDay(programme.stop)} · $durationMinutes мин",
+                uiText("{0} · {1} мин", formatTimeOfDay(programme.stop), durationMinutes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
         )
         programme.category?.takeIf { it.isNotBlank() }?.let { category ->
             Text(
-                text = "Жанр: $category",
+                text = uiText("Жанр: {0}", category),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         providerText.takeIf { it.isNotBlank() }?.let { provider ->
             Text(
-                text = "Источник: $provider",
+                text = uiText("Источник: {0}", provider),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

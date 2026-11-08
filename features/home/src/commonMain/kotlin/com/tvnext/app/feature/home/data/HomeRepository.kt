@@ -63,7 +63,7 @@ class DefaultHomeRepository(
         // EPG "current/next" is resolved ONLY for a small surface: the channels
         // actually shown on Home (continue watching + recent + favorites), or —
         // when the user has no history/favorites yet — the first few channels,
-        // so «Сейчас идёт» / «Ближайшие передачи» still work for a new user.
+        // so «Ближайшие передачи» still works for a new user.
         // Resolving it for all ~2000+ channels would cost a DISTINCT scan over
         // the whole EPG (seconds on a large XMLTV).
         val featuredChannels = buildList {
@@ -84,9 +84,6 @@ class DefaultHomeRepository(
             .mapNotNull { vodById[it.itemId] }
             .map { it.toFeaturedVod() }
 
-        // «Сейчас идёт»: featured channels whose current programme is running.
-        val nowPlaying = featured.filter { it.currentProgramme != null }
-            .take(SECTION_LIMIT)
         // «Ближайшие передачи»: next programmes of the featured channels.
         val upcoming = featured
             .mapNotNull { ch ->
@@ -112,7 +109,6 @@ class DefaultHomeRepository(
             favorites = favorites.map { it.toFeatured(now, nowNext) },
             continueWatchingVod = continueWatchingVod,
             recentVod = recentVod,
-            nowPlaying = nowPlaying,
             upcoming = upcoming,
             favoriteVod = favoriteVod,
         )

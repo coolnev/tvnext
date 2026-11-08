@@ -52,8 +52,6 @@ data class HomeContent(
     val continueWatchingVod: FeaturedVod? = null,
     /** Recently watched VOD items (excluding the continue-watching one). */
     val recentVod: List<FeaturedVod> = emptyList(),
-    /** Channels with a currently-running programme («Сейчас идёт»). */
-    val nowPlaying: List<FeaturedChannel> = emptyList(),
     /** Next programmes of the featured channels («Ближайшие передачи»). */
     val upcoming: List<FeaturedProgramme> = emptyList(),
     /** Favorite VOD items («Избранные фильмы и сериалы»). */

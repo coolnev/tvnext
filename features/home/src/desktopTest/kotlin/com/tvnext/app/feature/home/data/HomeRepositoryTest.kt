@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Home screen content contracts: the new «Сейчас идёт», «Ближайшие передачи»,
+ * Home screen content contracts: the «Ближайшие передачи»,
  * «Избранные фильмы и сериалы» and «Категории медиатеки» sections are
  * populated from REAL repositories, and stay empty (hidden) when there is no
  * matching data — never crash, never invent content.
@@ -155,7 +155,6 @@ class HomeRepositoryTest {
         assertTrue(content.continueWatching == null)
         assertTrue(content.recent.isEmpty())
         assertTrue(content.favorites.isEmpty())
-        assertTrue(content.nowPlaying.isEmpty(), "no EPG → «Сейчас идёт» is empty")
         assertTrue(content.upcoming.isEmpty(), "no EPG → «Ближайшие передачи» is empty")
         assertTrue(content.continueWatchingVod == null)
         assertTrue(content.recentVod.isEmpty())
@@ -181,7 +180,7 @@ class HomeRepositoryTest {
     }
 
     @Test
-    fun nowPlayingAndUpcomingComeFromEpg() = runBlocking {
+    fun continueWatchingAndUpcomingComeFromEpg() = runBlocking {
         val ch = channel("ch1", "Канал 1", tvgId = "epg1")
         val now = 1_000_000L
         val nowNext = mapOf(
@@ -192,16 +191,15 @@ class HomeRepositoryTest {
         )
         val repo = DefaultHomeRepository(
             channelsRepository = FakeChannelsRepository(listOf(ch)),
-            historyRepository = FakeHistoryRepository(),
+            historyRepository = FakeHistoryRepository(listOf(HistoryEntry(itemId = "ch1", contentType = WatchContentType.LIVE, watchedAt = now))),
             epgRepository = FakeEpgRepository(nowNext = nowNext),
             mediaLibrary = FakeMediaLibrary(emptyList()),
         )
         val content = repo.getContent()
 
-        assertEquals(listOf("ch1"), content.nowPlaying.map { it.id }, "«Сейчас идёт» uses current programme")
         assertEquals(
             "Новости",
-            content.nowPlaying.single().currentProgramme?.title,
+            content.continueWatching?.currentProgramme?.title,
         )
         assertEquals(1, content.upcoming.size, "«Ближайшие передачи» uses next programme")
         assertEquals("Время", content.upcoming.single().programme.title)

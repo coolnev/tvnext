@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.tvg.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -160,7 +162,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
         } else false
     }.fillMaxSize().background(com.tvnext.app.core.player.videoSurfaceBackground(MaterialTheme.colorScheme.surface)).padding(16.dp)) {
         AndroidGuideHeader(controller = component.playbackController,
-            category = state.selectedCategory ?: "Все каналы",
+            category = state.selectedCategory ?: uiText("Все каналы"),
             date = formatDate(if (state.from > 0) state.from else now),
             toolbarFocus = toolbarFocus, gridFocus = gridFocus,
             onFocus = { toolbarFocused = it }, onCategories = { categoriesOpen = true },
@@ -194,7 +196,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             }
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Канал", Modifier.width(channelWidth), style = MaterialTheme.typography.labelMedium)
+                    Text(uiText("Канал"), Modifier.width(channelWidth), style = MaterialTheme.typography.labelMedium)
                     Row(Modifier.width(timelineWidth).horizontalScroll(timeScroll)) {
                         val count = ((state.to - state.from) / GUIDE_HOUR).toInt().coerceIn(1, 25)
                         repeat(count * 2) { index ->
@@ -269,7 +271,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                             }
                             Box(Modifier.width(timelineWidth).fillMaxHeight().clipToBounds()) {
                                 val programmes = state.programmes[channel.id].orEmpty()
-                                if (programmes.isEmpty()) Text("Нет программы", Modifier.padding(12.dp), color = foreground.copy(alpha = .5f))
+                                if (programmes.isEmpty()) Text(uiText("Нет программы"), Modifier.padding(12.dp), color = foreground.copy(alpha = .5f))
                                 programmes.filter { it.stop > visibleStart && it.start < visibleEnd }.forEach { programme ->
                                     val start = maxOf(programme.start, state.from, visibleStart)
                                     val stop = minOf(programme.stop, state.to, visibleEnd)
@@ -292,15 +294,15 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                             }
                         }
                     }
-                    if (rows.isEmpty()) item { Text(if (state.isLoading) "Загрузка каналов…" else "Нет каналов в этой категории. Добавьте плейлист или выберите другую категорию.") }
+                    if (rows.isEmpty()) item { Text(if (state.isLoading) uiText("Загрузка каналов…") else uiText("Нет каналов в этой категории. Добавьте плейлист или выберите другую категорию.")) }
                 }
             }
         }
         AutoScrollText(selectedProgramme?.let { "${selectedChannel?.name} • ${it.title}\n${it.description.orEmpty()}" }
-            ?: "↑↓ Каналы   ←→ Передачи   OK Информация   Назад: кнопки / выход", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
+            ?: uiText("↑↓ Каналы   ←→ Передачи   OK Информация   Назад: кнопки / выход"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
     }
     if (categoriesOpen) AlertDialog(
-        onDismissRequest = { categoriesOpen = false }, title = { Text("Категории") },
+        onDismissRequest = { categoriesOpen = false }, title = { Text(uiText("Категории")) },
         text = {
             val categories = remember(state.channels) { listOf<String?>(null) + channelCategoriesInOrder(state.channels) }
             val categoryList = rememberLazyListState(initialFirstVisibleItemIndex = categories.indexOf(state.selectedCategory).coerceAtLeast(0))
@@ -308,13 +310,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             LaunchedEffect(Unit) { withFrameNanos { }; runCatching { selectedFocus.requestFocus() } }
             LazyColumn(state = categoryList, modifier = Modifier.heightIn(max = 350.dp)) {
                 items(categories) { category ->
-                    GuideOutlineButton(category ?: "Все каналы", onClick = {
+                    GuideOutlineButton(category ?: uiText("Все каналы"), onClick = {
                         component.dispatch(TvgIntent.CategorySelected(category)); categoriesOpen = false
                     }, modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).then(
                         if (category == state.selectedCategory) Modifier.focusRequester(selectedFocus) else Modifier))
                 }
             }
-        }, confirmButton = { TvActionButton(onClick = { categoriesOpen = false }) { Text("Закрыть") } },
+        }, confirmButton = { TvActionButton(onClick = { categoriesOpen = false }) { Text(uiText("Закрыть")) } },
     )
     details?.let { info ->
         val p = info.programme
@@ -322,7 +324,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             text = { AutoScrollText("${info.channel.name} • ${formatDateTime(p.start)}–${formatTimeOfDay(p.stop)}\n${p.description.orEmpty()}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 9) },
             confirmButton = {
                 Row {
-                    TvActionButton(onClick = { details = null; component.dispatch(TvgIntent.ChannelClicked(info.channel.id)) }) { Text("Прямой эфир") }
+                    TvActionButton(onClick = { details = null; component.dispatch(TvgIntent.ChannelClicked(info.channel.id)) }) { Text(uiText("Прямой эфир")) }
                     if (p.start > now && p.stop > p.start && p.stop - p.start <= 6 * 60 * 60 * 1000L &&
                         info.channel.streamUrl.isNotBlank() &&
                         com.tvnext.app.core.common.platform.isAndroidPlatform()) {
@@ -334,18 +336,19 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                                     streamUrl = info.channel.streamUrl,
                                     startAt = p.start,
                                     stopAt = p.stop,
+                                    channelId = info.channel.id,
                                 )
                             )
                             details = null
-                        }) { Text("Запланировать запись") }
+                        }) { Text(uiText("Запланировать запись")) }
                     }
                     if (p.start > now) TvActionButton(onClick = { component.dispatch(TvgIntent.ScheduleToggled(info.channel.id, p.start)); details = null }) {
                         val scheduled = "${info.channel.playlistId}|${info.channel.id}|${p.start}" in state.scheduledKeys
-                        Text(if (scheduled) "Убрать напоминание" else "Напомнить")
+                        Text(if (scheduled) uiText("Убрать напоминание") else uiText("Напомнить"))
                     }
-                    else if (info.channel.hasCatchupMechanism) TvActionButton(onClick = { component.dispatch(TvgIntent.ArchiveProgrammeClicked(info.channel.id, p.start)); details = null }) { Text("Смотреть с начала") }
+                    else if (info.channel.hasCatchupMechanism) TvActionButton(onClick = { component.dispatch(TvgIntent.ArchiveProgrammeClicked(info.channel.id, p.start)); details = null }) { Text(uiText("Смотреть с начала")) }
                 }
-            }, dismissButton = { TvActionButton(onClick = { details = null }) { Text("Закрыть") } })
+            }, dismissButton = { TvActionButton(onClick = { details = null }) { Text(uiText("Закрыть")) } })
     }
 }
 

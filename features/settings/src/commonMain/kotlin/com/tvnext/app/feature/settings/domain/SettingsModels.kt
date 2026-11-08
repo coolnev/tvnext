@@ -5,6 +5,7 @@ import com.tvnext.app.core.player.VideoDecodeMode
 import com.tvnext.app.core.ui.theme.AccentColor
 
 data class AppSettings(
+    val language: com.tvnext.app.core.common.UiLanguage = com.tvnext.app.core.common.UiLanguage.RUSSIAN,
     val theme: ThemePreference = ThemePreference.DARK,
     val accentColor: AccentColor = AccentColor.GREEN,
     /** Percentage of panel translucency. Does not affect the video surface. */
@@ -93,5 +94,5 @@ enum class ThemePreference {
 
 data class AppInfo(
     val name: String = "TVNext",
-    val version: String = "0.1.0",
+    val version: String = com.tvnext.app.core.common.AppVersion.NAME,
 )

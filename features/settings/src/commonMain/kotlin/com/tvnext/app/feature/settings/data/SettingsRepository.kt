@@ -39,6 +39,7 @@ class SqlDelightSettingsRepository(
 ) : SettingsRepository {
 
     private object Keys {
+        const val LANGUAGE = "settings.language"
         const val THEME = "settings.theme"
         const val ACCENT_COLOR = "settings.accent_color"
         const val PANEL_TRANSPARENCY = "settings.panel_transparency"
@@ -72,6 +73,7 @@ class SqlDelightSettingsRepository(
     override suspend fun load(): AppSettings = observe().first()
 
     override suspend fun save(settings: AppSettings) {
+        meta.setValue(Keys.LANGUAGE, settings.language.name)
         meta.setValue(Keys.THEME, settings.theme.name)
         meta.setValue(Keys.ACCENT_COLOR, settings.accentColor.name)
         meta.setValue(Keys.PANEL_TRANSPARENCY, settings.panelTransparencyPercent.coerceIn(0, 80).toString())
@@ -127,6 +129,9 @@ class SqlDelightSettingsRepository(
     private fun fromRows(rows: List<App_meta>): AppSettings {
         val defaults = AppSettings()
         return AppSettings(
+            language = rows.string(Keys.LANGUAGE)?.let { value ->
+                com.tvnext.app.core.common.UiLanguage.entries.firstOrNull { it.name == value }
+            } ?: defaults.language,
             theme = rows.theme() ?: defaults.theme,
             accentColor = rows.accentColor() ?: defaults.accentColor,
             panelTransparencyPercent = (rows.int(Keys.PANEL_TRANSPARENCY)

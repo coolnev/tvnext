@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -243,7 +245,7 @@ fun TvPlayerPanel(
                                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp,
                                     color = Color.White)
                                 Text(if (playerState.state == PlaybackState.BUFFERING)
-                                    "Восстановление…" else "Загрузка…", color = Color.White,
+                                    uiText("Восстановление…") else uiText("Загрузка…"), color = Color.White,
                                     style = MaterialTheme.typography.labelSmall)
                             }
                         } else CircularProgressIndicator(
@@ -262,7 +264,7 @@ fun TvPlayerPanel(
                                 .padding(TVNextDimens.ItemSpacing),
                         ) {
                             Text(
-                                text = playerState.error ?: "Ошибка воспроизведения",
+                                text = playerState.error ?: uiText("Ошибка воспроизведения"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
                                 textAlign = TextAlign.Center,
@@ -278,7 +280,7 @@ fun TvPlayerPanel(
                                     ),
                                 ) {
                                     Text(
-                                        text = "Повторить",
+                                        text = uiText("Повторить"),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary,
                                     )
@@ -292,7 +294,7 @@ fun TvPlayerPanel(
                                     ),
                                 ) {
                                     Text(
-                                        text = "Закрыть",
+                                        text = uiText("Закрыть"),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
@@ -370,9 +372,9 @@ fun TvPlayerPanel(
                                     PlaybackState.PLAYING,
                                     PlaybackState.READY,
                                     PlaybackState.BUFFERING,
-                                    -> "Пауза"
-                                    PlaybackState.PAUSED -> "Продолжить"
-                                    else -> "Смотреть"
+                                    -> uiText("Пауза")
+                                    PlaybackState.PAUSED -> uiText("Продолжить")
+                                    else -> uiText("Смотреть")
                                 },
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
@@ -387,7 +389,7 @@ fun TvPlayerPanel(
                             ),
                         ) {
                             Text(
-                                text = if (playerState.isMuted) "Включить звук" else "Выключить звук",
+                                text = if (playerState.isMuted) uiText("Включить звук") else uiText("Выключить звук"),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -403,7 +405,7 @@ fun TvPlayerPanel(
                                 ),
                             ) {
                                 Text(
-                                    text = if (channelFavorite) "★ В избранном" else "☆ В избранное",
+                                    text = if (channelFavorite) uiText("★ В избранном") else uiText("☆ В избранное"),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = if (channelFavorite) {
                                         MaterialTheme.colorScheme.primary
@@ -423,7 +425,7 @@ fun TvPlayerPanel(
                             ),
                         ) {
                             Text(
-                                text = "Закрыть",
+                                text = uiText("Закрыть"),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
@@ -579,9 +581,9 @@ private fun PlayerStatusOverlay(
                 Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))
                 Text(
                     text = if (state.state == PlaybackState.BUFFERING) {
-                        "Буферизация"
+                        uiText("Буферизация")
                     } else {
-                        "Загрузка"
+                        uiText("Загрузка")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
@@ -597,7 +599,7 @@ private fun PlayerStatusOverlay(
                 modifier = Modifier.padding(TVNextDimens.ItemSpacing),
             ) {
                 Text(
-                    text = state.error ?: "Ошибка воспроизведения",
+                    text = state.error ?: uiText("Ошибка воспроизведения"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
                     textAlign = TextAlign.Center,
@@ -615,7 +617,7 @@ private fun PlayerStatusOverlay(
                         ),
                     ) {
                         Text(
-                            text = "Повторить",
+                            text = uiText("Повторить"),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -629,7 +631,7 @@ private fun PlayerStatusOverlay(
                         ),
                     ) {
                         Text(
-                            text = "Закрыть",
+                            text = uiText("Закрыть"),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -697,9 +699,9 @@ fun DiagnosticsPanel(
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         val fallbackText = if (diagnostics.fallback) " (fallback!)" else ""
-        DiagnosticsRow("Запр.: ${diagnostics.requestedMode} | Факт.: ${diagnostics.actualMode}$fallbackText")
+        DiagnosticsRow(uiText("Запр.: {0} | Факт.: {1}{2}", diagnostics.requestedMode, diagnostics.actualMode, fallbackText))
         if (diagnostics.transportState.isNotEmpty()) {
-            DiagnosticsRow("Состояние: ${diagnostics.transportState}")
+            DiagnosticsRow(uiText("Состояние: {0}", diagnostics.transportState))
         }
         DiagnosticsRow("Decoder: ${diagnostics.decoder} | Output: ${diagnostics.videoOutput}")
         DiagnosticsRow(

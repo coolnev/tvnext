@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.tvg.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,20 +46,20 @@ internal fun AndroidGuideHeader(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("ТВ-гид", fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
+                    Text(uiText("ТВ-гид"), fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
                     Text(date, style = MaterialTheme.typography.bodySmall)
                 }
                 GuideOutlineButton(category, onCategories, Modifier.widthIn(max = 260.dp)
                     .testTag("tvg-categories").focusRequester(toolbarFocus)
                     .guideDirections(right = previous, down = now))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GuideOutlineButton("- День", onPreviousDay, Modifier.testTag("tvg-day-previous")
+                    GuideOutlineButton(uiText("- День"), onPreviousDay, Modifier.testTag("tvg-day-previous")
                         .focusRequester(previous).guideDirections(toolbarFocus, now, toolbarFocus, gridFocus))
-                    GuideOutlineButton("Сейчас", onNow, Modifier.testTag("tvg-now")
+                    GuideOutlineButton(uiText("Сейчас"), onNow, Modifier.testTag("tvg-now")
                         .focusRequester(now).guideDirections(previous, next, toolbarFocus, gridFocus))
-                    GuideOutlineButton("+ День", onNextDay, Modifier.testTag("tvg-day-next")
+                    GuideOutlineButton(uiText("+ День"), onNextDay, Modifier.testTag("tvg-day-next")
                         .focusRequester(next).guideDirections(now, refresh, toolbarFocus, gridFocus))
-                    GuideOutlineButton("Обновить", onRefresh, Modifier.testTag("tvg-refresh")
+                    GuideOutlineButton(uiText("Обновить"), onRefresh, Modifier.testTag("tvg-refresh")
                         .focusRequester(refresh).guideDirections(next, if (onVideo != null) video else FocusRequester.Cancel, toolbarFocus, gridFocus))
                 }
             }
@@ -73,7 +75,7 @@ internal fun AndroidGuideHeader(
                         interactionSource = remember { MutableInteractionSource() }) { onVideo?.invoke() }) {
                     PlayerSurface(controller, Modifier.fillMaxSize())
                 }
-                Text(playback.item?.title ?: "Нет воспроизведения", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text(playback.item?.title ?: uiText("Нет воспроизведения"), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     fontSize = 12.sp, lineHeight = 16.sp, modifier = Modifier.testTag("tvg-playing-channel"))
             }
         }

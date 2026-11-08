@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.media.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -200,7 +202,7 @@ actual fun MediaScreen(
         // screen and the space is used for the list/video (dense 4K layout).
         if (!immersive && !isAndroidPlatform()) {
             ScreenHeader(
-                title = "Медиатека",
+                title = uiText("Медиатека"),
                 onBack = onBackHome,
                 trailing = {
                     if (state.isRefreshing) {
@@ -216,6 +218,7 @@ actual fun MediaScreen(
 
         if (selectedItem != null) {
             WatchingLayout(
+                seekStepMs = seekStepMs,
                 state = state,
                 selectedItem = selectedItem,
                 tmdbMetadata = state.tmdbMetadata,
@@ -264,11 +267,11 @@ actual fun MediaScreen(
                             Text(metadata?.genres?.joinToString(" · ").orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 metadata?.overview?.takeIf { it.isNotBlank() }
-                                    ?: if (state.infoTmdbLoading) "Загрузка описания…" else "Описание недоступно.",
+                                    ?: if (state.infoTmdbLoading) uiText("Загрузка описания…") else uiText("Описание недоступно."),
                             )
                         }
                     },
-                    confirmButton = { TextButton(onClick = { infoDialogVisible = false }) { Text("Закрыть") } },
+                    confirmButton = { TextButton(onClick = { infoDialogVisible = false }) { Text(uiText("Закрыть")) } },
                 )
             } else {
                 infoDialogVisible = false
@@ -288,6 +291,7 @@ actual fun MediaScreen(
 
 @Composable
 private fun WatchingLayout(
+    seekStepMs: Long,
     state: MediaState,
     selectedItem: MediaItem,
     tmdbMetadata: com.tvnext.app.core.tmdb.TmdbMetadata?,
@@ -480,7 +484,7 @@ private fun WatchingLayout(
                         value = state.query,
                         onValueChange = onSearch,
                         onClear = { onSearch("") },
-                        placeholder = "Поиск в медиатеке",
+                        placeholder = uiText("Поиск в медиатеке"),
                         onFocusChanged = onSearchFocusChanged,
                     )
                 }
@@ -492,7 +496,7 @@ private fun WatchingLayout(
                     ) {
                         item {
                             FilterChip(
-                                label = "Все источники",
+                                label = uiText("Все источники"),
                                 selected = state.selectedSourceId == null,
                                 onClick = { onSourceSelected(null) },
                             )
@@ -546,7 +550,7 @@ private fun WatchingLayout(
                         if (filteredItems.isEmpty()) {
                             item {
                                 Text(
-                                    text = "Ничего не найдено",
+                                    text = uiText("Ничего не найдено"),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(vertical = TVNextDimens.SectionSpacing),
@@ -762,12 +766,12 @@ private fun MediaImmersiveDrawer(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Медиатека",
+                    text = uiText("Медиатека"),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "${visibleItems.size} фильмов и передач",
+                    text = uiText("{0} фильмов и передач", visibleItems.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -780,7 +784,7 @@ private fun MediaImmersiveDrawer(
                 value = state.query,
                 onValueChange = onSearch,
                 onClear = { onSearch("") },
-                placeholder = "Поиск",
+                placeholder = uiText("Поиск"),
                 onFocusChanged = onSearchFocusChanged,
             )
         }
@@ -789,7 +793,7 @@ private fun MediaImmersiveDrawer(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
                     FilterChip(
-                        label = "Все",
+                        label = uiText("Все"),
                         selected = state.selectedSourceId == null,
                         onClick = { onSourceSelected(null) },
                     )
@@ -941,7 +945,7 @@ private fun RegularLayout(
                         text = if (state.error != null) {
                             state.error.toUserMessage()
                         } else {
-                            "Медиатека пуста. Добавьте M3U-источник VOD в настройках."
+                            uiText("Медиатека пуста. Добавьте M3U-источник VOD в настройках.")
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -956,7 +960,7 @@ private fun RegularLayout(
                         ),
                     ) {
                         Text(
-                            text = "Обновить",
+                            text = uiText("Обновить"),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -996,7 +1000,7 @@ private fun RegularLayout(
 
                     if (state.content.recent.isNotEmpty()) {
                         item(key = "recent") {
-                            MediaSection(title = "Недавно просмотренные") {
+                            MediaSection(title = uiText("Недавно просмотренные")) {
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacing)) {
                                     itemsIndexed(state.content.recent, key = { _, featured -> featured.item.id }) { index, featured ->
                                         MediaCard(
@@ -1020,7 +1024,7 @@ private fun RegularLayout(
 
                     if (state.content.favorites.isNotEmpty()) {
                         item(key = "favorites") {
-                            MediaSection(title = "Избранное") {
+                            MediaSection(title = uiText("Избранное")) {
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacing)) {
                                     itemsIndexed(state.content.favorites, key = { _, featured -> featured.item.id }) { index, featured ->
                                         MediaCard(
@@ -1097,7 +1101,7 @@ private fun RegularLayout(
                         if (filteredItems.isEmpty()) {
                             item(key = "empty") {
                                 Text(
-                                    text = "Ничего не найдено",
+                                    text = uiText("Ничего не найдено"),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -1123,7 +1127,7 @@ private fun MediaFilters(
             value = state.query,
             onValueChange = onSearch,
             onClear = { onSearch("") },
-            placeholder = "Поиск в медиатеке",
+            placeholder = uiText("Поиск в медиатеке"),
             onFocusChanged = onSearchFocusChanged,
             modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacingSmall),
         )
@@ -1135,7 +1139,7 @@ private fun MediaFilters(
         ) {
             item {
                 FilterChip(
-                    label = "Все источники",
+                    label = uiText("Все источники"),
                     selected = state.selectedSourceId == null,
                     onClick = { onSourceSelected(null) },
                 )
@@ -1246,11 +1250,11 @@ private fun buildMediaEntries(
     return buildList {
         // «Избранное» sits on top of every category, exactly like the
         // Channels tab — a collapsible header followed by the favorite rows.
-        add(MediaCategoryEntry(FAVORITES_KEY, "Избранное", favorites.size))
+        add(MediaCategoryEntry(FAVORITES_KEY, uiText("Избранное"), favorites.size))
         if (expandedCategory == FAVORITES_KEY) {
             favorites.forEach { add(MediaItemEntry(it)) }
         }
-        add(MediaCategoryEntry(ALL_CATEGORY_KEY, "Все", items.size))
+        add(MediaCategoryEntry(ALL_CATEGORY_KEY, uiText("Все"), items.size))
         if (expandedCategory == ALL_CATEGORY_KEY) {
             items.forEach { add(MediaItemEntry(it)) }
         }
@@ -1369,7 +1373,7 @@ private fun ContinueWatchingMediaCard(
             Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Продолжить просмотр",
+                    text = uiText("Продолжить просмотр"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -1389,7 +1393,7 @@ private fun ContinueWatchingMediaCard(
                 )
                 if (featured.resumePositionMs > 0L) {
                     Text(
-                        text = "Позиция: ${formatDuration(featured.resumePositionMs)}",
+                        text = uiText("Позиция: {0}", formatDuration(featured.resumePositionMs)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1615,9 +1619,9 @@ private fun seasonEpisodeLabel(item: MediaItem): String? {
     val season = item.season?.takeIf { it.isNotBlank() }
     val episode = item.episode?.takeIf { it.isNotBlank() }
     return when {
-        season != null && episode != null -> "Сезон $season · Серия $episode"
-        season != null -> "Сезон $season"
-        episode != null -> "Серия $episode"
+        season != null && episode != null -> uiText("Сезон {0} · Серия {1}", season, episode)
+        season != null -> uiText("Сезон {0}", season)
+        episode != null -> uiText("Серия {0}", episode)
         else -> null
     }
 }
@@ -1684,8 +1688,8 @@ private fun MovieInfoOverlay(
                         if (isNotEmpty()) append(" · ")
                         append(item.category)
                         append(durationLabel(tmdbMetadata?.runtimeMinutes?.toLong()?.times(60) ?: item.durationSeconds))
-                        if (!item.season.isNullOrBlank()) append(" · Сезон ${item.season}")
-                        if (!item.episode.isNullOrBlank()) append(" · Серия ${item.episode}")
+                        if (!item.season.isNullOrBlank()) append(uiText(" · Сезон {0}", item.season))
+                        if (!item.episode.isNullOrBlank()) append(uiText(" · Серия {0}", item.episode))
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1705,7 +1709,7 @@ private fun MovieInfoOverlay(
                 }
                 tmdbMetadata?.director?.takeIf { it.isNotBlank() }?.let {
                     Text(
-                        text = "Режиссёр: $it",
+                        text = uiText("Режиссёр: {0}", it),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1714,7 +1718,7 @@ private fun MovieInfoOverlay(
                 }
                 tmdbMetadata?.cast?.takeIf { it.isNotEmpty() }?.let {
                     Text(
-                        text = "В ролях: ${it.joinToString(", ")}",
+                        text = uiText("В ролях: {0}", it.joinToString(", ")),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1825,7 +1829,7 @@ private fun TmdbInfoPanel(
                 ?.takeIf { it.isNotBlank() && it != tmdbMetadata.title }
                 ?.let { original ->
                     Text(
-                        text = "Оригинал: $original",
+                        text = uiText("Оригинал: {0}", original),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1836,7 +1840,7 @@ private fun TmdbInfoPanel(
                 ?.takeIf { it.isNotBlank() }
                 ?.let { language ->
                     Text(
-                        text = "Язык: ${languageLabel(language)}",
+                        text = uiText("Язык: {0}", languageLabel(language)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1856,7 +1860,7 @@ private fun TmdbInfoPanel(
             }
             tmdbMetadata?.director?.takeIf { it.isNotBlank() }?.let {
                 Text(
-                    text = "Режиссёр: $it",
+                    text = uiText("Режиссёр: {0}", it),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1865,7 +1869,7 @@ private fun TmdbInfoPanel(
             }
             tmdbMetadata?.cast?.takeIf { it.isNotEmpty() }?.let {
                 Text(
-                    text = "В ролях: ${it.joinToString(", ")}",
+                    text = uiText("В ролях: {0}", it.joinToString(", ")),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1874,7 +1878,7 @@ private fun TmdbInfoPanel(
             }
             if (tmdbMetadata == null && !loading) {
                 Text(
-                    text = "TMDB: информация недоступна (включите TMDB в настройках и укажите API-ключ)",
+                    text = uiText("TMDB: информация недоступна (включите TMDB в настройках и укажите API-ключ)"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1898,9 +1902,9 @@ private fun formatDuration(millis: Long): String {
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     return if (hours > 0) {
-        "%d ч %02d мин".format(hours, minutes)
+        uiText("%d ч %02d мин").format(hours, minutes)
     } else {
-        "%d мин".format(minutes)
+        uiText("%d мин").format(minutes)
     }
 }
 
@@ -1909,21 +1913,21 @@ private val GoldStar = androidx.compose.ui.graphics.Color(0xFFE6B800)
 
 /** Human-readable name for a TMDB original-language code (falls back to code). */
 private fun languageLabel(code: String): String = when (code.lowercase()) {
-    "ru" -> "Русский"
-    "uk" -> "Украинский"
-    "en" -> "Английский"
-    "de" -> "Немецкий"
-    "fr" -> "Французский"
-    "es" -> "Испанский"
-    "it" -> "Итальянский"
-    "pt" -> "Португальский"
-    "pl" -> "Польский"
-    "tr" -> "Турецкий"
-    "ja" -> "Японский"
-    "ko" -> "Корейский"
-    "zh" -> "Китайский"
-    "hi" -> "Хинди"
-    "ar" -> "Арабский"
+    "ru" -> uiText("Русский")
+    "uk" -> uiText("Украинский")
+    "en" -> uiText("Английский")
+    "de" -> uiText("Немецкий")
+    "fr" -> uiText("Французский")
+    "es" -> uiText("Испанский")
+    "it" -> uiText("Итальянский")
+    "pt" -> uiText("Португальский")
+    "pl" -> uiText("Польский")
+    "tr" -> uiText("Турецкий")
+    "ja" -> uiText("Японский")
+    "ko" -> uiText("Корейский")
+    "zh" -> uiText("Китайский")
+    "hi" -> uiText("Хинди")
+    "ar" -> uiText("Арабский")
     else -> code
 }
 

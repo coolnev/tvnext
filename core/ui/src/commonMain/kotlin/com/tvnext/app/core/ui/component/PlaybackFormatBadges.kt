@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 /**
  * Display-only labels for the ACTUAL selected stream formats.
  * Unknown metadata is intentionally omitted; never infer it from a playlist name.
@@ -24,8 +26,8 @@ internal fun playbackFormatBadges(resolution: String?, audio: String?): List<Str
         when {
             Regex("(^|[^0-9])7\\.1([^0-9]|$)").containsMatchIn(description) -> "7.1"
             Regex("(^|[^0-9])5\\.1([^0-9]|$)").containsMatchIn(description) -> "5.1"
-            "стерео" in description || "stereo" in description -> "Stereo"
-            "моно" in description || "mono" in description -> "Mono"
+            uiText("стерео") in description || "stereo" in description -> "Stereo"
+            uiText("моно") in description || "mono" in description -> "Mono"
             else -> null
         }
     }

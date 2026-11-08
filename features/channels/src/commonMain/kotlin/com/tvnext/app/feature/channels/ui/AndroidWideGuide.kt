@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
@@ -204,7 +206,7 @@ internal fun AndroidWideGuide(
                     shrinkHorizontally(shrinkTowards = Alignment.Start),
             ) {
                 Column(Modifier.width(190.dp).fillMaxHeight()) {
-                    Text("Категории", color = MaterialTheme.colorScheme.primary,
+                    Text(uiText("Категории"), color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.height(35.dp).padding(start = 10.dp, bottom = 4.dp))
                     val categoryValues = listOf<String?>(null, FAVORITES_CATEGORY) + categories
@@ -235,8 +237,8 @@ internal fun AndroidWideGuide(
                             .focusable(),
                         verticalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
-                        item { GuideRow("Все каналы", activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 0, onClick = { onChooseCategory(null) }) }
-                        item { GuideRow("Избранное", activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 1,
+                        item { GuideRow(uiText("Все каналы"), activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 0, onClick = { onChooseCategory(null) }) }
+                        item { GuideRow(uiText("Избранное"), activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == 1,
                             onClick = { onChooseCategory(FAVORITES_CATEGORY) }) }
                         items(categories) { category -> GuideRow(category,
                             activeColumn == GuideFocusColumn.CATEGORIES && categoryCursor == categories.indexOf(category) + 2,
@@ -245,7 +247,7 @@ internal fun AndroidWideGuide(
                 }
             }
             Column(Modifier.weight(0.40f).fillMaxHeight()) {
-                Text("Каналы", color = MaterialTheme.colorScheme.primary,
+                Text(uiText("Каналы"), color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.height(35.dp).padding(start = 10.dp, bottom = 4.dp))
                     CentredGuideRows(
@@ -330,7 +332,7 @@ internal fun AndroidWideGuide(
                                             color = if (adult) Color(0xFFFF6767) else Color.White,
                                             fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
                                             lineHeight = 15.sp)
-                                        Text(programme?.title ?: "Нет данных EPG", maxLines = 1,
+                                        Text(programme?.title ?: uiText("Нет данных EPG"), maxLines = 1,
                                             overflow = TextOverflow.Ellipsis, color = Color.White,
                                             fontSize = 11.sp, lineHeight = 13.sp)
                                         if (programme != null) {
@@ -358,7 +360,7 @@ internal fun AndroidWideGuide(
                     }
             }
             Column(Modifier.weight(0.48f).fillMaxHeight()) {
-                Text(channels.firstOrNull { it.id == activeId }?.name ?: "Программа передач",
+                Text(channels.firstOrNull { it.id == activeId }?.name ?: uiText("Программа передач"),
                     maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.titleMedium, modifier = Modifier.height(35.dp).padding(start = 9.dp, bottom = 4.dp))
                 CentredGuideRows(
@@ -403,7 +405,7 @@ internal fun AndroidWideGuide(
                         }
                         .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.PROGRAMMES }
                         .focusable(),
-                    emptyLabel = if (timeline.loading) "Загрузка телепрограммы…" else "Нет телепрограммы",
+                    emptyLabel = if (timeline.loading) uiText("Загрузка телепрограммы…") else uiText("Нет телепрограммы"),
                 ) { programme ->
                         val selected = programme == highlighted && activeColumn == GuideFocusColumn.PROGRAMMES
                         GuideRow(
@@ -422,7 +424,7 @@ internal fun AndroidWideGuide(
                 }
             }
             Column(Modifier.weight(0.12f).fillMaxHeight()) {
-                Text("Дни", color = MaterialTheme.colorScheme.primary,
+                Text(uiText("Дни"), color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth().height(35.dp).padding(bottom = 4.dp))
                 CentredGuideRows(
@@ -457,7 +459,7 @@ internal fun AndroidWideGuide(
                         }
                         .onFocusChanged { if (it.isFocused) activeColumn = GuideFocusColumn.DAYS }
                         .focusable(),
-                    emptyLabel = "Нет дат EPG",
+                    emptyLabel = uiText("Нет дат EPG"),
                 ) { day ->
                         val dateTitle = "${guideWeekday(day)}\n${formatDate(day)}"
                         GuideRow(dateTitle, day == displayedDay && activeColumn == GuideFocusColumn.DAYS,
@@ -471,7 +473,7 @@ internal fun AndroidWideGuide(
     }
     // Artwork is only allocated after a decoded bitmap exists; absent images leave zero gap.
     val description = programmeSynopsis(highlighted?.description, remoteInfo?.overview)
-        ?: "Описание передачи отсутствует"
+        ?: uiText("Описание передачи отсутствует")
     val info: @Composable (Modifier) -> Unit = { infoModifier ->
         if (descriptionOnRight) Column(
             modifier = infoModifier.background(Color.Black.copy(alpha = 0.50f))
@@ -562,7 +564,7 @@ internal fun AndroidWindowedProgrammeList(
                 values = values, selectedIndex = index, rowHeight = 29.dp, rowSpacing = 4.dp,
                 viewportCapacity = capacity, fillViewport = true,
                 modifier = Modifier.fillMaxSize(),
-                emptyLabel = if (loading) "Загрузка телепрограммы…" else "Программа передач недоступна",
+                emptyLabel = if (loading) uiText("Загрузка телепрограммы…") else uiText("Программа передач недоступна"),
             ) { programme ->
                 GuideRow("${formatTimeOfDay(programme.start)}  ${programme.title}",
                     selected = programme == highlighted && focused,
@@ -592,7 +594,7 @@ private fun <T> CentredGuideRows(
     clampChannelEdges: Boolean = false,
     fillViewport: Boolean = false,
     anchorSlot: Int? = null,
-    emptyLabel: String = "Нет элементов",
+    emptyLabel: String = uiText("Нет элементов"),
     onVisibleChanged: ((List<T>) -> Unit)? = null,
     row: @Composable (T) -> Unit,
 ) {
@@ -635,7 +637,7 @@ private fun <T> CentredGuideRows(
 
 @Composable
 private fun GuideDescription(programme: EpgProgramme?, description: String) {
-    Text(programme?.title ?: "Телепрограмма", maxLines = 2,
+    Text(programme?.title ?: uiText("Телепрограмма"), maxLines = 2,
         style = MaterialTheme.typography.titleMedium, color = Color.White)
     if (programme != null) {
         Text("${formatTimeOfDay(programme.start)} — ${formatTimeOfDay(programme.stop)} · ${formatDate(programme.start)}",
@@ -724,7 +726,7 @@ internal fun guideWeekday(epochMillis: Long): String {
     val noonMillis = startOfDay(epochMillis) + 12L * 60 * 60 * 1000
     val day = noonMillis / (24L * 60 * 60 * 1000)
     val index = ((day + 3L) % 7L + 7L).toInt() % 7
-    return arrayOf("пн", "вт", "ср", "чт", "пт", "сб", "вс")[index]
+    return arrayOf(uiText("пн"), uiText("вт"), uiText("ср"), uiText("чт"), uiText("пт"), uiText("сб"), uiText("вс"))[index]
 }
 
 /** Reusable detailed programme view; avoids a text-only dialog when artwork is cached. */
@@ -732,7 +734,7 @@ internal fun guideWeekday(epochMillis: Long): String {
 internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier = Modifier, compact: Boolean = false) {
     val remote = rememberProgrammeMetadata(programme?.title)
     val description = programmeSynopsis(programme?.description, remote?.overview)
-        ?: "Описание передачи недоступно"
+        ?: uiText("Описание передачи недоступно")
     val loader = LocalLogoImageLoader.current
     var picture by remember(remote?.frameUrl, remote?.posterUrl, loader) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(remote?.frameUrl, remote?.posterUrl, loader) {

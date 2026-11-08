@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import android.app.Activity
 import android.content.Context
@@ -57,13 +59,13 @@ internal class ProfileBackup(private val context: Context) {
     }
 
     fun validate(text: String): ParsedBackup {
-        require(text.length <= 5_000_000) { "Файл резервной копии слишком большой" }
+        require(text.length <= 5_000_000) { uiText("Файл резервной копии слишком большой") }
         val root = JSONObject(text)
         require(root.optString("format") == "tvnext-profile-backup" && root.optInt("version") == 1) {
-            "Неподдерживаемая резервная копия"
+            uiText("Неподдерживаемая резервная копия")
         }
         val items = root.getJSONArray("profiles")
-        require(items.length() in 1..8) { "Допустимо от 1 до 8 профилей" }
+        require(items.length() in 1..8) { uiText("Допустимо от 1 до 8 профилей") }
         val profiles = (0 until items.length()).map { i ->
             val item = items.getJSONObject(i)
             LocalProfile(item.getString("id"), item.getString("name"))
@@ -71,18 +73,18 @@ internal class ProfileBackup(private val context: Context) {
         val ids = profiles.map { it.id }.toSet()
         require(ids.size == profiles.size && "main" in ids &&
             profiles.all { it.id.matches(Regex("[A-Za-z0-9_-]{1,80}")) && it.name.isNotBlank() && it.name.length <= 40 }) {
-            "Неверные идентификаторы или названия профилей"
+            uiText("Неверные идентификаторы или названия профилей")
         }
         val selected = root.getString("selected")
-        require(selected in ids) { "Выбранный профиль отсутствует" }
+        require(selected in ids) { uiText("Выбранный профиль отсутствует") }
         val personal = root.getJSONObject("personal")
-        require(personal.length() <= 400) { "Слишком много параметров" }
+        require(personal.length() <= 400) { uiText("Слишком много параметров") }
         val values = mutableMapOf<String, Any>()
         val names = personal.keys()
         while (names.hasNext()) {
             val name = names.next()
             require(safeKey(name) && name.split('.').getOrNull(1) in ids) {
-                "Неверный параметр профиля"
+                uiText("Неверный параметр профиля")
             }
             val value = personal.get(name)
             require((value is String && value.length <= 1_000_000) ||
@@ -145,9 +147,9 @@ internal fun ProfileBackupDialog(onDismiss: () -> Unit) {
                 runCatching {
                     context.contentResolver.openOutputStream(uri, "wt")?.bufferedWriter(Charsets.UTF_8)?.use {
                         it.write(backup.exportJson())
-                    } ?: throw IOException("Не удалось открыть файл")
-                    "Резервная копия сохранена"
-                }.getOrElse { "Ошибка сохранения: ${it.message ?: it.javaClass.simpleName}" }
+                    } ?: throw IOException(uiText("Не удалось открыть файл"))
+                    uiText("Резервная копия сохранена")
+                }.getOrElse { uiText("Ошибка сохранения: {0}", it.message ?: it.javaClass.simpleName) }
             }
         }
     }
@@ -158,49 +160,49 @@ internal fun ProfileBackupDialog(onDismiss: () -> Unit) {
                     context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use {
                         val text = it.readText()
                         backup.validate(text)
-                    } ?: throw IOException("Не удалось прочитать файл")
+                    } ?: throw IOException(uiText("Не удалось прочитать файл"))
                 }
             }
             parsed.onSuccess { importCandidate = it; message = "" }
-                .onFailure { message = "Ошибка проверки: ${it.message ?: it.javaClass.simpleName}" }
+                .onFailure { message = uiText("Ошибка проверки: {0}", it.message ?: it.javaClass.simpleName) }
         }
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Резервная копия профилей") },
+        title = { Text(uiText("Резервная копия профилей")) },
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max=480.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Сохраняются профили, избранное, история, оформление, редактор каналов " +
-                    "и позиции просмотра. " +
-                    "Адреса источников, API-ключи, PIN и сами видеозаписи не экспортируются.")
+                Text(uiText("Сохраняются профили, избранное, история, оформление, редактор каналов ") +
+                    uiText("и позиции просмотра. ") +
+                    uiText("Адреса источников, API-ключи, PIN и сами видеозаписи не экспортируются."))
                 TvActionButton(onClick = { export.launch("TVNext_profiles.json") },
-                    modifier = Modifier.fillMaxWidth()) { Text("Сохранить резервную копию") }
+                    modifier = Modifier.fillMaxWidth()) { Text(uiText("Сохранить резервную копию")) }
                 TvActionButton(onClick = { import.launch(arrayOf("application/json", "text/plain", "*/*")) },
-                    modifier = Modifier.fillMaxWidth()) { Text("Восстановить из файла") }
+                    modifier = Modifier.fillMaxWidth()) { Text(uiText("Восстановить из файла")) }
                 if (message.isNotBlank()) Text(message)
             }
         },
-        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Закрыть") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text(uiText("Закрыть")) } },
     )
     if (importCandidate != null) {
         AlertDialog(
             onDismissRequest = { importCandidate = null },
-            title = { Text("Заменить профили?") },
-            text = { Text("Данные избранного, истории и редактора будут заменены содержимым копии. " +
-                "Записи и расписания останутся на устройстве. Восстановление отклоняется, если " +
-                "оно сделает чужие записи недоступными.") },
+            title = { Text(uiText("Заменить профили?")) },
+            text = { Text(uiText("Данные избранного, истории и редактора будут заменены содержимым копии. ") +
+                uiText("Записи и расписания останутся на устройстве. Восстановление отклоняется, если ") +
+                uiText("оно сделает чужие записи недоступными.")) },
             confirmButton = { TvActionButton(onClick = {
                 val parsed = importCandidate
                 importCandidate = null
                 if (parsed != null) {
                     message = if (backup.restore(parsed)) {
                         (context as? Activity)?.recreate()
-                        "Профили восстановлены"
-                    } else "Не удалось восстановить профили (проверьте связанные записи)"
+                        uiText("Профили восстановлены")
+                    } else uiText("Не удалось восстановить профили (проверьте связанные записи)")
                 }
-            }) { Text("Восстановить") } },
-            dismissButton = { TvActionButton(onClick = { importCandidate = null }) { Text("Отмена") } },
+            }) { Text(uiText("Восстановить")) } },
+            dismissButton = { TvActionButton(onClick = { importCandidate = null }) { Text(uiText("Отмена")) } },
         )
     }
 }

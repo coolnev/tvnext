@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.settings.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.common.util.rethrowAndroidCancellation
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
 import com.arkivanov.decompose.ComponentContext
@@ -66,6 +68,7 @@ data class SettingsState(
 
 sealed interface SettingsIntent : MviIntent {
     data object Load : SettingsIntent
+    data class LanguageChanged(val language: com.tvnext.app.core.common.UiLanguage) : SettingsIntent
     data class ThemeChanged(val theme: ThemePreference) : SettingsIntent
     data class AccentColorChanged(val accent: AccentColor) : SettingsIntent
     data class PanelTransparencyChanged(val percent: Int) : SettingsIntent
@@ -150,6 +153,7 @@ class DefaultSettingsComponent(
 
     override fun reduce(state: SettingsState, intent: SettingsIntent): SettingsState = when (intent) {
         SettingsIntent.Load -> state.copy(isLoading = true)
+        is SettingsIntent.LanguageChanged -> state.copy(settings = state.settings.copy(language = intent.language))
         is SettingsIntent.ThemeChanged -> state.copy(settings = state.settings.copy(theme = intent.theme))
         is SettingsIntent.AccentColorChanged ->
             state.copy(settings = state.settings.copy(accentColor = intent.accent))
@@ -223,6 +227,7 @@ class DefaultSettingsComponent(
     override fun handle(intent: SettingsIntent) {
         when (intent) {
             SettingsIntent.Load -> load()
+            is SettingsIntent.LanguageChanged,
             is SettingsIntent.ThemeChanged,
             is SettingsIntent.AccentColorChanged,
             is SettingsIntent.PanelTransparencyChanged,
@@ -358,7 +363,7 @@ class DefaultSettingsComponent(
     private fun addPlaylist() {
         val url = state.value.playlistUrl.trim()
         if (url.isBlank()) {
-            setState { it.copy(playlistError = AppError.InvalidPlaylist("Введите URL M3U-источника")) }
+            setState { it.copy(playlistError = AppError.InvalidPlaylist(uiText("Введите URL M3U-источника"))) }
             return
         }
         val name = state.value.playlistName.trim().takeIf { it.isNotEmpty() }
@@ -496,7 +501,7 @@ class DefaultSettingsComponent(
             .onSuccess { setState { it.copy(epgStateError = null) } }
             .onFailure { error ->
                 Logger.e(TAG, "Failed to read EPG cache", error)
-                setState { it.copy(epgStateError = "Не удалось прочитать кэш EPG", epgRefreshing = false) }
+                setState { it.copy(epgStateError = uiText("Не удалось прочитать кэш EPG"), epgRefreshing = false) }
             }
     }
 

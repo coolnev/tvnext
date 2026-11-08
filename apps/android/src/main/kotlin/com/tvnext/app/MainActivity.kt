@@ -1,9 +1,10 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import android.view.KeyEvent
 import android.os.Bundle
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -63,9 +64,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var playbackViewModel: PlaybackViewModel
     private var recoveryScreen by mutableStateOf(RecoveryScreen.NONE)
     private var menuHomeRequested by mutableStateOf(false)
-    private var recordingNotice by mutableStateOf<Pair<Long, String>?>(null)
+    private var textNotice by mutableStateOf<Pair<Long, String>?>(null)
     private var noticeSequence = 0L
     private var stopNoticePending = false
+    private var recordStartPending by mutableStateOf(false)
     private var parentalPrompt by mutableStateOf<Pair<String, () -> Unit>?>(null)
     private lateinit var parentalProtection: ParentalProtection
     private var epgRecordingRequest by mutableStateOf<com.tvnext.app.core.common.util.RecordingScheduleRequest?>(null)
@@ -80,7 +82,7 @@ class MainActivity : ComponentActivity() {
             val outcome = runCatching {
                 withContext(Dispatchers.IO) { RecordingExport.toUri(this@MainActivity,pending.first,pending.second,uri) }
             }
-            showRecordingNotice(if (outcome.isSuccess) "Запись сохранена" else "Не удалось сохранить запись")
+            showTextNotice(if (outcome.isSuccess) uiText("Запись сохранена") else uiText("Не удалось сохранить запись"))
         }
     }
 
@@ -261,16 +263,29 @@ class MainActivity : ComponentActivity() {
                 prefs.registerOnSharedPreferenceChangeListener(listener)
                 onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
             }
-            LaunchedEffect(recordingNotice?.first) {
-                val id = recordingNotice?.first ?: return@LaunchedEffect
+            LaunchedEffect(textNotice?.first) {
+                val id = textNotice?.first ?: return@LaunchedEffect
                 kotlinx.coroutines.delay(2800)
-                if (recordingNotice?.first == id) recordingNotice = null
+                if (textNotice?.first == id) textNotice = null
+            }
+            LaunchedEffect(recordStartPending) {
+                if (recordStartPending) {
+                    kotlinx.coroutines.delay(6000)
+                    if (recordStartPending && RecordingRuntime.active.value == null) {
+                        recordStartPending = false
+                        showTextNotice(uiText("Не удалось начать запись"))
+                    }
+                }
             }
             LaunchedEffect(Unit) {
                 RecordingRuntime.active.collect { active ->
+                    if (active != null && recordStartPending) {
+                        recordStartPending = false
+                        showTextNotice(uiText("Запись начата"))
+                    }
                     if (active == null && stopNoticePending) {
                         stopNoticePending = false
-                        showRecordingNotice("Запись остановлена")
+                        showTextNotice(uiText("Запись остановлена"))
                     }
                 }
             }
@@ -301,19 +316,34 @@ class MainActivity : ComponentActivity() {
                     val item = playback.state.value.item
                     val store = LocalRecoveryStore(this@MainActivity)
                     val owner = store.activeProfileId()
-                    if (RecordingRuntime.active.value?.let { it.profileId == owner && !it.scheduled } == true) {
-                        stopNoticePending = true
-                        runCatching { RecordingService.stop(this@MainActivity) }
-                            .onSuccess { showRecordingNotice("Останавливаем запись") }
-                            .onFailure {
-                                stopNoticePending = false
-                                showRecordingNotice("Не удалось остановить запись")
+                    val active = RecordingRuntime.active.value
+                    when {
+                        stopNoticePending -> showTextNotice(uiText("Останавливаем запись"))
+                        recordStartPending -> showTextNotice(uiText("Запись запускается"))
+                        else -> when (recordButtonAction(active, item)) {
+                            RecordButtonAction.STOP -> {
+                                stopNoticePending = true
+                                runCatching { RecordingService.stop(this@MainActivity, active?.id) }
+                                    .onSuccess { showTextNotice(uiText("Останавливаем запись")) }
+                                    .onFailure {
+                                        stopNoticePending = false
+                                        showTextNotice(uiText("Не удалось остановить запись"))
+                                    }
                             }
-                    } else if (item?.kind == PlaybackContentKind.LIVE && item.url.startsWith("http")) {
-                        runCatching { RecordingService.start(this@MainActivity, item.url, item.title, owner) }
-                            .onSuccess { showRecordingNotice("Запись начата") }
-                            .onFailure { showRecordingNotice("Не удалось начать запись") }
-                    } else showRecordingNotice("Сначала включите прямой эфир")
+                            RecordButtonAction.BUSY -> showTextNotice(uiText("Уже идёт запись другого канала"))
+                            RecordButtonAction.START -> {
+                                val live = item ?: return@collect
+                                recordStartPending = true
+                                runCatching { RecordingService.start(this@MainActivity, live.url, live.title, owner, channelId = live.id) }
+                                    .onSuccess { showTextNotice(uiText("Запись запускается")) }
+                                    .onFailure {
+                                        recordStartPending = false
+                                        showTextNotice(uiText("Не удалось начать запись"))
+                                    }
+                            }
+                            RecordButtonAction.LIVE_REQUIRED -> showTextNotice(uiText("Сначала включите прямой эфир"))
+                        }
+                    }
                 }
             }
             LaunchedEffect(Unit) {
@@ -347,15 +377,11 @@ class MainActivity : ComponentActivity() {
             }
 
             // First Back on the Home tab arms the double-back-to-exit: show a
-            // toast hint. A second Back (while armed) triggers onExitRequested.
+            // text hint. A second Back (while armed) triggers onExitRequested.
             LaunchedEffect(rootComponent) {
                 rootComponent.backExit.collect { state ->
                     if (state == BackExitState.CONFIRM_EXIT) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "Еще раз нажмите Назад (Back), чтобы выйти из TVNext",
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                        showTextNotice(uiText("Еще раз нажмите Назад (Back), чтобы выйти из TVNext"))
                     }
                 }
             }
@@ -392,7 +418,7 @@ class MainActivity : ComponentActivity() {
                                     // Rebuild Decompose components with the new profile data.
                                     recreate()
                                 } else {
-                                    Toast.makeText(this@MainActivity, "Не удалось выбрать профиль", Toast.LENGTH_SHORT).show()
+                                    showTextNotice(uiText("Не удалось выбрать профиль"))
                                 }
                             }
                         },
@@ -428,7 +454,7 @@ class MainActivity : ComponentActivity() {
                         epgLoadedProgrammes = epgStatus.programmeCount,
                         epgProgressText = epgStatus.notice,
                         recordingActive = activeRecording != null,
-                        textNotice = recordingNotice?.second,
+                        textNotice = textNotice?.second,
                         sharedPlaybackController = koin.get<com.tvnext.app.core.player.PlaybackController>(),
                         animateVideoTransitions = videoAnimation,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
@@ -520,8 +546,8 @@ class MainActivity : ComponentActivity() {
         recoveryScreen = RecoveryScreen.RECORDINGS
     }
 
-    private fun showRecordingNotice(message: String) {
-        recordingNotice = ++noticeSequence to message
+    private fun showTextNotice(message: String) {
+        textNotice = ++noticeSequence to message
     }
 
     override fun onDestroy() {

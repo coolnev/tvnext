@@ -11,6 +11,10 @@ plugins {
     alias(libs.plugins.sqldelight) apply false
 }
 
+allprojects {
+    version = "1.0"
+}
+
 /**
  * Guards the sources against encoding corruption (UTF-8 -> CP1251 -> UTF-8
  * re-transcoding), which turned every Russian string into "е"/"�"-style

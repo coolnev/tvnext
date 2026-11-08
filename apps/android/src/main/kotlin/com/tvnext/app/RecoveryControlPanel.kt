@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import android.Manifest
 import android.app.Activity
@@ -15,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
@@ -70,6 +73,7 @@ internal fun RecoveryControlPanel(
     var pendingPickerId by remember { mutableStateOf<String?>(null) }
     val profiles = remember(revision) { store.profiles() }
     val owner = remember(revision) { store.activeProfileId() }
+    val recordingActive by RecordingRuntime.active.collectAsState()
     val records = remember(revision) { store.recordings(owner) }
     val scheduled = remember(revision) { store.schedules().filter { it.profileId == owner } }
     val storageLocations = remember(revision) { store.availableRecordingLocations() }
@@ -80,15 +84,15 @@ internal fun RecoveryControlPanel(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(when(section) {
-            RecoverySection.PROFILES -> "Профили"
-            RecoverySection.RECORDINGS -> "Мои записи"
-            RecoverySection.RECORDING_SETTINGS -> "Запись и расписание"
+            RecoverySection.PROFILES -> uiText("Профили")
+            RecoverySection.RECORDINGS -> uiText("Мои записи")
+            RecoverySection.RECORDING_SETTINGS -> uiText("Запись и расписание")
         }) },
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = 570.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 if (section == RecoverySection.PROFILES) {
-                Text("Текущий профиль: ${profiles.firstOrNull { it.id == owner }?.name ?: "Основной"}")
+                Text(uiText("Текущий профиль: {0}", profiles.firstOrNull { it.id == owner }?.name ?: uiText("Основной")))
                 profiles.forEachIndexed { index, p ->
                     TvActionButton(modifier = if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
                         onClick = {
@@ -105,32 +109,32 @@ internal fun RecoveryControlPanel(
                                 com.tvnext.app.core.player.AndroidPlaybackSession.clearPersonalSession()
                                 onDismiss()
                                 (context as? Activity)?.recreate()
-                            } else message = "Не удалось переключить профиль"
+                            } else message = uiText("Не удалось переключить профиль")
                         }
                     }) { Text((if (p.id == owner) "✓  " else "   ") + p.name) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = newProfile, onValueChange = { newProfile = it },
-                        label = { Text("Новый профиль") }, singleLine = true,
+                        label = { Text(uiText("Новый профиль")) }, singleLine = true,
                         modifier = Modifier.weight(1f))
                     TvActionButton(onClick = {
                         val result = store.addProfile(newProfile)
-                        message = if (result != null) "Профиль добавлен" else "Максимум 8 профилей или пустое имя"
+                        message = if (result != null) uiText("Профиль добавлен") else uiText("Максимум 8 профилей или пустое имя")
                         if (result != null) { newProfile = ""; revision++ }
-                    }) { Text("Добавить") }
+                    }) { Text(uiText("Добавить")) }
                 }
-                Text("Переименовать текущий профиль")
+                Text(uiText("Переименовать текущий профиль"))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = renamedProfile, onValueChange = { renamedProfile = it },
-                        label = { Text("Новое имя") }, singleLine = true,
+                        label = { Text(uiText("Новое имя")) }, singleLine = true,
                         modifier = Modifier.weight(1f))
                     TvActionButton(onClick = {
                         message = if (store.renameProfile(owner, renamedProfile)) {
                             renamedProfile = ""
                             revision++
-                            "Имя профиля сохранено"
-                        } else "Укажи непустое имя профиля"
-                    }) { Text("Переименовать") }
+                            uiText("Имя профиля сохранено")
+                        } else uiText("Укажи непустое имя профиля")
+                    }) { Text(uiText("Переименовать")) }
                 }
                 // Deletion is refused when a profile owns recordings or schedules.
                 profiles.filter { it.id != owner }.forEach { p ->
@@ -138,60 +142,60 @@ internal fun RecoveryControlPanel(
                         message = if (store.deleteEmptyProfile(p.id)) {
                             ProfilePersonalData(context, store).purgeProfile(p.id)
                             revision++
-                            "Пустой профиль удалён"
-                        } else "Нельзя удалить профиль с записями или расписанием"
-                    }) { Text("Удалить пустой профиль «${p.name}»") }
+                            uiText("Пустой профиль удалён")
+                        } else uiText("Нельзя удалить профиль с записями или расписанием")
+                    }) { Text(uiText("Удалить пустой профиль «{0}»", p.name)) }
                 }
                 } // PROFILES
                 if (section == RecoverySection.RECORDING_SETTINGS) {
                 TvActionButton(onClick={ revision++ }, modifier=Modifier.focusRequester(firstFocus)) {
-                    Text("Обновить настройки записи")
+                    Text(uiText("Обновить настройки записи"))
                 }
-                Text("Запас времени при записи из телепрограммы")
+                Text(uiText("Запас времени при записи из телепрограммы"))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(padBefore, {padBefore = it}, label={Text("До начала, мин")},
+                    OutlinedTextField(padBefore, {padBefore = it}, label={Text(uiText("До начала, мин"))},
                         modifier=Modifier.weight(1f), singleLine=true)
-                    OutlinedTextField(padAfter, {padAfter = it}, label={Text("После окончания, мин")},
+                    OutlinedTextField(padAfter, {padAfter = it}, label={Text(uiText("После окончания, мин"))},
                         modifier=Modifier.weight(1f), singleLine=true)
                 }
                 TvActionButton(onClick={
                     message = if (store.setRecordingPadding(padBefore.toIntOrNull() ?: -1,
-                            padAfter.toIntOrNull() ?: -1)) "Запас времени сохранён"
-                        else "Укажите от 0 до 60 минут"
-                }) { Text("Сохранить запас времени") }
-                Text("Папка для новых записей")
-                Text("Выбрано: ${selectedStorage?.title ?: "Накопитель недоступен — выберите другую папку"}")
+                            padAfter.toIntOrNull() ?: -1)) uiText("Запас времени сохранён")
+                        else uiText("Укажите от 0 до 60 минут")
+                }) { Text(uiText("Сохранить запас времени")) }
+                Text(uiText("Папка для новых записей"))
+                Text(uiText("Выбрано: {0}", selectedStorage?.title ?: uiText("Накопитель недоступен — выберите другую папку")))
                 storageLocations.forEach { location ->
                     TvActionButton(onClick = {
                         message = if (store.selectRecordingLocation(location.token)) {
                             revision++
-                            "Новые записи: ${location.title}"
-                        } else "Не удалось открыть хранилище для записи"
+                            uiText("Новые записи: {0}", location.title)
+                        } else uiText("Не удалось открыть хранилище для записи")
                     }) {
                         Text((if (selectedStorage?.token == location.token) "✓  " else "   ") + location.title)
                     }
                 }
-                Text("Внутренние папки принадлежат TVNext и удаляются при удалении приложения. " +
-                    "Для независимой копии используйте экспорт в ZIP. Старые записи не переносятся.")
-                Text("Текущий эфир: ${usable?.title ?: "прямой эфир не выбран"}")
+                Text(uiText("Внутренние папки принадлежат TVNext и удаляются при удалении приложения. ") +
+                    uiText("Для независимой копии используйте экспорт в ZIP. Старые записи не переносятся."))
+                Text(uiText("Текущий эфир: {0}", usable?.title ?: uiText("прямой эфир не выбран")))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TvActionButton(enabled = usable != null && selectedStorage != null, onClick = {
+                    TvActionButton(enabled = usable != null && selectedStorage != null && recordingActive == null, onClick = {
                         val item = usable ?: return@TvActionButton
                         runCatching {
-                            RecordingService.start(context,item.url,item.title,owner)
-                            message = "Запись запущена. Для остановки нажмите «Стоп»."
-                        }.onFailure { message = "Не удалось запустить запись: ${it.javaClass.simpleName}" }
+                            RecordingService.start(context,item.url,item.title,owner,channelId = item.id)
+                            message = uiText("Запись запущена. Для остановки нажмите «Стоп».")
+                        }.onFailure { message = uiText("Не удалось запустить запись: {0}", it.javaClass.simpleName) }
                         revision++
-                    }) { Text("Записать эфир") }
-                    TvActionButton(onClick = { RecordingService.stop(context); message = "Запись останавливается" }) {
-                        Text("Стоп")
+                    }) { Text(uiText("Записать эфир")) }
+                    TvActionButton(onClick = { RecordingService.stop(context); message = uiText("Запись останавливается") }) {
+                        Text(uiText("Стоп"))
                     }
                 }
-                Text("Запланировать текущий эфир")
+                Text(uiText("Запланировать текущий эфир"))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(afterMinutes,{afterMinutes=it},label={Text("Через, мин")},
+                    OutlinedTextField(afterMinutes,{afterMinutes=it},label={Text(uiText("Через, мин"))},
                         singleLine=true,modifier=Modifier.weight(1f))
-                    OutlinedTextField(durationMinutes,{durationMinutes=it},label={Text("На, мин")},
+                    OutlinedTextField(durationMinutes,{durationMinutes=it},label={Text(uiText("На, мин"))},
                         singleLine=true,modifier=Modifier.weight(1f))
                 }
                 TvActionButton(enabled=usable != null,onClick={
@@ -199,53 +203,53 @@ internal fun RecoveryControlPanel(
                     val delay=afterMinutes.toLongOrNull()
                     val length=durationMinutes.toLongOrNull()
                     if (delay == null || delay !in 1..10080 || length == null || length !in 1..360) {
-                        message = "Укажи 1–10080 минут ожидания и 1–360 минут записи"
+                        message = uiText("Укажи 1–10080 минут ожидания и 1–360 минут записи")
                     } else {
                         runCatching {
                             val added = RecordingScheduler.schedule(context, ScheduledRecording(
                                 UUID.randomUUID().toString(), owner, item.title, item.url,
-                                System.currentTimeMillis() + delay * 60000, length * 60000))
-                            message = if (added) "Расписание добавлено (возможны задержки Android)"
-                                else "Время пересекается с другой записью или уже прошло"
+                                System.currentTimeMillis() + delay * 60000, length * 60000, channelId = item.id))
+                            message = if (added) uiText("Расписание добавлено (возможны задержки Android)")
+                                else uiText("Время пересекается с другой записью или уже прошло")
                             if (added) revision++
-                        }.onFailure { message="Невозможно запланировать запись" }
+                        }.onFailure { message=uiText("Невозможно запланировать запись") }
                     }
-                }) { Text("Добавить в расписание") }
+                }) { Text(uiText("Добавить в расписание")) }
                 scheduled.forEach { task ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("${task.title} · ${java.text.DateFormat.getDateTimeInstance().format(task.startAt)}",
                             modifier=Modifier.weight(1f))
-                        TvActionButton(onClick={RecordingScheduler.cancel(context,task.id);revision++}){Text("Отмена")}
+                        TvActionButton(onClick={RecordingScheduler.cancel(context,task.id);revision++}){Text(uiText("Отмена"))}
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(storageLimit, { storageLimit = it },
-                        label = { Text("Лимит записей, ГиБ (1–128)") },
+                        label = { Text(uiText("Лимит записей, ГиБ (1–128)")) },
                         modifier = Modifier.weight(1f), singleLine = true)
                     TvActionButton(onClick = {
                         message = if (store.setLimitGiB(storageLimit.toIntOrNull() ?: -1))
-                            "Лимит записей сохранён" else "Выбери значение от 1 до 128"
-                    }) { Text("Сохранить") }
+                            uiText("Лимит записей сохранён") else uiText("Выбери значение от 1 до 128")
+                    }) { Text(uiText("Сохранить")) }
                 }
                 } // RECORDING_SETTINGS
                 if (section == RecoverySection.RECORDINGS) {
-                TvActionButton(onClick={revision++}, modifier=Modifier.focusRequester(firstFocus)) { Text("Обновить список") }
-                if (records.isEmpty()) Text("Пока нет сохранённых записей этого профиля")
+                TvActionButton(onClick={revision++}, modifier=Modifier.focusRequester(firstFocus)) { Text(uiText("Обновить список")) }
+                if (records.isEmpty()) Text(uiText("Пока нет сохранённых записей этого профиля"))
                 records.forEach { record ->
                     Column {
-                        Text("${record.title} · ${record.status}")
+                        Text("${record.title} · ${record.statusLabel()}")
                         if (record.error.isNotBlank()) Text(record.error)
                         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             TvActionButton(onClick={
                                 val item = record.playbackItem()
-                                if (item == null) message="Файл записи не найден или пуст"
+                                if (item == null) message=uiText("Файл записи не найден или пуст")
                                 else onPlayRecording(item)
-                            }){Text("Смотреть")}
+                            }){Text(uiText("Смотреть"))}
                             TvActionButton(onClick={
                                 scope.launch {
-                                    message="Экспорт..."
+                                    message=uiText("Экспорт...")
                                     message = runCatching { RecordingExport.toDownloads(context,record.id,owner) }
-                                        .fold({"Сохранено: $it"},{"Экспорт не выполнен: ${it.javaClass.simpleName}"})
+                                        .fold({uiText("Сохранено: {0}", it)},{uiText("Экспорт не выполнен: {0}", it.javaClass.simpleName)})
                                 }
                             }){Text("ZIP")}
                             TvActionButton(onClick={
@@ -253,8 +257,8 @@ internal fun RecoveryControlPanel(
                                     pendingPickerId = record.id
                                     missingPicker = true
                                 }
-                            }) { Text("Сохранить в файл") }
-                            TvActionButton(onClick={confirmDelete=record.id}){Text("Удалить")}
+                            }) { Text(uiText("Сохранить в файл")) }
+                            TvActionButton(onClick={confirmDelete=record.id}){Text(uiText("Удалить"))}
                         }
                     }
                 }
@@ -266,33 +270,33 @@ internal fun RecoveryControlPanel(
                             .areNotificationsEnabled()
                     } else true
                 }.getOrDefault(true)
-                Text("Уведомления приложения: ${if (notificationState) "включены" else "отключены"}")
+                Text(uiText("Уведомления приложения: {0}", if (notificationState) uiText("включены") else uiText("отключены")))
                 if (Build.VERSION.SDK_INT >= 33 &&
                     ContextCompat.checkSelfPermission(context,Manifest.permission.POST_NOTIFICATIONS)
                         != PackageManager.PERMISSION_GRANTED) {
                     TvActionButton(onClick={
                         (context as? Activity)?.requestPermissions(
                             arrayOf(Manifest.permission.POST_NOTIFICATIONS),521)
-                    }) { Text("Разрешить уведомления о записи") }
+                    }) { Text(uiText("Разрешить уведомления о записи")) }
                 }
                 if (Build.VERSION.SDK_INT >= 26) {
                     TvActionButton(onClick={
                         val settings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName)
                         runCatching { context.startActivity(settings) }
-                    }) { Text("Настроить уведомления записи") }
+                    }) { Text(uiText("Настроить уведомления записи")) }
                 }
                 if (message.isNotBlank()) Text(message)
                 } // RECORDING_SETTINGS notifications
             }
         },
-        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Закрыть") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text(uiText("Закрыть")) } },
     )
 
     if (missingPicker) {
         AlertDialog(onDismissRequest = { missingPicker = false },
-            title = { Text("Нет приложения для выбора файла") },
-            text = { Text("На этом Android TV нет совместимого системного проводника. Можно установить AnExplorer (бесплатный, с рекламой), повторить поиск или сохранить ZIP в Загрузки через кнопку ZIP.") },
+            title = { Text(uiText("Нет приложения для выбора файла")) },
+            text = { Text(uiText("На этом Android TV нет совместимого системного проводника. Можно установить AnExplorer (бесплатный, с рекламой), повторить поиск или сохранить ZIP в Загрузки через кнопку ZIP.")) },
             confirmButton = { TvActionButton(onClick = {
                 missingPicker = false
                 val market = RecordingFileContracts.installExplorerIntent()
@@ -300,24 +304,24 @@ internal fun RecoveryControlPanel(
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,
                         Uri.parse("https://play.google.com/store/apps/details?id=dev.dworks.apps.anexplorer"))) }
                 }
-            }) { Text("Установить AnExplorer") } },
+            }) { Text(uiText("Установить AnExplorer")) } },
             dismissButton = { TvActionButton(onClick = {
                 missingPicker = false
                 pendingPickerId?.let { id ->
-                    if (!onExportWithPicker(id,owner)) message="Проводник пока недоступен"
+                    if (!onExportWithPicker(id,owner)) message=uiText("Проводник пока недоступен")
                 }
-            }) { Text("Повторить") } },
+            }) { Text(uiText("Повторить")) } },
         )
     }
     if (confirmDelete != null) {
-        AlertDialog(onDismissRequest={confirmDelete=null},title={Text("Удалить запись?")},
-            text={Text("Удаление записи необратимо.")},
+        AlertDialog(onDismissRequest={confirmDelete=null},title={Text(uiText("Удалить запись?"))},
+            text={Text(uiText("Удаление записи необратимо."))},
             confirmButton={TvActionButton(onClick={
                 val id=confirmDelete
-                if(id != null) message=if(store.deleteRecording(id,owner)) "Запись удалена" else "Запись не удалена"
+                if(id != null) message=if(store.deleteRecording(id,owner)) uiText("Запись удалена") else uiText("Запись не удалена")
                 confirmDelete=null
                 revision++
-            }){Text("Удалить")}},
-            dismissButton={TvActionButton(onClick={confirmDelete=null}){Text("Отмена")}})
+            }){Text(uiText("Удалить"))}},
+            dismissButton={TvActionButton(onClick={confirmDelete=null}){Text(uiText("Отмена"))}})
     }
 }

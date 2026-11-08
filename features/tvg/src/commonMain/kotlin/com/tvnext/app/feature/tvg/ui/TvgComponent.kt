@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.tvg.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.common.platform.isAndroidPlatform
 import com.tvnext.app.core.common.util.rethrowAndroidCancellation
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
@@ -504,7 +506,7 @@ class DefaultTvgComponent(
                             selectedCategory = null,
                             programmes = emptyMap(),
                             archiveStatus = emptyMap(),
-                            error = AppError.InvalidData("Нет LIVE-каналов для ТВ-гида."),
+                            error = AppError.InvalidData(uiText("Нет LIVE-каналов для ТВ-гида.")),
                         )
                     }
                     return@launch
@@ -870,24 +872,24 @@ class DefaultTvgComponent(
             val capability = runCatching { archiveRepository.getCapability(channel) }.getOrNull()
             if (capability == null || !capability.isPlayable) {
                 Logger.d(TAG, "Archive unavailable for ${channel.name} (${capability?.status})")
-                setState { it.copy(message = "Архив передачи недоступен.") }
+                setState { it.copy(message = uiText("Архив передачи недоступен.")) }
                 return@launchPlayback
             }
             val archiveEnd = if (isAndroidPlatform()) minOf(programme.stop, currentTimeMillis()) else programme.stop
             val url = archiveRepository.buildArchiveUrl(channel, programme.start, archiveEnd)
             if (url == null) {
                 Logger.d(TAG, "No archive URL for ${channel.name}")
-                setState { it.copy(message = "Архив передачи недоступен.") }
+                setState { it.copy(message = uiText("Архив передачи недоступен.")) }
                 return@launchPlayback
             }
             // Pre-flight: some providers DECLARE catch-up but serve an empty
             // playlist — show an honest message instead of a broken player.
             if (!archiveRepository.isArchiveUrlPlayable(channel, programme.start, archiveEnd)) {
                 Logger.d(TAG, "Archive URL not playable for ${channel.name}")
-                setState { it.copy(message = "Архив передачи недоступен (провайдер не отдаёт архив).") }
+                setState { it.copy(message = uiText("Архив передачи недоступен (провайдер не отдаёт архив).")) }
                 return@launchPlayback
             }
-            val title = "${channel.name} • Архив • ${formatDateTime(programme.start)}"
+            val title = uiText("{0} • Архив • {1}", channel.name, formatDateTime(programme.start))
             playbackController.play(
                 PlaybackItem(
                     id = channel.id,

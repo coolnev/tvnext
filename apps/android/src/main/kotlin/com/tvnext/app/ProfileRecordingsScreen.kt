@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import android.content.Intent
 import android.net.Uri
@@ -38,10 +40,12 @@ internal fun ProfileRecordingsScreen(
     var missingPicker by remember { mutableStateOf(false) }
     var pendingPickerId by remember { mutableStateOf<String?>(null) }
     val owner = remember(revision) { store.activeProfileId() }
-    val profileName = remember(revision) {
-        store.profiles().firstOrNull { it.id == owner }?.name ?: "Основной"
+    val profileName = remember(com.tvnext.app.core.ui.i18n.UiLocale.language, revision) {
+        store.profiles().firstOrNull { it.id == owner }?.name ?: uiText("Основной")
     }
-    val records = remember(revision) { store.recordings(owner) }
+    val active by RecordingRuntime.active.collectAsState()
+    val records = remember(revision, active) { store.recordings(owner) }
+    var busyId by remember { mutableStateOf<String?>(null) }
 
     Column(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -50,15 +54,15 @@ internal fun ProfileRecordingsScreen(
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Мои записи", style = MaterialTheme.typography.titleLarge,
+                Text(uiText("Мои записи"), style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground)
-                Text("Профиль: $profileName · записей: ${records.size}",
+                Text(uiText("Профиль: {0} · записей: {1}", profileName, records.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TvActionButton(onClick = { revision++ }) { Text("Обновить") }
+            TvActionButton(onClick = { revision++ }) { Text(uiText("Обновить")) }
             Spacer(Modifier.width(10.dp))
-            TvActionButton(onClick = onBack) { Text("Назад") }
+            TvActionButton(onClick = onBack) { Text(uiText("Назад")) }
         }
         if (message.isNotBlank()) {
             Text(message, color = MaterialTheme.colorScheme.primary,
@@ -67,7 +71,7 @@ internal fun ProfileRecordingsScreen(
         if (records.isEmpty()) {
             Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
-                Text("Пока нет сохранённых записей этого профиля",
+                Text(uiText("Пока нет сохранённых записей этого профиля"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
@@ -83,28 +87,38 @@ internal fun ProfileRecordingsScreen(
                             Text(record.title, modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface)
-                            Text(record.status, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            Text(record.statusLabel(), color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelMedium)
                         }
                         Text(DateFormat.getDateTimeInstance().format(record.startedAt),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (record.error.isNotBlank()) Text(record.error,
+                        if (record.error.isNotBlank()) Text(uiText(record.error),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                            if (active?.id == record.id) TvActionButton(enabled = busyId == null, onClick = {
+                                busyId = record.id
+                                message = uiText("Останавливаем запись")
+                                scope.launch {
+                                    val stopped = stopActiveRecording(context, record.id)
+                                    message = if (stopped) uiText("Запись остановлена") else uiText("Не удалось остановить запись")
+                                    busyId = null
+                                    revision++
+                                }
+                            }) { Text(uiText("Остановить")) }
                             TvActionButton(onClick = {
                                 val item = record.playbackItem()
-                                if (item == null) message = "Файл записи не найден или пуст"
+                                if (item == null) message = uiText("Файл записи не найден или пуст")
                                 else onPlayRecording(item)
-                            }) { Text("Смотреть") }
+                            }) { Text(uiText("Смотреть")) }
                             TvActionButton(onClick = {
                                 scope.launch {
-                                    message = "Экспорт..."
+                                    message = uiText("Экспорт...")
                                     message = runCatching {
                                         RecordingExport.toDownloads(context, record.id, owner)
-                                    }.fold({ "Сохранено: $it" },
-                                        { "Экспорт не выполнен: ${it.javaClass.simpleName}" })
+                                    }.fold({ uiText("Сохранено: {0}", it) },
+                                        { uiText("Экспорт не выполнен: {0}", it.javaClass.simpleName) })
                                 }
                             }) { Text("ZIP") }
                             TvActionButton(onClick = {
@@ -112,9 +126,9 @@ internal fun ProfileRecordingsScreen(
                                     pendingPickerId = record.id
                                     missingPicker = true
                                 }
-                            }) { Text("Сохранить в файл") }
-                            TvActionButton(onClick = { confirmDelete = record.id }) {
-                                Text("Удалить")
+                            }) { Text(uiText("Сохранить в файл")) }
+                            TvActionButton(enabled = busyId == null, onClick = { confirmDelete = record.id }) {
+                                Text(uiText("Удалить"))
                             }
                         }
                     }
@@ -124,8 +138,8 @@ internal fun ProfileRecordingsScreen(
     }
     if (missingPicker) {
         AlertDialog(onDismissRequest = { missingPicker = false },
-            title = { Text("Нет приложения для выбора файла") },
-            text = { Text("На этом Android TV нет системного проводника. Можно установить AnExplorer или сохранить ZIP в Загрузки.") },
+            title = { Text(uiText("Нет приложения для выбора файла")) },
+            text = { Text(uiText("На этом Android TV нет системного проводника. Можно установить AnExplorer или сохранить ZIP в Загрузки.")) },
             confirmButton = { TvActionButton(onClick = {
                 missingPicker = false
                 val market = RecordingFileContracts.installExplorerIntent()
@@ -135,28 +149,34 @@ internal fun ProfileRecordingsScreen(
                             Uri.parse("https://play.google.com/store/apps/details?id=dev.dworks.apps.anexplorer")))
                     }
                 }
-            }) { Text("Установить AnExplorer") } },
+            }) { Text(uiText("Установить AnExplorer")) } },
             dismissButton = { TvActionButton(onClick = {
                 missingPicker = false
                 pendingPickerId?.let { id ->
-                    if (!onExportWithPicker(id, owner)) message = "Проводник пока недоступен"
+                    if (!onExportWithPicker(id, owner)) message = uiText("Проводник пока недоступен")
                 }
-            }) { Text("Повторить") } })
+            }) { Text(uiText("Повторить")) } })
     }
     if (confirmDelete != null) {
         AlertDialog(onDismissRequest = { confirmDelete = null },
-            title = { Text("Удалить запись?") },
-            text = { Text("Удаление записи необратимо.") },
+            title = { Text(uiText("Удалить запись?")) },
+            text = { Text(if (active?.id == confirmDelete)
+                uiText("Запись будет остановлена, затем её файлы будут удалены. Это действие необратимо.")
+                else uiText("Удаление записи необратимо.")) },
             confirmButton = { TvActionButton(onClick = {
-                confirmDelete?.let { id ->
-                    message = if (store.deleteRecording(id, owner)) "Запись удалена"
-                        else "Запись не удалена"
-                }
+                val id = confirmDelete ?: return@TvActionButton
                 confirmDelete = null
-                revision++
-            }) { Text("Удалить") } },
+                busyId = id
+                message = if (active?.id == id) uiText("Останавливаем запись") else uiText("Удаляем запись")
+                scope.launch {
+                    val deleted = deleteRecordingAfterStop(context, id, owner)
+                    message = if (deleted) uiText("Запись удалена") else uiText("Запись не удалена")
+                    busyId = null
+                    revision++
+                }
+            }) { Text(if (active?.id == confirmDelete) uiText("Остановить и удалить") else uiText("Удалить")) } },
             dismissButton = { TvActionButton(onClick = { confirmDelete = null }) {
-                Text("Отмена")
+                Text(uiText("Отмена"))
             } })
     }
 }

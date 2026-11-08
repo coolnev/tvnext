@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -73,11 +75,11 @@ internal fun AndroidProgrammeOverlay(
                         Text(channel.name, color = Color.White, fontSize = 16.sp * scale, lineHeight = 19.sp * scale,
                             fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false).testTag("overlay-channel-name"))
-                        if (archived) Text("Архив", color = Color.White.copy(alpha = .70f), fontSize = 9.5.sp * scale,
+                        if (archived) Text(uiText("Архив"), color = Color.White.copy(alpha = .70f), fontSize = 9.5.sp * scale,
                             lineHeight = 12.sp * scale, modifier = Modifier.border(.5.dp * scale, Color.White.copy(alpha = .22f),
                                 RoundedCornerShape(3.dp * scale)).padding(horizontal = 5.dp * scale, vertical = 2.dp * scale))
                     }
-                    if (duration > 0) Text("До конца ${(duration - position + 59_999) / 60_000} мин",
+                    if (duration > 0) Text(uiText("До конца {0} мин", (duration - position + 59_999) / 60_000),
                         color = Color.White.copy(alpha = .7f), fontSize = 10.5.sp * scale, lineHeight = 14.sp * scale, maxLines = 1)
                 }
                 Spacer(Modifier.height(6.dp * scale))
@@ -85,10 +87,10 @@ internal fun AndroidProgrammeOverlay(
                     ((now - programme.start).toFloat() / duration.coerceAtLeast(1)).coerceIn(0f,1f) else null, scale)
                 Spacer(Modifier.height(8.dp * scale))
                 Row(Modifier.fillMaxWidth().testTag("overlay-programme-cards"), horizontalArrangement = Arrangement.spacedBy(9.dp * scale)) {
-                    ProgrammeCard("Текущая передача", programme?.title ?: "Нет данных EPG", null, true, scale,
+                    ProgrammeCard(uiText("Текущая передача"), programme?.title ?: uiText("Нет данных EPG"), null, true, scale,
                         Modifier.weight(1f).testTag("overlay-current-card"))
                     val next = epg.next
-                    ProgrammeCard("Следующая передача", next?.title ?: "Нет данных EPG",
+                    ProgrammeCard(uiText("Следующая передача"), next?.title ?: uiText("Нет данных EPG"),
                         next?.let { "${formatTimeOfDay(it.start)}–${formatTimeOfDay(it.stop)}" }, false, scale,
                         Modifier.weight(1f).testTag("overlay-next-card"))
                 }
@@ -118,7 +120,7 @@ private fun ProgrammeTimeline(programme: EpgProgramme?, position: Long, duration
             if (fraction > 0) drawLine(primary, Offset(width/2,middle), Offset((size.width*fraction).coerceAtLeast(width/2),middle), width, StrokeCap.Round)
             liveEdge?.let { x -> drawLine(Color.White.copy(alpha = .9f), Offset(size.width*x,0f), Offset(size.width*x,size.height), .8.dp.toPx()*scale) }
         }
-        liveEdge?.let { fraction -> Text("Эфир", color = Color.White.copy(alpha = .8f), fontSize = 7.5.sp * scale,
+        liveEdge?.let { fraction -> Text(uiText("Эфир"), color = Color.White.copy(alpha = .8f), fontSize = 7.5.sp * scale,
             lineHeight = 8.sp * scale, modifier = Modifier.offset(x = (maxWidth * fraction + 4.dp * scale).coerceAtMost(maxWidth - 25.dp * scale))) }
     }
     Row(Modifier.fillMaxWidth().testTag("overlay-programme-times"), horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,13 +160,13 @@ private fun ProgrammeDescriptionView(channel: Channel, programme: EpgProgramme?,
         .padding(horizontal = 28.dp * scale, vertical = 12.dp * scale).testTag("fullscreen-description-view")) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(programme?.title ?: "Описание передачи", color = Color.White, fontSize = 17.sp * scale,
+                Text(programme?.title ?: uiText("Описание передачи"), color = Color.White, fontSize = 17.sp * scale,
                     lineHeight = 21.sp * scale, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(channel.name + (programme?.let { " · ${formatTimeOfDay(it.start)}–${formatTimeOfDay(it.stop)}" } ?: ""),
                     color = Color.White.copy(alpha = .65f), fontSize = 10.sp * scale, lineHeight = 14.sp * scale)
             }
             TvActionButton(onClick = onClose, modifier = Modifier.focusRequester(close).testTag("fullscreen-description-close")) {
-                Text("Закрыть", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp * scale)
+                Text(uiText("Закрыть"), color = MaterialTheme.colorScheme.primary, fontSize = 11.sp * scale)
             }
         }
         Spacer(Modifier.height(6.dp * scale))

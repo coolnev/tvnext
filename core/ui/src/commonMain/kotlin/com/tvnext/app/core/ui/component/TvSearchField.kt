@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +33,7 @@ fun TvSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Поиск",
+    placeholder: String = uiText("Поиск"),
     onClear: () -> Unit = {},
     onFocusChanged: (Boolean) -> Unit = {},
 ) {

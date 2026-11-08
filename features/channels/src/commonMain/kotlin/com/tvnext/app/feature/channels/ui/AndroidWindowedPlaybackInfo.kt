@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +44,7 @@ internal fun AndroidWindowedPlaybackInfo(
         )
         Column(Modifier.weight(1f).fillMaxWidth().background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 8.dp, vertical = 4.dp).testTag("windowed-description")) {
-            Text(programme?.title ?: "Описание передачи", style = MaterialTheme.typography.titleSmall,
+            Text(programme?.title ?: uiText("Описание передачи"), style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (programme != null) Text("${formatTimeOfDay(programme.start)} — ${formatTimeOfDay(programme.stop)}",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

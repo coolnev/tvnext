@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.search.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -160,7 +162,7 @@ fun SearchScreen(
         // screen (dense 4K layout).
         if (!isAndroidPlatform()) {
             ScreenHeader(
-                title = "Поиск",
+                title = uiText("Поиск"),
                 onBack = onBackHome,
             )
         }
@@ -169,7 +171,7 @@ fun SearchScreen(
             value = state.query,
             onValueChange = { component.dispatch(SearchIntent.SearchChanged(it)) },
             onClear = { component.dispatch(SearchIntent.SearchChanged("")) },
-            placeholder = "Каналы, фильмы, передачи…",
+            placeholder = uiText("Каналы, фильмы, передачи…"),
             onFocusChanged = { searchFieldFocused = it },
         )
 
@@ -184,8 +186,8 @@ fun SearchScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Начните вводить запрос.\nИщутся каналы, текущие и будущие передачи, " +
-                            "архив и медиатека.",
+                        text = uiText("Начните вводить запрос.\nИщутся каналы, текущие и будущие передачи, ") +
+                            uiText("архив и медиатека."),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -234,19 +236,19 @@ fun SearchScreen(
                             verticalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall),
                         ) {
                             val title = when (result) {
-                                is SearchResult.Channel -> "Каналы"
-                                is SearchResult.Current -> "Сейчас"
-                                is SearchResult.Archive -> "Архив"
-                                is SearchResult.Media -> "Медиатека"
-                                is SearchResult.Future -> "Будущее"
+                                is SearchResult.Channel -> uiText("Каналы")
+                                is SearchResult.Current -> uiText("Сейчас")
+                                is SearchResult.Archive -> uiText("Архив")
+                                is SearchResult.Media -> uiText("Медиатека")
+                                is SearchResult.Future -> uiText("Будущее")
                             }
                             val previousTitle = allResults.getOrNull(index - 1)?.let {
                                 when (it) {
-                                    is SearchResult.Channel -> "Каналы"
-                                    is SearchResult.Current -> "Сейчас"
-                                    is SearchResult.Archive -> "Архив"
-                                    is SearchResult.Media -> "Медиатека"
-                                    is SearchResult.Future -> "Будущее"
+                                    is SearchResult.Channel -> uiText("Каналы")
+                                    is SearchResult.Current -> uiText("Сейчас")
+                                    is SearchResult.Archive -> uiText("Архив")
+                                    is SearchResult.Media -> uiText("Медиатека")
+                                    is SearchResult.Future -> uiText("Будущее")
                                 }
                             }
                             if (title != previousTitle) {
@@ -266,7 +268,7 @@ fun SearchScreen(
                                     hit = result.hit,
                                     enabled = result.hit.channelId != null,
                                     selected = index == selectedIndex,
-                                    action = { "Смотреть" },
+                                    action = { uiText("Смотреть") },
                                     onClick = {
                                         selectedIndex = index
                                         openResult(index)
@@ -277,7 +279,7 @@ fun SearchScreen(
                                     hit = result.hit,
                                     enabled = result.hit.channelId != null,
                                     selected = index == selectedIndex,
-                                    action = { "Смотреть архив" },
+                                    action = { uiText("Смотреть архив") },
                                     onClick = {
                                         selectedIndex = index
                                         openResult(index)
@@ -296,7 +298,7 @@ fun SearchScreen(
                                     hit = result.hit,
                                     enabled = result.hit.channelId != null,
                                     selected = index == selectedIndex,
-                                    action = { "Запланировать" },
+                                    action = { uiText("Запланировать") },
                                     onClick = {
                                         selectedIndex = index
                                         openResult(index)
@@ -407,7 +409,7 @@ private fun SearchMediaRow(
                 )
             }
             Text(
-                text = "Открыть",
+                text = uiText("Открыть"),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )

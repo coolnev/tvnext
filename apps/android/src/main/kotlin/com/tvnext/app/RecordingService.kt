@@ -45,6 +45,8 @@ class RecordingService : Service() {
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == STOP) {
+            val expectedId = intent.getStringExtra(RECORDING_ID)
+            if (expectedId != null && expectedId != runningId) return START_NOT_STICKY
             pendingScheduledStart = null
             capture?.cancel()
             if (capture == null) stopSelf()
@@ -93,7 +95,7 @@ class RecordingService : Service() {
         val initial = SavedRecording(id, owner, title, folder.canonicalPath,
             System.currentTimeMillis(), 0L, "recording", scheduled = isScheduled)
         store.saveRecording(initial)
-        RecordingRuntime.started(ActiveRecording(id, owner, isScheduled))
+        RecordingRuntime.started(ActiveRecording(id, owner, isScheduled, url, intent.getStringExtra(CHANNEL_ID).orEmpty()))
         capture = scope.launch {
             var status = "complete"
             var error = ""
@@ -158,19 +160,22 @@ class RecordingService : Service() {
         const val OWNER = "ownerId"
         const val DURATION = "durationMs"
         const val SCHEDULED = "scheduled"
+        const val CHANNEL_ID = "channelId"
+        const val RECORDING_ID = "recordingId"
         private const val CHANNEL = "tvnext-restored-recording"
         private const val NOTIFICATION_ID = 40521
         const val HOUR = 60L * 60 * 1000
 
-        fun start(context: Context, url: String, title: String, profile: String, duration: Long = 2 * HOUR, scheduled: Boolean = false) {
+        fun start(context: Context, url: String, title: String, profile: String, duration: Long = 2 * HOUR, scheduled: Boolean = false, channelId: String = "") {
             val intent = Intent(context, RecordingService::class.java).setAction(START)
                 .putExtra(URL,url).putExtra(TITLE,title).putExtra(OWNER,profile)
                 .putExtra(DURATION,duration).putExtra(SCHEDULED,scheduled)
+                .putExtra(CHANNEL_ID,channelId)
             if (Build.VERSION.SDK_INT >= 26) ContextCompat.startForegroundService(context, intent)
             else context.startService(intent)
         }
-        fun stop(context: Context) {
-            context.startService(Intent(context,RecordingService::class.java).setAction(STOP))
+        fun stop(context: Context, recordingId: String? = null) {
+            context.startService(Intent(context,RecordingService::class.java).setAction(STOP).putExtra(RECORDING_ID, recordingId))
         }
     }
 }
@@ -233,7 +238,7 @@ class RecordingAlarmReceiver : BroadcastReceiver() {
         store.removeSchedule(id)
         if (System.currentTimeMillis() - item.startAt > 20 * 60 * 1000) return
         // Android 12+ background-start restrictions may prevent starting a FGS on some TVs.
-        runCatching { RecordingService.start(context,item.streamUrl,item.title,item.profileId,item.durationMs,true) }
+        runCatching { RecordingService.start(context,item.streamUrl,item.title,item.profileId,item.durationMs,true,item.channelId) }
     }
 }
 

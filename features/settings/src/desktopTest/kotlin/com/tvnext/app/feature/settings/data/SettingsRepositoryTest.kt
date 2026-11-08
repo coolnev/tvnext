@@ -58,6 +58,7 @@ class SettingsRepositoryTest {
     fun fullSettingsRoundTrip() = runBlocking {
         val repo = createRepo()
         val saved = AppSettings(
+            language = com.tvnext.app.core.common.UiLanguage.CHINESE,
             theme = ThemePreference.LIGHT,
             accentColor = AccentColor.ORANGE,
             clockPosition = ClockPosition.TOP_LEFT,

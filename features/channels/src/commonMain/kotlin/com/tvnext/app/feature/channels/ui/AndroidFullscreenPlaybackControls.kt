@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -77,24 +79,24 @@ internal fun AndroidFullscreenPlaybackControls(
             initialFocusSet = true
         }
     }
-    val step = if (seekStepMs % 60_000L == 0L) "${seekStepMs / 60_000} мин" else "${seekStepMs / 1000} с"
+    val step = if (seekStepMs % 60_000L == 0L) uiText("{0} мин", seekStepMs / 60_000) else uiText("{0} с", seekStepMs / 1000)
     val button: @Composable (PanelAction) -> Unit = { action ->
         val label = when (action) {
-            PanelAction.ASPECT -> "Формат: $aspect"
-            PanelAction.PREVIOUS -> "Предыдущий канал"
-            PanelAction.REWIND -> "Назад на $step"
-            PanelAction.PAUSE -> if (paused) "Воспроизвести" else "Пауза"
-            PanelAction.FORWARD -> "Вперёд на $step"
-            PanelAction.LIVE -> "К эфиру"
-            PanelAction.RECORD -> "Записать эфир"
-            PanelAction.CLOSE -> "Закрыть"
+            PanelAction.ASPECT -> uiText("Формат: {0}", aspect)
+            PanelAction.PREVIOUS -> uiText("Предыдущий канал")
+            PanelAction.REWIND -> uiText("Назад на {0}", step)
+            PanelAction.PAUSE -> if (paused) uiText("Воспроизвести") else uiText("Пауза")
+            PanelAction.FORWARD -> uiText("Вперёд на {0}", step)
+            PanelAction.LIVE -> uiText("К эфиру")
+            PanelAction.RECORD -> uiText("Записать эфир")
+            PanelAction.CLOSE -> uiText("Закрыть")
         }
         val caption = when (action) {
             PanelAction.ASPECT -> aspect
-            PanelAction.PREVIOUS -> "Пред. канал"
-            PanelAction.LIVE -> "К эфиру"
-            PanelAction.RECORD -> "Запись"
-            PanelAction.CLOSE -> "Закрыть"
+            PanelAction.PREVIOUS -> uiText("Пред. канал")
+            PanelAction.LIVE -> uiText("К эфиру")
+            PanelAction.RECORD -> uiText("Запись")
+            PanelAction.CLOSE -> uiText("Закрыть")
             else -> null
         }
         val index = active.indexOf(action)

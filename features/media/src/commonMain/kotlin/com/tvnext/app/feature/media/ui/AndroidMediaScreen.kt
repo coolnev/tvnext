@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.media.ui
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
@@ -73,7 +75,7 @@ internal fun AndroidMediaScreen(
     val categoryScroll = rememberLazyGridState()
     val filmScroll = rememberLazyGridState()
     val cardFocus = remember { FocusRequester() }
-    val categories = remember(state.content, state.selectedSourceId) { listOf("Все", "Избранное") + state.categories }
+    val categories = remember(com.tvnext.app.core.ui.i18n.UiLocale.language, state.content, state.selectedSourceId) { listOf(uiText("Все"), uiText("Избранное")) + state.categories }
     val films = remember(state.content, state.selectedSourceId, state.selectedCategory, state.query, favoritesOnly) {
         state.filteredItems.filter { !favoritesOnly || it.isFavorite }
     }
@@ -239,23 +241,23 @@ internal fun AndroidMediaScreen(
             }
             if (browsing) Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(if (pane == MediaPane.CATEGORIES) "Медиатека · Категории"
-                        else if (favoritesOnly) "Избранное" else state.selectedCategory ?: "Все фильмы",
+                    Text(if (pane == MediaPane.CATEGORIES) uiText("Медиатека · Категории")
+                        else if (favoritesOnly) uiText("Избранное") else state.selectedCategory ?: uiText("Все фильмы"),
                         color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    if (selected != null) TvCardButton(onClick = { pane = MediaPane.VIDEO }) { Text("К просмотру", color = MaterialTheme.colorScheme.onSurface) }
-                    TvCardButton(onClick = { component.dispatch(MediaIntent.Refresh) }) { Text("Обновить", color = MaterialTheme.colorScheme.onSurface) }
+                    if (selected != null) TvCardButton(onClick = { pane = MediaPane.VIDEO }) { Text(uiText("К просмотру"), color = MaterialTheme.colorScheme.onSurface) }
+                    TvCardButton(onClick = { component.dispatch(MediaIntent.Refresh) }) { Text(uiText("Обновить"), color = MaterialTheme.colorScheme.onSurface) }
                 }
                 if (state.content.sources.size > 1) LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item { TvCardButton(onClick = {
                         component.dispatch(MediaIntent.SourceSelected(null)); categoryIndex = 0; filmIndex = 0; pane = MediaPane.CATEGORIES
-                    }) { Text("Все источники", color = MaterialTheme.colorScheme.onSurface) } }
+                    }) { Text(uiText("Все источники"), color = MaterialTheme.colorScheme.onSurface) } }
                     items(state.content.sources, key = { it.id }) { source ->
                         TvCardButton(onClick = {
                             component.dispatch(MediaIntent.SourceSelected(source.id)); categoryIndex = 0; filmIndex = 0; pane = MediaPane.CATEGORIES
                         }) { Text(source.name, color = MaterialTheme.colorScheme.onSurface) }
                     }
                 }
-                Text(if (pane == MediaPane.CATEGORIES) "OK — открыть категорию" else "OK — смотреть   ·   Назад — категории   ·   Удерживать OK — избранное",
+                Text(if (pane == MediaPane.CATEGORIES) uiText("OK — открыть категорию") else uiText("OK — смотреть   ·   Назад — категории   ·   Удерживать OK — избранное"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 10.dp))
                 if (state.isLoading || state.isRefreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
                 if (pane == MediaPane.CATEGORIES) {
@@ -278,7 +280,7 @@ internal fun AndroidMediaScreen(
                         }
                     }
                 } else {
-                    if (films.isEmpty()) Text("В этой категории пока нет фильмов", color = MaterialTheme.colorScheme.onSurface)
+                    if (films.isEmpty()) Text(uiText("В этой категории пока нет фильмов"), color = MaterialTheme.colorScheme.onSurface)
                     LazyVerticalGrid(GridCells.Adaptive(160.dp), state = filmScroll,
                         modifier = Modifier.weight(1f).focusGroup().onPreviewKeyEvent { event ->
                             val direction = when (event.key) {
@@ -376,12 +378,12 @@ internal fun AndroidMediaScreen(
                 Column(Modifier.weight(1f)) {
                 Text(infoMetadata?.title ?: infoItem.name, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge)
                 Text(listOfNotNull(infoMetadata?.releaseDate, infoMetadata?.genres?.joinToString(" · ")?.takeIf { it.isNotBlank() },
-                    infoMetadata?.runtimeMinutes?.let { "$it мин" }).joinToString("   ·   "), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    infoMetadata?.runtimeMinutes?.let { uiText("{0} мин", it) }).joinToString("   ·   "), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 AutoScrollText(text = infoMetadata?.overview?.takeIf { it.isNotBlank() }
-                    ?: if (infoLoading) "Загрузка описания…" else "Описание недоступно",
+                    ?: if (infoLoading) uiText("Загрузка описания…") else uiText("Описание недоступно"),
                     style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 7,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp))
-                Text("Info / → — закрыть описание   ·   Назад — назад", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(uiText("Info / → — закрыть описание   ·   Назад — назад"), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

@@ -111,7 +111,7 @@ private val logoKoinModule = module {
 
 private suspend fun fetchLogo(client: HttpClient, url: String): ByteArray? = runCatching {
     client.get(url) {
-        header(HttpHeaders.UserAgent, "TVNext/0.1")
+        header(HttpHeaders.UserAgent, com.tvnext.app.core.common.AppVersion.USER_AGENT)
         header(HttpHeaders.Accept, "image/*")
         timeout {
             requestTimeoutMillis = 8_000

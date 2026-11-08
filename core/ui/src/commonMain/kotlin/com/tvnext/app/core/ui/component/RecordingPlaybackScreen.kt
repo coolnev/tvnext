@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
@@ -60,7 +62,7 @@ fun RecordingPlaybackScreen(controller: PlaybackController, onBack: () -> Unit, 
             onSurfaceVariant = Color.White.copy(alpha = .7f))) {
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xF20D1216))
                 .padding(16.dp).testTag("recording-controls"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(state.item?.title ?: "Запись", maxLines = 1, style = MaterialTheme.typography.titleMedium, color = Color.White)
+                Text(state.item?.title ?: uiText("Запись"), maxLines = 1, style = MaterialTheme.typography.titleMedium, color = Color.White)
                 PlayerSeekBar(state.positionMs, state.durationMs, controller::seekTo)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     TvSeekButton(TvSeekDirection.BACKWARD, { controller.seekBy(-60_000) }, Modifier.testTag("recording-rewind")
@@ -77,9 +79,9 @@ fun RecordingPlaybackScreen(controller: PlaybackController, onBack: () -> Unit, 
                         .recordingDirections(pause, if (state.state == PlaybackState.ERROR) retry else close), focusRequester = forward)
                     Spacer(Modifier.weight(1f))
                     if (state.state == PlaybackState.ERROR) TvActionButton(onClick = { state.item?.let(controller::play) },
-                        modifier = Modifier.focusRequester(retry).recordingDirections(forward, close)) { Text("Повторить") }
+                        modifier = Modifier.focusRequester(retry).recordingDirections(forward, close)) { Text(uiText("Повторить")) }
                     TvActionButton(onClick = onBack, modifier = Modifier.testTag("recording-close").focusRequester(close)
-                        .recordingDirections(if (state.state == PlaybackState.ERROR) retry else forward, FocusRequester.Cancel)) { Text("К записям") }
+                        .recordingDirections(if (state.state == PlaybackState.ERROR) retry else forward, FocusRequester.Cancel)) { Text(uiText("К записям")) }
                 }
             }
         }

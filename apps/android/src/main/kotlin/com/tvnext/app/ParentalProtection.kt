@@ -1,5 +1,7 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import com.tvnext.app.core.ui.component.TvActionButton
 import android.content.Context
 import androidx.compose.foundation.layout.*
@@ -87,7 +89,7 @@ internal fun ParentalPinEntryDialog(
         title = { Text(title, color = MaterialTheme.colorScheme.onSurface) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Введите PIN-код (4–8 цифр)", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(uiText("Введите PIN-код (4–8 цифр)"), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { new -> pin = new.filter(Char::isDigit).take(8); incorrect = false },
@@ -97,11 +99,11 @@ internal fun ParentalPinEntryDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
-                if (incorrect) Text("Неверный PIN-код", color = MaterialTheme.colorScheme.error)
+                if (incorrect) Text(uiText("Неверный PIN-код"), color = MaterialTheme.colorScheme.error)
             }
         },
-        confirmButton = { TvActionButton(onClick = { submit() }, enabled = pin.length >= 4) { Text("Открыть") } },
-        dismissButton = { TvActionButton(onClick = { keyboard?.hide(); onCancel() }) { Text("Отмена") } },
+        confirmButton = { TvActionButton(onClick = { submit() }, enabled = pin.length >= 4) { Text(uiText("Открыть")) } },
+        dismissButton = { TvActionButton(onClick = { keyboard?.hide(); onCancel() }) { Text(uiText("Отмена")) } },
         containerColor = MaterialTheme.colorScheme.surface,
     )
 }
@@ -117,27 +119,27 @@ internal fun ParentalPinSettingsDialog(
     var error by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text("Изменить PIN-код") },
+        title = { Text(uiText("Изменить PIN-код")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(value = old, onValueChange = { old = it.filter(Char::isDigit).take(8) },
-                    label = { Text("Текущий PIN") }, singleLine = true,
+                    label = { Text(uiText("Текущий PIN")) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation())
                 OutlinedTextField(value = current, onValueChange = { current = it.filter(Char::isDigit).take(8) },
-                    label = { Text("Новый PIN (4–8 цифр)") }, singleLine = true,
+                    label = { Text(uiText("Новый PIN (4–8 цифр)")) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation())
-                if (error) Text("Проверьте текущий PIN и новый код", color = MaterialTheme.colorScheme.error)
+                if (error) Text(uiText("Проверьте текущий PIN и новый код"), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
             TvActionButton(onClick = {
                 if (protection.changePin(old, current)) { protection.lock(); onChanged(); onClose() }
                 else error = true
-            }, enabled = old.length >= 4 && current.length >= 4) { Text("Сохранить") }
+            }, enabled = old.length >= 4 && current.length >= 4) { Text(uiText("Сохранить")) }
         },
-        dismissButton = { TvActionButton(onClick = onClose) { Text("Отмена") } },
+        dismissButton = { TvActionButton(onClick = onClose) { Text(uiText("Отмена")) } },
         containerColor = MaterialTheme.colorScheme.surface,
     )
 }

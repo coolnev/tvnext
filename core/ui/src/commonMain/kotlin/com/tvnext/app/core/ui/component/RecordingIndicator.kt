@@ -1,5 +1,7 @@
 package com.tvnext.app.core.ui.component
 
+import com.tvnext.app.core.ui.i18n.uiText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +21,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun RecordingIndicator(modifier: Modifier = Modifier) {
     val red = Color(0xFFFF4545)
-    Row(modifier.testTag("recording-indicator").semantics { contentDescription = "Идёт запись" }
+    Row(modifier.testTag("recording-indicator").semantics { contentDescription = uiText("Идёт запись") }
         .background(Color.Black.copy(alpha = .78f), RoundedCornerShape(4.dp)).padding(horizontal = 9.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(7.dp).background(red, CircleShape))
