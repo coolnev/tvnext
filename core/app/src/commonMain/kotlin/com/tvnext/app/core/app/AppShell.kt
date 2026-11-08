@@ -318,7 +318,7 @@ fun AppShell(
             }
             if (recordingActive) com.tvnext.app.core.ui.component.RecordingIndicator(
                 Modifier.align(Alignment.TopEnd).padding(end = 16.dp,
-                    top = if (settings.clockPosition == ClockPosition.TOP_RIGHT) 48.dp else 16.dp))
+                    top = if (settings.clockPosition == ClockPosition.TOP_RIGHT) 64.dp else 16.dp))
             textNotice?.let { message ->
                 com.tvnext.app.core.ui.component.TextOnlyNotice(message,
                     Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 28.dp))

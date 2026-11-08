@@ -101,17 +101,14 @@ class RecordingService : Service() {
             var error = ""
             try {
                 val remaining = store.limitGiB().toLong() * 1024 * 1024 * 1024 - store.recordingBytes()
-                require(remaining > 0) { "No remaining recording storage" }
+                if (remaining <= 0) throw RecordingFailure(RecordingFailureReason.LIMIT)
                 StreamRecordingEngine(remaining).capture(url, folder, duration)
             } catch (cancel: CancellationException) {
                 status = "partial"
             } catch (failure: Exception) {
                 status = "partial"
                 // Do not persist source URLs, response bodies or credentials.
-                error = when (failure) {
-                    is java.io.IOException -> "Сбой сети или чтения потока"
-                    else -> "Не удалось полностью записать поток"
-                }
+                error = recordingFailureMessage(failure)
             } finally {
                 store.saveRecording(initial.copy(finishedAt = System.currentTimeMillis(),
                     status = status, error = error))

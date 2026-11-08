@@ -108,6 +108,7 @@ fun HomeScreen(
         val continuingChannel=state.content.continueWatching
         if(playbackController!=null && playing!=null) BoxWithConstraints(Modifier.fillMaxWidth()) {
             val previewWidth=(maxWidth*.35f).coerceIn(176.dp,288.dp)
+            val showChannelDetails = maxWidth >= 560.dp
             TvCardButton(
                 onClick = onOpenPlayingVideo,
                 modifier = Modifier.fillMaxWidth().testTag("home-current-block"),
@@ -119,7 +120,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Top,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        if (playing?.kind != PlaybackContentKind.VOD && continuingChannel != null && continuingChannel.id == playing?.id) {
+                        if (showChannelDetails && playing?.kind != PlaybackContentKind.VOD && continuingChannel != null && continuingChannel.id == playing?.id) {
                             ContinueWatchingChannelContent(continuingChannel, now)
                         } else {
                             Text(uiText("Сейчас смотрите"), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)

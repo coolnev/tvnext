@@ -82,7 +82,7 @@ internal fun AndroidFullscreenPlaybackControls(
     val step = if (seekStepMs % 60_000L == 0L) uiText("{0} мин", seekStepMs / 60_000) else uiText("{0} с", seekStepMs / 1000)
     val button: @Composable (PanelAction) -> Unit = { action ->
         val label = when (action) {
-            PanelAction.ASPECT -> uiText("Формат: {0}", aspect)
+            PanelAction.ASPECT -> uiText("Формат: {0}", uiText(aspect))
             PanelAction.PREVIOUS -> uiText("Предыдущий канал")
             PanelAction.REWIND -> uiText("Назад на {0}", step)
             PanelAction.PAUSE -> if (paused) uiText("Воспроизвести") else uiText("Пауза")
@@ -92,7 +92,7 @@ internal fun AndroidFullscreenPlaybackControls(
             PanelAction.CLOSE -> uiText("Закрыть")
         }
         val caption = when (action) {
-            PanelAction.ASPECT -> aspect
+            PanelAction.ASPECT -> uiText(aspect)
             PanelAction.PREVIOUS -> uiText("Пред. канал")
             PanelAction.LIVE -> uiText("К эфиру")
             PanelAction.RECORD -> uiText("Запись")

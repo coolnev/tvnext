@@ -29,6 +29,11 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Достигнут лимит записей TVNext" to ("TVNext recording limit reached" to "已达到 TVNext 录像容量限制"),
+        "Недостаточно свободного места для записи" to ("Not enough free space for recording" to "录像可用空间不足"),
+        "Накопитель для записи недоступен" to ("Recording storage is unavailable" to "录像存储不可用"),
+        "Не удалось записать файл на накопитель" to ("Could not write the recording file" to "无法写入录像文件"),
+        "Источник не отдаёт поддерживаемый поток" to ("The source did not provide a supported stream" to "视频源未提供受支持的视频流"),
         " · {0} мин" to (" · {0} min" to " · {0} 分钟"),
         " · Сезон {0}" to (" · Season {0}" to " · 第{0}季"),
         " · Серия {0}" to (" · Episode {0}" to " · 第{0}集"),

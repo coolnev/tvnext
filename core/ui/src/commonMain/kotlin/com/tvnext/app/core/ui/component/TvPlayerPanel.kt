@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,6 +53,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -325,7 +327,7 @@ fun TvPlayerPanel(
                             .padding(
                                 start = TVNextDimens.ItemSpacing,
                                 end = TVNextDimens.ItemSpacing,
-                                top = if (clockPosition == ClockPosition.TOP_LEFT) 44.dp else TVNextDimens.ItemSpacing,
+                                top = if (clockPosition == ClockPosition.TOP_LEFT) 60.dp else TVNextDimens.ItemSpacing,
                             )
                             .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (isAndroidPlatform() && PlayerClockStyle.withoutBackground.collectAsState().value) 0f else if (isAndroidPlatform()) 0.96f else 0.5f))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -663,21 +665,22 @@ fun PlayerClock(modifier: Modifier = Modifier) {
             now = currentTimeMillis()
         }
     }
-    Text(
-        text = formatClockTime(now),
-        style = MaterialTheme.typography.titleMedium.copy(
-            shadow = if (isAndroidPlatform() && withoutBackground)
-                androidx.compose.ui.graphics.Shadow(Color.Black, Offset(1f, 1f), 3f) else null
-        ),
-        color = if (isAndroidPlatform() && !withoutBackground) MaterialTheme.colorScheme.onSurface else Color.White,
-        textAlign = TextAlign.Center,
-        // Fixed-width square: without seconds the text is shorter, but the
-        // background plaque keeps its previous size.
-        modifier = modifier
-            .widthIn(min = 64.dp)
-            .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (isAndroidPlatform() && withoutBackground) 0f else if (isAndroidPlatform()) 0.96f else 0.5f))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    )
+    val transparent = isAndroidPlatform() && withoutBackground
+    val time = formatClockTime(now)
+    val baseStyle = MaterialTheme.typography.titleMedium
+    val clockStyle = baseStyle.copy(fontSize = baseStyle.fontSize * 1.3f,
+        lineHeight = baseStyle.lineHeight * 1.3f, shadow = null)
+    Box(modifier.widthIn(min = 83.2.dp)
+        .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black)
+            .copy(alpha = if (transparent) 0f else if (isAndroidPlatform()) 0.96f else 0.5f))
+        .padding(horizontal = 10.dp, vertical = 5.dp), contentAlignment = Alignment.Center) {
+        if (transparent) Text(time, style = clockStyle, color = Color.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.offset(2.dp, 2.dp).clearAndSetSemantics {})
+        Text(time, style = clockStyle,
+            color = if (isAndroidPlatform() && !transparent) MaterialTheme.colorScheme.onSurface else Color.White,
+            textAlign = TextAlign.Center)
+    }
 }
 
 /**
