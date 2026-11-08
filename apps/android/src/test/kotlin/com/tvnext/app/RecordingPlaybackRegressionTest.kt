@@ -117,6 +117,18 @@ class RecordingPlaybackRegressionTest {
         } finally {RecordingRuntime.active.value?.id?.let(RecordingRuntime::finished)}
     }
 
+    @Test fun orphanedRecordingFlagDoesNotPreventDeletionAfterTheServiceHasStopped() {
+        val context=RuntimeEnvironment.getApplication();val store=LocalRecoveryStore(context)
+        val folder=store.folderFor("orphaned-recording").apply {mkdirs()}
+        File(folder,"capture.ts").writeBytes(ByteArray(376){0x47})
+        val record=SavedRecording("orphaned-recording",store.activeProfileId(),"Прерванная запись",folder.path,1,0,"recording")
+        store.saveRecording(record)
+        assertNull(RecordingRuntime.active.value)
+        assertEquals("Остановлена",record.statusLabel())
+        assertTrue(runBlocking {deleteRecordingAfterStop(context,record.id,record.profileId)})
+        assertFalse(folder.exists())
+    }
+
     private fun await(condition: () -> Boolean) {
         val end=System.nanoTime()+8_000_000_000L
         while(!condition() && System.nanoTime()<end) {shadowOf(Looper.getMainLooper()).idle();Thread.sleep(15)}

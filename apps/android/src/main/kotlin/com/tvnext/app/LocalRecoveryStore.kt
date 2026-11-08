@@ -139,7 +139,7 @@ internal class LocalRecoveryStore(context: Context) {
         // Never delete a path obtained from preferences until confined to the private root.
         val target = File(record.folder).canonicalFile
         if (!recordingFolderOwned(target)) return@synchronized false
-        if (record.status == "recording") return@synchronized false
+        if (RecordingRuntime.active.value?.id == id) return@synchronized false
         if (!target.deleteRecursively() && target.exists()) return@synchronized false
         prefs.edit().putString("recordings", JSONArray().apply {
             readRecordings().filterNot { it.id == id }.forEach { put(it.toJson()) }
