@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-08",
+  "versionName": "0.5.40-recovery-preview",
+  "versionCode": 540,
+  "applicationId": "com.tvnext.app.recovery",
+  "variant": "release",
+  "debuggable": false,
+  "sha256": "a8d838e968d5ea70686ba4a90a1a8ab98b2bbc2b5cbd7e73c17a1985c54baa5b",
+  "sourceCommit": "d1ffb10480fa01f2d17cae4b1243898c4a47de09",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 94,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 142,
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "apksigner v2",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "Unofficial default API key retained in DEX; absent from tracked source text"
+  ],
+  "fullscreenPanel": {
+    "approvedVariant": 3,
+    "programmeCards": 2,
+    "timelines": 1,
+    "synopsisInBasicPanel": false,
+    "descriptionButtonInBasicPanel": false,
+    "descriptionOnDoubleRight": true,
+    "controlRows": 1,
+    "controlGroups": 3,
+    "testedViewportWidths": [
+      720,
+      1280,
+      1920
+    ],
+    "screenshotViewport": [
+      1920,
+      1080
+    ],
+    "remoteChecks": [
+      "DPAD LEFT/RIGHT including disabled seeks",
+      "CENTER/ENTER/NUMPAD_ENTER activate once",
+      "pause keeps focus and size",
+      "archive-to-live focus recovery",
+      "passive panel allows double RIGHT",
+      "BACK closes description"
+    ]
+  },
+  "launcher": {
+    "adaptiveBackground": "#0C111B",
+    "roundIcon": "@mipmap/ic_launcher",
+    "androidTvBannerUnchanged": true,
+    "foregroundUnchanged": true,
+    "legacyPngsUnchanged": true,
+    "allPackagedPngsUnchanged": 25,
+    "sourcePngSha256": {
+      "apps/android/src/main/res/drawable/banner.png": "7f69729b47f600ca5a3bba8ec522f704886006923cd50da2eaccc31619bc91e9",
+      "apps/android/src/main/res/drawable/ic_launcher_foreground.png": "92c3fcc50db708af77f6732e9e76f7507afecaa0a9f51353b37f10d19e93ae4d",
+      "apps/android/src/main/res/mipmap-xxxhdpi/ic_launcher.png": "921bff9fdc7cda68761ab6ce98244ef58f7f74ade33d9f0534d6533418f33c86",
+      "apps/android/src/main/res/mipmap-xhdpi/ic_launcher.png": "2cc6b3601c23009cdb42e4a441c29aa9e176a5f209208d8f059caa6307d956de",
+      "apps/android/src/main/res/mipmap-mdpi/ic_launcher.png": "0e7fa2bcda917ad80a00c930d245bfe1ae0d45b44cddb5599d166dc0e8306a8b",
+      "apps/android/src/main/res/mipmap-hdpi/ic_launcher.png": "71644a836b76afdf127f03c786ce2b48499a41751d0ad55fbf5001dc9353db3c",
+      "apps/android/src/main/res/mipmap-xxhdpi/ic_launcher.png": "0f479d6459cd14e1c2154faeda409319b0b2f7d0fb59fe8700c09d4a78f7713e"
+    },
+    "preview": "CSS rendering of the original resources through a circular mask; not a Google TV screenshot"
+  },
+  "nativeAndroidApiLevels": [
+    28,
+    35
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitation": "Common Compose UI rendered and driven with synthetic playback; Android resources checked on API 28/35. No physical Google TV, live streaming, or launcher run."
+}

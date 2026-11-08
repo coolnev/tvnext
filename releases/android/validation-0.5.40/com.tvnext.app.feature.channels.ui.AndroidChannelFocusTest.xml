@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidChannelFocusTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-08T08:34:18.901Z" hostname="fbd2d42f1624" time="0.0">
+  <properties/>
+  <testcase name="deletedFocusedChannelFallsBackToSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidChannelFocusTest" time="0.0"/>
+  <testcase name="explicitCategoryPickRequestsTopWithoutChangingSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidChannelFocusTest" time="0.0"/>
+  <testcase name="reorderPreservesIdentityRatherThanOldIndex[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidChannelFocusTest" time="0.0"/>
+  <testcase name="emptySearchHasNoFocusTarget[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidChannelFocusTest" time="0.0"/>
+  <testcase name="differentCategoryFallsBackToFirstVisibleChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.AndroidChannelFocusTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

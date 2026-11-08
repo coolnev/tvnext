@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.EpgDownloadRegressionTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-08T08:26:19.392Z" hostname="fbd2d42f1624" time="0.477">
+  <properties/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.048"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.027"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.023"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.04"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.027"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.024"/>
+  <testcase name="aServerReturningNoGuideBytesStopsAfterTwoAttempts[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.019"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.039"/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.041"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.028"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.028"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.023"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.026"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.034"/>
+  <testcase name="aServerReturningNoGuideBytesStopsAfterTwoAttempts" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.019"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.019"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
