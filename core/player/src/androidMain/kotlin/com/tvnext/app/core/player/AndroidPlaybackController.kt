@@ -8,7 +8,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -540,15 +539,7 @@ class AndroidPlaybackController(
     }
 
     private fun createMediaSourceFactory(): DefaultMediaSourceFactory {
-        // IPTV streams are picky about the HTTP client: many hosts (including
-        // YouTube-backed channels) reject unknown user agents, and several
-        // streams redirect across protocols/hosts.
-        val httpDataSource = DefaultHttpDataSource.Factory()
-            .setUserAgent(USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(CONNECT_TIMEOUT_MS)
-            .setReadTimeoutMs(READ_TIMEOUT_MS)
-        return DefaultMediaSourceFactory(httpDataSource)
+        return DefaultMediaSourceFactory(AndroidPlaybackDataSources.factory(context))
     }
 
     /**
@@ -803,12 +794,6 @@ class AndroidPlaybackController(
     }
 
     private companion object {
-        const val CONNECT_TIMEOUT_MS = 15_000
-        const val READ_TIMEOUT_MS = 30_000
-        const val USER_AGENT =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
-
         /** Bounded auto-restarts per item (VOD/ARCHIVE and LIVE alike). */
         const val MAX_AUTO_RESTARTS = 3
 

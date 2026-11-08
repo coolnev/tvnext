@@ -3,6 +3,8 @@ package com.tvnext.app.core.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -47,7 +49,11 @@ fun TVNextTheme(
             } else {
                 TVNextTypography.Default
             },
-            shapes = TVNextShapes.Default,
+            shapes = if (isAndroidPlatform()) Shapes(
+                extraSmall = RoundedCornerShape(3.dp), small = RoundedCornerShape(4.dp),
+                medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp),
+                extraLarge = RoundedCornerShape(8.dp),
+            ) else TVNextShapes.Default,
             content = content,
         )
     }

@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,9 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import com.tvnext.app.core.app.tab.AppTab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,27 +46,27 @@ internal fun RecoveryMainMenu(
                     AppTab.SEARCH to "Поиск",
                     AppTab.SETTINGS to "Настройки",
                 ).forEachIndexed { index, (tab, title) ->
-                    OutlinedButton(
+                    TvActionButton(
                         onClick = { onSelectTab(tab) },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                             .then(if (index == 0) Modifier.focusRequester(initialFocus) else Modifier),
                     ) { Text(title) }
                 }
                 Text("Инструменты")
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.CHANNEL_EDITOR) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.CHANNEL_EDITOR) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Редактор каналов") }
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.RECORDINGS) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.RECORDINGS) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Мои записи") }
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.PROFILES) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.PROFILES) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Профили") }
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.RECORDING_SETTINGS) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.RECORDING_SETTINGS) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Запись и расписание") }
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.VIDEO_ASPECT) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.VIDEO_ASPECT) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Формат видео") }
-                OutlinedButton(onClick = { onNavigate(RecoveryScreen.BACKUP) },
+                TvActionButton(onClick = { onNavigate(RecoveryScreen.BACKUP) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Резервная копия профилей") }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Закрыть") } },
     )
 }

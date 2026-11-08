@@ -113,13 +113,16 @@ class MainActivity : ComponentActivity() {
             return true
         }
         if (event.keyCode == KeyEvent.KEYCODE_BACK && recoveryScreen != RecoveryScreen.NONE) {
-            if (event.action == KeyEvent.ACTION_UP) recoveryScreen =
-                RecoveryScreen.NONE
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK) closeRecordingPlayback()
+                else recoveryScreen = RecoveryScreen.NONE
+            }
             return true
         }
         // Recovery-only entry point; does not alter the original navigation tree.
         if (event.keyCode == KeyEvent.KEYCODE_MENU) {
             if (event.action == KeyEvent.ACTION_UP && event.repeatCount == 0) {
+                if (recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK) closeRecordingPlayback()
                 recoveryScreen = RecoveryScreen.NONE
                 menuHomeRequested = true
             }
@@ -237,7 +240,9 @@ class MainActivity : ComponentActivity() {
         // through to HOME on the second.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                rootComponent.handleBack()
+                if (recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK) closeRecordingPlayback()
+                else if (recoveryScreen != RecoveryScreen.NONE) recoveryScreen = RecoveryScreen.NONE
+                else rootComponent.handleBack()
             }
         })
         // Scheduled-programme reminders (in-app banner; no auto channel switch).
@@ -273,7 +278,7 @@ class MainActivity : ComponentActivity() {
                     val item = playback.state.value.item
                     val store = LocalRecoveryStore(this@MainActivity)
                     val owner = store.activeProfileId()
-                    if (store.recordings(owner).any { it.status == "recording" && !it.scheduled }) {
+                    if (RecordingRuntime.active.value?.let { it.profileId == owner && !it.scheduled } == true) {
                         RecordingService.stop(this@MainActivity)
                         Toast.makeText(this@MainActivity, "Останавливаем запись", Toast.LENGTH_SHORT).show()
                     } else if (item?.kind == PlaybackContentKind.LIVE && item.url.startsWith("http")) {
@@ -336,6 +341,7 @@ class MainActivity : ComponentActivity() {
             }
             val epgStatus by remember { koin.get<com.tvnext.app.core.iptv.data.EpgRepository>()
                 .observeState() }.collectAsState()
+            val activeRecording by RecordingRuntime.active.collectAsState()
             ProvideLogoImageLoader(loader = logoLoader) {
                     AppShell(
                         component = rootComponent,
@@ -393,8 +399,9 @@ class MainActivity : ComponentActivity() {
                         epgLoadedChannels = epgStatus.channelCount,
                         epgLoadedProgrammes = epgStatus.programmeCount,
                         epgProgressText = epgStatus.notice,
+                        recordingActive = activeRecording != null,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
-                            recoveryScreen == RecoveryScreen.RECORDINGS,
+                            recoveryScreen == RecoveryScreen.RECORDINGS || recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK,
                         overlayContent = {
                     parentalPrompt?.let { request ->
                         ParentalPinEntryDialog(
@@ -429,12 +436,23 @@ class MainActivity : ComponentActivity() {
                             onDismiss = { recoveryScreen = RecoveryScreen.NONE },
                         )
                         RecoveryScreen.RECORDINGS -> ProfileRecordingsScreen(
-                            playback = koin.get<com.tvnext.app.core.player.PlaybackController>(),
+                            onPlayRecording = { item ->
+                                koin.get<com.tvnext.app.core.player.PlaybackController>().play(item)
+                                recoveryScreen = RecoveryScreen.RECORDING_PLAYBACK
+                            },
                             onExportWithPicker = ::exportThroughFilePicker,
                             onBack = { recoveryScreen = RecoveryScreen.NONE },
                         )
+                        RecoveryScreen.RECORDING_PLAYBACK -> com.tvnext.app.core.ui.component.RecordingPlaybackScreen(
+                            controller = koin.get<com.tvnext.app.core.player.PlaybackController>(),
+                            onBack = ::closeRecordingPlayback,
+                        )
                         else -> RecoveryControlPanel(
                             playback = koin.get<com.tvnext.app.core.player.PlaybackController>(),
+                            onPlayRecording = { item ->
+                                koin.get<com.tvnext.app.core.player.PlaybackController>().play(item)
+                                recoveryScreen = RecoveryScreen.RECORDING_PLAYBACK
+                            },
                             onExportWithPicker = ::exportThroughFilePicker,
                             onDismiss = {
                                 if (recoveryScreen == RecoveryScreen.PROFILES) profileRevision++
@@ -464,6 +482,11 @@ class MainActivity : ComponentActivity() {
                 else -> Unit
             }
         }
+    }
+
+    private fun closeRecordingPlayback() {
+        GlobalContext.get().get<com.tvnext.app.core.player.PlaybackController>().stop()
+        recoveryScreen = RecoveryScreen.RECORDINGS
     }
 
     override fun onDestroy() {

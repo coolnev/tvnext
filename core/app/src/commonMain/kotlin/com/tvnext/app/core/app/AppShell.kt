@@ -97,6 +97,7 @@ fun AppShell(
     epgLoadedChannels: Int = 0,
     epgLoadedProgrammes: Int = 0,
     epgProgressText: String? = null,
+    recordingActive: Boolean = false,
 ) {
     val childStack by component.childStack.subscribeAsState()
     val activeTab = childStack.active.configuration
@@ -290,6 +291,9 @@ fun AppShell(
                         .padding(TVNextDimens.ScreenPadding),
                 )
             }
+            if (recordingActive) com.tvnext.app.core.ui.component.RecordingIndicator(
+                Modifier.align(Alignment.TopEnd).padding(end = 16.dp,
+                    top = if (settings.clockPosition == ClockPosition.TOP_RIGHT) 48.dp else 16.dp))
         }
     }
 }

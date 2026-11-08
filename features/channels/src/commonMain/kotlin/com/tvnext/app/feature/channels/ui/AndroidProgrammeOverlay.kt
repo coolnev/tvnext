@@ -1,5 +1,6 @@
 package com.tvnext.app.feature.channels.ui
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -162,7 +163,7 @@ private fun ProgrammeDescriptionView(channel: Channel, programme: EpgProgramme?,
                 Text(channel.name + (programme?.let { " · ${formatTimeOfDay(it.start)}–${formatTimeOfDay(it.stop)}" } ?: ""),
                     color = Color.White.copy(alpha = .65f), fontSize = 10.sp * scale, lineHeight = 14.sp * scale)
             }
-            TextButton(onClick = onClose, modifier = Modifier.focusRequester(close).testTag("fullscreen-description-close")) {
+            TvActionButton(onClick = onClose, modifier = Modifier.focusRequester(close).testTag("fullscreen-description-close")) {
                 Text("Закрыть", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp * scale)
             }
         }

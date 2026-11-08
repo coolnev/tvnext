@@ -30,8 +30,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Restore branch, deliberately NOT labelled as the original 0.5.21.
-        versionCode = 540
-        versionName = "0.5.40-recovery"
+        versionCode = 541
+        versionName = "0.5.41-recovery"
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
     }
@@ -86,6 +86,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("io.ktor:ktor-client-mock:3.5.2")
     testImplementation(libs.ktor.client.encoding)
+    testImplementation(libs.media3.exoplayer)
     implementation(compose.foundation)
     implementation(compose.material3)
     implementation(libs.androidx.activity.compose)

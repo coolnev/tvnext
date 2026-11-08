@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -24,7 +25,7 @@ import java.text.DateFormat
 /** Full-screen library of recordings belonging to the active profile. */
 @Composable
 internal fun ProfileRecordingsScreen(
-    playback: PlaybackController,
+    onPlayRecording: (PlaybackItem) -> Unit,
     onExportWithPicker: (String, String) -> Boolean,
     onBack: () -> Unit,
 ) {
@@ -55,9 +56,9 @@ internal fun ProfileRecordingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            OutlinedButton(onClick = { revision++ }) { Text("Обновить") }
+            TvActionButton(onClick = { revision++ }) { Text("Обновить") }
             Spacer(Modifier.width(10.dp))
-            OutlinedButton(onClick = onBack) { Text("Назад") }
+            TvActionButton(onClick = onBack) { Text("Назад") }
         }
         if (message.isNotBlank()) {
             Text(message, color = MaterialTheme.colorScheme.primary,
@@ -92,19 +93,12 @@ internal fun ProfileRecordingsScreen(
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                            OutlinedButton(onClick = {
-                                val path = File(record.folder).let { folder ->
-                                    listOf(File(folder, "recording.m3u8"), File(folder, "capture.ts"))
-                                        .firstOrNull { it.isFile }
-                                }
-                                if (path == null) message = "Файл записи не найден"
-                                else {
-                                    playback.play(PlaybackItem(record.id, record.title,
-                                        Uri.fromFile(path).toString(), PlaybackContentKind.VOD))
-                                    onBack()
-                                }
+                            TvActionButton(onClick = {
+                                val item = record.playbackItem()
+                                if (item == null) message = "Файл записи не найден или пуст"
+                                else onPlayRecording(item)
                             }) { Text("Смотреть") }
-                            OutlinedButton(onClick = {
+                            TvActionButton(onClick = {
                                 scope.launch {
                                     message = "Экспорт..."
                                     message = runCatching {
@@ -113,13 +107,13 @@ internal fun ProfileRecordingsScreen(
                                         { "Экспорт не выполнен: ${it.javaClass.simpleName}" })
                                 }
                             }) { Text("ZIP") }
-                            OutlinedButton(onClick = {
+                            TvActionButton(onClick = {
                                 if (!onExportWithPicker(record.id, owner)) {
                                     pendingPickerId = record.id
                                     missingPicker = true
                                 }
                             }) { Text("Сохранить в файл") }
-                            OutlinedButton(onClick = { confirmDelete = record.id }) {
+                            TvActionButton(onClick = { confirmDelete = record.id }) {
                                 Text("Удалить")
                             }
                         }
@@ -132,7 +126,7 @@ internal fun ProfileRecordingsScreen(
         AlertDialog(onDismissRequest = { missingPicker = false },
             title = { Text("Нет приложения для выбора файла") },
             text = { Text("На этом Android TV нет системного проводника. Можно установить AnExplorer или сохранить ZIP в Загрузки.") },
-            confirmButton = { TextButton(onClick = {
+            confirmButton = { TvActionButton(onClick = {
                 missingPicker = false
                 val market = RecordingFileContracts.installExplorerIntent()
                 if (runCatching { context.startActivity(market) }.isFailure) {
@@ -142,7 +136,7 @@ internal fun ProfileRecordingsScreen(
                     }
                 }
             }) { Text("Установить AnExplorer") } },
-            dismissButton = { TextButton(onClick = {
+            dismissButton = { TvActionButton(onClick = {
                 missingPicker = false
                 pendingPickerId?.let { id ->
                     if (!onExportWithPicker(id, owner)) message = "Проводник пока недоступен"
@@ -153,7 +147,7 @@ internal fun ProfileRecordingsScreen(
         AlertDialog(onDismissRequest = { confirmDelete = null },
             title = { Text("Удалить запись?") },
             text = { Text("Удаление записи необратимо.") },
-            confirmButton = { TextButton(onClick = {
+            confirmButton = { TvActionButton(onClick = {
                 confirmDelete?.let { id ->
                     message = if (store.deleteRecording(id, owner)) "Запись удалена"
                         else "Запись не удалена"
@@ -161,7 +155,7 @@ internal fun ProfileRecordingsScreen(
                 confirmDelete = null
                 revision++
             }) { Text("Удалить") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) {
+            dismissButton = { TvActionButton(onClick = { confirmDelete = null }) {
                 Text("Отмена")
             } })
     }

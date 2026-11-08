@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,9 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +47,7 @@ internal fun VideoAspectSettingsDialog(onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Общая настройка для каналов и фильмов. Для отдельного канала можно выбрать другой формат в редакторе.")
                 VideoAspectMode.entries.filter { it != VideoAspectMode.INHERIT }.forEachIndexed { index, aspect ->
-                    OutlinedButton(
+                    TvActionButton(
                         onClick = {
                             error = !AndroidVideoAspectSettings.set(context, aspect.token)
                             if (!error) selected = aspect
@@ -59,6 +58,6 @@ internal fun VideoAspectSettingsDialog(onDismiss: () -> Unit) {
                 if (error) Text("Не удалось сохранить настройку")
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Готово") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Готово") } },
     )
 }

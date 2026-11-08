@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -94,7 +95,7 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            OutlinedButton(onClick = close) { Text("Назад") }
+            TvActionButton(onClick = close) { Text("Назад") }
         }
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(0.46f).fillMaxHeight()
@@ -104,12 +105,12 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                     label = { Text("Поиск по каналам и категориям") },
                     singleLine = true, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    OutlinedButton(onClick = {
+                    TvActionButton(onClick = {
                         if (personal.setHideDuplicateChannels(!hideDuplicates)) {
                             revision++; changed = true
                         }
                     }) { Text(if (hideDuplicates) "✓ Дубликаты" else "Дубликаты") }
-                    OutlinedButton(onClick = { showHidden = !showHidden }) {
+                    TvActionButton(onClick = { showHidden = !showHidden }) {
                         Text(if (showHidden) "Скрыть скрытые" else "Показать скрытые")
                     }
                 }
@@ -141,7 +142,7 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                         }
                     }
                 }
-                OutlinedButton(onClick = { confirmReset = true }) { Text("Вернуть список провайдера") }
+                TvActionButton(onClick = { confirmReset = true }) { Text("Вернуть список провайдера") }
             }
             Column(Modifier.weight(0.54f).fillMaxHeight()
                 .clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surface)
@@ -162,32 +163,32 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                     OutlinedTextField(newCategory, { newCategory = it }, label = { Text("Категория") },
                         modifier = Modifier.fillMaxWidth(), singleLine = true)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = {
+                        TvActionButton(onClick = {
                             if (personal.setChannelFavorite(selected.id, selected.id !in favorites)) {
                                 revision++; changed = true
                             }
                         }) { Text(if (selected.id in favorites) "Убрать ★" else "В избранное") }
-                        OutlinedButton(onClick = {
+                        TvActionButton(onClick = {
                             if (personal.editChannel(selected.id, current.copy(hidden = !current.hidden))) {
                                 revision++; changed = true
                             }
                         }) { Text(if (current.hidden) "Показать" else "Скрыть") }
-                        OutlinedButton(onClick = {
+                        TvActionButton(onClick = {
                             if (personal.moveChannel(selected.id, -1, effective.map { it.id })) {
                                 revision++; changed = true
                             }
                         }) { Text("↑") }
-                        OutlinedButton(onClick = {
+                        TvActionButton(onClick = {
                             if (personal.moveChannel(selected.id, 1, effective.map { it.id })) {
                                 revision++; changed = true
                             }
                         }) { Text("↓") }
                     }
-                    OutlinedButton(onClick = { decodePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    TvActionButton(onClick = { decodePicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("Декодирование: " + if (decodeMode == "inherit") "из общих настроек"
                             else VideoDecodeMode.entries.firstOrNull { it.name == decodeMode }?.displayName.orEmpty())
                     }
-                    OutlinedButton(onClick = { aspectPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    TvActionButton(onClick = { aspectPicker = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("Формат видео: " + (VideoAspectMode.fromToken(resize) ?: VideoAspectMode.INHERIT).displayName)
                     }
                     OutlinedTextField(preferredAudio, { preferredAudio = it.take(30) },
@@ -196,10 +197,10 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
                     OutlinedTextField(preferredText, { preferredText = it.take(30) },
                         label = { Text("Язык субтитров (пусто — авто)") },
                         modifier = Modifier.fillMaxWidth(), singleLine = true)
-                    OutlinedButton(onClick = { subtitlesEnabled = !subtitlesEnabled }) {
+                    TvActionButton(onClick = { subtitlesEnabled = !subtitlesEnabled }) {
                         Text(if (subtitlesEnabled) "Субтитры: разрешены" else "Субтитры: отключены")
                     }
-                    Button(onClick = {
+                    TvActionButton(onClick = {
                         val name = newName.trim().take(120)
                         val category = newCategory.trim().take(120)
                         if (name.isEmpty() || category.isEmpty()) {
@@ -227,38 +228,38 @@ internal fun ProfileChannelEditor(onClose: (Boolean) -> Unit) {
             title = { Text("Декодирование канала") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 (listOf("inherit") + VideoDecodeMode.entries.map { it.name }).forEach { mode ->
-                    OutlinedButton(onClick = { decodeMode = mode; decodePicker = false },
+                    TvActionButton(onClick = { decodeMode = mode; decodePicker = false },
                         modifier = Modifier.fillMaxWidth()) {
                         Text((if (decodeMode == mode) "✓ " else "") +
                             (if (mode == "inherit") "Из общих настроек"
                             else VideoDecodeMode.valueOf(mode).displayName))
                     }
                 }
-            } }, confirmButton = { TextButton(onClick = { decodePicker = false }) { Text("Отмена") } })
+            } }, confirmButton = { TvActionButton(onClick = { decodePicker = false }) { Text("Отмена") } })
     }
     if (aspectPicker) {
         AlertDialog(onDismissRequest = { aspectPicker = false },
             title = { Text("Соотношение сторон канала") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 VideoAspectMode.entries.forEach { option ->
-                    OutlinedButton(onClick = { resize = option.token; aspectPicker = false },
+                    TvActionButton(onClick = { resize = option.token; aspectPicker = false },
                         modifier = Modifier.fillMaxWidth()) {
                         Text((if (resize == option.token) "✓ " else "") + option.displayName)
                     }
                 }
-            } }, confirmButton = { TextButton(onClick = { aspectPicker = false }) { Text("Отмена") } })
+            } }, confirmButton = { TvActionButton(onClick = { aspectPicker = false }) { Text("Отмена") } })
     }
     if (confirmReset) {
         AlertDialog(onDismissRequest = { confirmReset = false },
             title = { Text("Вернуть список провайдера?") },
             text = { Text("Восстановятся названия, категории, порядок и видимость. Избранное сохранится.") },
-            confirmButton = { TextButton(onClick = {
+            confirmButton = { TvActionButton(onClick = {
                 if (personal.resetChannelEditor()) {
                     revision++; changed = true; message = "Список восстановлен"
                 }
                 confirmReset = false
             }) { Text("Восстановить") } },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Отмена") } })
+            dismissButton = { TvActionButton(onClick = { confirmReset = false }) { Text("Отмена") } })
     }
     }
 }

@@ -1,12 +1,12 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +43,7 @@ internal fun EpgRecordingScheduleDialog(request: RecordingScheduleRequest, onDis
                 if (error.isNotBlank()) Text(error)
             }
         },
-        confirmButton = { TextButton(onClick = {
+        confirmButton = { TvActionButton(onClick = {
             val startPad = before.toIntOrNull()
             val stopPad = after.toIntOrNull()
             if (startPad == null || stopPad == null || startPad !in 0..60 || stopPad !in 0..60) {
@@ -67,6 +67,6 @@ internal fun EpgRecordingScheduleDialog(request: RecordingScheduleRequest, onDis
                 }
             }
         }) { Text("Запланировать") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TvActionButton(onClick = onDismiss) { Text("Отмена") } },
     )
 }

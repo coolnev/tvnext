@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -99,8 +100,8 @@ internal fun ParentalPinEntryDialog(
                 if (incorrect) Text("Неверный PIN-код", color = MaterialTheme.colorScheme.error)
             }
         },
-        confirmButton = { TextButton(onClick = { submit() }, enabled = pin.length >= 4) { Text("Открыть") } },
-        dismissButton = { TextButton(onClick = { keyboard?.hide(); onCancel() }) { Text("Отмена") } },
+        confirmButton = { TvActionButton(onClick = { submit() }, enabled = pin.length >= 4) { Text("Открыть") } },
+        dismissButton = { TvActionButton(onClick = { keyboard?.hide(); onCancel() }) { Text("Отмена") } },
         containerColor = MaterialTheme.colorScheme.surface,
     )
 }
@@ -131,12 +132,12 @@ internal fun ParentalPinSettingsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            TvActionButton(onClick = {
                 if (protection.changePin(old, current)) { protection.lock(); onChanged(); onClose() }
                 else error = true
             }, enabled = old.length >= 4 && current.length >= 4) { Text("Сохранить") }
         },
-        dismissButton = { TextButton(onClick = onClose) { Text("Отмена") } },
+        dismissButton = { TvActionButton(onClick = onClose) { Text("Отмена") } },
         containerColor = MaterialTheme.colorScheme.surface,
     )
 }

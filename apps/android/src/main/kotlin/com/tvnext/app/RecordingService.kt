@@ -93,6 +93,7 @@ class RecordingService : Service() {
         val initial = SavedRecording(id, owner, title, folder.canonicalPath,
             System.currentTimeMillis(), 0L, "recording", scheduled = isScheduled)
         store.saveRecording(initial)
+        RecordingRuntime.started(ActiveRecording(id, owner, isScheduled))
         capture = scope.launch {
             var status = "complete"
             var error = ""
@@ -113,6 +114,7 @@ class RecordingService : Service() {
                 store.saveRecording(initial.copy(finishedAt = System.currentTimeMillis(),
                     status = status, error = error))
                 mainHandler.post {
+                    RecordingRuntime.finished(id)
                     runningId = null
                     currentScheduled = false
                     capture = null
@@ -141,6 +143,7 @@ class RecordingService : Service() {
     }
     override fun onDestroy() {
         destroying = true
+        runningId?.let(RecordingRuntime::finished)
         pendingScheduledStart = null
         capture?.cancel()
         scope.cancel()

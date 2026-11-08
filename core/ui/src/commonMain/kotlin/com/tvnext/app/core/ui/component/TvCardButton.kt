@@ -65,11 +65,16 @@ fun TvCardButton(
     val focused = if (isAndroidPlatform()) androidFocused else interactionFocused
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
+    val android = isAndroidPlatform()
+    val effectiveShape = if (android) RoundedCornerShape(4.dp) else shape
 
     // Subtle glass treatment shared by cards/buttons: translucent surfaces,
     // animated hover/press transitions and a clear keyboard focus ring.
     val targetContainerColor = when {
         selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+        android && focused -> MaterialTheme.colorScheme.primary.copy(alpha = .18f)
+        android && pressed -> MaterialTheme.colorScheme.primary.copy(alpha = .24f)
+        android -> MaterialTheme.colorScheme.onSurface.copy(alpha = .035f)
         pressed -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)
         hovered -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
         else -> MaterialTheme.colorScheme.surface.copy(alpha = containerAlpha)
@@ -82,6 +87,7 @@ fun TvCardButton(
     val targetBorderWidth = when {
         focused -> TVNextDimens.FocusBorderWidth
         selected -> 1.dp
+        android -> .5.dp
         else -> 0.dp
     }
     val borderWidth by animateDpAsState(
@@ -92,6 +98,7 @@ fun TvCardButton(
     val borderColor = when {
         focused -> MaterialTheme.colorScheme.primary
         selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+        android -> MaterialTheme.colorScheme.onSurface.copy(alpha = .15f)
         else -> Color.Transparent
     }
 
@@ -154,9 +161,9 @@ fun TvCardButton(
 
     Box(
         modifier = modifier
-            .clip(shape)
+            .clip(effectiveShape)
             .background(containerColor)
-            .border(BorderStroke(if (isAndroidPlatform()) targetBorderWidth else borderWidth, borderColor), shape)
+            .border(BorderStroke(if (android) targetBorderWidth else borderWidth, borderColor), effectiveShape)
             .then(inputModifier)
             .padding(contentPadding),
         contentAlignment = contentAlignment,

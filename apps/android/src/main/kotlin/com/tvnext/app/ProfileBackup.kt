@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import android.app.Activity
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,9 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -175,14 +174,14 @@ internal fun ProfileBackupDialog(onDismiss: () -> Unit) {
                 Text("Сохраняются профили, избранное, история, оформление, редактор каналов " +
                     "и позиции просмотра. " +
                     "Адреса источников, API-ключи, PIN и сами видеозаписи не экспортируются.")
-                OutlinedButton(onClick = { export.launch("TVNext_profiles.json") },
+                TvActionButton(onClick = { export.launch("TVNext_profiles.json") },
                     modifier = Modifier.fillMaxWidth()) { Text("Сохранить резервную копию") }
-                OutlinedButton(onClick = { import.launch(arrayOf("application/json", "text/plain", "*/*")) },
+                TvActionButton(onClick = { import.launch(arrayOf("application/json", "text/plain", "*/*")) },
                     modifier = Modifier.fillMaxWidth()) { Text("Восстановить из файла") }
                 if (message.isNotBlank()) Text(message)
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
+        confirmButton = { TvActionButton(onClick = onDismiss) { Text("Закрыть") } },
     )
     if (importCandidate != null) {
         AlertDialog(
@@ -191,7 +190,7 @@ internal fun ProfileBackupDialog(onDismiss: () -> Unit) {
             text = { Text("Данные избранного, истории и редактора будут заменены содержимым копии. " +
                 "Записи и расписания останутся на устройстве. Восстановление отклоняется, если " +
                 "оно сделает чужие записи недоступными.") },
-            confirmButton = { TextButton(onClick = {
+            confirmButton = { TvActionButton(onClick = {
                 val parsed = importCandidate
                 importCandidate = null
                 if (parsed != null) {
@@ -201,7 +200,7 @@ internal fun ProfileBackupDialog(onDismiss: () -> Unit) {
                     } else "Не удалось восстановить профили (проверьте связанные записи)"
                 }
             }) { Text("Восстановить") } },
-            dismissButton = { TextButton(onClick = { importCandidate = null }) { Text("Отмена") } },
+            dismissButton = { TvActionButton(onClick = { importCandidate = null }) { Text("Отмена") } },
         )
     }
 }

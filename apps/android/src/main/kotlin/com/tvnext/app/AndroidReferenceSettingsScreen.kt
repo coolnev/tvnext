@@ -1,5 +1,6 @@
 package com.tvnext.app
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
@@ -488,7 +489,7 @@ internal fun AndroidReferenceSettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                TvActionButton(onClick = {
                     if (fallbackEpg.setUrl(fallbackUrl)) {
                         fallbackChanged()
                         showFallbackUrlDialog = false
@@ -496,10 +497,10 @@ internal fun AndroidReferenceSettingsScreen(
                 }) { Text("Сохранить") }
             },
             dismissButton = {
-                TextButton(onClick = { fallbackUrl = AndroidFallbackEpgSettings.DEFAULT_URLS }) {
+                TvActionButton(onClick = { fallbackUrl = AndroidFallbackEpgSettings.DEFAULT_URLS }) {
                     Text("По умолчанию")
                 }
-                TextButton(onClick = { showFallbackUrlDialog = false }) { Text("Отмена") }
+                TvActionButton(onClick = { showFallbackUrlDialog = false }) { Text("Отмена") }
             },
         )
     }
@@ -528,7 +529,7 @@ internal fun AndroidReferenceSettingsScreen(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { choice = null }) { Text("Закрыть") } },
+            confirmButton = { TvActionButton(onClick = { choice = null }) { Text("Закрыть") } },
         )
     }
     if (showHomeBlocks) {
@@ -548,7 +549,7 @@ internal fun AndroidReferenceSettingsScreen(
                     ).forEach { (title, checked, cb) -> ReferenceToggle(title, checked, 43.dp, cb) }
                 }
             },
-            confirmButton = { TextButton(onClick = { showHomeBlocks = false }) { Text("Готово") } },
+            confirmButton = { TvActionButton(onClick = { showHomeBlocks = false }) { Text("Готово") } },
         )
     }
     if (showPlaylistDialog) {
@@ -558,12 +559,12 @@ internal fun AndroidReferenceSettingsScreen(
                     state.playlists.forEach { playlist ->
                         Text(playlist.name, color = MaterialTheme.colorScheme.onSurface)
                         Row {
-                            TextButton(onClick = { component.dispatch(SettingsIntent.PlaylistRefresh(playlist.id)) }) { Text("Обновить") }
-                            TextButton(onClick = { component.dispatch(SettingsIntent.PlaylistRemove(playlist.id)) }) { Text("Удалить") }
+                            TvActionButton(onClick = { component.dispatch(SettingsIntent.PlaylistRefresh(playlist.id)) }) { Text("Обновить") }
+                            TvActionButton(onClick = { component.dispatch(SettingsIntent.PlaylistRemove(playlist.id)) }) { Text("Удалить") }
                         }
                     }
                 }
-            }, confirmButton = { TextButton(onClick = { showPlaylistDialog = false }) { Text("Закрыть") } })
+            }, confirmButton = { TvActionButton(onClick = { showPlaylistDialog = false }) { Text("Закрыть") } })
     }
     if (showPlaylistAdd) {
         var url by remember { mutableStateOf("") }
@@ -575,24 +576,24 @@ internal fun AndroidReferenceSettingsScreen(
                     OutlinedTextField(url, { url = it }, label = { Text("URL источника") }, singleLine = true)
                 }
             }, confirmButton = {
-                TextButton(enabled = url.isNotBlank(), onClick = {
+                TvActionButton(enabled = url.isNotBlank(), onClick = {
                     component.dispatch(SettingsIntent.PlaylistNameChanged(name))
                     component.dispatch(SettingsIntent.PlaylistUrlChanged(url))
                     component.dispatch(SettingsIntent.PlaylistAdd)
                     showPlaylistAdd = false
                 }) { Text("Добавить") }
-            }, dismissButton = { TextButton(onClick = { showPlaylistAdd = false }) { Text("Отмена") } })
+            }, dismissButton = { TvActionButton(onClick = { showPlaylistAdd = false }) { Text("Отмена") } })
     }
     if (showTmdbKey) {
         var key by remember { mutableStateOf(state.tmdbApiKey) }
         AlertDialog(onDismissRequest = { showTmdbKey = false },
             title = { Text("Собственный ключ TMDB") }, text = {
                 OutlinedTextField(key, { key = it }, label = { Text("API-ключ") }, singleLine = true)
-            }, confirmButton = { TextButton(onClick = {
+            }, confirmButton = { TvActionButton(onClick = {
                 component.dispatch(SettingsIntent.TmdbApiKeyChanged(key))
                 showTmdbKey = false
             }) { Text("Сохранить") } }, dismissButton = {
-                TextButton(onClick = { showTmdbKey = false }) { Text("Отмена") }
+                TvActionButton(onClick = { showTmdbKey = false }) { Text("Отмена") }
             })
     }
     if (showKinopoiskKey) {
@@ -607,7 +608,7 @@ internal fun AndroidReferenceSettingsScreen(
                         label = { Text("Полный API-ключ") }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation())
                 }
-            }, confirmButton = { TextButton(onClick = {
+            }, confirmButton = { TvActionButton(onClick = {
                 scope.launch {
                     kinopoiskStore.setKey(key)
                     kinopoiskLookup.resetAfterKeyChange()
@@ -617,7 +618,7 @@ internal fun AndroidReferenceSettingsScreen(
                 }
                 showKinopoiskKey = false
             }) { Text("Сохранить") } }, dismissButton = {
-                TextButton(onClick = { showKinopoiskKey = false }) { Text("Отмена") }
+                TvActionButton(onClick = { showKinopoiskKey = false }) { Text("Отмена") }
             })
     }
     if (showDiagnosticsDialog) {
@@ -645,19 +646,19 @@ internal fun AndroidReferenceSettingsScreen(
                     } else Text("Параметры видеопотока появятся после запуска канала")
                 }
             },
-            confirmButton = { TextButton(onClick = { showDiagnosticsDialog = false }) { Text("Закрыть") } },
+            confirmButton = { TvActionButton(onClick = { showDiagnosticsDialog = false }) { Text("Закрыть") } },
         )
     }
     if (showReset) {
         AlertDialog(onDismissRequest = { showReset = false },
             title = { Text("Сбросить данные?") }, text = {
                 Text("Все плейлисты, история и настройки будут удалены. Отменить это нельзя.")
-            }, confirmButton = { TextButton(onClick = {
+            }, confirmButton = { TvActionButton(onClick = {
                 component.dispatch(SettingsIntent.DataResetStart)
                 component.dispatch(SettingsIntent.DataResetConfirm)
                 showReset = false
             }) { Text("Сбросить") } }, dismissButton = {
-                TextButton(onClick = { showReset = false }) { Text("Отмена") }
+                TvActionButton(onClick = { showReset = false }) { Text("Отмена") }
             })
     }
 }

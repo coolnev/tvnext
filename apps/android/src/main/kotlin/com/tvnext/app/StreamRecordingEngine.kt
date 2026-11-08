@@ -72,49 +72,52 @@ internal class StreamRecordingEngine(
         val initForSegment = mutableMapOf<String, String>()
         var targetDuration = 6
         var emptyPolls = 0
-        while (SystemClock.elapsedRealtime() - started < durationMs) {
-            currentCoroutineContext().ensureActive()
-            val listing = readText(playlistUrl)
-            val index = RecordingFormats.parseHls(playlistUrl, listing)
-            if (index.variants.isNotEmpty()) {
-                playlistUrl = index.variants.first()
-                continue
-            }
-            targetDuration = index.targetDuration
-            var newSegments = 0
-            for (segment in index.segments) {
+        try {
+            while (SystemClock.elapsedRealtime() - started < durationMs) {
                 currentCoroutineContext().ensureActive()
-                if (SystemClock.elapsedRealtime() - started >= durationMs) break
-                val identity = "${segment.sequence}:${segment.url}:${segment.range}"
-                if (!seen.add(identity)) continue
-                val format = if (segment.initMapUrl != null || segment.url.substringBefore('?').endsWith(".m4s", true)) "m4s" else "ts"
-                val localName = "segment_%07d.%s".format(records.size, format)
-                val output = File(folder, localName)
-                try {
-                    if (segment.initMapUrl != null && !initFiles.containsKey(segment.initMapUrl)) {
-                        val localInit = "init_%03d.mp4".format(initFiles.size)
-                        download(segment.initMapUrl, File(folder, localInit), null, null, 0)
-                        initFiles[segment.initMapUrl] = localInit
-                    }
-                    segment.initMapUrl?.let { initForSegment[localName] = initFiles.getValue(it) }
-                    download(segment.url, output, segment.range, segment.key, segment.sequence)
-                    records.add(segment.seconds to localName)
-                    newSegments++
-                    writeIndex(outputIndex, records, initForSegment, targetDuration)
-                } catch (e: Exception) {
-                    output.delete()
-                    seen.remove(identity)
-                    throw e
+                val listing = readText(playlistUrl)
+                val index = RecordingFormats.parseHls(playlistUrl, listing)
+                if (index.variants.isNotEmpty()) {
+                    playlistUrl = index.variants.first()
+                    continue
                 }
+                targetDuration = index.targetDuration
+                var newSegments = 0
+                for (segment in index.segments) {
+                    currentCoroutineContext().ensureActive()
+                    if (SystemClock.elapsedRealtime() - started >= durationMs) break
+                    val identity = "${segment.sequence}:${segment.url}:${segment.range}"
+                    if (!seen.add(identity)) continue
+                    val format = if (segment.initMapUrl != null || segment.url.substringBefore('?').endsWith(".m4s", true)) "m4s" else "ts"
+                    val localName = "segment_%07d.%s".format(records.size, format)
+                    val output = File(folder, localName)
+                    try {
+                        if (segment.initMapUrl != null && !initFiles.containsKey(segment.initMapUrl)) {
+                            val localInit = "init_%03d.mp4".format(initFiles.size)
+                            download(segment.initMapUrl, File(folder, localInit), null, null, 0)
+                            initFiles[segment.initMapUrl] = localInit
+                        }
+                        segment.initMapUrl?.let { initForSegment[localName] = initFiles.getValue(it) }
+                        download(segment.url, output, segment.range, segment.key, segment.sequence)
+                        records.add(segment.seconds to localName)
+                        newSegments++
+                        writeIndex(outputIndex, records, initForSegment, targetDuration)
+                    } catch (e: Exception) {
+                        output.delete()
+                        seen.remove(identity)
+                        throw e
+                    }
+                }
+                if (index.endList && newSegments == 0) break
+                if (newSegments == 0) emptyPolls++ else emptyPolls = 0
+                if (emptyPolls >= 20) break
+                delay((targetDuration * 500L).coerceIn(1000, 6000))
             }
-            if (index.endList && newSegments == 0) break
-            if (newSegments == 0) emptyPolls++ else emptyPolls = 0
-            if (emptyPolls >= 20) break
-            delay((targetDuration * 500L).coerceIn(1000, 6000))
+        } finally {
+            // A manually stopped or interrupted capture is also a finite local recording.
+            if (records.isNotEmpty()) writeIndex(outputIndex, records, initForSegment, targetDuration, finished = true)
         }
         require(records.isNotEmpty()) { "No media segments were received" }
-        // ENDLIST makes the captured file finite so local playback can seek to the end.
-        writeIndex(outputIndex, records, initForSegment, targetDuration, finished = true)
         return outputIndex.absolutePath
     }
 

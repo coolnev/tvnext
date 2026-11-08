@@ -1,5 +1,6 @@
 package com.tvnext.app.feature.tvg.ui
 
+import com.tvnext.app.core.ui.component.TvActionButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusGroup
@@ -19,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,15 +29,18 @@ import kotlinx.coroutines.Job
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tvnext.app.core.common.result.toUserMessage
 import com.tvnext.app.core.common.input.OkInputGate
 import com.tvnext.app.core.common.util.startOfLocalDayOffset
 import com.tvnext.app.core.common.util.currentTimeMillis
 import com.tvnext.app.core.common.util.formatDateTime
+import com.tvnext.app.core.common.util.formatDate
 import com.tvnext.app.core.common.util.formatTimeOfDay
 import com.tvnext.app.core.ui.component.AutoScrollText
 import com.tvnext.app.core.iptv.domain.Channel
@@ -45,7 +50,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 private const val GUIDE_HOUR = 3_600_000L
-private val GuideChannelWidth = 190.dp
+private val GuideRowHeight = 46.dp
 private val GuideHourWidth = 300.dp
 
 /** One focus target for the grid: the selected cell and its scroll never race native focus. */
@@ -67,6 +72,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val gridFocus = remember { FocusRequester() }
+    var gridReady by remember { mutableStateOf(false) }
     val toolbarFocus = remember { FocusRequester() }
     var toolbarFocused by remember { mutableStateOf(false) }
     var okHeld by remember { mutableStateOf(false) }
@@ -129,10 +135,10 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 if (ids.isNotEmpty()) component.dispatch(TvgIntent.VisibleChannelsChanged(ids))
             }
     }
-    LaunchedEffect(categoriesOpen, details, rows.isNotEmpty()) {
-        if (!categoriesOpen && details == null && rows.isNotEmpty()) {
+    LaunchedEffect(categoriesOpen, details, rows.isNotEmpty(), gridReady) {
+        if (!categoriesOpen && details == null && gridReady) {
             withFrameNanos { }
-            gridFocus.requestFocus()
+            if (rows.isNotEmpty()) gridFocus.requestFocus() else toolbarFocus.requestFocus()
         }
     }
     Column(modifier.onPreviewKeyEvent { event ->
@@ -146,29 +152,30 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             }
             true
         } else if (event.key == Key.Back && !categoriesOpen && details == null) {
-            if (event.type == KeyEventType.KeyUp) toolbarFocus.requestFocus()
+            if (event.type == KeyEventType.KeyUp) {
+                if (toolbarFocused && onBack != null) onBack() else toolbarFocus.requestFocus()
+            }
             true
         } else false
     }.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
-        Row(modifier = Modifier.onFocusChanged { toolbarFocused = it.hasFocus }.focusGroup()
-            .onPreviewKeyEvent { event ->
-                if (event.key == Key.DirectionDown) {
-                    if (event.type == KeyEventType.KeyDown) gridFocus.requestFocus()
-                    true
-                } else false
-            }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(modifier = Modifier.focusRequester(toolbarFocus), onClick = { categoriesOpen = true }) { Text(state.selectedCategory ?: "Все каналы") }
-            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(-1)) }) { Text("− День") }
-            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DaySet(0)); cursorTime = now; nowRequest++ }) { Text("Сейчас") }
-            Button(onClick = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(1)) }) { Text("+ День") }
-            Button(onClick = { component.dispatch(TvgIntent.Refresh) }) { Text("Обновить") }
+        AndroidGuideHeader(controller = component.playbackController,
+            category = state.selectedCategory ?: "Все каналы",
+            date = formatDate(if (state.from > 0) state.from else now),
+            toolbarFocus = toolbarFocus, gridFocus = gridFocus,
+            onFocus = { toolbarFocused = it }, onCategories = { categoriesOpen = true },
+            onPreviousDay = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(-1)) },
+            onNow = { pendingDayCursor = null; component.dispatch(TvgIntent.DaySet(0)); cursorTime = now; nowRequest++ },
+            onNextDay = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(1)) },
+            onRefresh = { component.dispatch(TvgIntent.Refresh) }, onVideo = onBack)
+        // Reserve the loading strip so refresh cannot move the video or grid.
+        Box(Modifier.fillMaxWidth().height(8.dp)) {
+            if (state.isRefreshing || state.isLoading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center))
         }
-        Text(formatDateTime(if (state.from > 0) state.from else now), modifier = Modifier.padding(vertical = 6.dp))
-        if (state.isRefreshing || state.isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         state.error?.let { Text(it.toUserMessage(), color = MaterialTheme.colorScheme.error) }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val timelineWidth = (maxWidth - GuideChannelWidth).coerceAtLeast(1.dp)
+            val channelWidth = (maxWidth * .28f).coerceIn(216.dp, 260.dp)
+            val timelineWidth = (maxWidth - channelWidth).coerceAtLeast(1.dp)
             val viewportPx = with(density) { timelineWidth.toPx() }
             val offsetDp = with(density) { timeScroll.value.toDp() }
             val visibleStart = state.from + (timeScroll.value / hourPx * GUIDE_HOUR).toLong()
@@ -184,9 +191,9 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 }
                 timeScroll.scrollTo(target.toInt().coerceAtLeast(0))
             }
-            Column {
-                Row(Modifier.height(30.dp)) {
-                    Text("Канал", Modifier.width(GuideChannelWidth))
+            Column(Modifier.fillMaxSize()) {
+                Row(Modifier.height(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Канал", Modifier.width(channelWidth), style = MaterialTheme.typography.labelMedium)
                     Row(Modifier.width(timelineWidth).horizontalScroll(timeScroll)) {
                         val count = ((state.to - state.from) / GUIDE_HOUR).toInt().coerceIn(1, 25)
                         repeat(count * 2) { index ->
@@ -194,17 +201,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                         }
                     }
                 }
-                // Keep exactly five channel rows visible. The description/help area
-                // below is outside this clipped viewport, so a sixth row can never
-                // slide underneath it. LazyColumn still scrolls normally to the
-                // following rows as the user navigates.
-                val fiveRowsHeight = 64.dp * 5 + 3.dp * 4
                 LazyColumn(
                     state = list,
                     modifier = Modifier
-                        .height(fiveRowsHeight)
+                        .weight(1f)
                         .fillMaxWidth()
                         .clipToBounds()
+                        .onGloballyPositioned { gridReady = it.size.width > 0 && it.size.height > 0 }
                         .testTag("tvg-grid").focusRequester(gridFocus)
                         .onPreviewKeyEvent { event ->
                             val navigation = event.key in listOf(Key.DirectionUp, Key.DirectionDown, Key.DirectionLeft, Key.DirectionRight)
@@ -255,11 +258,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 ) {
                     itemsIndexed(rows, key = { _, channel -> channel.id }) { _, channel ->
                         val selected = channel.id == channelId
-                        Row(Modifier.fillMaxWidth().height(64.dp)) {
-                            Column(Modifier.width(GuideChannelWidth).fillMaxHeight()
+                        Row(Modifier.fillMaxWidth().height(GuideRowHeight).testTag("tvg-channel-row")) {
+                            Box(Modifier.width(channelWidth).fillMaxHeight().testTag("tvg-channel-name")
                                 .background(if (selected) accent.copy(alpha = .2f) else foreground.copy(alpha = .05f))
-                                .guideTap { select(channel, cursorTime); component.dispatch(TvgIntent.ChannelClicked(channel.id)) }.padding(8.dp)) {
-                                Text("${channel.number}  ${channel.name}", maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                .guideTap { select(channel, cursorTime); component.dispatch(TvgIntent.ChannelClicked(channel.id)) }
+                                .padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) {
+                                Text("${channel.number}  ${channel.name}", maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    fontSize = 14.sp, lineHeight = 18.sp)
                             }
                             Box(Modifier.width(timelineWidth).fillMaxHeight().clipToBounds()) {
                                 val programmes = state.programmes[channel.id].orEmpty()
@@ -275,8 +280,9 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                                         Column(Modifier.testTag("tvg-programme").offset(x = x).width(width).fillMaxHeight().padding(end = 2.dp)
                                             .background(if (active) accent.copy(alpha = .24f) else foreground.copy(alpha = .08f))
                                             .border(if (highlighted) 2.dp else 0.dp, if (highlighted) accent else Color.Transparent)
-                                            .guideTap { select(channel, programme.start); showDetails(channel, programme) }.padding(8.dp)) {
-                                            Text(programme.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            .guideTap { select(channel, programme.start); showDetails(channel, programme) }
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)) {
+                                            Text(programme.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp, lineHeight = 18.sp)
                                             Text("${formatTimeOfDay(programme.start)}–${formatTimeOfDay(programme.stop)}", style = MaterialTheme.typography.labelSmall)
                                         }
                                     }
@@ -290,7 +296,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             }
         }
         AutoScrollText(selectedProgramme?.let { "${selectedChannel?.name} • ${it.title}\n${it.description.orEmpty()}" }
-            ?: "↑↓ Каналы   ←→ Передачи   OK Информация   Удержать OK / Назад: кнопки", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, modifier = Modifier.padding(top = 8.dp))
+            ?: "↑↓ Каналы   ←→ Передачи   OK Информация   Назад: кнопки / выход", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
     }
     if (categoriesOpen) AlertDialog(
         onDismissRequest = { categoriesOpen = false }, title = { Text("Категории") },
@@ -301,11 +307,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             LaunchedEffect(Unit) { withFrameNanos { }; runCatching { selectedFocus.requestFocus() } }
             LazyColumn(state = categoryList, modifier = Modifier.heightIn(max = 350.dp)) {
                 items(categories) { category ->
-                    TextButton(onClick = { component.dispatch(TvgIntent.CategorySelected(category)); categoriesOpen = false },
-                        modifier = if (category == state.selectedCategory) Modifier.focusRequester(selectedFocus) else Modifier) { Text(category ?: "Все каналы") }
+                    GuideOutlineButton(category ?: "Все каналы", onClick = {
+                        component.dispatch(TvgIntent.CategorySelected(category)); categoriesOpen = false
+                    }, modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).then(
+                        if (category == state.selectedCategory) Modifier.focusRequester(selectedFocus) else Modifier))
                 }
             }
-        }, confirmButton = { TextButton(onClick = { categoriesOpen = false }) { Text("Закрыть") } },
+        }, confirmButton = { TvActionButton(onClick = { categoriesOpen = false }) { Text("Закрыть") } },
     )
     details?.let { info ->
         val p = info.programme
@@ -313,11 +321,11 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             text = { AutoScrollText("${info.channel.name} • ${formatDateTime(p.start)}–${formatTimeOfDay(p.stop)}\n${p.description.orEmpty()}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 9) },
             confirmButton = {
                 Row {
-                    TextButton(onClick = { details = null; component.dispatch(TvgIntent.ChannelClicked(info.channel.id)) }) { Text("Прямой эфир") }
+                    TvActionButton(onClick = { details = null; component.dispatch(TvgIntent.ChannelClicked(info.channel.id)) }) { Text("Прямой эфир") }
                     if (p.start > now && p.stop > p.start && p.stop - p.start <= 6 * 60 * 60 * 1000L &&
                         info.channel.streamUrl.isNotBlank() &&
                         com.tvnext.app.core.common.platform.isAndroidPlatform()) {
-                        TextButton(onClick = {
+                        TvActionButton(onClick = {
                             com.tvnext.app.core.common.util.RecordingScheduleRequests.request(
                                 com.tvnext.app.core.common.util.RecordingScheduleRequest(
                                     channelName = info.channel.name,
@@ -330,13 +338,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                             details = null
                         }) { Text("Запланировать запись") }
                     }
-                    if (p.start > now) TextButton(onClick = { component.dispatch(TvgIntent.ScheduleToggled(info.channel.id, p.start)); details = null }) {
+                    if (p.start > now) TvActionButton(onClick = { component.dispatch(TvgIntent.ScheduleToggled(info.channel.id, p.start)); details = null }) {
                         val scheduled = "${info.channel.playlistId}|${info.channel.id}|${p.start}" in state.scheduledKeys
                         Text(if (scheduled) "Убрать напоминание" else "Напомнить")
                     }
-                    else if (info.channel.hasCatchupMechanism) TextButton(onClick = { component.dispatch(TvgIntent.ArchiveProgrammeClicked(info.channel.id, p.start)); details = null }) { Text("Смотреть с начала") }
+                    else if (info.channel.hasCatchupMechanism) TvActionButton(onClick = { component.dispatch(TvgIntent.ArchiveProgrammeClicked(info.channel.id, p.start)); details = null }) { Text("Смотреть с начала") }
                 }
-            }, dismissButton = { TextButton(onClick = { details = null }) { Text("Закрыть") } })
+            }, dismissButton = { TvActionButton(onClick = { details = null }) { Text("Закрыть") } })
     }
 }
 
