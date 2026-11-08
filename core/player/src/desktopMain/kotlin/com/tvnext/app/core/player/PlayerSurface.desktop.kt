@@ -38,9 +38,10 @@ import androidx.compose.ui.layout.onSizeChanged
  * what D3D11 cannot do, which is why the picture stayed white after big seeks.
  */
 @Composable
-actual fun PlayerSurface(
+actual fun NativePlayerSurface(
     controller: PlaybackController,
     modifier: Modifier,
+    useTextureView: Boolean,
 ) {
     val desktopController = controller as? DesktopVideoSurface
     if (desktopController == null) {

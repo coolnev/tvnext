@@ -64,7 +64,7 @@ internal fun AndroidGuideHeader(
             Column(Modifier.width(previewWidth), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var focused by remember { mutableStateOf(false) }
                 Box(Modifier.fillMaxWidth().aspectRatio(16f/9).testTag("tvg-video-preview")
-                    .background(Color.Black).border(if (focused) 2.dp else .5.dp,
+                    .background(com.tvnext.app.core.player.videoSurfaceBackground(Color.Black)).border(if (focused) 2.dp else .5.dp,
                         if (focused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = .25f), RoundedCornerShape(2.dp))
                     .focusRequester(video).onFocusChanged { focused = it.hasFocus }
                     .guideDirections(left = refresh, down = gridFocus)

@@ -239,7 +239,9 @@ class RecordingAlarmReceiver : BroadcastReceiver() {
 
 class RecordingBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED)
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             RecordingScheduler.restore(context)
+            WakeLaunchSettings.ensureMonitoring(context, afterBoot = intent.action == Intent.ACTION_BOOT_COMPLETED)
+        }
     }
 }

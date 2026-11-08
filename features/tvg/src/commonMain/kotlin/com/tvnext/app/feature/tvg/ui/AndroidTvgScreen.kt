@@ -158,7 +158,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             }
             true
         } else false
-    }.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(16.dp)) {
+    }.fillMaxSize().background(com.tvnext.app.core.player.videoSurfaceBackground(MaterialTheme.colorScheme.surface)).padding(16.dp)) {
         AndroidGuideHeader(controller = component.playbackController,
             category = state.selectedCategory ?: "Все каналы",
             date = formatDate(if (state.from > 0) state.from else now),

@@ -150,7 +150,7 @@ internal fun AndroidMediaScreen(
     }
     LaunchedEffect(pauseFeedback) { if (pauseFeedback) { delay(2500); pauseFeedback = false } }
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-        Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        Box(modifier.fillMaxSize().background(com.tvnext.app.core.player.videoSurfaceBackground(MaterialTheme.colorScheme.background))
             .onPreviewKeyEvent { event ->
                 if (controlsFocused) return@onPreviewKeyEvent false
                 val infoKey = event.key == Key.Info

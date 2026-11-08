@@ -14,6 +14,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.runtime.mutableStateOf
+import com.tvnext.app.core.player.PlaybackController
+import com.tvnext.app.core.player.PlaybackContentKind
+import com.tvnext.app.core.player.PlayerSurface
+import com.tvnext.app.core.player.videoSurfaceBackground
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -56,9 +73,14 @@ fun HomeScreen(
     showHomeFavorites: Boolean = true,
     showHomeRecentVod: Boolean = true,
     showHomeFavoriteVod: Boolean = true,
+    playbackController: PlaybackController? = null,
+    onOpenPlayingVideo: () -> Unit = {},
 ) {
     val state by component.state.collectAsState()
     val now = rememberTicker()
+    val playing by remember(playbackController) {
+        playbackController?.state?.map {it.item}?.distinctUntilChanged() ?: flowOf(null)
+    }.collectAsState(initial=playbackController?.state?.value?.item)
 
     // The component loads itself on creation (see HomeComponent.init) — do NOT
     // dispatch Load from here: the screen is recreated on every fullscreen F11
@@ -84,11 +106,39 @@ fun HomeScreen(
             (showHomeRecentVod && state.content.recentVod.isNotEmpty()) ||
             (showHomeFavoriteVod && state.content.favoriteVod.isNotEmpty())
 
-        if (anyLive) {
-            HomeGroupTitle(title = "Каналы")
+        if (anyLive || playing!=null) {
+            HomeGroupTitle(title = if(playing?.kind==PlaybackContentKind.VOD) "Сейчас смотрите" else "Каналы")
         }
 
-        state.content.continueWatching?.let { channel ->
+        val continuingChannel=state.content.continueWatching
+        if(playbackController!=null && playing!=null) BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val previewWidth=(maxWidth*.35f).coerceIn(176.dp,288.dp)
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(16.dp),verticalAlignment=Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    if(playing?.kind!=PlaybackContentKind.VOD && continuingChannel!=null && continuingChannel.id==playing?.id) ContinueWatchingCard(
+                        continuingChannel,now,onOpenPlayingVideo)
+                    else TvCardButton(onClick=onOpenPlayingVideo,modifier=Modifier.fillMaxWidth()) {
+                        Column {
+                            Text("Сейчас смотрите",color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.labelLarge)
+                            Text(playing?.title.orEmpty(),color=MaterialTheme.colorScheme.onSurface,
+                                style=MaterialTheme.typography.titleLarge,maxLines=2,overflow=TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+                Column(Modifier.width(previewWidth),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    var focused by remember {mutableStateOf(false)}
+                    Box(Modifier.fillMaxWidth().aspectRatio(16f/9).testTag("home-current-video")
+                        .background(videoSurfaceBackground(Color.Black))
+                        .border(if(focused)2.dp else .5.dp,if(focused)MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha=.25f),RoundedCornerShape(4.dp))
+                        .onFocusChanged {focused=it.hasFocus}.clickable(onClick=onOpenPlayingVideo)) {
+                        PlayerSurface(playbackController,Modifier.fillMaxSize())
+                    }
+                    Text(playing?.title.orEmpty(),maxLines=1,overflow=TextOverflow.Ellipsis,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,style=MaterialTheme.typography.labelMedium)
+                }
+            }
+        } else continuingChannel?.let { channel ->
             ContinueWatchingCard(
                 channel = channel,
                 now = now,

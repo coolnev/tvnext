@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
 import android.view.ViewGroup
+import android.view.LayoutInflater
 import android.widget.FrameLayout
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
@@ -11,8 +12,10 @@ import androidx.media3.ui.PlayerView
 /** A black letterbox around PlayerView, used for exact requested display aspect ratios.
  *  Aspect enforcement is on the *outer view* and doesn't touch the player/session.
  */
-internal class AndroidVideoViewport(context: Context) : FrameLayout(context) {
-    val videoView: PlayerView = PlayerView(context).apply {
+internal class AndroidVideoViewport(context: Context, useTextureView: Boolean = false) : FrameLayout(context) {
+    val videoView: PlayerView = (if (useTextureView)
+        LayoutInflater.from(context).inflate(com.tvnext.app.core.player.R.layout.tvnext_texture_player, this, false) as PlayerView
+        else PlayerView(context)).apply {
         useController = false
         setBackgroundColor(Color.BLACK)
         isFocusable = false

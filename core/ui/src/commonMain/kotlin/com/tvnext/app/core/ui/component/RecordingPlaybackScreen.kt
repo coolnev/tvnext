@@ -29,7 +29,7 @@ fun RecordingPlaybackScreen(controller: PlaybackController, onBack: () -> Unit, 
         withFrameNanos { }
         if (controls) pause.requestFocus() else video.requestFocus()
     }
-    Box(modifier.fillMaxSize().background(Color.Black).testTag("recording-playback")
+    Box(modifier.fillMaxSize().background(videoSurfaceBackground(Color.Black)).testTag("recording-playback")
         .onPreviewKeyEvent { event ->
             when {
                 event.key == Key.Back -> { if (event.type == KeyEventType.KeyUp) onBack(); true }

@@ -4,6 +4,8 @@ import com.tvnext.app.core.ui.component.TvActionButton
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +56,23 @@ internal fun AndroidReferenceSettingsScreen(
 ) {
     val state by component.state.collectAsState()
     val context = LocalContext.current
+    var wakeEnabled by remember(context) { mutableStateOf(WakeLaunchSettings.enabled(context)) }
+    var wakeMessage by remember(context) { mutableStateOf(WakeLaunchSettings.failure(context)) }
+    var videoAnimation by remember(context) { mutableStateOf(AndroidAnimationSettings.enabled(context)) }
+    val wakePermission = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        wakeEnabled = WakeLaunchSettings.enabled(context)
+        wakeMessage = if (WakeLaunchSettings.canLaunch(context)) WakeLaunchSettings.failure(context)
+            else "Для запуска после сна разрешите TVNext показ поверх других приложений."
+    }
+    DisposableEffect(context) {
+        val prefs = WakeLaunchSettings.preferences(context)
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            wakeEnabled = WakeLaunchSettings.enabled(context)
+            wakeMessage = WakeLaunchSettings.failure(context)
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     val recording = remember(context) { LocalRecoveryStore(context) }
     var recRevision by remember { mutableIntStateOf(0) }
     var selected by remember { mutableIntStateOf(0) }
@@ -160,6 +179,23 @@ internal fun AndroidReferenceSettingsScreen(
                     when (selected) {
                         0 -> {
                             ReferenceRow("Профили", height = entryHeight, onClick = { onOpen("profiles") })
+                            ReferenceToggle("Запускать TVNext при включении", wakeEnabled, entryHeight) { enabled ->
+                                wakeMessage = ""
+                                if (!enabled) WakeLaunchSettings.setEnabled(context, false)
+                                else if (WakeLaunchSettings.canLaunch(context)) {
+                                    if (!WakeLaunchSettings.setEnabled(context, true)) wakeMessage = "Не удалось включить запуск после сна."
+                                } else {
+                                    WakeLaunchSettings.requestPermission(context)
+                                    runCatching { wakePermission.launch(WakeLaunchSettings.permissionIntent(context)) }
+                                        .onFailure {
+                                            WakeLaunchSettings.setEnabled(context, false)
+                                            wakeMessage = "В настройках Android разрешите TVNext показ поверх других приложений."
+                                        }
+                                }
+                            }
+                            Text(wakeMessage.ifBlank { "Открывать TVNext после выхода телевизора из спящего режима." },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (wakeMessage.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
                             ReferenceRow("Стартовый экран", when (s.startScreen) {
                                 StartScreen.HOME -> "Главная"
                                 StartScreen.CHANNELS -> "Каналы"
@@ -186,6 +222,9 @@ internal fun AndroidReferenceSettingsScreen(
                             }
                         }
                         1 -> {
+                            ReferenceToggle("Анимация", videoAnimation, entryHeight) { enabled ->
+                                if (AndroidAnimationSettings.setEnabled(context, enabled)) videoAnimation = enabled
+                            }
                             ReferenceRow("Язык интерфейса", "Русский", height = entryHeight, enabled = false)
                             ReferenceRow("Тема", when (s.accentColor) {
                                 AccentColor.GREEN -> "Классическая"

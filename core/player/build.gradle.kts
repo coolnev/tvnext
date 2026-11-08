@@ -12,6 +12,7 @@ kotlin {
         namespace = "com.tvnext.app.core.player"
         compileSdk = 36
         minSdk = 24
+        androidResources { enable = true }
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }

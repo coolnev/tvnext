@@ -252,6 +252,15 @@ class MainActivity : ComponentActivity() {
         val logoLoader = koin.getOrNull<LogoImageLoader>()
 
         setContent {
+            var videoAnimation by remember { mutableStateOf(AndroidAnimationSettings.enabled(this@MainActivity)) }
+            DisposableEffect(Unit) {
+                val prefs = AndroidAnimationSettings.preferences(this@MainActivity)
+                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+                    videoAnimation = AndroidAnimationSettings.enabled(this@MainActivity)
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+            }
             LaunchedEffect(recordingNotice?.first) {
                 val id = recordingNotice?.first ?: return@LaunchedEffect
                 kotlinx.coroutines.delay(2800)
@@ -420,6 +429,8 @@ class MainActivity : ComponentActivity() {
                         epgProgressText = epgStatus.notice,
                         recordingActive = activeRecording != null,
                         textNotice = recordingNotice?.second,
+                        sharedPlaybackController = koin.get<com.tvnext.app.core.player.PlaybackController>(),
+                        animateVideoTransitions = videoAnimation,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
                             recoveryScreen == RecoveryScreen.RECORDINGS || recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK,
                         overlayContent = {
@@ -538,6 +549,11 @@ class MainActivity : ComponentActivity() {
         AndroidBootDiagnostics.onEnterBackground(this)
         playbackViewModel.onBackground()
         GlobalContext.get().getOrNull<com.tvnext.app.core.iptv.data.ScheduledReminderService>()?.stop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        WakeLaunchSettings.onActivityResumed(this)
     }
 
     override fun onStart() {

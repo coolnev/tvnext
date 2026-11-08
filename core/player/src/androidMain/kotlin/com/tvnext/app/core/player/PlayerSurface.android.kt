@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -19,7 +20,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 /** Android Media3 surface; retains the singleton player and D-pad focus ownership. */
 @Composable
-actual fun PlayerSurface(controller: PlaybackController, modifier: Modifier) {
+actual fun NativePlayerSurface(controller: PlaybackController, modifier: Modifier, useTextureView: Boolean) {
     val androidController = controller as? AndroidPlaybackController
     if (androidController == null) {
         Box(modifier = modifier.fillMaxSize().background(Color.Black))
@@ -52,8 +53,9 @@ actual fun PlayerSurface(controller: PlaybackController, modifier: Modifier) {
         } else VideoAspectMode.INHERIT.token
         VideoAspectMode.resolved(channelMode, AndroidVideoAspectSettings.get(context).token)
     }
+    key(useTextureView) {
     AndroidView(
-        factory = { AndroidVideoViewport(it) },
+        factory = { AndroidVideoViewport(it, useTextureView) },
         modifier = modifier.fillMaxSize(),
         update = { viewport ->
             if (viewport.videoView.player !== player) viewport.videoView.player = player
@@ -61,4 +63,5 @@ actual fun PlayerSurface(controller: PlaybackController, modifier: Modifier) {
         },
         onRelease = { it.videoView.player = null },
     )
+    }
 }

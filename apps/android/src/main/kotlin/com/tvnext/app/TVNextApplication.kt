@@ -58,10 +58,8 @@ class TVNextApplication : Application() {
         single<Context> { applicationContext }
         single<CoroutineContext>(named("mainDispatcher")) { Dispatchers.Main }
         single<AppDataReset> { AndroidAppDataReset(applicationContext) }
-        // No OS-level autostart concept on Android TV; the setting itself is
-        // hidden from the Android UI (see SettingsScreen isAndroidPlatform()
-        // check), this binding only exists so Koin can satisfy the shared
-        // SettingsComponent constructor.
+        // Windows login autostart stays separate from the native Android
+        // WakeLaunchSettings/Service used for standby wake.
         single<com.tvnext.app.core.common.platform.AppAutostart> {
             com.tvnext.app.core.common.platform.NoOpAppAutostart()
         }

@@ -174,7 +174,7 @@ fun TvPlayerPanel(
                         Modifier
                     },
                 )
-                .background(Color.Black)
+                .background(com.tvnext.app.core.player.videoSurfaceBackground(Color.Black))
                 .then(videoFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .onFocusChanged { onVideoFocusedChange(it.isFocused) }
                 .focusable(enabled = videoFocusable, interactionSource = videoInteractionSource)

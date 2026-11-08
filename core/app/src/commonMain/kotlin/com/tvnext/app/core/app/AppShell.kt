@@ -39,6 +39,13 @@ import com.tvnext.app.feature.settings.ui.SettingsComponent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import com.tvnext.app.core.player.LocalVideoScene
+import com.tvnext.app.core.player.VideoScene
+import com.tvnext.app.core.player.PlaybackController
+import com.tvnext.app.core.player.PlaybackContentKind
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -99,6 +106,8 @@ fun AppShell(
     epgProgressText: String? = null,
     recordingActive: Boolean = false,
     textNotice: String? = null,
+    sharedPlaybackController: PlaybackController? = null,
+    animateVideoTransitions: Boolean = false,
 ) {
     val childStack by component.childStack.subscribeAsState()
     val activeTab = childStack.active.configuration
@@ -117,12 +126,17 @@ fun AppShell(
         accentColor = settings.accentColor,
         panelTransparencyPercent = settings.panelTransparencyPercent,
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val scene = remember(sharedPlaybackController) { if(sharedPlaybackController!=null) VideoScene() else null }
+        CompositionLocalProvider(LocalVideoScene provides scene) {
+        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .onGloballyPositioned {scene?.origin=it.positionInRoot()}) {
+            if(scene!=null && sharedPlaybackController!=null) com.tvnext.app.core.ui.component.SharedVideoStage(
+                scene,sharedPlaybackController,animateVideoTransitions)
             if (!overlayFullScreen) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(if(scene!=null) Color.Transparent else MaterialTheme.colorScheme.background),
             ) {
                 // Top bar (logo + settings gear): on desktop it stays visible
                 // on the HOME tab in every mode and on other tabs while the
@@ -189,6 +203,12 @@ fun AppShell(
                                     showHomeFavorites = settings.showHomeFavorites,
                                     showHomeRecentVod = settings.showHomeRecentVod,
                                     showHomeFavoriteVod = settings.showHomeFavoriteVod,
+                                    playbackController = sharedPlaybackController,
+                                    onOpenPlayingVideo = {
+                                        onImmersiveChange(true)
+                                        component.selectTab(if(sharedPlaybackController?.state?.value?.item?.kind==PlaybackContentKind.VOD)
+                                            AppTab.MEDIA_LIBRARY else AppTab.CHANNELS)
+                                    },
                                 )
                                 is AppTabComponent.Channels -> ChannelsScreen(
                                     component = tab.component,
@@ -299,6 +319,7 @@ fun AppShell(
                 com.tvnext.app.core.ui.component.TextOnlyNotice(message,
                     Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 28.dp))
             }
+        }
         }
     }
 }
