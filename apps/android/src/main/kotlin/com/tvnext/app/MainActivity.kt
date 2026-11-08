@@ -63,6 +63,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var playbackViewModel: PlaybackViewModel
     private var recoveryScreen by mutableStateOf(RecoveryScreen.NONE)
     private var menuHomeRequested by mutableStateOf(false)
+    private var recordingNotice by mutableStateOf<Pair<Long, String>?>(null)
+    private var noticeSequence = 0L
+    private var stopNoticePending = false
     private var parentalPrompt by mutableStateOf<Pair<String, () -> Unit>?>(null)
     private lateinit var parentalProtection: ParentalProtection
     private var epgRecordingRequest by mutableStateOf<com.tvnext.app.core.common.util.RecordingScheduleRequest?>(null)
@@ -77,9 +80,7 @@ class MainActivity : ComponentActivity() {
             val outcome = runCatching {
                 withContext(Dispatchers.IO) { RecordingExport.toUri(this@MainActivity,pending.first,pending.second,uri) }
             }
-            Toast.makeText(this@MainActivity,
-                if (outcome.isSuccess) "Запись сохранена" else "Не удалось сохранить запись",
-                Toast.LENGTH_LONG).show()
+            showRecordingNotice(if (outcome.isSuccess) "Запись сохранена" else "Не удалось сохранить запись")
         }
     }
 
@@ -251,6 +252,19 @@ class MainActivity : ComponentActivity() {
         val logoLoader = koin.getOrNull<LogoImageLoader>()
 
         setContent {
+            LaunchedEffect(recordingNotice?.first) {
+                val id = recordingNotice?.first ?: return@LaunchedEffect
+                kotlinx.coroutines.delay(2800)
+                if (recordingNotice?.first == id) recordingNotice = null
+            }
+            LaunchedEffect(Unit) {
+                RecordingRuntime.active.collect { active ->
+                    if (active == null && stopNoticePending) {
+                        stopNoticePending = false
+                        showRecordingNotice("Запись остановлена")
+                    }
+                }
+            }
             LaunchedEffect(Unit) {
                 RecordingPanelEvents.requests.collect { recoveryScreen = RecoveryScreen.RECORDINGS }
             }
@@ -279,13 +293,18 @@ class MainActivity : ComponentActivity() {
                     val store = LocalRecoveryStore(this@MainActivity)
                     val owner = store.activeProfileId()
                     if (RecordingRuntime.active.value?.let { it.profileId == owner && !it.scheduled } == true) {
-                        RecordingService.stop(this@MainActivity)
-                        Toast.makeText(this@MainActivity, "Останавливаем запись", Toast.LENGTH_SHORT).show()
+                        stopNoticePending = true
+                        runCatching { RecordingService.stop(this@MainActivity) }
+                            .onSuccess { showRecordingNotice("Останавливаем запись") }
+                            .onFailure {
+                                stopNoticePending = false
+                                showRecordingNotice("Не удалось остановить запись")
+                            }
                     } else if (item?.kind == PlaybackContentKind.LIVE && item.url.startsWith("http")) {
                         runCatching { RecordingService.start(this@MainActivity, item.url, item.title, owner) }
-                            .onSuccess { Toast.makeText(this@MainActivity, "Запись начата", Toast.LENGTH_SHORT).show() }
-                            .onFailure { Toast.makeText(this@MainActivity, "Не удалось начать запись", Toast.LENGTH_SHORT).show() }
-                    } else Toast.makeText(this@MainActivity, "Сначала включите прямой эфир", Toast.LENGTH_SHORT).show()
+                            .onSuccess { showRecordingNotice("Запись начата") }
+                            .onFailure { showRecordingNotice("Не удалось начать запись") }
+                    } else showRecordingNotice("Сначала включите прямой эфир")
                 }
             }
             LaunchedEffect(Unit) {
@@ -400,6 +419,7 @@ class MainActivity : ComponentActivity() {
                         epgLoadedProgrammes = epgStatus.programmeCount,
                         epgProgressText = epgStatus.notice,
                         recordingActive = activeRecording != null,
+                        textNotice = recordingNotice?.second,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
                             recoveryScreen == RecoveryScreen.RECORDINGS || recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK,
                         overlayContent = {
@@ -487,6 +507,10 @@ class MainActivity : ComponentActivity() {
     private fun closeRecordingPlayback() {
         GlobalContext.get().get<com.tvnext.app.core.player.PlaybackController>().stop()
         recoveryScreen = RecoveryScreen.RECORDINGS
+    }
+
+    private fun showRecordingNotice(message: String) {
+        recordingNotice = ++noticeSequence to message
     }
 
     override fun onDestroy() {

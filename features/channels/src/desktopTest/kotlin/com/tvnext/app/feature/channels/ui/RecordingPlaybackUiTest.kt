@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.tvnext.app.core.player.*
 import com.tvnext.app.core.ui.component.RecordingIndicator
 import com.tvnext.app.core.ui.component.RecordingPlaybackScreen
+import com.tvnext.app.core.ui.component.TextOnlyNotice
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -37,14 +38,22 @@ class RecordingPlaybackUiTest {
 
     @Test fun recordingOwnsVideoAndRemoteControlsWhileRecBadgeDoesNotTakeFocus() = runDesktopComposeUiTest(width=960,height=540) {
         val player=Player();val recording=mutableStateOf(true);var closed=0
+        val notice=mutableStateOf<String?>(null)
         setContent {MaterialTheme(colorScheme=darkColorScheme()) {
             Box(Modifier.fillMaxSize()) {
                 RecordingPlaybackScreen(player,{closed++})
                 if(recording.value) RecordingIndicator(Modifier.align(Alignment.TopEnd).padding(16.dp))
+                notice.value?.let {TextOnlyNotice(it,Modifier.align(Alignment.BottomCenter).padding(bottom=28.dp))}
             }
         }}
         waitForIdle();onNodeWithTag("recording-pause").assertIsFocused()
         onNodeWithText("Сохранённая запись").assertIsDisplayed();onNodeWithText("REC").assertIsDisplayed()
+        runOnIdle {notice.value="Запись начата"};waitForIdle()
+        onNodeWithText("Запись начата").assertIsDisplayed();onNodeWithTag("recording-pause").assertIsFocused()
+        System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+            val file=java.io.File(root,"recording-text-only-notice.png");file.parentFile.mkdirs()
+            org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {file.writeBytes(it.bytes)}
+        }
         onNodeWithTag("recording-pause").performKeyInput {pressKey(Key.DirectionCenter)}
         waitForIdle();assertEquals(1,player.pauses);onNodeWithTag("recording-pause").assertIsFocused()
         onNodeWithTag("recording-pause").performKeyInput {pressKey(Key.DirectionLeft)}
@@ -60,7 +69,8 @@ class RecordingPlaybackUiTest {
         waitForIdle();onNodeWithTag("recording-controls").assertDoesNotExist();onNodeWithTag("recording-video").assertIsFocused()
         onNodeWithTag("recording-video").performKeyInput {pressKey(Key.DirectionCenter)}
         waitForIdle();onNodeWithTag("recording-pause").assertIsFocused()
-        runOnIdle {recording.value=false};waitForIdle()
+        runOnIdle {recording.value=false;notice.value="Запись остановлена"};waitForIdle()
+        onNodeWithText("Запись остановлена").assertIsDisplayed()
         onNodeWithTag("recording-indicator").assertDoesNotExist();onNodeWithTag("recording-pause").assertIsFocused()
         onNodeWithTag("recording-pause").performKeyInput {pressKey(Key.DirectionRight)}
         onNodeWithTag("recording-forward").performKeyInput {pressKey(Key.DirectionRight)}
