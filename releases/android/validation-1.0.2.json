@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-09",
+  "versionName": "1.0.2",
+  "versionCode": 1002,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "33f3282f342f8f63b848e1f856f3a5a1d8e0c71a",
+  "sha256": "66c582bac1355ec9b5a350bc2b4fa8206c5cdb20a4f85a42af22f36888454ace",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "matching": {
+    "allM3uVariantsMatchedIndependently": true,
+    "exactTvgIdPriority": true,
+    "allXmltvDisplayAliasesUsed": true,
+    "playlistScopedDuplicateIdsSupported": true,
+    "qualityAndCodecFallback": true,
+    "unicodeWhitespaceAndYoNormalized": true,
+    "numericXmlEntitiesFixed": true,
+    "ambiguousNamesRejected": true,
+    "timeShiftSignsPreserved": true
+  },
+  "coverage": {
+    "forcedRefreshCoversWholePlaylist": true,
+    "forcedRefreshWaitsForActiveAutomaticRefresh": true,
+    "visibleMissingChannelsMayUseUncachedBackupsWithFreshPrimary": true,
+    "freshProviderIsNotDownloadedJustForMissingChannel": true,
+    "sourceFreshnessAndFailureBackoffRetained": true
+  },
+  "timing": {
+    "optionalOrInvalidStopsResolvedFromNextStart": true,
+    "independentOfFeedOrder": true,
+    "boundedRowsPerTransaction": 512,
+    "lastUnknownStopFallbackMs": 1800000
+  },
+  "sourceCache": {
+    "conditionalHttpHeaders": [
+      "If-None-Match",
+      "If-Modified-Since"
+    ],
+    "notModifiedUsesRetainedFile": true,
+    "changedFeedReplacesRetainedFile": true,
+    "sourceCacheBudgetBytes": 268435456,
+    "sourceCacheAgeMs": 86400000,
+    "invalidCachedFileAndValidatorDiscarded": true,
+    "reusedFileNoticeIsNotDownloadProgress": true,
+    "automaticRestartDoesNotFetchFreshIndex": true
+  },
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 231,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 333,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "PNG resources unchanged"
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitations": [
+    "Specific missing channel names were requested but not supplied before this build; their live coverage is unconfirmed",
+    "Actual provider EPG host unavailable under environment outbound policy; matching/network/index scenarios verified with fixtures and real local HTTP",
+    "Conditional HTTP avoids a full transfer only when the source supports ETag or Last-Modified",
+    "No source can provide schedules absent from its data; ambiguous names deliberately do not receive an arbitrary guide"
+  ]
+}

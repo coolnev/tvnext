@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChannelStoreFavoritesTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-09T19:26:19.052Z" hostname="fbd2d42f1624" time="0.024">
+  <properties/>
+  <testcase name="favoritesPersistAcrossStores[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelStoreFavoritesTest" time="0.004"/>
+  <testcase name="favoritesSurvivePlaylistRefresh[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelStoreFavoritesTest" time="0.004"/>
+  <testcase name="favoritesSurvivePlaylistReloadWithDeleteAll[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelStoreFavoritesTest" time="0.008"/>
+  <testcase name="favoriteOfRemovedChannelIsDroppedOnRefresh[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelStoreFavoritesTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

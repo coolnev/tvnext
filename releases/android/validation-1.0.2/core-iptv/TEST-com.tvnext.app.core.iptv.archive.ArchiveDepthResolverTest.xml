@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ArchiveDepthResolverTest[desktop]" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-09T19:26:18.665Z" hostname="fbd2d42f1624" time="0.063">
+  <properties/>
+  <testcase name="shallowArchiveMeasuredInHours[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.043"/>
+  <testcase name="declaredDaysWithPlayableFormatRemainAvailable[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <testcase name="noMechanismIsNone[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.0"/>
+  <testcase name="holeInTheMiddleStopsAtLastConfirmedDay[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.006"/>
+  <testcase name="declaredDaysWithUnsupportedFormatDoNotClaimWorkingArchive[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <testcase name="depthMeasuredBySequentialSearch[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.003"/>
+  <testcase name="nothingReachableYieldsUnknown[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <testcase name="networkErrorsYieldUnknownNotInventedNumber[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <testcase name="unsupportedFormatYieldsUnknown[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <testcase name="declaredDaysUsedWithoutProbing[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveDepthResolverTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

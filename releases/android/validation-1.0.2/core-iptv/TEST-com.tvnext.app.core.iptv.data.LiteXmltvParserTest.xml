@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="LiteXmltvParserTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-09T19:26:22.746Z" hostname="fbd2d42f1624" time="0.003">
+  <properties/>
+  <testcase name="normalizesMissingStopTimes[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvParserTest" time="0.0"/>
+  <testcase name="descriptionsKeptOnlyInsideWindow[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvParserTest" time="0.001"/>
+  <testcase name="parsesProgrammesAndMatchesByTvgId[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvParserTest" time="0.001"/>
+  <testcase name="matchesByDisplayNameAndStripsQualitySuffix[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvParserTest" time="0.001"/>
+  <system-out><![CDATA[[LiteEpgParser] Parsed 1 channels / 2 programmes
+[LiteEpgParser] Parsed 2 channels / 3 programmes
+[LiteEpgParser] Parsed 1 channels / 1 programmes
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

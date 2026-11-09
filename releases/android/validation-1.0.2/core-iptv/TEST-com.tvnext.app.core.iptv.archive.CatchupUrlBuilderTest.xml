@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CatchupUrlBuilderTest[desktop]" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-09T19:26:18.939Z" hostname="fbd2d42f1624" time="0.008">
+  <properties/>
+  <testcase name="declaredDaysAloneDoesNotBuildUrl[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="flussonicEmptyDurationRejected[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="noMechanismCannotBuild[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.001"/>
+  <testcase name="utcTemplateReplacedWithStartSeconds[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="flussonicWithoutQueryKeepsNoQuery[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.005"/>
+  <testcase name="flussonicTypeBuildsDvrFileUrl[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="startEndAliasesReplaced[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.001"/>
+  <testcase name="shiftFlagWithoutTemplateUsesLiveUrlWithTimeParams[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="emptyRangeRejected[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="timeshiftPlainUrlAlreadyHasQueryKeepsParams[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <testcase name="timeshiftTypeWithPlainUrlAppendsTimeParams[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.001"/>
+  <testcase name="datePartPlaceholdersReplacedInUtc[desktop]" classname="com.tvnext.app.core.iptv.archive.CatchupUrlBuilderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
