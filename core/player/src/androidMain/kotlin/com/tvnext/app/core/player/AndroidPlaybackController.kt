@@ -2,6 +2,7 @@ package com.tvnext.app.core.player
 
 import android.content.Context
 import android.os.Looper
+import com.tvnext.app.core.common.log.AndroidPerformanceCounters
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -178,7 +179,14 @@ class AndroidPlaybackController(
             initializationDurationMs: Long,
         ) {
             activeDecoderName = decoderName
+            AndroidPerformanceCounters.increment("video.decoderStarts")
+            AndroidPerformanceCounters.set("video.decoderInitMs", initializationDurationMs)
             refreshState()
+        }
+
+        override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
+            AndroidPerformanceCounters.increment("video.droppedFrames", droppedFrames.toLong())
+            AndroidPerformanceCounters.set("video.droppedWindowMs", elapsedMs)
         }
 
         override fun onVideoInputFormatChanged(

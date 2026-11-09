@@ -28,7 +28,8 @@ class IndexedEpgRepository(
     private val clock: () -> Long = ::currentTimeMillis,
     private val automaticRefresh: Boolean = true,
     private val onSourceImported: (String) -> Unit = {},
-    private val importTimeoutMs: Long = 20 * 60_000L,
+    private val importTimeoutMs: Long = 8 * 60_000L,
+    private val refreshTimeoutMs: Long = 8 * 60_000L,
 ) : EpgRepository {
     private val store by lazy(storeProvider)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -39,6 +40,7 @@ class IndexedEpgRepository(
     private val importing = ConcurrentHashMap<String, Long>()
     @Volatile private var configuration: Configuration? = null
     @Volatile private var autoJob: Job? = null
+    @Volatile private var nextRefreshAt = 0L
     private val _state = MutableStateFlow(EpgState())
     private val _version = MutableStateFlow(0L)
     private var publishedAt = 0L
@@ -65,7 +67,7 @@ class IndexedEpgRepository(
 
     override fun observeState(): StateFlow<EpgState> = _state.asStateFlow()
     override fun observeVersion(): Flow<Long> = _version.asStateFlow()
-    fun invalidateConfiguration() { configuration = null; _version.update { it + 1L } }
+    fun invalidateConfiguration() { configuration = null; nextRefreshAt = 0L; _version.update { it + 1L } }
     suspend fun close() { scope.coroutineContext[Job]?.cancelAndJoin() }
 
     private suspend fun sources(): Configuration = configuration ?: sourceLock.withLock {
@@ -113,7 +115,7 @@ class IndexedEpgRepository(
 
     private fun requestPriority(requested: List<Channel>) {
         priority.set(requested.mapTo(hashSetOf(), ::key))
-        if (!automaticRefresh) return
+        if (!automaticRefresh || clock() < nextRefreshAt) return
         synchronized(this) {
             if (autoJob?.isActive == true) return
             autoJob = scope.launch {
@@ -126,10 +128,11 @@ class IndexedEpgRepository(
     override suspend fun refreshPlaylist(playlistId: String, force: Boolean): AppResult<Unit> = refreshIfStale(force)
 
     override suspend fun refreshIfStale(force: Boolean): AppResult<Unit> {
+        if (!force && clock() < nextRefreshAt) return AppResult.Success(Unit)
         if (!importLock.tryLock()) return AppResult.Success(Unit)
         return try {
             awaitImport()
-            withContext(worker) {
+            val result = withTimeoutOrNull(refreshTimeoutMs) { withContext(worker) {
                 val cfg = sources()
                 if (!cfg.enabled) return@withContext AppResult.Success(Unit)
                 var failure = false
@@ -160,10 +163,18 @@ class IndexedEpgRepository(
                     (failureNotice ?: "Один из источников EPG не обновился. Сохранённая программа доступна.") else null) }
                 if (failure) AppResult.Failure(AppError.InvalidData("Не удалось обновить источник EPG"))
                 else AppResult.Success(Unit)
+            } } ?: run {
+                _state.update { it.copy(lastError = "Обновление EPG остановлено по времени. Сохранённая программа доступна.") }
+                AppResult.Failure(AppError.InvalidData("EPG refresh timed out"))
             }
+            // Repeated viewport reads and Activity starts must not immediately
+            // restart an exhausted source/backup chain. Manual force bypasses it.
+            nextRefreshAt = clock() + if (result is AppResult.Failure) RETRY_MS else 60_000L
+            result
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
+            nextRefreshAt = clock() + RETRY_MS
             _state.update { it.copy(lastError = "Не удалось обновить EPG. Сохранённая программа доступна.") }
             AppResult.Failure(AppError.Database(error))
         } finally { _state.update { it.copy(isLoading = false, notice = null) }; importLock.unlock() }
@@ -409,7 +420,7 @@ class IndexedEpgRepository(
         .filter { it.startsWith("http://", true) || it.startsWith("https://", true) }.distinct()
 
     companion object {
-        private const val RETRY_MS = 15 * 60_000L
+        private const val RETRY_MS = 30 * 60_000L
         internal fun sourceId(url: String): String = MessageDigest.getInstance("SHA-256")
             .digest(url.toByteArray()).joinToString("") { "%02x".format(it) }
         internal fun merge(primary: List<EpgProgramme>, backup: List<EpgProgramme>): List<EpgProgramme> {

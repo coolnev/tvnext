@@ -13,6 +13,14 @@ import io.ktor.utils.io.ByteReadChannel
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import io.ktor.utils.io.ByteChannel
+import com.sun.net.httpserver.HttpServer
+import com.tvnext.app.core.network.createHttpClient
+import java.net.InetSocketAddress
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +36,93 @@ class EpgDownloadRegressionTest {
     private fun headers(size: Int, etag: String = "\"v1\"", range: String? = null) = Headers.build {
         append(HttpHeaders.ContentLength, size.toString()); append(HttpHeaders.ETag, etag)
         if (range != null) append(HttpHeaders.ContentRange, range)
+    }
+
+    @Test fun savedPrefixDoesNotKeepRetryingWhenResumedRequestsDeliverNothing() = runBlocking<Unit> {
+        var requests = 0
+        val client = HttpClient(MockEngine { request ->
+            requests++
+            if (requests == 1) respond("saved-prefix", headers = headers(1_000))
+            else {
+                assertEquals("bytes=12-", request.headers[HttpHeaders.Range])
+                respond(ByteChannel(autoFlush = true), HttpStatusCode.PartialContent,
+                    headers(988, range = "bytes 12-999/1000"))
+            }
+        }) { install(HttpTimeout) }
+        try {
+            withTimeout(3_000) {
+                try {
+                    EpgSourceDownload(client, directory(), retryDelay = {}, stallTimeoutMs = 100)
+                        .consume(url) { fail("Stalled bytes must not reach the parser") }
+                    fail("Download failure expected")
+                } catch (_: java.io.IOException) { }
+            }
+            assertEquals(3, requests) // initial prefix + two attempts without new bytes
+            assertEquals(12L, directory().listFiles()!!.single { it.name.endsWith(".part") }.length())
+        } finally { client.close() }
+    }
+
+    @Test fun oneDeadlineCoversAllRetriesAndLeavesPartialBytesResumable() = runBlocking<Unit> {
+        var requests = 0
+        val client = HttpClient(MockEngine {
+            requests++
+            respond("prefix", headers = headers(1_000))
+        }) { install(HttpTimeout) }
+        try {
+            withTimeout(3_000) {
+                try {
+                    EpgSourceDownload(client, directory(), downloadTimeoutMs = 200)
+                        .consume(url) { fail("Incomplete document") }
+                    fail("Budget must expire during retry delay")
+                } catch (_: java.io.IOException) { }
+            }
+            assertEquals(1, requests)
+            assertEquals(6L, directory().listFiles()!!.single { it.name.endsWith(".part") }.length())
+        } finally { client.close() }
+    }
+
+    @Test fun realAndroidHttpStallClosesConnectionAndNextRunResumesItsSavedPrefix() = runBlocking<Unit> {
+        val payload = "complete-guide".repeat(1_000).toByteArray()
+        val release = CountDownLatch(1)
+        val executor = Executors.newCachedThreadPool()
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.executor = executor
+        var requests = 0
+        val resume = java.util.concurrent.atomic.AtomicBoolean(false)
+        server.createContext("/epg.xml") { exchange ->
+            synchronized(this@EpgDownloadRegressionTest) { requests++ }
+            exchange.responseHeaders.add("ETag", "\"v1\"")
+            try {
+                if (resume.get()) {
+                    assertEquals("bytes=1024-", exchange.requestHeaders.getFirst("Range"))
+                    exchange.responseHeaders.add("Content-Range", "bytes 1024-${payload.lastIndex}/${payload.size}")
+                    exchange.sendResponseHeaders(206, (payload.size - 1024).toLong())
+                    exchange.responseBody.write(payload, 1024, payload.size - 1024)
+                } else {
+                    exchange.sendResponseHeaders(200, payload.size.toLong())
+                    exchange.responseBody.write(payload, 0, 1024)
+                    exchange.responseBody.flush()
+                    release.await(5, TimeUnit.SECONDS)
+                }
+            } finally { exchange.close() }
+        }
+        server.start()
+        val client = createHttpClient()
+        val localUrl = "http://127.0.0.1:${server.address.port}/epg.xml"
+        try {
+            withTimeout(6_000) {
+                try {
+                    EpgSourceDownload(client, directory(), retryDelay = {}, downloadTimeoutMs = 3_000, stallTimeoutMs = 350)
+                        .consume(localUrl) { fail("Stalled source must not be parsed") }
+                    fail("Timeout expected")
+                } catch (_: java.io.IOException) { }
+            }
+            assertEquals(1024L, directory().listFiles()!!.single { it.name.endsWith(".part") }.length())
+            resume.set(true)
+            release.countDown()
+            EpgSourceDownload(client, directory()).consume(localUrl) { assertArrayEquals(payload, it.readBytes()) }
+            assertTrue(requests >= 2)
+        } finally { release.countDown(); client.close(); server.stop(0); executor.shutdownNow() }
     }
 
     @Test fun interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive() = runBlocking<Unit> {

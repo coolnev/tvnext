@@ -8,7 +8,7 @@ import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.readAvailable
 import java.io.File
 import java.io.IOException
 import java.util.Properties
@@ -16,6 +16,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -25,6 +26,8 @@ class EpgSourceDownload(
     private val directory: File,
     private val retryDelay: suspend (Long) -> Unit = { delay(it) },
     private val clock: () -> Long = System::currentTimeMillis,
+    private val downloadTimeoutMs: Long = 5 * 60_000L,
+    private val stallTimeoutMs: Long = 15_000L,
 ) {
     data class Progress(val bytes: Long, val total: Long?, val attempt: Int, val resumed: Boolean = false)
     private val lock = Mutex()
@@ -56,6 +59,13 @@ class EpgSourceDownload(
     }
 
     private suspend fun fetch(url: String, progress: (Progress) -> Unit): File {
+        // One deadline for ALL retries, including Range requests. A stalled
+        // source must not consume five minutes on each of four attempts.
+        return withTimeoutOrNull(downloadTimeoutMs) { fetchWithinBudget(url, progress) }
+            ?: throw IOException("EPG download exceeded its time budget")
+    }
+
+    private suspend fun fetchWithinBudget(url: String, progress: (Progress) -> Unit): File {
         check(directory.isDirectory || directory.mkdirs()) { "Cannot create EPG download directory" }
         val key = IndexedEpgRepository.sourceId(url)
         val complete = File(directory, "$key.ready")
@@ -70,13 +80,14 @@ class EpgSourceDownload(
             partial.delete(); metadata.delete()
         }
         var lastFailure: IOException? = null
-        var zeroByteFailures = 0
+        var noProgressFailures = 0
         for (attempt in 1..ATTEMPTS) {
             currentCoroutineContext().ensureActive()
             val previous = readMeta(metadata)
             val validator = previous.getProperty("validator").orEmpty()
             val offset = if (validator.isNotBlank() && partial.isFile) partial.length() else 0L
             progress(Progress(offset, null, attempt, resumed = offset > 0))
+            var received = 0L
             try {
                 client.prepareGet(url) {
                     header(HttpHeaders.UserAgent, "TVNext/EPG")
@@ -121,15 +132,22 @@ class EpgSourceDownload(
                     val context = currentCoroutineContext()
                     var copied = appendAt
                     var published = 0L
-                    response.bodyAsChannel().toInputStream().use { input ->
+                    val input = response.bodyAsChannel()
+                    try {
                         java.io.FileOutputStream(partial, appendAt > 0).buffered(128 * 1024).use { out ->
                             // Truncate an ignored/changed range before replacing its validator.
                             saveMeta(metadata, meta)
                             val buffer = ByteArray(64 * 1024)
                             while (true) {
                                 context.ensureActive()
-                                val count = input.read(buffer)
+                                // Read the cancellable channel directly: the Java
+                                // InputStream bridge can block the parser worker
+                                // while its coroutine has already timed out.
+                                val count = withTimeoutOrNull(stallTimeoutMs) {
+                                    input.readAvailable(buffer, 0, buffer.size)
+                                } ?: throw IOException("EPG source stopped sending data")
                                 if (count < 0) break
+                                received += count
                                 copied += count
                                 if (copied > MAX_BYTES || (total != null && copied > total)) throw DownloadLimitException()
                                 out.write(buffer, 0, count)
@@ -139,7 +157,7 @@ class EpgSourceDownload(
                                 }
                             }
                         }
-                    }
+                    } finally { input.cancel(null) }
                     if (copied == 0L || (total != null && copied != total)) throw IOException("EPG download was interrupted")
                     progress(Progress(copied, total ?: copied, attempt, resumed = appendAt > 0))
                     check(partial.renameTo(complete)) { "Cannot commit EPG download" }
@@ -157,8 +175,9 @@ class EpgSourceDownload(
             } catch (failure: IOException) {
                 lastFailure = failure
             }
-            zeroByteFailures = if (partial.length() == 0L) zeroByteFailures + 1 else 0
-            if (zeroByteFailures >= 2) break
+            // A saved prefix is not progress in the current request.
+            noProgressFailures = if (received == 0L) noProgressFailures + 1 else 0
+            if (noProgressFailures >= 2) break
             if (attempt < ATTEMPTS) retryDelay(500L shl (attempt - 1))
         }
         throw lastFailure ?: IOException("EPG download failed")

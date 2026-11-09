@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
     private var appComponent: DefaultAppComponent? = null
 
     private lateinit var playbackViewModel: PlaybackViewModel
+    private lateinit var playbackDisplay: PlaybackDisplayLifecycle
     private var recoveryScreen by mutableStateOf(RecoveryScreen.NONE)
     private var menuHomeRequested by mutableStateOf(false)
     private var textNotice by mutableStateOf<Pair<Long, String>?>(null)
@@ -162,6 +163,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         playbackViewModel = ViewModelProvider(this)[PlaybackViewModel::class.java]
+        playbackDisplay = PlaybackDisplayLifecycle(this, playbackViewModel::onForeground, playbackViewModel::onBackground)
         parentalProtection = ParentalProtection(this)
         com.tvnext.app.core.iptv.domain.ParentalChannelGate.handler = { channel, granted ->
             if (!parentalProtection.enabled || parentalProtection.unlocked ||
@@ -551,6 +553,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (::playbackDisplay.isInitialized) playbackDisplay.close()
         // Only a clean user exit (double-Back / finish) clears the boot marker;
         // a system kill (LMK/native crash) leaves it, so the next launch can
         // detect the crash and skip the heavy automatic EPG import.
@@ -573,7 +576,7 @@ class MainActivity : ComponentActivity() {
         // Left the foreground: drop the boot marker (a background kill after
         // Home is ordinary Android behaviour, not the reported crash).
         AndroidBootDiagnostics.onEnterBackground(this)
-        playbackViewModel.onBackground()
+        playbackDisplay.onStop()
         GlobalContext.get().getOrNull<com.tvnext.app.core.iptv.data.ScheduledReminderService>()?.stop()
     }
 
@@ -594,7 +597,7 @@ class MainActivity : ComponentActivity() {
         // kill (e.g. during the EPG import) is later treated as a crash, not a
         // background reap after Home.
         AndroidBootDiagnostics.onEnterForeground(this)
-        playbackViewModel.onForeground()
+        playbackDisplay.onStart()
         GlobalContext.get().getOrNull<com.tvnext.app.core.iptv.data.ScheduledReminderService>()?.start()
     }
 }

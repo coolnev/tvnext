@@ -53,7 +53,10 @@ actual fun NativePlayerSurface(controller: PlaybackController, modifier: Modifie
         } else VideoAspectMode.INHERIT.token
         VideoAspectMode.resolved(channelMode, AndroidVideoAspectSettings.get(context).token)
     }
-    key(useTextureView) {
+    // A decoder session resumed after standby gets a new native surface too.
+    // Keeping the old TextureView can retain its pre-sleep graphics buffers.
+    // Navigation/animation keeps the same player and therefore the same view.
+    key(useTextureView, player) {
     AndroidView(
         factory = { AndroidVideoViewport(it, useTextureView) },
         modifier = modifier.fillMaxSize(),

@@ -59,14 +59,37 @@ class IndexedEpgRepositoryTest {
             override suspend fun getFavoriteIds(): Set<String> = emptySet()
             override suspend fun setFavorite(channelId: String, favorite: Boolean) = Unit
         }
-        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(), timeoutMs: Long = 20 * 60_000L,
+        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(), timeoutMs: Long = 20 * 60_000L, refreshTimeoutMs: Long = 8 * 60_000L,
             stream: suspend (String, suspend (EpgTextSource) -> Unit) -> Boolean): IndexedEpgRepository =
             IndexedEpgRepository({ store }, playlistRepo, channelRepo, object : EpgConfigProvider {
                 override suspend fun isEnabled() = true
                 override suspend fun userEpgUrl(): String? = null
             }, { fallback }, stream, { _, _ -> legacy }, worker = Dispatchers.IO.limitedParallelism(1),
-                clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs).also { repos.add(it) }
+                clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs, refreshTimeoutMs = refreshTimeoutMs).also { repos.add(it) }
         suspend fun close() { repos.forEach { it.close() }; driver.close() }
+    }
+
+    @Test fun wholeRefreshHasOneDeadlineAcrossPrimaryAndBackupAndBrowsingCannotRestartIt() = runBlocking<Unit> {
+        val f = Fixture()
+        var requests = 0
+        try {
+            val r = f.repo(automatic = true, refreshTimeoutMs = 180,
+                fallback = listOf("https://unused.invalid/backup.xml")) { _, _ ->
+                requests++
+                if (requests == 1) { delay(100); false } else awaitCancellation()
+            }
+            assertIs<AppResult.Failure>(withTimeout(3_000) { r.refreshIfStale(true) })
+            assertEquals(2, requests)
+            assertFalse(r.observeState().value.isLoading)
+            assertNull(r.observeState().value.notice)
+            assertNotNull(r.observeState().value.lastError)
+            repeat(5) { r.getNowPlaying(f.roster, now); r.refreshIfStale(false) }
+            delay(200)
+            assertEquals(2, requests)
+            // Manual refresh remains available during the automatic backoff.
+            assertIs<AppResult.Failure>(withTimeout(3_000) { r.refreshIfStale(true) })
+            assertEquals(3, requests)
+        } finally { f.close() }
     }
 
     @Test fun browsingAnUnmatchedChannelDoesNotStartUncachedBackupDownloads() = runBlocking<Unit> {

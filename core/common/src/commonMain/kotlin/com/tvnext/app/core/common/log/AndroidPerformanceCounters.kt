@@ -13,8 +13,8 @@ object AndroidPerformanceCounters {
     fun set(name: String, value: Long) = synchronized(lock) {
         if (name in values || values.size < 40) values[name] = value
     }
-    fun increment(name: String) = synchronized(lock) {
-        if (name in values || values.size < 40) values[name] = (values[name] ?: 0L) + 1
+    fun increment(name: String, count: Long = 1L) = synchronized(lock) {
+        if (name in values || values.size < 40) values[name] = (values[name] ?: 0L) + count
     }
     fun snapshot(): Map<String, Long> = synchronized(lock) { values.toMap() }
 }
