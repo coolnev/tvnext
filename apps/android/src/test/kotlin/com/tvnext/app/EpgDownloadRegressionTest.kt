@@ -283,4 +283,80 @@ class EpgDownloadRegressionTest {
             assertEquals(1, requests)
         } finally { client.close() }
     }
+    @Test fun unchangedFeedUsesConditionalRequestAndRetainedFileWhileChangedFeedReplacesIt() = runBlocking<Unit> {
+        var requests = 0
+        val client = HttpClient(MockEngine { request ->
+            requests++
+            when (requests) {
+                1 -> { assertNull(request.headers[HttpHeaders.IfNoneMatch]); respond("first", headers = headers(5)) }
+                2 -> { assertEquals("\"v1\"", request.headers[HttpHeaders.IfNoneMatch]); respond("", HttpStatusCode.NotModified) }
+                3 -> { assertEquals("\"v1\"", request.headers[HttpHeaders.IfNoneMatch]); respond("second", headers = headers(6, "\"v2\"")) }
+                else -> { assertEquals("\"v2\"", request.headers[HttpHeaders.IfNoneMatch]); respond("", HttpStatusCode.NotModified) }
+            }
+        }) { install(HttpTimeout) }
+        try {
+            val downloader = EpgSourceDownload(client, directory())
+            for (expected in listOf("first", "first", "second", "second")) {
+                downloader.consume(url) { assertEquals(expected, it.readText()) }
+                downloader.acknowledge(url)
+            }
+            assertEquals(4, requests)
+            assertEquals(1, directory().listFiles()!!.count { it.name.endsWith(".cached") })
+        } finally { client.close() }
+    }
+
+    @Test fun lastModifiedCanValidateRetainedFeedWithoutEtag() = runBlocking<Unit> {
+        val modified = "Mon, 09 Nov 2026 08:00:00 GMT"
+        var requests = 0
+        val client = HttpClient(MockEngine { request ->
+            requests++
+            if (requests == 1) respond("guide", headers = Headers.build { append(HttpHeaders.LastModified, modified) })
+            else {
+                assertEquals(modified, request.headers[HttpHeaders.IfModifiedSince])
+                assertNull(request.headers[HttpHeaders.IfNoneMatch])
+                respond("", HttpStatusCode.NotModified)
+            }
+        }) { install(HttpTimeout) }
+        try {
+            val downloader = EpgSourceDownload(client, directory())
+            repeat(2) { downloader.consume(url) { assertEquals("guide", it.readText()) }; downloader.acknowledge(url) }
+            assertEquals(2, requests)
+        } finally { client.close() }
+    }
+
+    @Test fun invalidRetainedDocumentIsDiscardedInsteadOfBeingCachedAgain() = runBlocking<Unit> {
+        var requests = 0
+        val client = HttpClient(MockEngine { request ->
+            requests++
+            if (requests == 2) respond("", HttpStatusCode.NotModified)
+            else {
+                if (requests == 3) assertNull(request.headers[HttpHeaders.IfNoneMatch])
+                respond("guide", headers = headers(5))
+            }
+        }) { install(HttpTimeout) }
+        try {
+            val downloader = EpgSourceDownload(client, directory())
+            downloader.consume(url) {}; downloader.acknowledge(url)
+            try { downloader.consume(url) { throw java.io.EOFException("invalid archive") }; fail("Invalid file") }
+            catch (_: java.io.EOFException) { }
+            assertFalse(directory().listFiles()!!.any { it.name.endsWith(".cached") })
+            downloader.consume(url) { assertEquals("guide", it.readText()) }
+            assertEquals(3, requests)
+        } finally { client.close() }
+    }
+
+    @Test fun compressedSourceCacheEvictsOldestFileAndValidatorWithinDiskBudget() = runBlocking<Unit> {
+        val dir = directory().apply { mkdirs() }
+        File(dir, "old.cached").apply { writeText("old-guide"); setLastModified(System.currentTimeMillis() - 1_000) }
+        File(dir, "old.cached-meta").writeText("etag=old")
+        val client = HttpClient(MockEngine { respond("new-guide", headers = headers(9)) }) { install(HttpTimeout) }
+        try {
+            val downloader = EpgSourceDownload(client, dir, cacheBudgetBytes = 12)
+            downloader.consume(url) {}; downloader.acknowledge(url)
+            assertFalse(File(dir, "old.cached").exists())
+            assertFalse(File(dir, "old.cached-meta").exists())
+            assertTrue(dir.listFiles()!!.filter { it.name.endsWith(".cached") }.sumOf { it.length() } <= 12)
+        } finally { client.close() }
+    }
+
 }

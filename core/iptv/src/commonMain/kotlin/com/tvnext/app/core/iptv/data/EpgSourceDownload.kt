@@ -28,8 +28,10 @@ class EpgSourceDownload(
     private val clock: () -> Long = System::currentTimeMillis,
     private val downloadTimeoutMs: Long = 5 * 60_000L,
     private val stallTimeoutMs: Long = 15_000L,
+    private val cacheBudgetBytes: Long = CACHE_BUDGET_BYTES,
 ) {
-    data class Progress(val bytes: Long, val total: Long?, val attempt: Int, val resumed: Boolean = false)
+    data class Progress(val bytes: Long, val total: Long?, val attempt: Int, val resumed: Boolean = false,
+        val reused: Boolean = false)
     private val lock = Mutex()
 
     suspend fun consume(url: String, progress: (Progress) -> Unit = {},
@@ -41,21 +43,51 @@ class EpgSourceDownload(
             // Keep the file until the database generation has committed (acknowledge()).
             true
         } catch (invalid: InvalidEpgDocumentException) {
-            acknowledge(url)
+            discard(file)
             throw invalid
         } catch (invalid: java.util.zip.ZipException) {
-            acknowledge(url)
+            discard(file)
             throw invalid
         } catch (invalid: java.io.EOFException) {
-            acknowledge(url)
+            discard(file)
             throw invalid
         }
     }
 
+    private fun discard(file: File) {
+        file.delete()
+        val suffix = if (file.name.endsWith(".cached")) ".cached-meta" else ".meta"
+        File(directory, file.name.substringBeforeLast('.') + suffix).delete()
+    }
+
     fun acknowledge(url: String) {
         val key = IndexedEpgRepository.sourceId(url)
-        File(directory, "$key.ready").delete()
-        File(directory, "$key.meta").delete()
+        val ready = File(directory, "$key.ready")
+        val metadata = File(directory, "$key.meta")
+        val cached = File(directory, "$key.cached")
+        if (ready.isFile) {
+            // Retain the compressed representation for conditional HTTP checks
+            // and reindexing, bounded across every source on the device.
+            if (ready.length() <= cacheBudgetBytes) {
+                val cachedMeta = File(directory, "$key.cached-meta")
+                // A crash between the two renames may lose a validator, never
+                // pair an old validator with a new document.
+                cachedMeta.delete()
+                cached.delete()
+                if (ready.renameTo(cached)) {
+                    metadata.renameTo(cachedMeta)
+                }
+            }
+            ready.delete()
+        }
+        metadata.delete()
+        val files = directory.listFiles().orEmpty().filter { it.name.endsWith(".cached") }.sortedByDescending { it.lastModified() }
+        var bytes = 0L
+        for (file in files) {
+            if (bytes + file.length() > cacheBudgetBytes || clock() - file.lastModified() !in 0..MAX_CACHE_AGE_MS) {
+                file.delete(); File(directory, file.name.removeSuffix(".cached") + ".cached-meta").delete()
+            } else bytes += file.length()
+        }
     }
 
     private suspend fun fetch(url: String, progress: (Progress) -> Unit): File {
@@ -71,8 +103,11 @@ class EpgSourceDownload(
         val complete = File(directory, "$key.ready")
         val partial = File(directory, "$key.part")
         val metadata = File(directory, "$key.meta")
+        val cached = File(directory, "$key.cached")
+        val cachedMeta = readMeta(File(directory, "$key.cached-meta"))
+        val canRevalidate = cached.isFile && cached.length() > 0L && clock() - cached.lastModified() in 0..MAX_CACHE_AGE_MS
         if (complete.isFile && complete.length() > 0 && clock() - complete.lastModified() in 0..MAX_AGE_MS) {
-            progress(Progress(complete.length(), complete.length(), 0))
+            progress(Progress(complete.length(), complete.length(), 0, reused = true))
             return complete
         }
         complete.delete()
@@ -88,6 +123,7 @@ class EpgSourceDownload(
             val offset = if (validator.isNotBlank() && partial.isFile) partial.length() else 0L
             progress(Progress(offset, null, attempt, resumed = offset > 0))
             var received = 0L
+            var downloaded = complete
             try {
                 client.prepareGet(url) {
                     header(HttpHeaders.UserAgent, "TVNext/EPG")
@@ -97,10 +133,23 @@ class EpgSourceDownload(
                     if (offset > 0) {
                         header(HttpHeaders.Range, "bytes=$offset-")
                         header(HttpHeaders.IfRange, validator)
+                    } else if (canRevalidate) {
+                        cachedMeta.getProperty("etag")?.takeIf(String::isNotBlank)?.let { header(HttpHeaders.IfNoneMatch, it) }
+                            ?: cachedMeta.getProperty("modified")?.takeIf(String::isNotBlank)?.let { header(HttpHeaders.IfModifiedSince, it) }
                     }
                     timeout { requestTimeoutMillis = 5 * 60_000L; connectTimeoutMillis = 10_000L; socketTimeoutMillis = 15_000L }
                 }.execute { response ->
                     val status = response.status.value
+                    if (status == 304) {
+                        if (!canRevalidate || offset > 0 ||
+                            (cachedMeta.getProperty("etag").isNullOrBlank() && cachedMeta.getProperty("modified").isNullOrBlank()))
+                            throw IOException("EPG source returned 304 without a cached document")
+                        cached.setLastModified(clock())
+                        partial.delete(); metadata.delete()
+                        progress(Progress(cached.length(), cached.length(), attempt, reused = true))
+                        downloaded = cached
+                        return@execute
+                    }
                     if (status == 416) {
                         partial.delete(); metadata.delete()
                         throw IOException("EPG range no longer available")
@@ -128,6 +177,8 @@ class EpgSourceDownload(
                     if ((total ?: 0L) > MAX_BYTES) throw DownloadLimitException()
                     val meta = Properties().apply {
                         setProperty("validator", if (decoded) "" else newValidator)
+                        setProperty("etag", response.headers[HttpHeaders.ETag].orEmpty())
+                        setProperty("modified", response.headers[HttpHeaders.LastModified].orEmpty())
                     }
                     val context = currentCoroutineContext()
                     var copied = appendAt
@@ -162,7 +213,7 @@ class EpgSourceDownload(
                     progress(Progress(copied, total ?: copied, attempt, resumed = appendAt > 0))
                     check(partial.renameTo(complete)) { "Cannot commit EPG download" }
                 }
-                return complete
+                return downloaded
             } catch (cancelled: CancellationException) {
                 // Leave both partial data and its HTTP validator for the next foreground run.
                 throw cancelled
@@ -197,6 +248,8 @@ class EpgSourceDownload(
         const val ATTEMPTS = 4
         const val MAX_AGE_MS = 12 * 60 * 60_000L
         const val MAX_BYTES = 1024L * 1024 * 1024
+        const val CACHE_BUDGET_BYTES = 256L * 1024 * 1024
+        const val MAX_CACHE_AGE_MS = 24 * 60 * 60_000L
         val RANGE = Regex("bytes (\\d+)-(\\d+)/(\\d+)")
     }
 }

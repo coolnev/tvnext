@@ -55,7 +55,9 @@ class IndexedEpgRepository(
             bytes < 1024 * 1024 -> "${(bytes / 102.4).toLong() / 10.0} КБ"
             else -> "${(bytes / (1024.0 * 1024) * 10).toLong() / 10.0} МБ"
         }
-        val notice = if (progress.bytes == 0L && progress.total == null) {
+        val notice = if (progress.reused) {
+            "Чтение сохранённого EPG…"
+        } else if (progress.bytes == 0L && progress.total == null) {
             if (progress.attempt > 1) "Повтор подключения к EPG (${progress.attempt})…" else "Подключение к источнику EPG…"
         } else {
             val size = amount(progress.bytes) + (progress.total?.let { " / ${amount(it)}" } ?: "")
@@ -129,7 +131,9 @@ class IndexedEpgRepository(
 
     override suspend fun refreshIfStale(force: Boolean): AppResult<Unit> {
         if (!force && clock() < nextRefreshAt) return AppResult.Success(Unit)
-        if (!importLock.tryLock()) return AppResult.Success(Unit)
+        // An explicit user refresh must not be reported as completed while a
+        // viewport-only automatic refresh is still running.
+        if (force) importLock.lock() else if (!importLock.tryLock()) return AppResult.Success(Unit)
         return try {
             awaitImport()
             val result = withTimeoutOrNull(refreshTimeoutMs) { withContext(worker) {
@@ -141,19 +145,15 @@ class IndexedEpgRepository(
                 for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
                 val ordered = cfg.sources.sortedWith(compareBy<Source> { !it.primary }
                     .thenBy { s -> s.channels.none { key(it) in priority.get() } })
-                val hasCompleteGuide = cfg.sources.any { source ->
-                    store.snapshot(source.id)?.let { it.fetchedAt > 0 && it.rows > 0 } == true
-                }
-                var primaryAttempted = false
                 for (source in ordered) {
                     if (source.channels.isEmpty()) continue
                     val old = store.snapshot(source.id)
                     val fresh = old != null && cacheUsable(source, old)
                     if (!force && (fresh || (old?.retryAt ?: 0L) > clock())) continue
-                    // Do not fetch unrelated backup feeds when the visible channels have EPG.
-                    if (!source.primary && !force && hasCompleteGuide && !primaryAttempted && (old?.fetchedAt ?: 0L) <= 0L) continue
-                    if (!source.primary && !needsBackup(cfg, source)) continue
-                    if (source.primary) primaryAttempted = true
+                    // Manual refresh covers the entire playlist. Automatic
+                    // refresh fills the viewport, even with a fresh provider
+                    // cache; per-source freshness/backoff bounds later retries.
+                    if (!source.primary && !needsBackup(cfg, source, allChannels = force)) continue
                     awaitImport()
                     _state.update { it.copy(isLoading = true, lastError = null) }
                     if (!import(source)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }
@@ -180,8 +180,8 @@ class IndexedEpgRepository(
         } finally { _state.update { it.copy(isLoading = false, notice = null) }; importLock.unlock() }
     }
 
-    private fun needsBackup(cfg: Configuration, source: Source): Boolean {
-        val viewport = priority.get()
+    private fun needsBackup(cfg: Configuration, source: Source, allChannels: Boolean = false): Boolean {
+        val viewport = if (allChannels) emptySet() else priority.get()
         val wanted = source.channels.filter { viewport.isEmpty() || key(it) in viewport }.mapTo(hashSetOf(), ::key)
         if (wanted.isEmpty()) return false
         for (cached in cfg.sources) {
@@ -235,6 +235,8 @@ class IndexedEpgRepository(
                 writer.flush()
                 check(success && complete) { "Incomplete XMLTV" }
                 if (writer.count == 0L) throw NoMatchedEpgChannels()
+                _state.update { it.copy(notice = "Уточнение времени передач…") }
+                store.normalizeStopTimes(source.id, generation) { context.ensureActive() }
                 _state.update { it.copy(notice = "Сохранение программы передач…") }
                 store.complete(source.id, generation, source.signature, clock(), clock()) { done, total ->
                     context.ensureActive()

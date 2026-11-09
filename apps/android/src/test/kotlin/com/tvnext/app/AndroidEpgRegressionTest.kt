@@ -235,4 +235,47 @@ class AndroidEpgRegressionTest {
         } finally { lifecycle.destroy(); client.close() }
     }
 
+    @Test fun allPlaylistVariantsAndOffscreenBackupPersistAndManualRefreshUses304() = runBlocking<Unit> {
+        val context = RuntimeEnvironment.getApplication()
+        val backupUrl = "https://unused.invalid/backup.xml"
+        AndroidFallbackEpgSettings(context).apply { setEnabled(true); setUrl(backupUrl) }
+        AndroidEpgPlaybackGate.setAppForeground(true)
+        val hd = item.copy(id = "hd", name = "Тестовый канал [HD]", tvgId = "different.id")
+        val missing = item.copy(id = "missing", name = "Другой HD", tvgId = "missing.id")
+        val roster = listOf(item, hd, missing)
+        val rosterRepo = object : ChannelsRepository by channels {
+            override suspend fun getChannels() = roster
+            override suspend fun getChannelsByPlaylist(playlistId: String) = roster
+        }
+        val now = System.currentTimeMillis()
+        val format = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z").withZone(ZoneOffset.UTC)
+        fun row(id: String, title: String, start: Long = now-60_000) = "<programme channel='$id' start='${format.format(Instant.ofEpochMilli(start))}'><title>$title</title></programme>"
+        var primaryRequests = 0; var backupRequests = 0; var bodies = 0
+        val client = HttpClient(MockEngine { request ->
+            val backup = request.url.toString() == backupUrl
+            if (backup) backupRequests++ else primaryRequests++
+            if (request.headers[HttpHeaders.IfNoneMatch] == "\"v1\"") respond("", HttpStatusCode.NotModified)
+            else {
+                bodies++
+                val xml = if (backup) "<tv><channel id='external'><display-name>&#1044;ругой</display-name></channel>${row("external", "Из резерва")}</tv>"
+                    else "<tv><channel id='news'><display-name>Тестовый канал</display-name></channel>${row("news", "Основной")}${row("news", "Следующая", now+3_600_000)}</tv>"
+                respond(xml, headers = headersOf(HttpHeaders.ETag, "\"v1\""))
+            }
+        }) { install(HttpTimeout) }
+        try {
+            val repository = AndroidEpgRepository(client, playlists, rosterRepo, config, context)
+            repository.getNowPlaying(listOf(item), now) // force must include the offscreen channel
+            assertTrue(repository.refreshIfStale(true) is AppResult.Success)
+            assertEquals(mapOf(item.id to "Основной", hd.id to "Основной", missing.id to "Из резерва"),
+                repository.getNowPlaying(roster, now).mapValues { it.value.title })
+            assertTrue(repository.getNowPlaying(listOf(hd), now).getValue(hd.id).stop > now+3_500_000)
+            assertTrue(repository.refreshIfStale(true) is AppResult.Success)
+            assertEquals(2, primaryRequests); assertEquals(1, backupRequests); assertEquals(2, bodies)
+            val reopened = AndroidEpgRepository(client, playlists, rosterRepo, config, context)
+            assertEquals(3, reopened.getNowPlaying(roster, now).size)
+            assertTrue(reopened.refreshIfStale(false) is AppResult.Success)
+            assertEquals(3, primaryRequests + backupRequests)
+        } finally { client.close() }
+    }
+
 }

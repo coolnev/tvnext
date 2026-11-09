@@ -3,6 +3,7 @@ package com.tvnext.app.core.iptv.data
 import com.tvnext.app.core.common.log.Logger
 import com.tvnext.app.core.iptv.domain.Channel
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
+import com.tvnext.app.core.iptv.xmltv.EpgChannel
 
 /**
  * Streaming XMLTV parser (LiteTV port). Reads the document from an
@@ -24,7 +25,7 @@ internal class LiteXmltvParser {
      */
     fun parse(
         source: EpgTextSource,
-        lookup: Map<String, MutableList<String>>,
+        lookup: ChannelLookup,
         playlistId: String,
         out: EpgProgrammeSink,
         windowStart: Long = Long.MIN_VALUE,
@@ -34,6 +35,8 @@ internal class LiteXmltvParser {
     ): Boolean {
         val scanner = XmlScanner(source)
         val xmltvIdToKeys = HashMap<String, List<String>>()
+        val declared = linkedMapOf<String, EpgChannel>()
+        var matchingDirty = false
         var parsedChannels = 0
         var parsedProgrammes = 0
 
@@ -42,10 +45,24 @@ internal class LiteXmltvParser {
             if (tag == "channel") {
                 val element = scanner.extractElement("channel") ?: return false
                 parsedChannels++
-                parseChannelElement(element, lookup, xmltvIdToKeys)
+                parseChannelElement(element)?.let { declared[it.id] = it; matchingDirty = true }
             } else {
                 val element = scanner.extractElement("programme") ?: return false
                 parsedProgrammes++
+                if (matchingDirty) {
+                    xmltvIdToKeys.clear()
+                    // Resolve every playlist channel independently, after all
+                    // declarations. An SD ID match must not hide HD/name aliases.
+                    val result = EpgMatcher(allowQualityFallback = true).match(
+                        lookup.channels.map { it.copy(id = "${it.playlistId}|${it.id}") }, declared.values.toList())
+                    result.channelToEpgId.forEach { (key, id) ->
+                        xmltvIdToKeys[id] = xmltvIdToKeys[id].orEmpty() + key
+                    }
+                    // A declared but ambiguous channel must not fall through to
+                    // the headerless compatibility matcher below.
+                    declared.keys.forEach { xmltvIdToKeys.putIfAbsent(it, emptyList()) }
+                    matchingDirty = false
+                }
                 parseProgrammeElement(element, playlistId, xmltvIdToKeys, lookup, out, windowStart, windowEnd, fullDescriptions)
                 // Every 256 entries, give Android playback threads a small CPU
                 // window. Desktop stays unchanged through its platform actual.
@@ -56,93 +73,49 @@ internal class LiteXmltvParser {
         return scanner.closedDocument
     }
 
-    /** Builds a normalised name/id -> channel keys index (ported from LiteTV). */
-    fun buildChannelLookup(channels: List<Channel>): Map<String, MutableList<String>> {
-        val lookup = HashMap<String, MutableList<String>>()
-        for (channel in channels) {
-            val key = "${channel.playlistId}|${channel.id}"
-            addLookupToken(lookup, channel.tvgId, key)
-            addLookupToken(lookup, channel.tvgName, key)
-            addLookupToken(lookup, channel.name, key)
-        }
-        return lookup
-    }
-
-    private fun addLookupToken(lookup: MutableMap<String, MutableList<String>>, token: String?, key: String) {
-        val normalized = normalize(token)
-        if (normalized.isEmpty()) return
-        lookup.getOrPut(normalized) { ArrayList(1) }.let { if (key !in it) it.add(key) }
-        val stripped = stripQualitySuffix(normalized)
-        if (stripped != normalized) {
-            lookup.getOrPut(stripped) { ArrayList(1) }.let { if (key !in it) it.add(key) }
-        }
-    }
-
-    private fun matchChannelKeys(lookup: Map<String, MutableList<String>>, token: String?): List<String>? {
-        val normalized = normalize(token)
-        if (normalized.isEmpty()) return null
-        lookup[normalized]?.let { return it }
-        return lookup[stripQualitySuffix(normalized)]
-    }
-
-    /** Lowercase, separators feeds/playlists disagree about removed (ported from LiteTV). */
-    private fun normalize(value: String?): String {
-        if (value.isNullOrEmpty()) return ""
-        val sb = StringBuilder(value.length)
-        for (c in value) {
-            if (c == ' ' || c == '\t' || c == '-' || c == '_' || c == '.' || c == '\u00b7') continue
-            sb.append(c.lowercaseChar())
-        }
-        return sb.toString()
-    }
-
-    private fun stripQualitySuffix(normalized: String): String {
-        for (suffix in QUALITY_SUFFIXES) {
-            if (normalized.length > suffix.length && normalized.endsWith(suffix)) {
-                return normalized.substring(0, normalized.length - suffix.length)
+    internal class ChannelLookup(val channels: List<Channel>) {
+        private val matcher = EpgMatcher(allowQualityFallback = true)
+        private val byId = hashMapOf<String, MutableList<String>>()
+        private val byName = hashMapOf<String, MutableList<String>>()
+        init {
+            for (channel in channels) {
+                val key = "${channel.playlistId}|${channel.id}"
+                channel.tvgId?.takeIf { it.isNotBlank() }?.let {
+                    byId.getOrPut(matcher.normalize(it)) { arrayListOf() }.add(key)
+                }
+                for (name in listOfNotNull(channel.tvgName, channel.name)) {
+                    byName.getOrPut(matcher.qualityName(name)) { arrayListOf() }.let { if (key !in it) it.add(key) }
+                }
             }
         }
-        return normalized
+        fun withoutDeclaration(id: String): List<String>? =
+            byId[matcher.normalize(id)] ?: byName[matcher.qualityName(id)]
     }
 
-    private fun parseChannelElement(
-        element: String,
-        lookup: Map<String, MutableList<String>>,
-        xmltvIdToKeys: MutableMap<String, List<String>>,
-    ) {
+    fun buildChannelLookup(channels: List<Channel>) = ChannelLookup(channels)
+
+    private fun parseChannelElement(element: String): EpgChannel? {
         val gt = element.indexOf('>')
-        if (gt < 0) return
-        val open = element.substring(0, gt + 1)
-        val id = decodeXml(attr(open, "id"))
-        var keys = matchChannelKeys(lookup, id)
-
-        // XMLTV channels can have several <display-name> aliases. Do not
-        // discard a valid second/third alias when the first one differs from M3U.
-        if (keys == null) {
-            var cursor = gt + 1
-            while (true) {
-                val dn = element.indexOf("<display-name", cursor)
-                if (dn < 0) break
-                val dgt = element.indexOf('>', dn)
-                if (dgt < 0) break
-                val end = element.indexOf("</display-name", dgt + 1)
-                if (end < 0) break
-                val name = decodeXml(element.substring(dgt + 1, end))?.trim()
-                keys = matchChannelKeys(lookup, name)
-                if (keys != null) break
-                cursor = end + 14
-            }
+        if (gt < 0) return null
+        val id = decodeXml(attr(element.substring(0, gt + 1), "id"))?.takeIf { it.isNotBlank() } ?: return null
+        val names = arrayListOf<String>()
+        var cursor = gt + 1
+        while (true) {
+            val dn = element.indexOf("<display-name", cursor)
+            if (dn < 0) break
+            childText(element, dn, "display-name")?.takeIf(String::isNotBlank)?.let(names::add)
+            val end = element.indexOf("</display-name", dn)
+            if (end < 0) break
+            cursor = end + 14
         }
-        if (keys != null && !id.isNullOrEmpty() && !xmltvIdToKeys.containsKey(id)) {
-            xmltvIdToKeys[id] = keys
-        }
+        return EpgChannel(id, names)
     }
 
     private fun parseProgrammeElement(
         element: String,
         playlistId: String,
         xmltvIdToKeys: Map<String, List<String>>,
-        lookup: Map<String, MutableList<String>>,
+        lookup: ChannelLookup,
         out: EpgProgrammeSink,
         windowStart: Long,
         windowEnd: Long,
@@ -154,7 +127,7 @@ internal class LiteXmltvParser {
         val xmltvId = decodeXml(attr(open, "channel")) ?: return
         // Some valid feeds omit <channel> declarations and use M3U tvg-id
         // directly on programmes. These used to silently import zero rows.
-        val keys = xmltvIdToKeys[xmltvId] ?: matchChannelKeys(lookup, xmltvId) ?: return
+        val keys = xmltvIdToKeys[xmltvId] ?: lookup.withoutDeclaration(xmltvId) ?: return
         val title = childText(element, gt + 1, "title") ?: return
         if (title.isEmpty()) return
         val start = parseXmltvTime(decodeXml(attr(open, "start"))) ?: return
@@ -246,28 +219,20 @@ internal class LiteXmltvParser {
     }
 
     private fun decodeXml(value: String?): String? {
-        if (value == null) return null
-        var s = value
-            .replace("&amp;", "&")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&quot;", "\"")
-            .replace("&apos;", "'")
-        // Numeric entities (&#123; / &#x1f;).
-        var p = s.indexOf("&#")
-        while (p >= 0) {
-            val e = s.indexOf(';', p + 2)
-            if (e < 0) break
-            val num = s.substring(p + 2, e)
-            val cp = num.removePrefix("x").removePrefix("X").toIntOrNull(16) ?: num.toIntOrNull(10)
-            if (cp != null) {
-                s = s.substring(0, p) + cp.toChar() + s.substring(e + 1)
-                p = s.indexOf("&#", p + 1)
-            } else {
-                p = s.indexOf("&#", e + 1)
+        if (value == null || '&' !in value) return value
+        return XML_ENTITY.replace(value) { match ->
+            val token = match.groupValues[1]
+            when (token) {
+                "amp" -> "&"; "lt" -> "<"; "gt" -> ">"; "quot" -> "\""; "apos" -> "'"
+                else -> {
+                    val number = token.removePrefix("#")
+                    val hex = number.startsWith("x", true)
+                    val cp = (if (hex) number.drop(1) else number).toIntOrNull(if (hex) 16 else 10)
+                    if (cp != null && Character.isValidCodePoint(cp) && cp !in 0xD800..0xDFFF)
+                        String(Character.toChars(cp)) else match.value
+                }
             }
         }
-        return s
     }
 
     /** Sorts by start, drops repeats, and fills missing stop times (LiteTV port). */
@@ -367,7 +332,7 @@ internal class LiteXmltvParser {
         const val DEFAULT_PROGRAM_DURATION_MS = 30L * 60 * 1000
         const val MAX_DESC_LENGTH = 500
         const val MAX_CATEGORY_LENGTH = 80
-        val QUALITY_SUFFIXES = arrayOf("4k", "8k", "uhd", "fhd", "hd", "超清", "高清", "标清", "蓝光")
+        val XML_ENTITY = Regex("&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|amp|lt|gt|quot|apos);")
     }
 }
 

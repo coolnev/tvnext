@@ -97,6 +97,36 @@ class IndexedEpgStore(private val database: TvNextDatabase, private val driver: 
         }
     }
 
+    /** XMLTV permits an omitted stop. Infer it from the next indexed start,
+     * independently of file order, with a bounded fallback for the final row. */
+    fun normalizeStopTimes(source: String, generation: Long, checkpoint: () -> Unit = {}) {
+        var afterRow = 0L
+        while (true) {
+            checkpoint()
+            val ids = driver.executeQuery(null,
+                "SELECT rowid FROM epg_programme WHERE playlist_id=? AND batch_id=? AND rowid>? AND stop_time<=start_time ORDER BY rowid LIMIT 512",
+                { cursor ->
+                    val result = arrayListOf<Long>()
+                    while (cursor.next().value) cursor.getLong(0)?.let(result::add)
+                    QueryResult.Value(result)
+                }, 3) { bindString(0, source); bindLong(1, generation); bindLong(2, afterRow) }.value
+            if (ids.isEmpty()) break
+            afterRow = ids.last()
+            database.transaction {
+                driver.execute(null, """
+                    UPDATE epg_programme SET stop_time=COALESCE(
+                        (SELECT MIN(following.start_time) FROM epg_programme following
+                         WHERE following.playlist_id=epg_programme.playlist_id AND following.batch_id=epg_programme.batch_id
+                         AND following.channel_id=epg_programme.channel_id AND following.start_time>epg_programme.start_time),
+                        start_time+1800000)
+                    WHERE rowid IN (${ids.joinToString(",") { "?" }})
+                """.trimIndent(), ids.size) {
+                    ids.forEachIndexed { index, row -> bindLong(index, row) }
+                }
+            }
+        }
+    }
+
     fun complete(source: String, generation: Long, signature: String, fetchedAt: Long, now: Long,
         checkpoint: (Int, Int) -> Unit = { _, _ -> }) {
         val previous = snapshot(source)?.generation ?: 0L

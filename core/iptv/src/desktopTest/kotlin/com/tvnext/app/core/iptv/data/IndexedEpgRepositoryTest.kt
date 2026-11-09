@@ -92,19 +92,100 @@ class IndexedEpgRepositoryTest {
         } finally { f.close() }
     }
 
-    @Test fun browsingAnUnmatchedChannelDoesNotStartUncachedBackupDownloads() = runBlocking<Unit> {
+    @Test fun browsingMissingChannelFetchesBackupOnceWithoutDownloadingFreshPrimaryAgain() = runBlocking<Unit> {
         val f = Fixture()
         try {
             val initial = f.repo { _, consume -> StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }; true }
             initial.refreshIfStale()
-            val missing = channel("missing").copy(name = "Без программы", tvgId = "missing")
+            val missing = channel("missing").copy(name = "Резервный", tvgId = "missing")
             f.roster = f.roster + missing
-            var requests = 0
-            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { _, _ -> requests++; error("No background HTTP for a missing channel") }
+            val requests = arrayListOf<String>()
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { url, consume ->
+                requests += url
+                StringEpgTextSource("<tv>${programme(id = "missing")}</tv>").use { consume(it) }; true
+            }
             r.getNowPlaying(listOf(missing), now)
             assertIs<AppResult.Success<Unit>>(r.refreshIfStale())
-            assertEquals(0, requests)
+            assertEquals(listOf("https://unused.invalid/backup.xml"), requests)
+            assertNotNull(r.getNowPlaying(listOf(missing), now)[missing.id])
+            f.time += 61_000
+            r.refreshIfStale()
+            assertEquals(1, requests.size)
             assertFalse(r.observeState().value.isLoading)
+        } finally { f.close() }
+    }
+
+    @Test fun forcedRefreshWaitsForAutomaticRefreshInsteadOfSilentlyReturningSuccess() = runBlocking<Unit> {
+        val f = Fixture()
+        val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
+        var requests = 0
+        try {
+            val r = f.repo { _, consume ->
+                requests++
+                if (requests == 1) { entered.complete(Unit); release.await() }
+                StringEpgTextSource("<tv>${programme()}</tv>").use { consume(it) }; true
+            }
+            val automatic = async { r.refreshIfStale(false) }
+            withTimeout(3_000) { entered.await() }
+            val forced = async { r.refreshIfStale(true) }
+            delay(50)
+            assertFalse(forced.isCompleted)
+            release.complete(Unit)
+            assertIs<AppResult.Success<Unit>>(withTimeout(3_000) { automatic.await() })
+            assertIs<AppResult.Success<Unit>>(withTimeout(3_000) { forced.await() })
+            assertEquals(2, requests)
+        } finally { release.complete(Unit); f.close() }
+    }
+
+    @Test fun optionalOrInvalidStopTimesAreInferredFromNextStartRegardlessOfFileOrder() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            fun row(start: Long, title: String, stop: String = "") =
+                "<programme channel='news' start='${stamp(start)}' $stop><title>$title</title></programme>"
+            val xml = "<tv>" + row(now + hour, "Следующая") + row(now - hour, "Архив") +
+                row(now - hour/2, "Текущая", "stop='${stamp(now - 2*hour)}'") + "</tv>"
+            val r = f.repo { _, consume -> StringEpgTextSource(xml).use { consume(it) }; true }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            val current = assertNotNull(r.getNowPlaying(f.roster, now)["c"])
+            assertEquals("Текущая", current.title)
+            assertEquals(now + hour, current.stop)
+            val rows = r.getProgrammesInRange(f.roster, now - 2*hour, now + 2*hour).getValue("c")
+            assertEquals(listOf(now-hour/2, now+hour, now+hour+hour/2), rows.map { it.stop })
+        } finally { f.close() }
+    }
+
+    @Test fun thousandsOfOmittedStopTimesUseBoundedIndexedBatches() = runBlocking<Unit> {
+        val f = Fixture()
+        try {
+            val xml = buildString {
+                append("<tv>")
+                repeat(9_000) { i -> append("<programme channel='news' start='${stamp(now+(i-4500)*60_000L)}'><title>P$i</title></programme>") }
+                append("</tv>")
+            }
+            val r = f.repo { _, consume -> StringEpgTextSource(xml).use { consume(it) }; true }
+            assertIs<AppResult.Success<Unit>>(withTimeout(20_000) { r.refreshIfStale(true) })
+            assertEquals(9_000, r.observeState().value.programmeCount)
+            val current = assertNotNull(r.getNowPlaying(f.roster, now)["c"])
+            assertEquals("P4500", current.title)
+            assertEquals(now+60_000, current.stop)
+        } finally { f.close() }
+    }
+
+    @Test fun forcedRefreshFillsMissingOffscreenChannelsFromBackup() = runBlocking<Unit> {
+        val f = Fixture()
+        val missing = channel("missing").copy(name = "Резервный", tvgId = "missing")
+        f.roster = f.roster + missing
+        val requests = arrayListOf<String>()
+        try {
+            val r = f.repo(fallback = listOf("https://unused.invalid/backup.xml")) { url, consume ->
+                requests += url
+                val content = if (url.endsWith("backup.xml")) programme(id = "missing") else programme()
+                StringEpgTextSource("<tv>$content</tv>").use { consume(it) }; true
+            }
+            r.getNowPlaying(listOf(f.roster.first()), now) // covered viewport hides the missing channel
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            assertEquals(2, requests.size)
+            assertNotNull(r.getNowPlaying(listOf(missing), now)[missing.id])
         } finally { f.close() }
     }
 
@@ -134,6 +215,9 @@ class IndexedEpgRepositoryTest {
         val f = Fixture()
         try {
             val r = f.repo { _, _ -> false }
+            r.downloadProgress(EpgSourceDownload.Progress(1_000_000, 1_000_000, 1, reused = true))
+            assertTrue(r.observeState().value.notice.orEmpty().contains("сохранённого"))
+            assertFalse(r.observeState().value.notice.orEmpty().contains("Скачивание"))
             r.downloadProgress(EpgSourceDownload.Progress(0, null, 2))
             assertTrue(r.observeState().value.notice.orEmpty().contains("Повтор"))
             assertFalse(r.observeState().value.notice.orEmpty().contains("докачка"))

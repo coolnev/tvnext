@@ -22,7 +22,9 @@ class FullDescriptionRegressionTest {
             override fun close() {}
         }
         val out = EpgBuffer()
-        LiteXmltvParser().parse(source, mapOf("c" to mutableListOf("p|c")), "p", out,
+        val parser = LiteXmltvParser()
+        val channel = com.tvnext.app.core.iptv.domain.Channel("c", "C", 0, "", "unused", tvgId = "c", playlistId = "p")
+        parser.parse(source, parser.buildChannelLookup(listOf(channel)), "p", out,
             windowStart = windowStart, windowEnd = Long.MAX_VALUE, fullDescriptions = full)
         return out.drain().getValue("p|c").single().description
     }
