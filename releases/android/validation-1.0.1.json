@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-09",
+  "versionName": "1.0.1",
+  "versionCode": 1001,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "87c3fde5bc7584865f36da8c62bb3d2183925676",
+  "sha256": "ba0fe22c0ce8e267e5dd1e40a2a12e307c10daefe3e1d45c2b3830be30debd17",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "epg": {
+    "cancellableChannelReads": true,
+    "stallTimeoutMs": 15000,
+    "downloadBudgetAcrossAllAttemptsMs": 300000,
+    "refreshBudgetAcrossAllSourcesMs": 480000,
+    "automaticFailureBackoffMs": 1800000,
+    "successfulCheckCoalescingMs": 60000,
+    "manualForcedRefreshBypassesBackoff": true,
+    "partialFileAndValidatorRetained": true,
+    "completeGuideRetainedOnFailure": true,
+    "freshCacheDoesNotRequireHttp": true,
+    "backupsRetainedWithinOverallBudget": true
+  },
+  "playback": {
+    "screenBroadcastsIndependentlySuspendAndResumePlayer": true,
+    "screenOnWhileActivityStoppedDoesNotStartPlayback": true,
+    "nativeViewRenewedForNewPlayerSession": true,
+    "viewAndPlayerRetainedDuringNavigation": true,
+    "animationStillEnabled": true,
+    "droppedFrameCountersAdded": true
+  },
+  "tests": [
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 220,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 92,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 381,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key present in DEX, absent from tracked plaintext",
+    "PNG resources unchanged"
+  ],
+  "emulator": {
+    "api": 28,
+    "hardwareAcceleration": false,
+    "installedVersionCode": 1001,
+    "installationSucceeded": true,
+    "completedRuntimeVerification": false,
+    "status": "INSTRUMENTATION_ABORTED: System has crashed.",
+    "cause": "Android Watchdog killed system_server while AMS/WindowManager handlers were blocked; target app reported DeadSystemException",
+    "source": "local H.264/AAC fixture prepared; video runtime check did not complete"
+  },
+  "limitations": [
+    "Release APK runtime standby verification incomplete: software AVD system_server watchdog death; do not report it as a passed APK test",
+    "Physical Google TV unavailable: original subtle stutter not reproduced or proven resolved on that device",
+    "Actual provider EPG source unavailable under environment outbound policy; timeout/resume verified against real local HTTP and fixtures"
+  ]
+}

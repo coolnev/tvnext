@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VodMediaLibraryTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:58:35.068Z" hostname="fbd2d42f1624" time="0.015">
+  <properties/>
+  <testcase name="vodM3uParsesIntoItemsWithCategories[desktop]" classname="com.tvnext.app.core.iptv.data.VodMediaLibraryTest" time="0.004"/>
+  <testcase name="searchFindsByNameAndCategory[desktop]" classname="com.tvnext.app.core.iptv.data.VodMediaLibraryTest" time="0.002"/>
+  <testcase name="removeSourceDeletesItsItems[desktop]" classname="com.tvnext.app.core.iptv.data.VodMediaLibraryTest" time="0.003"/>
+  <testcase name="vodWatchHistoryIsTyped[desktop]" classname="com.tvnext.app.core.iptv.data.VodMediaLibraryTest" time="0.003"/>
+  <testcase name="refreshKeepsStableIdentityNoDuplicates[desktop]" classname="com.tvnext.app.core.iptv.data.VodMediaLibraryTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

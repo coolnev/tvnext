@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChannelIdStabilityTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:58:29.472Z" hostname="fbd2d42f1624" time="0.196">
+  <properties/>
+  <testcase name="refreshWithChangedUrlKeepsIdAndUserData[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.097"/>
+  <testcase name="migrationIsIdempotent[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.02"/>
+  <testcase name="mediaItemIdIgnoresUrlWhenTvgIdPresent[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.009"/>
+  <testcase name="sameChannelInDifferentPlaylistsNeverCollides[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.0"/>
+  <testcase name="nameIdentityIsCaseAndWhitespaceInsensitive[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.001"/>
+  <testcase name="channelIdIgnoresStreamUrlWhenTvgIdPresent[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.0"/>
+  <testcase name="channelIdFallsBackToUrlOnlyWhenNoIdentity[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.001"/>
+  <testcase name="refreshWithoutTvgIdKeepsIdWhenOnlyUrlChanges[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.034"/>
+  <testcase name="migrationRewritesIdsAndCarriesUserData[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.029"/>
+  <testcase name="mediaItemIdKeepsSeriesParts[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.003"/>
+  <testcase name="channelIdUsesNameWhenNoTvgId[desktop]" classname="com.tvnext.app.core.iptv.data.ChannelIdStabilityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

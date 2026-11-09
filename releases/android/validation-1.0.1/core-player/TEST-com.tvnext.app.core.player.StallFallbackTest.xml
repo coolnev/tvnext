@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="StallFallbackTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:57:38.833Z" hostname="fbd2d42f1624" time="0.009">
+  <properties/>
+  <testcase name="confirmedStallTriggersRepair[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.004"/>
+  <testcase name="noRepairLoop[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <testcase name="realNetworkBufferingNeverTriggersRepair[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <testcase name="explicitHardwareStillRepairsInPlace[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <testcase name="exactlyAtWindowTriggersRepair[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <testcase name="liveContentNeverTriggersRepair[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.002"/>
+  <testcase name="softwareOutputNeverTriggersRepair[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <testcase name="briefFreezeBelowWindowIsNotAStall[desktop]" classname="com.tvnext.app.core.player.StallFallbackTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ScheduledRepositoryTest[desktop]" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:58:35.030Z" hostname="fbd2d42f1624" time="0.037">
+  <properties/>
+  <testcase name="deleteByPlaylistCleansOnlyThatPlaylist[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.003"/>
+  <testcase name="unscheduleRemovesEntry[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.002"/>
+  <testcase name="pastProgrammeIsRejected[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.001"/>
+  <testcase name="deleteExpiredRemovesFinishedProgrammes[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.002"/>
+  <testcase name="sameChannelAndStartDifferentPlaylistsDoNotCollide[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.001"/>
+  <testcase name="sameProgrammeOnDifferentChannelsDoNotCollide[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.001"/>
+  <testcase name="createAndListSchedule[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.001"/>
+  <testcase name="duplicateScheduleIsDetected[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.001"/>
+  <testcase name="observeEmitsCurrentList[desktop]" classname="com.tvnext.app.core.iptv.data.ScheduledRepositoryTest" time="0.022"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

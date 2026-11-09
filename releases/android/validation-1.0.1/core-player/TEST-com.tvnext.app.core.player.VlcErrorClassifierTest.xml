@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VlcErrorClassifierTest[desktop]" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:57:38.932Z" hostname="fbd2d42f1624" time="0.009">
+  <properties/>
+  <testcase name="socketTimeoutIsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.001"/>
+  <testcase name="cannotGuessFormatIsUnsupportedFormat[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="emptyMessagesAreUnknown[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="tlsHandshakeFailureIsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="mixedNoiseAndNetworkIsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="http404IsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="invalidDataIsUnsupportedFormat[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="dnsFailureIsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="streamWithVideoTrackButDecoderFailureIsDecoder[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="noSuitableDemuxIsUnsupportedFormat[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="unsupportedDataIsUnsupportedFormat[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="streamWithVideoTrackAndNetworkMessageIsStillDecoder[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <testcase name="connectionRefusedIsNetwork[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.001"/>
+  <testcase name="unrelatedMessagesAreUnknown[desktop]" classname="com.tvnext.app.core.player.VlcErrorClassifierTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

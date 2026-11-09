@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VideoAspectModeTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-09T12:57:38.853Z" hostname="fbd2d42f1624" time="0.016">
+  <properties/>
+  <testcase name="fixedRatiosFitInsideTheirContainer[desktop]" classname="com.tvnext.app.core.player.VideoAspectModeTest" time="0.006"/>
+  <testcase name="everyTokenIsUniqueAndEveryFixedRatioIsPositive[desktop]" classname="com.tvnext.app.core.player.VideoAspectModeTest" time="0.01"/>
+  <testcase name="channelInheritsGlobalUnlessExplicitlyOverridden[desktop]" classname="com.tvnext.app.core.player.VideoAspectModeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
