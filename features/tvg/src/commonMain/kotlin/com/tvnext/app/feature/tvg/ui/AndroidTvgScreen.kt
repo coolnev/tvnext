@@ -50,6 +50,12 @@ import com.tvnext.app.core.iptv.domain.channelCategoriesInOrder
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import kotlinx.coroutines.launch
 
 private const val GUIDE_HOUR = 3_600_000L
@@ -69,6 +75,9 @@ internal fun AndroidTvgScreen(component: TvgComponent, modifier: Modifier, onBac
 @Composable
 private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBack: (() -> Unit)?) {
     val state by component.state.collectAsState()
+    val playingChannelId by remember(component) {
+        component.playbackController.state.map { it.item?.id }.distinctUntilChanged()
+    }.collectAsState(initial = component.playbackController.state.value.item?.id)
     val rows = state.filteredChannels
     val list = rememberLazyListState()
     val timeScroll = rememberScrollState()
@@ -83,6 +92,9 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     var okJob by remember { mutableStateOf<Job?>(null) }
     DisposableEffect(Unit) { onDispose { okJob?.cancel() } }
     var channelId by remember { mutableStateOf<String?>(null) }
+    var visibleChannelIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var entryPositioned by remember(state.selectedCategory) { mutableStateOf(false) }
+    var userSelectedRow by remember(component) { mutableStateOf(false) }
     val entryTime = remember(component) { guidePlaybackTime(component.playbackController.state.value, currentTimeMillis()) }
     var cursorTime by remember { mutableLongStateOf(entryTime) }
     // When LEFT crosses midnight, keep the target in the preceding day rather
@@ -102,6 +114,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     val accent = MaterialTheme.colorScheme.primary
 
     fun select(channel: Channel, time: Long) {
+        userSelectedRow = true
         channelId = channel.id
         categoryMemory[state.selectedCategory] = channel.id
         cursorTime = time
@@ -111,10 +124,13 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
         else details = ProgrammeInfo(channel, programme)
     }
     LaunchedEffect(Unit) { while (true) { now = currentTimeMillis(); delay(30_000) } }
-    LaunchedEffect(rows.map { it.id }, state.selectedCategory) {
+    LaunchedEffect(rows.map { it.id }, state.selectedCategory, playingChannelId) {
         if (rows.isEmpty()) return@LaunchedEffect
-        val saved = categoryMemory[state.selectedCategory] ?: channelId ?: component.playbackController.state.value.item?.id
-        channelId = rows.firstOrNull { it.id == saved }?.id ?: rows.first().id
+        val saved = if (!userSelectedRow) playingChannelId ?: channelId
+            else categoryMemory[state.selectedCategory] ?: channelId ?: playingChannelId
+        val next = rows.firstOrNull { it.id == saved }?.id ?: rows.first().id
+        if (!userSelectedRow && next != channelId) entryPositioned = false
+        channelId = next
     }
     LaunchedEffect(state.from, state.to) {
         if (state.to > state.from) {
@@ -128,24 +144,51 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             timeScroll.scrollTo(((cursorTime - state.from) / GUIDE_HOUR.toFloat() * hourPx - hourPx / 4).toInt().coerceAtLeast(0))
         }
     }
-    LaunchedEffect(channelId, rows.map { it.id }) {
+    LaunchedEffect(channelId, rows.map { it.id }, gridReady) {
+        if (!gridReady) return@LaunchedEffect
         val index = rows.indexOfFirst { it.id == channelId }
-        if (index >= 0 && list.layoutInfo.visibleItemsInfo.none { it.index == index }) list.scrollToItem(index)
+        if (index < 0) return@LaunchedEffect
+        if (!entryPositioned) {
+            val layout = snapshotFlow { list.layoutInfo }.first { it.viewportEndOffset > it.viewportStartOffset }
+            val rowHeight = with(density) { GuideRowHeight.toPx() }
+            val offset = -((layout.viewportEndOffset - layout.viewportStartOffset - rowHeight) / 2).toInt()
+            // Schedule the jump for layout instead of forcing a synchronous
+            // remeasure while a late playback/selection composition is pending.
+            list.requestScrollToItem(index, offset)
+            entryPositioned = true
+        } else if (list.layoutInfo.visibleItemsInfo.none { it.index == index }) list.requestScrollToItem(index)
     }
     LaunchedEffect(list, rows.map { it.id }, state.from, state.to) {
         snapshotFlow { list.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }.toSet() }
             .distinctUntilChanged().collect { ids ->
+                visibleChannelIds = ids
                 if (ids.isNotEmpty()) component.dispatch(TvgIntent.VisibleChannelsChanged(ids))
             }
     }
     LaunchedEffect(categoriesOpen, details, rows.isNotEmpty(), gridReady) {
         if (!categoriesOpen && details == null && gridReady) {
             withFrameNanos { }
-            if (rows.isNotEmpty()) gridFocus.requestFocus() else toolbarFocus.requestFocus()
+            if (rows.isNotEmpty() || state.isLoading) gridFocus.requestFocus() else toolbarFocus.requestFocus()
         }
     }
-    Column(modifier.onPreviewKeyEvent { event ->
-        if ((event.key == Key.Enter || event.key == Key.DirectionCenter) && okLong) {
+    val hasVisibleProgrammes = visibleChannelIds.any { !state.programmes[it].isNullOrEmpty() }
+    val waiting = !hasVisibleProgrammes && (state.isLoading || state.isEpgLoading ||
+        state.loadingChannelIds.any { it in visibleChannelIds })
+    var showWait by remember { mutableStateOf(false) }
+    LaunchedEffect(waiting) {
+        if (waiting) { delay(200); showWait = true } else showWait = false
+    }
+    Box(modifier.onPreviewKeyEvent { event ->
+        val ok = event.key in listOf(Key.Enter, Key.DirectionCenter, Key.NumPadEnter)
+        if (ok && OkInputGate.suppressNextKeyUp) {
+            // Repeats and release belong to the press that opened this screen,
+            // including when cold startup temporarily focuses a toolbar button.
+            if (event.type == KeyEventType.KeyUp) {
+                OkInputGate.suppressNextKeyUp = false
+                okJob?.cancel(); okHeld = false; okLong = false
+            }
+            true
+        } else if (ok && okLong) {
             if (event.type == KeyEventType.KeyUp) { okHeld = false; okLong = false }
             true
         } else if (event.key == Key.Info && !categoriesOpen) {
@@ -161,6 +204,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             true
         } else false
     }.fillMaxSize().background(com.tvnext.app.core.player.videoSurfaceBackground(MaterialTheme.colorScheme.surface)).padding(16.dp)) {
+        Column(Modifier.fillMaxSize()) {
         AndroidGuideHeader(controller = component.playbackController,
             category = state.selectedCategory ?: uiText("Все каналы"),
             date = formatDate(if (state.from > 0) state.from else now),
@@ -172,7 +216,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             onRefresh = { component.dispatch(TvgIntent.Refresh) }, onVideo = onBack)
         // Reserve the loading strip so refresh cannot move the video or grid.
         Box(Modifier.fillMaxWidth().height(8.dp)) {
-            if (state.isRefreshing || state.isLoading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center))
+            if (state.isRefreshing || state.isLoading || state.loadingChannelIds.isNotEmpty() || state.isEpgLoading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center))
         }
         state.message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         state.error?.let { Text(it.toUserMessage(), color = MaterialTheme.colorScheme.error) }
@@ -261,7 +305,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 ) {
                     itemsIndexed(rows, key = { _, channel -> channel.id }) { _, channel ->
                         val selected = channel.id == channelId
-                        Row(Modifier.fillMaxWidth().height(GuideRowHeight).testTag("tvg-channel-row")) {
+                        Row(Modifier.fillMaxWidth().height(GuideRowHeight).testTag("tvg-channel-row").semantics { this.selected = channel.id == channelId }) {
                             Box(Modifier.width(channelWidth).fillMaxHeight().testTag("tvg-channel-name")
                                 .background(if (selected) accent.copy(alpha = .2f) else foreground.copy(alpha = .05f))
                                 .guideTap { select(channel, cursorTime); component.dispatch(TvgIntent.ChannelClicked(channel.id)) }
@@ -271,7 +315,8 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                             }
                             Box(Modifier.width(timelineWidth).fillMaxHeight().clipToBounds()) {
                                 val programmes = state.programmes[channel.id].orEmpty()
-                                if (programmes.isEmpty()) Text(uiText("Нет программы"), Modifier.padding(12.dp), color = foreground.copy(alpha = .5f))
+                                if (programmes.isEmpty()) Text(if (state.isLoading || state.isEpgLoading || channel.id in state.loadingChannelIds)
+                                    uiText("Загрузка телепрограммы…") else uiText("Нет программы"), Modifier.padding(12.dp), color = foreground.copy(alpha = .5f))
                                 programmes.filter { it.stop > visibleStart && it.start < visibleEnd }.forEach { programme ->
                                     val start = maxOf(programme.start, state.from, visibleStart)
                                     val stop = minOf(programme.stop, state.to, visibleEnd)
@@ -300,6 +345,15 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
         }
         AutoScrollText(selectedProgramme?.let { "${selectedChannel?.name} • ${it.title}\n${it.description.orEmpty()}" }
             ?: uiText("↑↓ Каналы   ←→ Передачи   OK Информация   Назад: кнопки / выход"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, modifier = Modifier.padding(top = 8.dp))
+        }
+        if (showWait) Row(Modifier.align(Alignment.Center).testTag("tvg-loading")
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .background(Color.Black.copy(alpha = .9f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+            .padding(horizontal = 22.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp, color = Color.White)
+            Text(uiText("Пожалуйста, подождите…"), color = Color.White, style = MaterialTheme.typography.bodyLarge)
+        }
     }
     if (categoriesOpen) AlertDialog(
         onDismissRequest = { categoriesOpen = false }, title = { Text(uiText("Категории")) },

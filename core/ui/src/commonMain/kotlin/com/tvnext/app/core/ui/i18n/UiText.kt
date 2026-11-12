@@ -29,6 +29,7 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Пожалуйста, подождите…" to ("Please wait…" to "请稍候…"),
         "Достигнут лимит записей TVNext" to ("TVNext recording limit reached" to "已达到 TVNext 录像容量限制"),
         "Недостаточно свободного места для записи" to ("Not enough free space for recording" to "录像可用空间不足"),
         "Накопитель для записи недоступен" to ("Recording storage is unavailable" to "录像存储不可用"),

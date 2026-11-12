@@ -64,9 +64,50 @@ class AndroidGuideAccessRegressionTest {
         fixture.channels = listOf(fixture.channel)
         fixture.component.dispatch(TvgIntent.Activated)
         assertEquals(listOf(fixture.channel), fixture.component.state.value.filteredChannels)
-        assertEquals("Кино", fixture.component.state.value.selectedCategory)
+        assertNull(fixture.component.state.value.selectedCategory)
         assertNotNull(fixture.component.state.value.programmes[fixture.channel.id]?.firstOrNull())
         assertNull(fixture.component.state.value.error)
+    }
+
+    @Test fun coldEntryAndReentryKeepAllCategoriesAndWarmOnlyPlayingNeighbours() = guide(null) { f ->
+        f.channels = (1..1_800).map { f.channel.copy(id="channel$it",number=it,category=if(it%2==0) "Кино" else "Новости") }
+        val playing=f.channels[1499]
+        f.player.value=PlayerState(item=PlaybackItem(playing.id,playing.name,playing.streamUrl))
+        f.component.dispatch(TvgIntent.Activated)
+        assertNull(f.component.state.value.selectedCategory)
+        assertEquals(1800,f.component.state.value.filteredChannels.size)
+        assertNotNull(f.component.state.value.programmes[playing.id])
+        assertTrue(f.component.state.value.currentProgrammes.size <= 25)
+        assertTrue(f.component.state.value.currentProgrammes.keys.any {it==f.channels[1498].id})
+        f.component.dispatch(TvgIntent.CategorySelected("Новости"))
+        assertEquals("Новости",f.component.state.value.selectedCategory)
+        f.component.dispatch(TvgIntent.Activated)
+        assertNull(f.component.state.value.selectedCategory)
+        assertNotNull(f.component.state.value.programmes[playing.id])
+    }
+
+    @Test fun deferredGridAndViewportReadsExposeLoadingAndLateCancelledReadsCannotOverwriteToday() = guide(null) { f ->
+        val tomorrow=startOfLocalDayOffset(f.now,1)
+        f.emptyFrom=tomorrow
+        f.deferFrom=tomorrow
+        f.component.dispatch(TvgIntent.DaySet(1))
+        assertTrue(f.component.state.value.isLoading)
+        f.deferFrom=null
+        val initial=f.pending.toList();f.pending.clear()
+        initial.forEach {(continuation,rows)->continuation.resume(rows)}
+        assertFalse(f.component.state.value.isLoading)
+        f.emptyFrom=null
+        f.deferFrom=tomorrow
+        f.component.dispatch(TvgIntent.VisibleChannelsChanged(setOf(f.channel.id)))
+        assertEquals(setOf(f.channel.id),f.component.state.value.loadingChannelIds)
+        assertFalse(f.component.state.value.isLoading)
+        f.component.dispatch(TvgIntent.DaySet(0))
+        assertTrue(f.component.state.value.loadingChannelIds.isEmpty())
+        val old=f.pending.toList();f.pending.clear();f.deferFrom=null
+        old.forEach {(continuation,rows)->continuation.resume(rows)}
+        assertTrue(f.component.state.value.loadingChannelIds.isEmpty())
+        assertEquals(startOfLocalDayOffset(f.now,0),f.component.state.value.from)
+        assertFalse(f.component.state.value.programmes[f.channel.id].isNullOrEmpty())
     }
 
     @Test fun removedCategoryCannotLeaveGuideEmpty() = guide(null) { fixture ->
@@ -75,7 +116,7 @@ class AndroidGuideAccessRegressionTest {
         assertNull(fixture.component.state.value.selectedCategory)
         fixture.channels = listOf(fixture.channel.copy(category = "Новая категория"))
         fixture.component.dispatch(TvgIntent.Activated)
-        assertEquals("Новая категория", fixture.component.state.value.selectedCategory)
+        assertNull(fixture.component.state.value.selectedCategory)
         assertEquals(fixture.channels, fixture.component.state.value.filteredChannels)
     }
 

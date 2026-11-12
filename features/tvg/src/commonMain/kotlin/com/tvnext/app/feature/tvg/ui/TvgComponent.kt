@@ -33,12 +33,14 @@ import com.tvnext.app.core.player.PlaybackController
 import com.tvnext.app.core.player.PlaybackItem
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** Selected programme shown in the info panel. */
@@ -58,6 +60,8 @@ data class TvgFocusState(
 data class TvgState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
+    val isEpgLoading: Boolean = false,
+    val loadingChannelIds: Set<String> = emptySet(),
     val channels: List<Channel> = emptyList(),
     /** Каналы, отфильтрованные по выбранной категории. */
     val filteredChannels: List<Channel> = emptyList(),
@@ -167,6 +171,7 @@ class DefaultTvgComponent(
     ComponentContext by componentContext,
     MviComponent<TvgState, TvgIntent, TvgEffect>(
         initialState = TvgState(
+            isLoading = true,
             selectedDayOffset = TvgDayOffsetHolder.offset.coerceIn(
                 if (isAndroidPlatform()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET),
         ),
@@ -187,7 +192,7 @@ class DefaultTvgComponent(
     private var priorityVisibleLoadJob: kotlinx.coroutines.Job? = null
     private var epgRefreshJob: kotlinx.coroutines.Job? = null
     private var lastVisibleChannelIds: Set<String> = emptySet()
-    private var categoryAutoSelected = false
+    private val rowLoads = mutableMapOf<Any, Set<String>>()
     private val androidRowVersions = mutableMapOf<String, Long>()
 
     init {
@@ -210,6 +215,11 @@ class DefaultTvgComponent(
         launch {
             ArchiveDepthChanges.revision.drop(1).collect {
                 loadGrid(forceRefresh = false, refreshEpg = false)
+            }
+        }
+        launch {
+            epgRepository.observeState().map { it.isLoading }.distinctUntilChanged().collect { loading ->
+                setState { it.copy(isEpgLoading = loading) }
             }
         }
         // Keep the scheduled-markers in sync with the repository.
@@ -252,7 +262,10 @@ class DefaultTvgComponent(
     }
 
     override fun reduce(state: TvgState, intent: TvgIntent): TvgState = when (intent) {
-        TvgIntent.Activated -> state.copy(selectedDayOffset = guideDayOffsetAt(
+        TvgIntent.Activated -> state.copy(
+            selectedCategory = if (isAndroidPlatform()) null else state.selectedCategory,
+            filteredChannels = if (isAndroidPlatform()) state.channels else state.filteredChannels,
+            selectedDayOffset = guideDayOffsetAt(
             currentTimeMillis(), guidePlaybackTime(playbackController.state.value, currentTimeMillis()),
             (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
         is TvgIntent.TimelineCursorMoved -> state.copy(selectedDayOffset = guideDayOffsetAt(
@@ -340,7 +353,6 @@ class DefaultTvgComponent(
             TvgIntent.Activated -> {
                 _focusState.value = TvgFocusState()
                 persistDayOffset(state.value.selectedDayOffset)
-                categoryAutoSelected = false
                 loadGrid(forceRefresh = false, refreshEpg = false)
             }
             TvgIntent.Load -> loadGrid(forceRefresh = false)
@@ -461,6 +473,8 @@ class DefaultTvgComponent(
         gridJob?.cancel()
         visibleLoadJob?.cancel()
         priorityVisibleLoadJob?.cancel()
+        rowLoads.clear()
+        setState { it.copy(isLoading = true, loadingChannelIds = emptySet(), error = null) }
         gridJob = launch {
             // Load the grid from the local DB immediately — the EPG refresh
             // (a large XMLTV re-import) must never block the TV Guide from
@@ -511,27 +525,6 @@ class DefaultTvgComponent(
                     }
                     return@launch
                 }
-                // On first open, scope the Guide to the category of the LIVE
-                // channel the user is currently watching. Without this the guide
-                // opens on "all channels" (2000+ rows) and the auto-scroll to the
-                // watched channel crawls across everything (and fights the focus
-                // logic, which pulls back to the first row).
-                if (!categoryAutoSelected) {
-                    categoryAutoSelected = true
-                    val playingId = playbackController.state.value.item?.id
-                    if (playingId != null) {
-                        channels.firstOrNull { it.id == playingId }?.category
-                            ?.takeIf { it.isNotBlank() }
-                            ?.let { category ->
-                                setState {
-                                    it.copy(
-                                        selectedCategory = category,
-                                        filteredChannels = channels.filter { c -> c.category == category },
-                                    )
-                                }
-                            }
-                    }
-                }
                 // Используем отфильтрованные по категории каналы для сетки.
                 // A retained category can disappear after editing/profile changes.
                 // Recompute from the same fresh channel snapshot on every platform.
@@ -574,6 +567,7 @@ class DefaultTvgComponent(
                 // programme strip and made the guide feel like it was scrolling
                 // through an empty list.
                 val currentEpgVersion = readEpgVersion()
+                val warmRows = initialGuideRows(allChannels)
                 val programmes = if (com.tvnext.app.core.common.platform.isAndroidPlatform()) {
                     // Android TV: paint the guide shell fast, but STILL warm the
                     // first rows immediately — the viewport loader alone left the
@@ -581,9 +575,7 @@ class DefaultTvgComponent(
                     // fired), so do not depend on it for the initial paint. The
                     // viewport loader keeps refilling rows as the user scrolls.
                     epgRepository.getProgrammesInRange(
-                        (allChannels.filter { it.id in lastVisibleChannelIds || it.id == playbackController.state.value.item?.id } +
-                            allChannels.take(FIRST_ROWS_WARMUP)).distinctBy { it.id }
-                            .take(MAX_VISIBLE_QUERY_CHANNELS + FIRST_ROWS_WARMUP + 1),
+                        warmRows,
                         from,
                         to,
                     )
@@ -595,7 +587,7 @@ class DefaultTvgComponent(
                 // large seven-day programme projection. The repository keeps EPG
                 // in memory, so this is cheap once the cache is warm.
                 val currentProgrammes = if (state.value.selectedDayOffset == 0) {
-                    runCatching { epgRepository.getNowPlaying(allChannels, currentTimeMillis()) }
+                    runCatching { epgRepository.getNowPlaying(if (isAndroidPlatform()) warmRows else allChannels, currentTimeMillis()) }
                         .getOrDefault(emptyMap())
                 } else {
                     emptyMap()
@@ -702,88 +694,59 @@ class DefaultTvgComponent(
         // by the next D-pad viewport event. Otherwise the exact race that made
         // EPG appear only after restarting the app can happen again. Ordinary
         // viewport changes remain cancellable to keep scrolling responsive.
-        if (forceReload) {
-            priorityVisibleLoadJob?.cancel()
-            priorityVisibleLoadJob = launch {
+        if (forceReload) priorityVisibleLoadJob?.cancel() else visibleLoadJob?.cancel()
+        val job = launch {
+            val token = Any()
+            rowLoads[token] = visible.mapTo(hashSetOf()) { it.id }
+            publishRowLoads()
+            try {
                 runCatching {
-                val loaded = epgRepository.getProgrammesInRange(
-                    visible,
-                    snapshot.from,
-                    snapshot.to,
-                )
-                val current = state.value
-                if (revision != gridRevision || current.from != snapshot.from || current.to != snapshot.to ||
-                    (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
-                if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
-                setState { latest ->
-                    val merged = latest.programmes.toMutableMap()
-                    val currentMerged = latest.currentProgrammes.toMutableMap()
-                    loaded.forEach { (id, programmes) ->
-                        // Never replace a known-good row with an empty transient
-                        // result while XMLTV batches are being imported.
-                        if (programmes.isNotEmpty() || merged[id].isNullOrEmpty()) {
-                            merged[id] = programmes
-                        }
-                        if (latest.selectedDayOffset == 0 && programmes.isNotEmpty()) {
-                            currentProgrammeFromSorted(programmes, currentTimeMillis())?.let { currentMerged[id] = it }
-                        }
-                    }
-                    latest.copy(
-                        programmes = merged,
-                        currentProgrammes = currentMerged,
-                        programmesEpgVersion = epgVersion,
-                    )
-                }
-                autoFocusCurrentProgramme()
-                }.onFailure { error ->
-                    Logger.e(TAG, "Failed to load visible TV guide rows", error)
-                }
-            }
-        } else {
-            visibleLoadJob?.cancel()
-            visibleLoadJob = launch {
-                runCatching {
-                    val loaded = epgRepository.getProgrammesInRange(
-                        visible,
-                        snapshot.from,
-                        snapshot.to,
-                    )
+                    val loaded = epgRepository.getProgrammesInRange(visible, snapshot.from, snapshot.to)
                     val current = state.value
                     if (revision != gridRevision || current.from != snapshot.from || current.to != snapshot.to ||
-                    (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
-                if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
+                        (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
+                    if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
                     setState { latest ->
                         val merged = latest.programmes.toMutableMap()
                         val currentMerged = latest.currentProgrammes.toMutableMap()
-                        val nowValue = currentTimeMillis()
                         loaded.forEach { (id, programmes) ->
-                            // Never erase a good cached row with a transient empty
-                            // result while an XMLTV import is still being committed.
-                            if (programmes.isNotEmpty() || merged[id].isNullOrEmpty()) {
-                                merged[id] = programmes
-                            }
+                            if (programmes.isNotEmpty() || merged[id].isNullOrEmpty()) merged[id] = programmes
                             if (latest.selectedDayOffset == 0 && programmes.isNotEmpty()) {
-                                currentProgrammeFromSorted(programmes, nowValue)?.let {
-                                    currentMerged[id] = it
-                                }
+                                currentProgrammeFromSorted(programmes, currentTimeMillis())?.let { currentMerged[id] = it }
                             }
                         }
-                        latest.copy(
-                            programmes = merged,
-                            currentProgrammes = currentMerged,
-                            programmesEpgVersion = epgVersion,
-                        )
+                        latest.copy(programmes = merged, currentProgrammes = currentMerged, programmesEpgVersion = epgVersion)
                     }
+                    if (forceReload) autoFocusCurrentProgramme()
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     Logger.e(TAG, "Failed to load visible TV guide rows", error)
+                    if (revision == gridRevision) setState { it.copy(error = AppError.Database(error)) }
                 }
+            } finally {
+                rowLoads.remove(token)
+                publishRowLoads()
             }
         }
+        if (forceReload) priorityVisibleLoadJob = job else visibleLoadJob = job
+    }
+
+    private fun publishRowLoads() {
+        val ids = rowLoads.values.flatMapTo(hashSetOf()) { it }
+        if (state.value.loadingChannelIds != ids) setState { it.copy(loadingChannelIds = ids) }
+    }
+
+    private fun initialGuideRows(channels: List<Channel>): List<Channel> {
+        val playingIndex = channels.indexOfFirst { it.id == playbackController.state.value.item?.id }.coerceAtLeast(0)
+        val start = (playingIndex - FIRST_ROWS_WARMUP / 2).coerceIn(0, (channels.size - FIRST_ROWS_WARMUP).coerceAtLeast(0))
+        val aroundPlaying = channels.drop(start).take(FIRST_ROWS_WARMUP)
+        return (channels.filter { it.id in lastVisibleChannelIds } + aroundPlaying).distinctBy { it.id }
+            .take(MAX_VISIBLE_QUERY_CHANNELS + FIRST_ROWS_WARMUP + 1)
     }
 
     private fun currentVisibleOrInitialIds(): Set<String> {
         if (lastVisibleChannelIds.isNotEmpty()) return lastVisibleChannelIds
-        return state.value.filteredChannels
+        return initialGuideRows(state.value.filteredChannels)
             .take(MAX_VISIBLE_QUERY_CHANNELS)
             .mapTo(LinkedHashSet()) { it.id }
     }

@@ -28,6 +28,81 @@ class AndroidGuideTimelineUiTest {
     private fun guideTest(width: Int = 1100, height: Int = 700, body: ComposeUiTest.() -> Unit) =
         runDesktopComposeUiTest(width=width,height=height) {ui=this;body()}
 
+    @Test fun coldEntryConsumesOpeningOkBeforeItCanActivateCategoriesAndKeepsGridFocus() = guideTest(960,540) {
+        val component = Guide()
+        val loaded = component.state.value
+        component.state.value = TvgState(isLoading = true)
+        com.tvnext.app.core.common.input.OkInputGate.suppressNextKeyUp = true
+        try {
+            setContent { MaterialTheme(colorScheme=darkColorScheme()) { AndroidTvgScreen(component, Modifier, {}) } }
+            waitForIdle()
+            onNodeWithTag("tvg-categories").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus) { it() }
+            onNodeWithTag("tvg-categories").performKeyInput { keyDown(Key.Enter); advanceEventTime(700); keyUp(Key.Enter) }
+            waitForIdle()
+            assertTrue(!com.tvnext.app.core.common.input.OkInputGate.suppressNextKeyUp)
+            onNodeWithText("Категории").assertDoesNotExist()
+            mainClock.advanceTimeBy(250); waitForIdle()
+            onNodeWithText("Пожалуйста, подождите…").assertIsDisplayed()
+            val wait = onNodeWithTag("tvg-loading").fetchSemanticsNode().boundsInRoot
+            assertEquals(480f, wait.center.x, 2f); assertEquals(270f, wait.center.y, 2f)
+            System.getenv("TVNEXT_VALIDATION_DIR")?.let { root ->
+                val f=java.io.File(root,"tv-guide-cold-loading.png");f.parentFile.mkdirs()
+                org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use { f.writeBytes(it.bytes) }
+            }
+            runOnIdle { component.state.value = loaded }
+            waitForIdle()
+            onNodeWithTag("tvg-loading").assertDoesNotExist()
+            onNodeWithTag("tvg-grid").assertIsFocused()
+            onNodeWithText("Категории").assertDoesNotExist()
+            // A new, deliberate press still opens the user's category selector.
+            onNodeWithTag("tvg-grid").performKeyInput { pressKey(Key.DirectionUp) }
+            onNodeWithTag("tvg-categories").performKeyInput { pressKey(Key.Enter) }
+            onNodeWithText("Категории").assertIsDisplayed()
+        } finally { com.tvnext.app.core.common.input.OkInputGate.suppressNextKeyUp = false }
+    }
+
+    @Test fun playingChannelOpensInCentreOfAllChannelsWithoutCategoryDialog() = guideTest(960,540) {
+        val component=Guide()
+        val channels=(1..80).map { component.channel.copy(id="channel$it",number=it,name="Канал $it",category=if(it%2==0) "Кино" else "Новости") }
+        val playing=channels[48]
+        component.playbackState.value=PlayerState()
+        component.state.value=component.state.value.copy(channels=channels,filteredChannels=channels,
+            programmes=channels.associate { c -> c.id to component.values(0).map {it.copy(channelId=c.id)} })
+        setContent {MaterialTheme(colorScheme=darkColorScheme()) { AndroidTvgScreen(component,Modifier,{}) }}
+        waitForIdle()
+        // Startup may restore the playing channel after the first guide frame.
+        runOnIdle {component.playbackState.value=PlayerState(item=PlaybackItem(playing.id,playing.name,playing.streamUrl))}
+        waitForIdle()
+        val grid=onNodeWithTag("tvg-grid").fetchSemanticsNode().boundsInRoot
+        val row=onNode(hasTestTag("tvg-channel-row") and isSelected()).fetchSemanticsNode().boundsInRoot
+        assertEquals(grid.center.y,row.center.y,2f)
+        onNodeWithText("Все каналы").assertIsDisplayed()
+        onNodeWithText("Категории").assertDoesNotExist()
+        onNodeWithTag("tvg-grid").assertIsFocused()
+        System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+            val f=java.io.File(root,"tv-guide-playing-centred.png");f.parentFile.mkdirs()
+            org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {f.writeBytes(it.bytes)}
+        }
+    }
+
+    @Test fun delayedProgrammeReadShowsPassiveWaitAndEmptyOrSuccessfulResultClearsIt() = guideTest(960,540) {
+        val component=Guide();val loaded=component.state.value
+        component.state.value=loaded.copy(programmes=emptyMap(), loadingChannelIds=setOf(component.channel.id))
+        setContent {MaterialTheme(colorScheme=darkColorScheme()) {AndroidTvgScreen(component,Modifier,{})}}
+        mainClock.advanceTimeBy(250);waitForIdle()
+        onNodeWithTag("tvg-loading").assertIsDisplayed()
+        onNodeWithTag("tvg-grid").assertIsFocused()
+        runOnIdle {component.state.value=component.state.value.copy(loadingChannelIds=emptySet())}
+        waitForIdle();onNodeWithTag("tvg-loading").assertDoesNotExist()
+        onNodeWithText("Нет программы").assertIsDisplayed()
+        runOnIdle {component.state.value=component.state.value.copy(isEpgLoading=true)}
+        mainClock.advanceTimeBy(250);waitForIdle()
+        onNodeWithTag("tvg-loading").assertIsDisplayed()
+        runOnIdle {component.state.value=loaded.copy(isEpgLoading=true)}
+        waitForIdle();onNodeWithTag("tvg-loading").assertDoesNotExist()
+        onNodeWithTag("tvg-grid").assertIsFocused()
+    }
+
     @Test fun categoryPickerMatchesChannelNumberOrderInsteadOfAlphabet() = guideTest(960,540) {
         val component=Guide()
         val channels=listOf(component.channel.copy(id="news20",number=20,category="Я Новости"),
