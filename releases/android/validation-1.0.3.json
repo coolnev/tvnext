@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-12",
+  "versionName": "1.0.3",
+  "versionCode": 1003,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "7ecd02d9a9b519f7509ecd8ced493d6259505cab",
+  "sha256": "b1f6d97680273efad55832285f8152f648dd034039fb124ec4bfd9a239772600",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "tvGuide": {
+    "defaultCategory": "all channels",
+    "automaticCategorySelectionRemoved": true,
+    "activationResetsAndroidFilter": true,
+    "openingLongOkRepeatsAndReleaseConsumedBeforeToolbar": true,
+    "gridReceivesEntryFocus": true,
+    "playingRowCentredWithinScrollBounds": true,
+    "latePlayingChannelRestorationSupported": true,
+    "initialProgrammeAndNowQueriesMaxChannels": 25,
+    "initialWarmupAroundPlayingChannel": true,
+    "loadingText": "Пожалуйста, подождите…",
+    "loadingTextTranslations": [
+      "Please wait…",
+      "请稍候…"
+    ],
+    "loadingIndicatorDelayMs": 200,
+    "loadingOverlayPassiveAndCentred": true,
+    "visibleQueryLoadingIdsTracked": true,
+    "loadingClearedOnEmptyResultFailureAndCancellation": true,
+    "existingRowsPreservedDuringRefresh": true,
+    "backgroundEpgLoadingObservedWithoutProgressChurn": true
+  },
+  "tests": [
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 106,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 114,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "PNG resources unchanged",
+    "Compose screenshots visually reviewed"
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitations": [
+    "UI key/focus/geometry scenarios use the real Android guide composable in Desktop Compose tests; Android component/loading/cancellation tested under Robolectric API28/35",
+    "Specific Google TV and 10–15 second device delay not measured here; initial query scope was reduced, no fixed startup delay added"
+  ]
+}

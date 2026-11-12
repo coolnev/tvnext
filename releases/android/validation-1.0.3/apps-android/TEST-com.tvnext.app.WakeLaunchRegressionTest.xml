@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.WakeLaunchRegressionTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-12T18:24:12.088Z" hostname="0fcc891603bc" time="0.491">
+  <properties/>
+  <testcase name="stickyRestartRecoversARecordedSleepWhileNormalAppEntryDoesNotLaunch[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.068"/>
+  <testcase name="realReceiverLaunchesOnceAfterStandbyAndNeverForAnInitialScreenOn[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.02"/>
+  <testcase name="bootReceiverStartsMonitoringWithoutOpeningTheApp[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.038"/>
+  <testcase name="bootArmsOnlyTheLaterStandbyCycle[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.022"/>
+  <testcase name="foregroundFailureTurnsTheSwitchOff[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.017"/>
+  <testcase name="preferenceIsOffByDefaultAndPermissionIsRequiredOnlyOnModernAndroid[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.017"/>
+  <testcase name="lockedScreenWaitsForUnlockAndDuplicateWakeEventsDoNotRelaunch[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.037"/>
+  <testcase name="disablingOrSleepingAgainCancelsPendingLaunch[28]" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.021"/>
+  <testcase name="stickyRestartRecoversARecordedSleepWhileNormalAppEntryDoesNotLaunch" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.075"/>
+  <testcase name="realReceiverLaunchesOnceAfterStandbyAndNeverForAnInitialScreenOn" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.021"/>
+  <testcase name="bootReceiverStartsMonitoringWithoutOpeningTheApp" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.023"/>
+  <testcase name="bootArmsOnlyTheLaterStandbyCycle" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.021"/>
+  <testcase name="foregroundFailureTurnsTheSwitchOff" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.042"/>
+  <testcase name="preferenceIsOffByDefaultAndPermissionIsRequiredOnlyOnModernAndroid" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.02"/>
+  <testcase name="lockedScreenWaitsForUnlockAndDuplicateWakeEventsDoNotRelaunch" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.02"/>
+  <testcase name="disablingOrSleepingAgainCancelsPendingLaunch" classname="com.tvnext.app.WakeLaunchRegressionTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@4a47329f], context=[android.app.ContextImpl@3e824b73], intentFilter=[android.content.IntentFilter@2a7c232c]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6568627c], context=[android.app.ContextImpl@ee53302], intentFilter=[android.content.IntentFilter@366c6378]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6568627c], context=[android.app.ContextImpl@ee53302], intentFilter=[android.content.IntentFilter@366c6378]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6568627c], context=[android.app.ContextImpl@ee53302], intentFilter=[android.content.IntentFilter@366c6378]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6568627c], context=[android.app.ContextImpl@ee53302], intentFilter=[android.content.IntentFilter@366c6378]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6568627c], context=[android.app.ContextImpl@ee53302], intentFilter=[android.content.IntentFilter@366c6378]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@461c1b08], context=[android.app.ContextImpl@30a9722d], intentFilter=[android.content.IntentFilter@5b54f3e8]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@461c1b08], context=[android.app.ContextImpl@30a9722d], intentFilter=[android.content.IntentFilter@5b54f3e8]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@461c1b08], context=[android.app.ContextImpl@30a9722d], intentFilter=[android.content.IntentFilter@5b54f3e8]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@461c1b08], context=[android.app.ContextImpl@30a9722d], intentFilter=[android.content.IntentFilter@5b54f3e8]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@59330e2a], context=[android.app.ContextImpl@3c7af9b4], intentFilter=[android.content.IntentFilter@7bce145c]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@59330e2a], context=[android.app.ContextImpl@3c7af9b4], intentFilter=[android.content.IntentFilter@7bce145c]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@59330e2a], context=[android.app.ContextImpl@3c7af9b4], intentFilter=[android.content.IntentFilter@7bce145c]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@59330e2a], context=[android.app.ContextImpl@3c7af9b4], intentFilter=[android.content.IntentFilter@7bce145c]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@3e457236], context=[android.app.ContextImpl@5027ad19], intentFilter=[android.content.IntentFilter@41565629]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@3e457236], context=[android.app.ContextImpl@5027ad19], intentFilter=[android.content.IntentFilter@41565629]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@3e457236], context=[android.app.ContextImpl@5027ad19], intentFilter=[android.content.IntentFilter@41565629]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@3e457236], context=[android.app.ContextImpl@5027ad19], intentFilter=[android.content.IntentFilter@41565629]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@59cad2d5], context=[android.app.ContextImpl@4df6a4fb], intentFilter=[android.content.IntentFilter@7f11a063]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6209ca56], context=[android.app.ContextImpl@1df78a39], intentFilter=[android.content.IntentFilter@2ebef859]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6209ca56], context=[android.app.ContextImpl@1df78a39], intentFilter=[android.content.IntentFilter@2ebef859]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6209ca56], context=[android.app.ContextImpl@1df78a39], intentFilter=[android.content.IntentFilter@2ebef859]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6209ca56], context=[android.app.ContextImpl@1df78a39], intentFilter=[android.content.IntentFilter@2ebef859]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@6209ca56], context=[android.app.ContextImpl@1df78a39], intentFilter=[android.content.IntentFilter@2ebef859]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d4da9], context=[android.app.ContextImpl@63daaf7e], intentFilter=[android.content.IntentFilter@4032b5b]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d4da9], context=[android.app.ContextImpl@63daaf7e], intentFilter=[android.content.IntentFilter@4032b5b]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d4da9], context=[android.app.ContextImpl@63daaf7e], intentFilter=[android.content.IntentFilter@4032b5b]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d4da9], context=[android.app.ContextImpl@63daaf7e], intentFilter=[android.content.IntentFilter@4032b5b]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d343fc], context=[android.app.ContextImpl@3351d92a], intentFilter=[android.content.IntentFilter@64078a26]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d343fc], context=[android.app.ContextImpl@3351d92a], intentFilter=[android.content.IntentFilter@64078a26]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d343fc], context=[android.app.ContextImpl@3351d92a], intentFilter=[android.content.IntentFilter@64078a26]]]
+Intent = Intent { act=android.intent.action.USER_PRESENT }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@53d343fc], context=[android.app.ContextImpl@3351d92a], intentFilter=[android.content.IntentFilter@64078a26]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@bc9d906], context=[android.app.ContextImpl@6e2a3c8c], intentFilter=[android.content.IntentFilter@71db4c71]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@bc9d906], context=[android.app.ContextImpl@6e2a3c8c], intentFilter=[android.content.IntentFilter@71db4c71]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@bc9d906], context=[android.app.ContextImpl@6e2a3c8c], intentFilter=[android.content.IntentFilter@71db4c71]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.WakeLaunchService$screenEvents$1@bc9d906], context=[android.app.ContextImpl@6e2a3c8c], intentFilter=[android.content.IntentFilter@71db4c71]]]
+]]></system-err>
+</testsuite>

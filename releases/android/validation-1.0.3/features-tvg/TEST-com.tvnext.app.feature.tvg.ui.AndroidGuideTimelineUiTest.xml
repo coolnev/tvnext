@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidGuideTimelineUiTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-12T18:23:42.385Z" hostname="0fcc891603bc" time="3.384">
+  <properties/>
+  <testcase name="compactGuideKeepsPlayingPreviewStableWhileBrowsingAndLoading[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="1.116"/>
+  <testcase name="categoryPickerMatchesChannelNumberOrderInsteadOfAlphabet[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.444"/>
+  <testcase name="delayedProgrammeReadShowsPassiveWaitAndEmptyOrSuccessfulResultClearsIt[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.195"/>
+  <testcase name="playingChannelOpensInCentreOfAllChannelsWithoutCategoryDialog[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.28"/>
+  <testcase name="outlinedToolbarNavigatesBothRowsAndReturnsToGridAndVideo[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.343"/>
+  <testcase name="rapidLeftAcrossMidnightThenRightRestoresVisibleProgrammes[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.425"/>
+  <testcase name="coldEntryConsumesOpeningOkBeforeItCanActivateCategoriesAndKeepsGridFocus[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.281"/>
+  <testcase name="reverseBeforeDayQueryFinishesKeepsCurrentGridAndCursor[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.294"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
