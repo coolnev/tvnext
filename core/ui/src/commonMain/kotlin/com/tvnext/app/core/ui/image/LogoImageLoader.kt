@@ -26,6 +26,7 @@ fun interface LogoFetcher {
 interface LogoImageLoader {
     /** Returns the decoded logo bitmap for [url], or null (never throws). */
     suspend fun load(url: String): ImageBitmap?
+    suspend fun loadArtwork(url: String): ImageBitmap? = load(url)
 }
 
 /**
@@ -48,6 +49,14 @@ class DefaultLogoImageLoader(
     maxMemoryEntries: Int = DEFAULT_MAX_MEMORY_ENTRIES,
     maxConcurrentLoads: Int = DEFAULT_MAX_CONCURRENT_LOADS,
 ) : LogoImageLoader {
+
+    override suspend fun loadArtwork(url: String): ImageBitmap? = loadGate.withPermit {
+        // Programme frames/posters belong to their visible composable only.
+        // They never enter the shared logo memory or disk cache.
+        try { fetcher.fetch(url)?.let(::decodeImageBytes) }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { null }
+    }
 
     private val diskDir = cacheDir.trimEnd('/')
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

@@ -37,7 +37,10 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
     config: EpgConfigProvider, context: Context): IndexedEpgRepository {
     val app = context.applicationContext
     val fallback = AndroidFallbackEpgSettings(app)
-    val downloads = EpgSourceDownload(client, File(app.noBackupFilesDir, "epg-downloads-v1"))
+    // Share the configured transport, but keep XMLTV in its original wire
+    // representation: HTTP gzip decoding must not stage gigabytes of raw XML.
+    val epgClient = HttpClient(client.engine) { install(io.ktor.client.plugins.HttpTimeout) }
+    val downloads = EpgSourceDownload(epgClient, File(app.noBackupFilesDir, "epg-downloads-v1"), keepSource=false, maxBytes=256L*1024*1024)
     lateinit var repository: IndexedEpgRepository
     repository = IndexedEpgRepository(
         storeProvider = {
@@ -50,12 +53,13 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
             // FrameworkSQLite owns the WAL connection pool and its connection settings.
             // In particular busy_timeout returns a row: SQLDelight's Android execute()
             // uses executeUpdateDelete(), which rejects it and prevents the index opening.
-            IndexedEpgStore(TvNextDatabase(driver), driver)
+            runCatching { helper.writableDatabase.query("PRAGMA journal_size_limit=8388608").close() }
+            IndexedEpgStore(TvNextDatabase(driver), driver, EpgStoragePolicy(usableBytes={app.noBackupFilesDir.usableSpace}))
         },
         playlists = playlists, channels = channels, config = config,
         fallbackUrls = { if (fallback.enabled()) fallback.urls() else emptyList() },
         stream = { url, consume ->
-            downloads.consume(url, repository::downloadProgress, repository::downloadReady) { file ->
+            downloads.consume(url, repository::downloadProgress, repository::downloadReady, allowNotModified=repository.canConfirmUnchanged(url)) { file ->
                 val context = currentCoroutineContext()
                 openEpgTextSource(file.absolutePath).use { source ->
                     consume(object : EpgTextSource {
@@ -69,6 +73,18 @@ private fun createIndex(client: HttpClient, playlists: PlaylistRepository, chann
             }
         },
         onSourceImported = downloads::acknowledge,
+        onMaintenance = { populated ->
+            downloads.cleanup()
+            val prefs=app.getSharedPreferences("tvnext_cache_storage_v104",Context.MODE_PRIVATE)
+            if (!prefs.getBoolean("old_images_removed",false)) {
+                File(app.cacheDir,"logos").deleteRecursively()
+                prefs.edit().putBoolean("old_images_removed",true).apply()
+            }
+            if (populated) {
+                File(app.noBackupFilesDir,"epg_cache").deleteRecursively()
+                File(app.cacheDir,"epg_cache").deleteRecursively()
+            }
+        },
         legacyDirectories = { url, ids ->
             platformEpgCacheDir()?.let { root ->
                 (ids.map { File(root, IndexedEpgRepository.sourceId("$it\u0000$url")) } +

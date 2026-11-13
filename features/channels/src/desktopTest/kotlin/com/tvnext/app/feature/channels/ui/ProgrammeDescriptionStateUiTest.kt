@@ -39,8 +39,8 @@ class ProgrammeDescriptionStateUiTest {
                     val title = if (first) "Первый фильм" else "Хитрый койот"
                     """{"films":[{"filmId":$id,"nameRu":"$title","posterUrlPreview":"https://example.org/$id.jpg"}]}"""
                 }
-                request.url.encodedPath.endsWith("/1") -> """{"description":"$plotA"}"""
-                request.url.encodedPath.endsWith("/2") -> { entered.complete(Unit);release.await();"""{"description":"$plotB"}""" }
+                request.url.encodedPath.endsWith("/1") -> """{"type":"FILM","description":"$plotA"}"""
+                request.url.encodedPath.endsWith("/2") -> { entered.complete(Unit);release.await();"""{"type":"FILM","description":"$plotB"}""" }
                 else -> "{}"
             }
             respond(text, headers = headersOf("Content-Type", "application/json"))
@@ -62,7 +62,7 @@ class ProgrammeDescriptionStateUiTest {
         val title = mutableStateOf("Первый фильм")
         val seen = mutableListOf<Pair<String, String?>>()
         try {
-            runBlocking { assertEquals(plotA, repository.find("Первый фильм")?.overview) }
+            runBlocking { assertEquals(plotA, repository.find(ProgrammeMetadataRequest("Первый фильм",category="Фильм"))?.overview) }
             assertNull(repository.cached("Хитрый койот"))
             assertNull(repository.cached("Первый фильм (2024)"))
             ui.setContent {
@@ -83,7 +83,36 @@ class ProgrammeDescriptionStateUiTest {
             ui.runOnIdle { title.value = "Первый фильм" }
             ui.waitForIdle()
             assertTrue(seen.drop(boundary).filter { it.first == "Первый фильм" }.isNotEmpty())
-            assertTrue(seen.drop(boundary).filter { it.first == "Первый фильм" }.all { it.second == plotA }, "A cached return must not reset to a placeholder")
+            assertTrue(seen.drop(boundary).filter { it.first == "Первый фильм" }.none { it.second == plotB }, "Reopening must not reuse another programme's story")
         } finally { release.complete(Unit);client.close() }
     }
+    @Test fun sameTitleNewsKeepsItsEpgAndNeverDisplaysThePreviouslyViewedMoviesArtwork() {
+        val filmPlot="Сюжет одноименного фантастического фильма."
+        val newsPlot="Информационная программа. Главные события дня."
+        var requests=0
+        val client=HttpClient(MockEngine {r->requests++;respond(if(r.url.encodedPath.endsWith("search-by-keyword"))
+            """{"films":[{"filmId":1,"nameRu":"Время","type":"FILM","year":"2011"}]}"""
+            else """{"type":"FILM","year":2011,"description":"$filmPlot","posterUrl":"https://fixture/movie.jpg","coverUrl":"https://fixture/frame.jpg"}""",
+            headers=headersOf("Content-Type","application/json"))}) {install(HttpTimeout)}
+        val keys=object:KinopoiskKeyStore {override suspend fun getKey()="fixture";override suspend fun setKey(value:String)=Unit}
+        val settings=object:TmdbSettingsStore {override suspend fun isEnabled()=false;override suspend fun setEnabled(enabled:Boolean)=Unit
+            override suspend fun getApiKey()="";override suspend fun setApiKey(apiKey:String)=Unit}
+        val tmdb=java.lang.reflect.Proxy.newProxyInstance(TmdbRepository::class.java.classLoader,arrayOf(TmdbRepository::class.java)){_,_,_->error("TMDB disabled")} as TmdbRepository
+        val repo=ProgrammeMetadataRepository(tmdb,KinopoiskProgrammeLookup(client,keys),settings)
+        loadKoinModules(module {single {repo}})
+        val now=System.currentTimeMillis()
+        val programme=mutableStateOf(com.tvnext.app.core.iptv.xmltv.EpgProgramme("c",now,now+3_600_000,"Время (2011)",category="Фильм"))
+        try {
+            ui.setContent {androidx.compose.material3.MaterialTheme {ProgrammeRichDetails(programme.value)}}
+            ui.waitUntil(5_000) {ui.onAllNodesWithText(filmPlot).fetchSemanticsNodes().isNotEmpty()}
+            val before=requests
+            ui.runOnIdle {programme.value=programme.value.copy(title="Время",category="Новости",description=newsPlot)}
+            ui.waitForIdle()
+            ui.onNodeWithText(newsPlot).assertIsDisplayed()
+            ui.onNodeWithText(filmPlot).assertDoesNotExist()
+            ui.onNodeWithTag("programme-description-artwork").assertDoesNotExist()
+            assertEquals(before,requests)
+        } finally {client.close()}
+    }
+
 }

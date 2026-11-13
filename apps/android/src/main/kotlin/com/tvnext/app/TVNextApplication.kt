@@ -38,6 +38,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -86,6 +88,7 @@ class TVNextApplication : Application() {
             DefaultLogoImageLoader(
                 fetcher = LogoFetcher { url -> fetchLogo(client, url) },
                 cacheDir = File(applicationContext.cacheDir, "logos").absolutePath,
+                maxDiskBytes = 8L * 1024 * 1024,
             )
         }
     }
@@ -179,6 +182,21 @@ class TVNextApplication : Application() {
                     (GlobalContext.get().get<com.tvnext.app.core.iptv.data.EpgRepository>()
                         as? com.tvnext.app.core.iptv.data.AndroidEpgRepository)?.fallbackSettingsChanged()
                 }
+        }
+        applicationScope.launch(com.tvnext.app.core.iptv.data.epgParseDispatcher()) {
+            kotlinx.coroutines.delay(3_000)
+            while (kotlinx.coroutines.currentCoroutineContext().isActive) {
+                try {
+                    AndroidCacheMaintenance.files(applicationContext)
+                    val context=kotlinx.coroutines.currentCoroutineContext()
+                    AndroidCacheMaintenance.database(GlobalContext.get().get<app.cash.sqldelight.db.SqlDriver>(),System.currentTimeMillis()) {
+                        context.ensureActive()
+                        Thread.yield()
+                    }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (error: Exception) { Log.w("TVNextCache","Cache maintenance will retry",error) }
+                kotlinx.coroutines.delay(10*60_000L)
+            }
         }
         LocalRecoveryStore(this).recoverInterrupted()
         seedDemoData()

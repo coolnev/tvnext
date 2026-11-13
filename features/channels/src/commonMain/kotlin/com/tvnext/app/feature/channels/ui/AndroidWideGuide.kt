@@ -166,7 +166,7 @@ internal fun AndroidWideGuide(
         }
     }
 
-    val remoteInfo = rememberProgrammeMetadata(highlighted?.title, debounceMs = 280)
+    val remoteInfo = rememberProgrammeMetadata(highlighted, debounceMs = 280)
     val grid: @Composable (Modifier) -> Unit = { gridModifier ->
         BoxWithConstraints(gridModifier) {
             // Focus never follows recycled row children. The focused element is the
@@ -660,7 +660,7 @@ internal fun GuideArtwork(frameUrl: String?, posterUrl: String?, rightColumn: Bo
             suspend fun safeLoad(url: String?): ImageBitmap? {
                 if (url.isNullOrBlank()) return null
                 return try {
-                    loader.load(url)
+                    loader.loadArtwork(url)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -732,7 +732,7 @@ internal fun guideWeekday(epochMillis: Long): String {
 /** Reusable detailed programme view; avoids a text-only dialog when artwork is cached. */
 @Composable
 internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier = Modifier, compact: Boolean = false) {
-    val remote = rememberProgrammeMetadata(programme?.title)
+    val remote = rememberProgrammeMetadata(programme)
     val description = programmeSynopsis(programme?.description, remote?.overview)
         ?: uiText("Описание передачи недоступно")
     val loader = LocalLogoImageLoader.current
@@ -742,7 +742,7 @@ internal fun ProgrammeRichDetails(programme: EpgProgramme?, modifier: Modifier =
         if (loader != null) {
             suspend fun load(url: String?): ImageBitmap? {
                 if (url.isNullOrBlank()) return null
-                return try { loader.load(url) }
+                return try { loader.loadArtwork(url) }
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (_: Exception) { null }
             }

@@ -317,6 +317,9 @@ class SqlDelightTmdbRepository(
             updated_at = currentTimeMillis(),
             status = status,
         )
+        if (isAndroidPlatform()) runCatching {
+            com.tvnext.app.core.database.executeRawSql("DELETE FROM tmdb_cache WHERE updated_at<${currentTimeMillis()-5*60_000L} OR media_item_id NOT IN (SELECT media_item_id FROM tmdb_cache ORDER BY updated_at DESC LIMIT 128)")
+        }
     }
 
     private suspend fun readCache(itemId: String) = database.tmdbCacheQueries.selectByMediaItemId(itemId).executeAsOneOrNull()

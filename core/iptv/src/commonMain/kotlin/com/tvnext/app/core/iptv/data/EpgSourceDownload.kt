@@ -29,13 +29,20 @@ class EpgSourceDownload(
     private val downloadTimeoutMs: Long = 5 * 60_000L,
     private val stallTimeoutMs: Long = 15_000L,
     private val cacheBudgetBytes: Long = CACHE_BUDGET_BYTES,
+    private val keepSource: Boolean = true,
+    private val maxBytes: Long = MAX_BYTES,
 ) {
     data class Progress(val bytes: Long, val total: Long?, val attempt: Int, val resumed: Boolean = false,
         val reused: Boolean = false)
     private val lock = Mutex()
+    @Volatile private var activeKey: String? = null
+    private var allowUnchanged = false
 
     suspend fun consume(url: String, progress: (Progress) -> Unit = {},
-        ready: () -> Unit = {}, consume: suspend (File) -> Unit): Boolean = lock.withLock {
+        ready: () -> Unit = {}, allowNotModified: Boolean = false, consume: suspend (File) -> Unit): Boolean = lock.withLock {
+        activeKey = IndexedEpgRepository.sourceId(url)
+        allowUnchanged = allowNotModified
+        try {
         val file = fetch(url, progress)
         ready()
         try {
@@ -52,6 +59,26 @@ class EpgSourceDownload(
             discard(file)
             throw invalid
         }
+        } finally { activeKey = null; allowUnchanged = false }
+    }
+
+    fun cleanup() {
+        if (keepSource || !directory.isDirectory) return
+        val now=clock()
+        for(file in directory.listFiles().orEmpty()) {
+            if (file.name.substringBefore('.') == activeKey) continue
+            when {
+                file.name.endsWith(".cached") -> {
+                    val key=file.name.removeSuffix(".cached")
+                    val oldMeta=File(directory,"$key.cached-meta")
+                    if (!File(directory,"$key.verified").exists()) oldMeta.renameTo(File(directory,"$key.verified"))
+                    file.delete(); oldMeta.delete()
+                }
+                file.name.endsWith(".cached-meta") -> file.delete()
+                file.name.endsWith(".part") || file.name.endsWith(".ready") || file.name.endsWith(".meta") || file.name.endsWith(".tmp") ->
+                    if(now-file.lastModified() !in 0..60*60_000L) file.delete()
+            }
+        }
     }
 
     private fun discard(file: File) {
@@ -64,6 +91,13 @@ class EpgSourceDownload(
         val key = IndexedEpgRepository.sourceId(url)
         val ready = File(directory, "$key.ready")
         val metadata = File(directory, "$key.meta")
+        if (!keepSource) {
+            val verified=File(directory,"$key.verified")
+            if (metadata.isFile) { verified.delete(); metadata.renameTo(verified) }
+            ready.delete()
+            File(directory,"$key.cached").delete(); File(directory,"$key.cached-meta").delete()
+            return
+        }
         val cached = File(directory, "$key.cached")
         if (ready.isFile) {
             // Retain the compressed representation for conditional HTTP checks
@@ -104,7 +138,8 @@ class EpgSourceDownload(
         val partial = File(directory, "$key.part")
         val metadata = File(directory, "$key.meta")
         val cached = File(directory, "$key.cached")
-        val cachedMeta = readMeta(File(directory, "$key.cached-meta"))
+        val verified=File(directory,"$key.verified")
+        val cachedMeta = readMeta(if (keepSource) File(directory, "$key.cached-meta") else verified)
         val canRevalidate = cached.isFile && cached.length() > 0L && clock() - cached.lastModified() in 0..MAX_CACHE_AGE_MS
         if (complete.isFile && complete.length() > 0 && clock() - complete.lastModified() in 0..MAX_AGE_MS) {
             progress(Progress(complete.length(), complete.length(), 0, reused = true))
@@ -133,7 +168,7 @@ class EpgSourceDownload(
                     if (offset > 0) {
                         header(HttpHeaders.Range, "bytes=$offset-")
                         header(HttpHeaders.IfRange, validator)
-                    } else if (canRevalidate) {
+                    } else if (canRevalidate || (!keepSource && allowUnchanged && verified.isFile)) {
                         cachedMeta.getProperty("etag")?.takeIf(String::isNotBlank)?.let { header(HttpHeaders.IfNoneMatch, it) }
                             ?: cachedMeta.getProperty("modified")?.takeIf(String::isNotBlank)?.let { header(HttpHeaders.IfModifiedSince, it) }
                     }
@@ -141,6 +176,11 @@ class EpgSourceDownload(
                 }.execute { response ->
                     val status = response.status.value
                     if (status == 304) {
+                        if (!keepSource && allowUnchanged && verified.isFile && offset == 0L &&
+                            (!cachedMeta.getProperty("etag").isNullOrBlank() || !cachedMeta.getProperty("modified").isNullOrBlank())) {
+                            verified.setLastModified(clock())
+                            throw EpgSourceUnchangedException()
+                        }
                         if (!canRevalidate || offset > 0 ||
                             (cachedMeta.getProperty("etag").isNullOrBlank() && cachedMeta.getProperty("modified").isNullOrBlank()))
                             throw IOException("EPG source returned 304 without a cached document")
@@ -174,7 +214,7 @@ class EpgSourceDownload(
                         appendAt = offset
                         total = full
                     }
-                    if ((total ?: 0L) > MAX_BYTES) throw DownloadLimitException()
+                    if ((total ?: 0L) > maxBytes) throw DownloadLimitException()
                     val meta = Properties().apply {
                         setProperty("validator", if (decoded) "" else newValidator)
                         setProperty("etag", response.headers[HttpHeaders.ETag].orEmpty())
@@ -200,7 +240,7 @@ class EpgSourceDownload(
                                 if (count < 0) break
                                 received += count
                                 copied += count
-                                if (copied > MAX_BYTES || (total != null && copied > total)) throw DownloadLimitException()
+                                if ((!keepSource && directory.usableSpace < 8L*1024*1024) || copied > maxBytes || (total != null && copied > total)) throw DownloadLimitException()
                                 out.write(buffer, 0, count)
                                 if (clock() - published >= 250) {
                                     published = clock()
@@ -214,6 +254,7 @@ class EpgSourceDownload(
                     check(partial.renameTo(complete)) { "Cannot commit EPG download" }
                 }
                 return downloaded
+            } catch (unchanged: EpgSourceUnchangedException) { throw unchanged
             } catch (cancelled: CancellationException) {
                 // Leave both partial data and its HTTP validator for the next foreground run.
                 throw cancelled
@@ -224,6 +265,7 @@ class EpgSourceDownload(
                 if (http.status !in setOf(408, 429) && http.status < 500) throw http
                 lastFailure = http
             } catch (failure: IOException) {
+                if (!keepSource && directory.usableSpace < 8L*1024*1024) { partial.delete(); metadata.delete(); throw failure }
                 lastFailure = failure
             }
             // A saved prefix is not progress in the current request.
@@ -255,3 +297,5 @@ class EpgSourceDownload(
 }
 
 internal class InvalidEpgDocumentException : IOException("Incomplete XMLTV document")
+
+internal class EpgSourceUnchangedException : IOException("EPG source is unchanged")

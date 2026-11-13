@@ -101,15 +101,17 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
 
     suspend fun testConnection(): Boolean = checkConnection().kind == KinopoiskConnectionResult.Kind.SUCCESS
 
-    suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
+    suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? = lookup(name, onUpdate, ProgrammeKind.CATALOG)
+
+    suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)?, kind: ProgrammeKind): ProgrammeMetadata? {
         val query = cleanProgrammeTitle(name)
         val token = keys.getKey().trim()
         if (query.isBlank() || token.isEmpty() || currentTimeMillis() < backoffUntil) return null
         return permits.withPermit {
             if (currentTimeMillis() < backoffUntil) return@withPermit null
-            val matchKey = normalizedProgrammeTitle(name) + "|" + programmeReleaseYear(name)
+            val matchKey = normalizedProgrammeTitle(name) + "|" + programmeReleaseYear(name) + "|" + kind
             val known = synchronized(matchedGuard) { matched[matchKey]?.takeIf {
-                it.token == token && currentTimeMillis() - it.time in 0 until 24 * 60 * 60_000L
+                it.token == token && currentTimeMillis() - it.time in 0 until 5 * 60_000L
             } }
             var serviceResponded = known != null
             var best: ProgrammeMetadata? = null
@@ -151,16 +153,15 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         temporaryFailureAt = currentTimeMillis()
                         return@withTimeoutOrNull null
                     }
-                    val card = known?.card ?: body?.let { parseKinopoiskSearch(it, name) }
+                    val card = known?.card ?: body?.let { parseKinopoiskSearch(it, name, kind) }
                         ?: return@withTimeoutOrNull null
-                    val movieId = known?.id ?: body?.let { kinopoiskMatchedId(it, name) }
-                    if (movieId != null) synchronized(matchedGuard) {
+                    val movieId = known?.id ?: body?.let { kinopoiskMatchedId(it, name, kind) }
+                    if (movieId != null && (known != null || kind == ProgrammeKind.CATALOG)) synchronized(matchedGuard) {
                         if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
                         matched[matchKey] = MatchedCard(movieId, card, token, currentTimeMillis())
                     }
-                    best = card
-                    onUpdate?.invoke(card)
-                    if (!card.overview.isNullOrBlank() && card.overview.length >= 120 &&
+                    if (known != null || kind == ProgrammeKind.CATALOG) { best = card; onUpdate?.invoke(card) }
+                    if ((known != null || kind == ProgrammeKind.CATALOG) && !card.overview.isNullOrBlank() && card.overview.length >= 120 &&
                         card.frameUrl != null && card.posterUrl != null)
                         return@withTimeoutOrNull card
                     val details = movieId?.let { id ->
@@ -179,7 +180,18 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                                     break
                                 }
                                 if (response.status.isSuccess()) {
-                                    detail = parseKinopoiskDetails(response.bodyAsText())
+                                    val text = response.bodyAsText()
+                                    val full = Json.parseToJsonElement(text).jsonObject
+                                    val type = full["type"]?.jsonPrimitive?.content
+                                    val fullYear = full["year"]?.jsonPrimitive?.content?.toIntOrNull()
+                                    if ((!type.isNullOrBlank() && !kind.accepts(type)) ||
+                                        (kind != ProgrammeKind.CATALOG && (type.isNullOrBlank() || !kind.accepts(type))) ||
+                                        (programmeReleaseYear(name) != null && fullYear != null && programmeReleaseYear(name) != fullYear)) {
+                                        synchronized(matchedGuard) { matched.remove(matchKey) }
+                                        best = null
+                                        return@withTimeoutOrNull null
+                                    }
+                                    detail = parseKinopoiskDetails(text)
                                     break
                                 }
                                 temporaryFailureAt = currentTimeMillis()
@@ -191,6 +203,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                             throw cancelled
                         } catch (_: Exception) { null }
                     }
+                    if (known == null && kind != ProgrammeKind.CATALOG && details == null) return@withTimeoutOrNull null
                     val combined = card.copy(
                         overview = details?.overview?.takeIf(::hasProgrammeSynopsis)
                             ?: card.overview?.takeIf(::hasProgrammeSynopsis),
@@ -237,11 +250,14 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
 }
 
 /** Search and detail requests must use the same ranked hit and movie id. */
-private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
+private fun matchedKinopoiskMovie(body: String, name: String, kind: ProgrammeKind = ProgrammeKind.CATALOG): JsonObject? {
     val root = Json.parseToJsonElement(body).jsonObject
     val docs = (root["films"] ?: root["items"] ?: root["docs"])?.jsonArray ?: return null
     val year = programmeReleaseYear(name)
-    return docs.mapNotNull { it as? JsonObject }.mapNotNull { entry ->
+    val ranked = docs.mapNotNull { it as? JsonObject }.mapNotNull { entry ->
+        val type = entry["type"]?.jsonPrimitive?.content
+        val candidateYear = entry["year"]?.jsonPrimitive?.content?.toIntOrNull()
+        if ((!type.isNullOrBlank() && !kind.accepts(type)) || (year != null && candidateYear != null && candidateYear != year)) return@mapNotNull null
         val titles = listOf("nameRu", "nameEn", "nameOriginal", "name", "alternativeName", "enName").mapNotNull { entry[it]?.jsonPrimitive?.content } +
             (entry["names"] as? kotlinx.serialization.json.JsonArray).orEmpty().mapNotNull {
                 (it as? JsonObject)?.get("name")?.jsonPrimitive?.content
@@ -253,11 +269,14 @@ private fun matchedKinopoiskMovie(body: String, name: String): JsonObject? {
         if (!exact && !shortSequel) null
         else entry to ((if (exact) 100 else 50) +
             if (year != null && entry["year"]?.jsonPrimitive?.content?.toIntOrNull() == year) 10 else 0)
-    }.maxByOrNull { it.second }?.first
+    }
+    val best = ranked.maxByOrNull { it.second } ?: return null
+    if (kind != ProgrammeKind.CATALOG && ranked.count { it.second == best.second } > 1) return null
+    return best.first
 }
 
-internal fun kinopoiskMatchedId(body: String, name: String): Int? {
-    val movie = matchedKinopoiskMovie(body, name) ?: return null
+internal fun kinopoiskMatchedId(body: String, name: String, kind: ProgrammeKind = ProgrammeKind.CATALOG): Int? {
+    val movie = matchedKinopoiskMovie(body, name, kind) ?: return null
     return listOf("kinopoiskId", "filmId", "id").firstNotNullOfOrNull { movie[it]?.jsonPrimitive?.content?.toIntOrNull() }
 }
 
@@ -292,8 +311,8 @@ internal fun parseKinopoiskImages(body: String): ProgrammeMetadata {
 }
 
 /** Kept separate from the network call for deterministic fixture tests. */
-internal fun parseKinopoiskSearch(body: String, name: String): ProgrammeMetadata? {
-    val match = matchedKinopoiskMovie(body, name) ?: return null
+internal fun parseKinopoiskSearch(body: String, name: String, kind: ProgrammeKind = ProgrammeKind.CATALOG): ProgrammeMetadata? {
+    val match = matchedKinopoiskMovie(body, name, kind) ?: return null
     fun text(key: String): String? = match[key]?.jsonPrimitive?.content
         ?.takeIf { it != "null" && it.isNotBlank() }
     fun imageUrl(key: String): String? = (match[key] as? JsonObject)?.get("url")
@@ -323,35 +342,48 @@ class ProgrammeMetadataRepository(
 
     suspend fun clearCache() { synchronized(cacheGuard) { cache.clear(); cacheRevision++ } }
 
+    fun cached(request: ProgrammeMetadataRequest): ProgrammeMetadata? =
+        if (request.canEnrich) cached(request.title, request.kind) else null
+    fun observe(request: ProgrammeMetadataRequest): Flow<ProgrammeMetadata?> =
+        if (request.canEnrich) observe(request.title, request.kind) else flowOf(null)
+    suspend fun find(request: ProgrammeMetadataRequest, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? =
+        if (request.canEnrich) find(request.title, onUpdate, request.kind) else null
+    fun forget(request: ProgrammeMetadataRequest): Unit = synchronized(cacheGuard) {
+        cache.remove(normalizedProgrammeTitle(request.title) + "|" + (programmeReleaseYear(request.title)?.toString().orEmpty()) + "|" + request.kind)
+        Unit
+    }
+
     /** A synchronous, title/year-specific snapshot for first-frame rendering; refresh stays asynchronous. */
-    fun cached(title: String): ProgrammeMetadata? {
+    fun cached(title: String, kind: ProgrammeKind = ProgrammeKind.CATALOG): ProgrammeMetadata? {
         val raw = title.trim().take(180)
         val query = cleanProgrammeTitle(raw)
         val year = programmeReleaseYear(raw)?.toString().orEmpty()
-        val key = normalizedProgrammeTitle(query) + "|" + year
+        val key = normalizedProgrammeTitle(query) + "|" + year + "|" + kind
         return synchronized(cacheGuard) {
-            cache[key]?.takeIf { currentTimeMillis() - it.time in 0 until 24 * 60 * 60_000L }?.result
+            cache[key]?.takeIf { currentTimeMillis() - it.time in 0 until 5 * 60_000L }?.result
         }
     }
 
-    fun observe(title: String): Flow<ProgrammeMetadata?> = channelFlow {
-        var result = find(title) { trySend(it) }
+    fun observe(title: String, kind: ProgrammeKind = ProgrammeKind.CATALOG): Flow<ProgrammeMetadata?> = channelFlow {
+        var result = find(title, { trySend(it) }, kind)
         trySend(result)
         // A visible poster-only card must get another chance without leaving the screen.
         repeat(2) {
             if (result == null || hasProgrammeSynopsis(result?.overview)) return@channelFlow
             delay(2_100)
-            result = find(title) { trySend(it) }
+            result = find(title, { trySend(it) }, kind)
             trySend(result)
         }
     }
 
-    suspend fun find(title: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? {
+    suspend fun find(title: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? = find(title, onUpdate, ProgrammeKind.CATALOG)
+
+    private suspend fun find(title: String, onUpdate: ((ProgrammeMetadata) -> Unit)?, kind: ProgrammeKind): ProgrammeMetadata? {
         val raw = title.trim().take(180)
         val query = cleanProgrammeTitle(raw)
         if (query.length < 3) return null
         val year = programmeReleaseYear(raw)?.toString()
-        val key = normalizedProgrammeTitle(query) + "|" + year.orEmpty()
+        val key = normalizedProgrammeTitle(query) + "|" + year.orEmpty() + "|" + kind
         val flight = mutex.withLock { lookups.getOrPut(key) { Lookup() }.also { it.readers++ } }
         return try {
             coroutineScope {
@@ -360,7 +392,7 @@ class ProgrammeMetadataRepository(
                 } }
                 try {
                     flight.lock.withLock { networkSlots.withPermit {
-                        withContext(Dispatchers.IO) { lookup(raw, query, year, key) { flight.updates.value = it } }
+                        withContext(Dispatchers.IO) { lookup(raw, query, year, key, kind) { flight.updates.value = it } }
                     } }
                 } finally { updates?.cancelAndJoin() }
             }
@@ -369,7 +401,7 @@ class ProgrammeMetadataRepository(
         } }
     }
 
-    private suspend fun lookup(raw: String, query: String, year: String?, key: String,
+    private suspend fun lookup(raw: String, query: String, year: String?, key: String, kind: ProgrammeKind,
         publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
         val now = currentTimeMillis()
         var retained: ProgrammeMetadata? = null
@@ -379,7 +411,7 @@ class ProgrammeMetadataRepository(
                 it.result == null -> 20_000L
                 !hasProgrammeSynopsis(it.result.overview) -> 2_000L
                 it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
-                else -> 24 * 60 * 60_000L
+                else -> 5 * 60_000L
             } }?.let { return it.result }
             cacheRevision
         }
@@ -389,6 +421,11 @@ class ProgrammeMetadataRepository(
         var kinoCard: ProgrammeMetadata? = null
         fun combine(): ProgrammeMetadata? {
             if (tmdbCard == null && kinoCard == null) return retained
+            if (kind != ProgrammeKind.CATALOG) {
+                // Never combine one provider's story with another identity's frames.
+                return kinoCard?.takeIf { hasProgrammeSynopsis(it.overview) }
+                    ?: tmdbCard?.takeIf { hasProgrammeSynopsis(it.overview) } ?: kinoCard ?: tmdbCard ?: retained
+            }
             return ProgrammeMetadata(
                 overview = kinoCard?.overview?.takeIf(::hasProgrammeSynopsis)
                     ?: tmdbCard?.overview?.takeIf(::hasProgrammeSynopsis) ?: retained?.overview?.takeIf(::hasProgrammeSynopsis),
@@ -420,14 +457,14 @@ class ProgrammeMetadataRepository(
             launch {
                 try {
                     if (tmdbSettings.isEnabled()) {
-                        val card = withTimeoutOrNull(12_000L) { lookupTmdb(raw, query, year) { progress(false, it) } }
+                        val card = withTimeoutOrNull(12_000L) { lookupTmdb(raw, query, year, kind) { progress(false, it) } }
                         progress(false, card)
                     }
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (_: Exception) { /* The other provider can still supply a real card. */ }
             }
             launch {
-                try { progress(true, kinopoisk.lookup(raw) { progress(true, it) }) }
+                try { progress(true, kinopoisk.lookup(raw, { progress(true, it) }, kind)) }
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (_: Exception) { /* Keep already published metadata. */ }
             }
@@ -437,15 +474,19 @@ class ProgrammeMetadataRepository(
         return result
     }
 
-    private suspend fun lookupTmdb(clean: String, query: String, year: String?,
+    private suspend fun lookupTmdb(clean: String, query: String, year: String?, kind: ProgrammeKind,
         publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
         var searchCard: ProgrammeMetadata? = null
         return try {
-            val results = tmdb.searchMovie(query)
-            val movie = results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) &&
-                (year == null || (it.release_date ?: it.first_air_date)?.startsWith(year) == true) }
-                ?: results.firstOrNull { similarProgrammeTitle(it.title ?: it.name, clean) }
-                ?: results.firstOrNull { similarProgrammeTitle(it.original_title ?: it.original_name, clean) }
+            fun matches(hit: TmdbSearchResult, tv: Boolean) =
+                listOf(hit.title,hit.name,hit.original_title,hit.original_name).any { similarProgrammeTitle(it,clean) } &&
+                    (year == null || (if(tv) hit.first_air_date else hit.release_date)?.startsWith(year) == true)
+            val results = if(kind == ProgrammeKind.SERIES) emptyList() else tmdb.searchMovie(query).filter {matches(it,false)}
+            val series = if(kind == ProgrammeKind.SERIES || kind == ProgrammeKind.FICTION ||
+                (kind == ProgrammeKind.CATALOG && results.isEmpty()))
+                tmdb.searchTv(query).filter {matches(it,true)} else emptyList()
+            if (kind != ProgrammeKind.CATALOG && results.size + series.size != 1) return null
+            val movie = results.firstOrNull()
             val details: TmdbDetails?
             val englishDescription: String?
             if (movie != null) {
@@ -456,11 +497,7 @@ class ProgrammeMetadataRepository(
                 englishDescription = if (!hasProgrammeSynopsis(details.overview))
                     runCatching { tmdb.getMovieDetails(movie.id, "en-US").overview }.getOrNull() else null
             } else {
-                val series = tmdb.searchTv(query)
-                val show = series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) &&
-                    (year == null || (it.first_air_date ?: it.release_date)?.startsWith(year) == true) }
-                    ?: series.firstOrNull { similarProgrammeTitle(it.name ?: it.title, clean) }
-                    ?: series.firstOrNull { similarProgrammeTitle(it.original_name, clean) }
+                val show = series.firstOrNull()
                 if (show != null) {
                     searchCard = ProgrammeMetadata(show.overview, tmdbImageUrl(show.backdrop_path, "w780"), tmdbImageUrl(show.poster_path, "w342"))
                     publish(searchCard)

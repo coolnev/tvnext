@@ -25,7 +25,7 @@ class IndexedEpgRepositoryTest {
     private fun channel(id: String = "c", playlist: String = "p") = Channel(id, "Новости HD", 1, "Тест", "https://unused.invalid/live",
         tvgId = "news", playlistId = playlist)
 
-    private inner class Fixture(val path: java.nio.file.Path = Files.createTempDirectory("tvnext-index").resolve("index.db")) {
+    private inner class Fixture(val path: java.nio.file.Path = Files.createTempDirectory("tvnext-index").resolve("index.db"), managed: Boolean = false) {
         var time = now
         var roster = listOf(channel())
         var playlistList = listOf(Playlist("p", "Тест", "https://unused.invalid/list.m3u", epgUrl = "https://unused.invalid/epg.xml"))
@@ -36,7 +36,7 @@ class IndexedEpgRepositoryTest {
             driver.execute(null, "PRAGMA journal_mode=WAL", 0)
             driver.execute(null, "PRAGMA busy_timeout=3000", 0)
         }
-        val store = IndexedEpgStore(TvNextDatabase(driver), driver)
+        val store = IndexedEpgStore(TvNextDatabase(driver), driver, if(managed) EpgStoragePolicy(clock={time}) else null)
         private val repos = arrayListOf<IndexedEpgRepository>()
         private val playlistRepo = object : PlaylistRepository {
             override fun observePlaylists(): Flow<List<Playlist>> = emptyFlow()
@@ -67,6 +67,37 @@ class IndexedEpgRepositoryTest {
             }, { fallback }, stream, { _, _ -> legacy }, worker = Dispatchers.IO.limitedParallelism(1),
                 clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs, refreshTimeoutMs = refreshTimeoutMs).also { repos.add(it) }
         suspend fun close() { repos.forEach { it.close() }; driver.close() }
+    }
+
+    @Test fun managedIndexStoresOnlyMissingBackupChannelsAndRevalidatesWithoutAnotherGeneration()=runBlocking<Unit> {
+        val f=Fixture(managed=true)
+        val primary="https://unused.invalid/epg.xml";val backup="https://unused.invalid/backup.xml"
+        f.roster=f.roster+channel("missing").copy(name="Резервный",tvgId="missing")
+        val calls=mutableListOf<String>();var unchanged=false
+        lateinit var r: IndexedEpgRepository
+        try {
+            r=f.repo(fallback=listOf(backup)) {url,consume->
+                calls+=url
+                if(unchanged) {assertTrue(r.canConfirmUnchanged(url));throw EpgSourceUnchangedException()}
+                val xml=if(url==primary) programme() else programme(title="Дубль")+programme(id="missing",title="Резерв")
+                StringEpgTextSource("<tv>$xml</tv>").use{consume(it)};true
+            }
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            val main=f.store.snapshot(IndexedEpgRepository.sourceId(primary))!!
+            val secondary=f.store.snapshot(IndexedEpgRepository.sourceId(backup))!!
+            assertEquals(1L,main.rows);assertEquals(1L,secondary.rows)
+            val playing=r.getNowPlaying(f.roster,now)
+            assertEquals("Новости",playing["c"]?.title);assertEquals("Резерв",playing["missing"]?.title)
+            unchanged=true
+            assertIs<AppResult.Success<Unit>>(r.refreshIfStale(true))
+            assertEquals(main.generation,f.store.snapshot(IndexedEpgRepository.sourceId(primary))?.generation)
+            assertEquals(secondary.generation,f.store.snapshot(IndexedEpgRepository.sourceId(backup))?.generation)
+            val count=calls.size
+            val restarted=f.repo(fallback=listOf(backup)) {_,_->error("Fresh index must survive restart without HTTP")}
+            restarted.refreshIfStale(false)
+            assertEquals(count,calls.size)
+            assertEquals(2,restarted.getNowPlaying(f.roster,now).size)
+        } finally {f.close()}
     }
 
     @Test fun wholeRefreshHasOneDeadlineAcrossPrimaryAndBackupAndBrowsingCannotRestartIt() = runBlocking<Unit> {

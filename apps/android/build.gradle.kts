@@ -29,7 +29,7 @@ android {
         applicationId = "com.tvnext.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1003
+        versionCode = 1004
         versionName = project.version.toString()
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
@@ -78,6 +78,8 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("io.ktor:ktor-client-mock:3.5.2")
     testImplementation(libs.ktor.client.encoding)
+    testImplementation(libs.sqldelight.android.driver)
+    testImplementation("androidx.sqlite:sqlite-framework:2.6.2")
     testImplementation(libs.media3.exoplayer)
     implementation(compose.foundation)
     implementation(compose.material3)

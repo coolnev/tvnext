@@ -41,4 +41,14 @@ class ArtworkCacheTest {
         assertTrue(images.all { it?.width == 2 })
         assertEquals(1, requests)
     }
+    @Test fun transientProgrammeArtworkNeverWritesDiskOrEntersTheLogoCache()=runBlocking<Unit> {
+        val directory=Files.createTempDirectory("tvnext-transient-art")
+        var calls=0
+        val loader=DefaultLogoImageLoader(LogoFetcher {calls++;png()},directory.toString())
+        assertNotNull(loader.loadArtwork("https://example.org/frame.png"))
+        assertNotNull(loader.loadArtwork("https://example.org/frame.png"))
+        assertEquals(2,calls)
+        Files.list(directory).use {assertEquals(0L,it.count())}
+    }
+
 }

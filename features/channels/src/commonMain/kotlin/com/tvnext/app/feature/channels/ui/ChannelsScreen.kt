@@ -1,5 +1,6 @@
 package com.tvnext.app.feature.channels.ui
 
+import androidx.compose.ui.platform.testTag
 import com.tvnext.app.core.ui.i18n.uiText
 
 import androidx.compose.animation.fadeIn
@@ -2526,10 +2527,11 @@ private fun EmptyStateBox(
  * caller is responsible for closing [categoriesOpen] on selection.
  */
 @Composable
-private fun ChannelCategoriesPanel(
+internal fun ChannelCategoriesPanel(
     state: ChannelsState,
     onCategorySelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
+    expandToVideo: Boolean = false,
 ) {
     val focusRequesters = remember { mutableMapOf<String?, FocusRequester>() }
     val allFocusRequester = remember { FocusRequester() }
@@ -2554,9 +2556,8 @@ private fun ChannelCategoriesPanel(
 
     Column(
         modifier = modifier
-            // Android TV: category panel widened to 200 dp so longer names fit
-            // comfortably (only Android uses it).
-            .width(if (isAndroidPlatform()) 200.dp else 260.dp)
+            .then(if (expandToVideo) Modifier.fillMaxWidth() else Modifier.width(if(isAndroidPlatform())200.dp else 260.dp))
+            .testTag("windowed-categories-panel")
             .fillMaxHeight()
             .clip(RoundedCornerShape(0.dp))
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f))
@@ -2703,7 +2704,7 @@ private fun ChannelCategoriesOrListPanel(
             } else Modifier),
     ) {
     when {
-        categoriesOpen -> ChannelCategoriesPanel(state = state, onCategorySelected = onCategorySelected)
+        categoriesOpen -> ChannelCategoriesPanel(state = state, onCategorySelected = onCategorySelected, expandToVideo = true)
         timelineChannel != null -> ChannelTimelinePanel(
             channel = timelineChannel,
             requestInitialFocus = isAndroidPlatform(),

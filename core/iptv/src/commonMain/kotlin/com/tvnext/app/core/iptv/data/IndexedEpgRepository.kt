@@ -30,6 +30,7 @@ class IndexedEpgRepository(
     private val onSourceImported: (String) -> Unit = {},
     private val importTimeoutMs: Long = 8 * 60_000L,
     private val refreshTimeoutMs: Long = 8 * 60_000L,
+    private val onMaintenance: (Boolean) -> Unit = {},
 ) : EpgRepository {
     private val store by lazy(storeProvider)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -38,6 +39,7 @@ class IndexedEpgRepository(
     private val importLock = Mutex()
     private val priority = AtomicReference<Set<String>>(emptySet())
     private val importing = ConcurrentHashMap<String, Long>()
+    private val importSignatures = ConcurrentHashMap<String,String>()
     @Volatile private var configuration: Configuration? = null
     @Volatile private var autoJob: Job? = null
     @Volatile private var nextRefreshAt = 0L
@@ -48,6 +50,41 @@ class IndexedEpgRepository(
         val signature: String, val primary: Boolean)
     private data class Configuration(val enabled: Boolean, val sources: List<Source>,
         val primaryByPlaylist: Map<String, List<String>>)
+
+    init {
+        if (automaticRefresh) scope.launch {
+            while (isActive) { delay(10*60_000L); maintainStorage() }
+        }
+    }
+
+    fun canConfirmUnchanged(url: String): Boolean {
+        val source=configuration?.sources?.firstOrNull {it.url==url} ?: return false
+        return store.snapshot(source.id)?.let { snapshot ->
+            snapshot.fetchedAt>0 && snapshot.rows>0 && snapshot.signature==(importSignatures[url] ?: source.signature) &&
+                store.now(source.id,source.channels.map(::key),clock()).isNotEmpty()
+        } == true
+    }
+
+    suspend fun maintainStorage() {
+        if (!importLock.tryLock()) return
+        try { withContext(worker) { maintain(sources()) } }
+        catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { /* Storage cleanup retries without hiding the active guide. */ }
+        finally { importLock.unlock() }
+    }
+
+    private fun maintain(cfg: Configuration) {
+        if (!store.storageManaged) return
+        val ids=if(cfg.sources.any {it.channels.isNotEmpty()}) cfg.sources.mapTo(hashSetOf()){it.id} else store.sourceIds()
+        val populated=ids.any {store.snapshot(it)?.rows?.let {rows->rows>0}==true}
+        onMaintenance(populated)
+        val covered=hashSetOf<String>()
+        for(source in cfg.sources.sortedBy { !it.primary }) {
+            if(!source.primary) store.removeChannels(source.id,covered)
+            covered.addAll(store.now(source.id,source.channels.map(::key),clock()).keys)
+        }
+        if(store.maintainStorage(ids)) _version.update {it+1}
+    }
 
     internal fun downloadProgress(progress: EpgSourceDownload.Progress) {
         fun amount(bytes: Long): String = when {
@@ -138,11 +175,12 @@ class IndexedEpgRepository(
             awaitImport()
             val result = withTimeoutOrNull(refreshTimeoutMs) { withContext(worker) {
                 val cfg = sources()
+                for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
+                maintain(cfg)
                 if (!cfg.enabled) return@withContext AppResult.Success(Unit)
                 var failure = false
                 var failureNotice: String? = null
                 // Cached sources (including backups) are readable before any HTTP.
-                for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
                 val ordered = cfg.sources.sortedWith(compareBy<Source> { !it.primary }
                     .thenBy { s -> s.channels.none { key(it) in priority.get() } })
                 for (source in ordered) {
@@ -156,8 +194,16 @@ class IndexedEpgRepository(
                     if (!source.primary && !needsBackup(cfg, source, allChannels = force)) continue
                     awaitImport()
                     _state.update { it.copy(isLoading = true, lastError = null) }
-                    if (!import(source)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }
+                    val effective = if (store.storageManaged && !source.primary) {
+                        val covered=hashSetOf<String>()
+                        for (higher in ordered.takeWhile {it.id!=source.id})
+                            covered.addAll(store.now(higher.id,source.channels.map(::key),clock()).keys)
+                        val missing=source.channels.filterNot {key(it) in covered}
+                        source.copy(channels=missing,signature=source.signature+":"+sourceId(missing.map(::key).sorted().joinToString("\n")))
+                    } else source
+                    if(effective.channels.isNotEmpty() && !import(effective)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }
                 }
+                maintain(cfg)
                 refreshState()
                 _state.update { it.copy(isLoading = false, lastError = if (failure)
                     (failureNotice ?: "Один из источников EPG не обновился. Сохранённая программа доступна.") else null) }
@@ -211,6 +257,7 @@ class IndexedEpgRepository(
         val generation = store.begin(source.id)
         val previous = store.snapshot(source.id)
         importing[source.id] = generation
+        importSignatures[source.url] = source.signature
         val writer = BatchWriter(source, generation, previous?.fetchedAt?.let { it > 0L } == true)
         var complete = false
         var parsedAt = 0L
@@ -251,6 +298,11 @@ class IndexedEpgRepository(
                 return false
             }
             onSourceImported(source.url)
+            val noCurrent = store.storageManaged && store.now(source.id,source.channels.map(::key),clock()).isEmpty()
+            if (noCurrent) {
+                store.failed(source.id,generation,clock()+RETRY_MS)
+                _state.update {it.copy(lastError="В источнике EPG пока нет текущих передач. Повтор будет позже.")}
+            }
             _version.update { it + 1L }
             // The active pointer has committed. Deleting old rows must not keep the loading spinner alive.
             scope.launch(worker) {
@@ -259,7 +311,12 @@ class IndexedEpgRepository(
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (_: Exception) { /* Inactive rows can be cleaned on the next successful import. */ }
             }
-            true
+            !noCurrent
+        } catch (unchanged: EpgSourceUnchangedException) {
+            if (previous?.fetchedAt?.let {it>0} == true && previous.rows>0) {
+                store.confirmUnchanged(source.id, source.signature, clock())
+                true
+            } else false
         } catch (cancelled: CancellationException) {
             store.failed(source.id, generation, clock() + RETRY_MS)
             throw cancelled
@@ -270,7 +327,7 @@ class IndexedEpgRepository(
             store.failed(source.id, generation, clock() + RETRY_MS)
             if (previous?.fetchedAt?.let { it > 0 } != true) _version.update { it + 1L }
             false
-        } finally { importing.remove(source.id) }
+        } finally { importing.remove(source.id); importSignatures.remove(source.url) }
     }
 
     private class NoMatchedEpgChannels : IllegalStateException()

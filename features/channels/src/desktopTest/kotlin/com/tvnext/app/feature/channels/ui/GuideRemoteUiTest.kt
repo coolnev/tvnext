@@ -200,7 +200,7 @@ class GuideRemoteUiTest {
         val synopsis = "История героев второй части комедии, найденная по названию фильма Холоп 2."
         val client = HttpClient(MockEngine { request ->
             val body = if (request.url.encodedPath.endsWith("/search-by-keyword"))
-                """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}""" else "{}"
+                """{"docs":[{"id":2,"name":"Холоп 2","description":"$synopsis"}]}""" else """{"type":"FILM","description":"$synopsis"}"""
             respond(body, headers = headersOf("Content-Type", "application/json"))
         }) { install(HttpTimeout) }
         val key = object : KinopoiskKeyStore {
@@ -220,7 +220,7 @@ class GuideRemoteUiTest {
         try {
             ui.setContent {
                 MaterialTheme { Box(Modifier.size(700.dp, 500.dp)) {
-                    ProgrammeRichDetails(EpgProgramme(channel.id, now, now + hour, "Холоп 2", "Описание передачи отсутствует"))
+                    ProgrammeRichDetails(EpgProgramme(channel.id, now, now + hour, "Холоп 2", "Описание передачи отсутствует", category="Фильм"))
                 } }
             }
             ui.waitUntil(5_000) { ui.onAllNodesWithText(synopsis).fetchSemanticsNodes().isNotEmpty() }
@@ -251,11 +251,12 @@ class GuideRemoteUiTest {
         val synopsis = "Найденный сюжет о возвращении героя домой.".let { if (wrapped) (it + " ").repeat(45) else it }
         val release = kotlinx.coroutines.CompletableDeferred<Unit>()
         val pictures = java.util.concurrent.atomic.AtomicInteger()
+        val detailsEntered = kotlinx.coroutines.CompletableDeferred<Unit>()
         val client = HttpClient(MockEngine { request ->
             val body = when {
                 request.url.encodedPath.endsWith("/search-by-keyword") ->
                     """{"films":[{"filmId":2,"nameRu":"$filmName","posterUrlPreview":"https://example.org/poster.png"}]}"""
-                request.url.encodedPath.endsWith("/2") -> { release.await(); """{"description":"$synopsis"}""" }
+                request.url.encodedPath.endsWith("/2") -> { detailsEntered.complete(Unit); release.await(); """{"type":"FILM","description":"$synopsis"}""" }
                 else -> "{}"
             }
             respond(body, headers = headersOf("Content-Type", "application/json"))
@@ -280,7 +281,7 @@ class GuideRemoteUiTest {
                 pictures.incrementAndGet(); return image
             }
         }
-        val programme = EpgProgramme(channel.id, now - hour / 2, now + hour / 2, filmName, epgDescription)
+        val programme = EpgProgramme(channel.id, now - hour / 2, now + hour / 2, filmName, epgDescription, category="Фильм")
         try {
             ui.setContent {
                 androidx.compose.runtime.CompositionLocalProvider(com.tvnext.app.core.ui.image.LocalLogoImageLoader provides loader) {
@@ -298,8 +299,10 @@ class GuideRemoteUiTest {
                     }
                 }
             }
-            ui.waitUntil(5_000) { pictures.get() > 0 }
+            ui.waitUntil(5_000) { detailsEntered.isCompleted }
+            assertEquals(0,pictures.get(),"Artwork must wait for verification of the full film type")
             release.complete(Unit)
+            ui.waitUntil(5_000) { pictures.get() > 0 }
             if (wrapped) {
                 ui.waitUntil(5_000) { ui.onAllNodesWithText("Найденный сюжет", substring = true).fetchSemanticsNodes().isNotEmpty() }
                 ui.waitUntil(5_000) { ui.onAllNodesWithTag("programme-description-beside").fetchSemanticsNodes().isNotEmpty() }
