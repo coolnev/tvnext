@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="M3uParserTest[desktop]" tests="28" skipped="0" failures="0" errors="0" timestamp="2026-11-13T20:08:52.829Z" hostname="0fcc891603bc" time="0.005">
+  <properties/>
+  <testcase name="simpleM3u[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="tvgIdParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.001"/>
+  <testcase name="groupTitleParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="quotedAttributeWithComma[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="tvgLogoParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="urlWithQueryParameters[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="multipleChannels[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.001"/>
+  <testcase name="noEpgUrlWhenHeaderHasNoAttributes[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="notM3uHeaderIsFailure[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="commentsAndOtherDirectivesIgnored[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="xTvgUrlFromHeaderIsParsedAsFallback[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="duplicateChannelsAreKept[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.001"/>
+  <testcase name="headerOnlyWithComments[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="timeshiftAttributeParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="channelNameWithComma[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="utf8BomStripped[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="emptyPlaylistIsValid[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="catchupDaysWithoutCatchupFlagStillParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="crlfLineEndings[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="headerWithExtraAttributes[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="noCatchupAttributesByDefault[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="streamUrlWithoutExtinfIsSkipped[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="durationIsParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="malformedExtinfIsSkipped[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="urlTvgTakesPriorityOverXTvgUrl[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="unicodeCyrillicNames[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="urlTvgFromHeaderIsParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <testcase name="catchupAttributesParsed[desktop]" classname="com.tvnext.app.core.iptv.m3u.M3uParserTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

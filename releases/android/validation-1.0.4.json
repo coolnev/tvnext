@@ -1,0 +1,110 @@
+{
+  "date": "2026-11-13",
+  "versionName": "1.0.4",
+  "versionCode": 1004,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "b28ef995a9bc8cc2cddc70b325adae7dbe8d6178",
+  "sha256": "de60100ed32543b8e5a3f5b690eb18e165914ee77a5929a4986d7d35e6f0ea38",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "metadata": {
+    "epgContextRequired": true,
+    "broadcastAndUnknownStayWithEpg": true,
+    "noProgrammeTitleBlacklist": true,
+    "filmSeriesTypesAndKnownYearChecked": true,
+    "ambiguousRemakesRejected": true,
+    "kinopoiskFullCardTypeVerifiedBeforePublishing": true,
+    "noCrossProviderSynopsisArtworkSplicing": true,
+    "cacheLifetimeMinutes": 5,
+    "liveArtworkNeverWrittenToDisk": true,
+    "liveArtworkNotAddedToSharedMemoryCache": true
+  },
+  "storage": {
+    "epgIndexBudgetMiB": 96,
+    "lowerBudgetWhenStorageLow": true,
+    "stagedIndexMaximumMiB": 192,
+    "temporarySourceMaximumMiB": 256,
+    "downloadFreeSpaceReserveMiB": 8,
+    "committedRawSourceRetained": false,
+    "httpValidatorRetained": true,
+    "notModifiedReusesIndex": true,
+    "missingBackupChannelsOnly": true,
+    "abandonedAndOldIndexGenerationsRemoved": true,
+    "archiveTitlesMaximumDays": 90,
+    "descriptionWindowHours": 12,
+    "descriptionMaximumChars": 6000,
+    "maintenancePeriodMinutes": 10,
+    "logoMaximumMiB": 8,
+    "logoMaximumAgeHours": 24,
+    "metadataDiskEntriesMaximum": 128,
+    "metadataDiskLifetimeMinutes": 5,
+    "legacyEpgCopiesRemoved": true,
+    "physicalSqliteCompactionTested": true,
+    "recordingsPlaylistsAndSettingsPreserved": true
+  },
+  "windowedCategories": {
+    "fullBrowserWidthToVideo": true,
+    "fixedVideoGeometry": true,
+    "selectionAndRemoteBehaviourPreserved": true
+  },
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 232,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 116,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 498,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "PNG resources unchanged",
+    "Compose screenshots visually reviewed"
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitations": [
+    "The actual 1.5GB storage breakdown on the user TV was not measured; code paths and native SQLite/filesystem regressions were checked",
+    "96MiB is the working EPG-index budget, not a hard limit on all application storage; staging, SQLite WAL, a temporary source, APK and user recordings are additional",
+    "Compaction runs off the UI thread; physical Google TV playback smoothness during the initial large cleanup was not measured",
+    "Live external metadata endpoints and provider XMLTV are unavailable under this environment network policy; API behaviour uses fixtures"
+  ]
+}

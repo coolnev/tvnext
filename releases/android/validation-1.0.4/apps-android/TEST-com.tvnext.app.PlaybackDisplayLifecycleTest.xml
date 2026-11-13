@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.PlaybackDisplayLifecycleTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-13T20:10:11.404Z" hostname="0fcc891603bc" time="0.162">
+  <properties/>
+  <testcase name="screenSleepReleasesPlaybackEvenWithoutActivityStopAndWakeResumesOnlyOnce[28]" classname="com.tvnext.app.PlaybackDisplayLifecycleTest" time="0.06"/>
+  <testcase name="activityStartingWhileScreenIsOffWaitsForWakeAndRecreationResumesRetainedPlayer[28]" classname="com.tvnext.app.PlaybackDisplayLifecycleTest" time="0.018"/>
+  <testcase name="screenSleepReleasesPlaybackEvenWithoutActivityStopAndWakeResumesOnlyOnce" classname="com.tvnext.app.PlaybackDisplayLifecycleTest" time="0.056"/>
+  <testcase name="activityStartingWhileScreenIsOffWaitsForWakeAndRecreationResumesRetainedPlayer" classname="com.tvnext.app.PlaybackDisplayLifecycleTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@8c13e7a], context=[android.app.ContextImpl@6043e36a], intentFilter=[android.content.IntentFilter@30ea2f5d]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@172bc66f], context=[android.app.ContextImpl@35835b9f], intentFilter=[android.content.IntentFilter@5af99a0f]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_OFF }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@7c647ccb], context=[android.app.ContextImpl@11b8d755], intentFilter=[android.content.IntentFilter@27be8a29]]]
+Intent = Intent { act=android.intent.action.SCREEN_ON }; Matching wrappers: [Wrapper[receiver=[com.tvnext.app.PlaybackDisplayLifecycle$receiver$1@32c442ff], context=[android.app.ContextImpl@b83d76e], intentFilter=[android.content.IntentFilter@242b6150]]]
+]]></system-err>
+</testsuite>

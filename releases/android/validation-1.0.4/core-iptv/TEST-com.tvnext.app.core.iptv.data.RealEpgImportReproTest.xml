@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="RealEpgImportReproTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-13T20:08:52.771Z" hostname="0fcc891603bc" time="0.001">
+  <properties/>
+  <testcase name="importRealVivamaxEpg[desktop]" classname="com.tvnext.app.core.iptv.data.RealEpgImportReproTest" time="0.001"/>
+  <system-out><![CDATA[SKIP: -DepgXmlPath not set (opt-in real-EPG import test)
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
