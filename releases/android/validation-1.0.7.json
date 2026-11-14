@@ -1,0 +1,121 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.7",
+  "versionCode": 1007,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "334389b3e0f2b8499a8b530a80796cd75301ee60",
+  "sha256": "55fe333c7fd084956065d957f7052cc9f487990f0b53cb30686f36a423ac31c3",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "settings": {
+    "compactLibraryPaddingFixed": true,
+    "rowsGrowForWrappedText": true,
+    "allThreeLanguagesAndFontScales": [
+      1,
+      1.4
+    ],
+    "sameAndroidProviderControls": [
+      "enable",
+      "API key",
+      "test connection",
+      "clear cache"
+    ],
+    "sameKeyStatus": true,
+    "maskedKeyEditors": true,
+    "independentProviderSwitchesPreserved": true,
+    "kinopoiskClearEvictsMatchedCards": true,
+    "inflightResponseCannotRepopulateClearedCache": true,
+    "clearingPreservesCredentialsAndRateLimits": true,
+    "sharedProgrammeCacheAlsoCleared": true
+  },
+  "overlays": {
+    "androidPlaybackBusy": "video center",
+    "epgBusy": "upper center below clock and channel title",
+    "archive": "persistent compact lower-left label",
+    "archiveDefaultEnabled": true,
+    "appearanceSwitch": "Подпись архива на видео",
+    "preferenceSurvivesRestart": true,
+    "measuredFullscreenControlsInset": true,
+    "realApprovedProgrammePanelGeometryTested": true,
+    "diagnosticsSeparated": true,
+    "overlaysDoNotTakeFocus": true
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true
+  },
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 56,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 233,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/media",
+      "task": "desktopTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 122,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 546,
+  "limitations": [
+    "APK 1.0.7 was not run on a physical television or emulator.",
+    "Compose UI tests and native Android API 28/35 regression tests passed; these do not model physical TV GPU and remote hardware.",
+    "Live movie APIs are unavailable under this environment network policy; cache behavior uses MockEngine.",
+    "Desktop compiles, but no Windows installer was built."
+  ]
+}

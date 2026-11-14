@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ArchiveRepositoryTest[desktop]" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:37.668Z" hostname="0fcc891603bc" time="0.56">
+  <properties/>
+  <testcase name="userLimitWiderThanProviderKeepsProviderDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.388"/>
+  <testcase name="unknownStatusIsStoredHonestly[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.013"/>
+  <testcase name="autoLimitUsesProviderDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.039"/>
+  <testcase name="capabilityIsCachedWithinTtl[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.015"/>
+  <testcase name="buildArchiveUrlSupportsUtcTemplate[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.002"/>
+  <testcase name="cacheFallbackHonoursPlayableDeclaredDays[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.01"/>
+  <testcase name="preflightRejectsDeclaredButEmptyArchive[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.015"/>
+  <testcase name="measuredDepthCappedByUserLimit[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.011"/>
+  <testcase name="shiftFormatBuildsFromLiveUrl[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.004"/>
+  <testcase name="declaredDaysCappedByUserLimit[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.038"/>
+  <testcase name="preflightAllowsReachableArchive[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.003"/>
+  <testcase name="cacheFallbackDoesNotClaimArchiveForUnsupportedFormat[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.004"/>
+  <testcase name="noMechanismHasNoDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.005"/>
+  <testcase name="declaredDaysAreUsedWithoutProbing[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveRepositoryTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

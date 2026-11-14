@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ArchiveCandidatesTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:37.423Z" hostname="0fcc891603bc" time="0.044">
+  <properties/>
+  <testcase name="noMechanismIsNeverCandidate[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.021"/>
+  <testcase name="noneStatusIsNotCandidate[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.009"/>
+  <testcase name="availableWithoutDepthAcceptsAnyPastProgramme[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.001"/>
+  <testcase name="missingCapabilityWithMechanismOffersProgramme[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="unknownStatusOffersProgrammeWithoutInventedDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="availableWithinMeasuredDepthIsCandidate[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="noUserLimitUsesProviderDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="availableBeyondMeasuredDepthIsNotCandidate[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="futureProgrammeIsNotArchive[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="userLimitNarrowsTheArchiveWindow[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.0"/>
+  <testcase name="userLimitNeverWidensTheProviderDepth[desktop]" classname="com.tvnext.app.core.iptv.archive.ArchiveCandidatesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

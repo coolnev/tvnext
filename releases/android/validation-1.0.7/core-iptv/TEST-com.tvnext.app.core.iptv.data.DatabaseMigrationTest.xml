@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="DatabaseMigrationTest[desktop]" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:38.575Z" hostname="0fcc891603bc" time="0.086">
+  <properties/>
+  <testcase name="migrationFromV4AddsCatchupAndKeepsUserData[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.039"/>
+  <testcase name="migrationRunsCleanlyOnEmptyDatabase[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.002"/>
+  <testcase name="migrationFromV1PreservesPlaylistAndFavorites[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.015"/>
+  <testcase name="migrationFromV2LayoutAddsTypeAndCatchupKeepingUserData[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.009"/>
+  <testcase name="migrationFromV2PreservesUserData[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.009"/>
+  <testcase name="userVersionZeroWithCompleteSchemaIsDetectedAsLatest[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.003"/>
+  <testcase name="migrationFromV5AddsLowerTitleColumn[desktop]" classname="com.tvnext.app.core.iptv.data.DatabaseMigrationTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

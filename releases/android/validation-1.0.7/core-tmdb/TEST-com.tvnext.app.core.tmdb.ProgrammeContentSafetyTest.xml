@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeContentSafetyTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:49.358Z" hostname="0fcc891603bc" time="0.028">
+  <properties/>
+  <testcase name="epgTypeOutranksTitleAndMovieAndSeriesHaveSeparateCacheKeys[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.011"/>
+  <testcase name="wrongYearAndAmbiguousRemakesAreRejectedAndCorrectYearRemainsAvailable[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.002"/>
+  <testcase name="noImageOrDescriptionEscapesWhenFullCardContradictsItsSearchType[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.005"/>
+  <testcase name="broadcastAndUnclassifiedEpgNeverQueryFilmCataloguesOrReuseTheirCards[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.003"/>
+  <testcase name="kinopoiskTypeFilterChoosesSeriesAndUnverifiedFilmArtIsNeverPublished[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.005"/>
+  <testcase name="absentMovieNeverFallsThroughToSameTitleTelevisionResult[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeContentSafetyTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

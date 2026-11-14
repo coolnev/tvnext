@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChannelCategoryOrderTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:40:43.872Z" hostname="0fcc891603bc" time="0.001">
+  <properties/>
+  <testcase name="sameNumbersKeepFirstSeenOrderInTheChannelList[desktop]" classname="com.tvnext.app.core.iptv.domain.ChannelCategoryOrderTest" time="0.0"/>
+  <testcase name="personalRenumberingAndEmptyListsHaveTheSameOrderingRules[desktop]" classname="com.tvnext.app.core.iptv.domain.ChannelCategoryOrderTest" time="0.0"/>
+  <testcase name="categoriesFollowTheirFirstChannelNumberInsteadOfAlphabetOrInputOrder[desktop]" classname="com.tvnext.app.core.iptv.domain.ChannelCategoryOrderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

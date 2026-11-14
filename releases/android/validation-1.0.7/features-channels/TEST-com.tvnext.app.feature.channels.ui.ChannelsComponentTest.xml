@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ChannelsComponentTest[desktop]" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-14T07:48:18.766Z" hostname="0fcc891603bc" time="0.731">
+  <properties/>
+  <testcase name="reopeningChannelsKeepsTheArchiveThatIsActuallyPlaying[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.039"/>
+  <testcase name="searchIntentUpdatesQuery[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.002"/>
+  <testcase name="selectingChannelSetsSelectedChannelIdAndStartsPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.002"/>
+  <testcase name="refreshingAnOpenTimelineNeverPublishesAnEmptyOrSingleRowPlaceholder[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.004"/>
+  <testcase name="closingPlayerClearsSelectedChannelAndStopsPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.017"/>
+  <testcase name="closingPlayerHidesChannelName[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.002"/>
+  <testcase name="openLastChannelStartsPlaybackOfLastChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="selectingChannelShowsChannelNameOverlay[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="repeatedSwitchRestartsTheTimer[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.393"/>
+  <testcase name="reopeningChannelsDropsUnplayedTimelineAndReturnsFocusToPlayback[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.004"/>
+  <testcase name="selectingChannelRecordsHistory[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.002"/>
+  <testcase name="selectingChannelPersistsLastChannelId[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="changingCategoryClosesTheOldProgrammePaneAndLateEpgCannotRestoreIt[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.054"/>
+  <testcase name="lastChannelIsSelectedWithoutStartingPlaybackWhenAutoOpenIsDisabled[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.001"/>
+  <testcase name="channelNameHidesAfterTimeout[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.202"/>
+  <testcase name="favoriteTogglePersistsToRepository[desktop]" classname="com.tvnext.app.feature.channels.ui.ChannelsComponentTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
