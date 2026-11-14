@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.7`, versionCode 1007, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.8`, versionCode 1008, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,11 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.7.apk`.
-Описание: `RELEASE_ANDROID_1.0.7_RU.md`.
-Сводка: `releases/android/validation-1.0.7.json`.
+APK: `releases/android/TVNext-1.0.8.apk`.
+Описание: `RELEASE_ANDROID_1.0.8_RU.md`.
+Сводка: `releases/android/validation-1.0.8.json`.
+
+В 1.0.8 (14.11) пользователь отверг центральную/верхнюю загрузку: ВСЕ индикаторы вниз по центру, скрывать пока нижняя панель открыта, возвращать если загрузка продолжается. AppShell EpgLoadingIndicator BottomCenter12dp, VideoPlaybackStatus busy BottomCenter12dp; EpgLoadingIndicator скрыт если bottomPanelVisible/videoLoading. Scoped PlaybackOverlayVisibility в CompositionLocal, owner maps и DisposableEffect(onDispose) в ReportPlaybackOverlays. Реальный AndroidProgrammeOverlay регистрируется при существовании, windowedcontrols и AndroidMediaScreen video/info panels тоже. VideoStatus reporter busy не читает position и не делает I/O, при panelVisible или positiveinset скрыт; archivebadge unchanged. EPGrepo/downloadjob НЕ менялись. TextNotice suppresses EPG meanwhile. Appearance Android переставлены строки: часы без фона ВЫШЕ подписи архива; common порядок уже такой. 119relevantUItests (104Channels15Media), реальная approvedpanel hide and close→restore, bottomcenterbounds, multiowner/dispose/video priority. Release/lint/encoding/Desktopcompile/sign/zipalign/ZIP/key/PNG passed. Остальные suites/native не rerun для UI-only, full546 в1.0.7. PhysicalTV/APKruntime1.0.8 НЕ запускались. Source 4a4c33d, SHA 48db8051d8719d5f96d275640e33a1c1b38c2b4df918b546f789f6e8f6c92648, version1.0.8/code1008.
 
 В 1.0.7 (14.11) исправлены компактные строки «Медиатеки»: default16dp padding съедал 32 из38dp; explicit h12/v6, heightIn(min38/50), две равные колонки с переносом. Android InfoFilms использует общий MovieSourceSettings: одинаковые enable/APIkey configured-test-clear, ключи masked. Kinopoisk clearCache matchedRevision блокирует запись старого in-flight ответа, rate limit и ключи сохранены; SettingsComponent clear выбранного provider + shared ProgrammeMetadataRepository cache. Новые RU/EN/ZH строки. VideoPlaybackStatus — Android busy в центре, archiveTitle12sp/16line max2 внизу слева, без focus; live temporary title остаётся сверху, max1line. AppShell EPGbusy TopCenter112dp ниже title/clock. Appearance showArchiveLabel defaulttrue AppMeta, CompositionLocal scoped AppShell, archive disabled полностью скрывает постоянную подпись. WatchingLayout меряет AndroidProgrammeOverlay onSizeChanged и передаёт statusBottomInset, подпись выше реальной панели; diagnostics справа и выше подписи. Actual approved panel+badge geometry tested. 546tests (56TMDB233IPTV104Channels10TVG7Settings14Media122Android), release/lint/encoding/Desktopcompile/sign/zipalign/ZIP/key/PNG. Compact text layouts tested all3languages fontscale1/1.4, real bounds; source callbacks independent, Kino clear and mid-flight clear. PhysicalTV/APKruntime1.0.7 НЕ запускались. Source 334389b, APK SHA 55fe333c7fd084956065d957f7052cc9f487990f0b53cb30686f36a423ac31c3, version1.0.7/code1007.
 

@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.8",
+  "versionCode": 1008,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "4a4c33deedffcd8753d00643f48e321b802a5a4a",
+  "sha256": "48db8051d8719d5f96d275640e33a1c1b38c2b4df918b546f789f6e8f6c92648",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "changes": {
+    "epgStatus": "bottom centre, 12dp inset",
+    "playbackLoadingAndRecovery": "bottom centre",
+    "hiddenWhileBottomPanelOpen": true,
+    "restoredWhenPanelClosesAndLoadingContinues": true,
+    "realProgrammePanelRegistration": true,
+    "mediaControlsAlsoHideProgress": true,
+    "windowedControlsHideGlobalEpgProgress": true,
+    "epgDownloadUnaffected": true,
+    "videoBusyTakesPriorityOverEpgLabel": true,
+    "disposedPanelsCannotKeepProgressHidden": true,
+    "multiplePanelOwnersSupported": true,
+    "clockWithoutBackgroundBeforeArchiveLabel": true
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true
+  },
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/media",
+      "task": "desktopTest",
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 119,
+  "limitations": [
+    "APK 1.0.8 was not run on a physical television or emulator.",
+    "119 relevant Channels and Media Compose tests ran; other module suites and native Android tests were not rerun for this UI-only change.",
+    "Desktop compiles, but no Windows installer was built."
+  ]
+}
