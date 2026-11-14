@@ -86,8 +86,6 @@ internal fun AndroidProgrammeOverlay(
                             Modifier.border(.5.dp*scale,Color.White.copy(alpha=.22f),RoundedCornerShape(3.dp*scale))
                                 .padding(horizontal=5.dp*scale,vertical=2.dp*scale))
                     }
-                    if (duration > 0) Text(uiText("До конца {0} мин", (duration - position + 59_999) / 60_000),
-                        color = Color.White.copy(alpha = .7f), fontSize = 10.5.sp * scale, lineHeight = 14.sp * scale, maxLines = 1)
                 }
                 Spacer(Modifier.height(6.dp * scale))
                 ProgrammeTimeline(programme, position, duration, if (archived && programme != null && now in programme.start until programme.stop)
@@ -118,7 +116,18 @@ internal fun AndroidProgrammeOverlay(
 @Composable
 private fun ProgrammeTimeline(programme: EpgProgramme?, position: Long, duration: Long, liveEdge: Float?, scale: Float) {
     val primary = MaterialTheme.colorScheme.primary
-    BoxWithConstraints(Modifier.fillMaxWidth().height(15.dp * scale)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().height((if (duration > 0) 23.dp else 15.dp) * scale)) {
+        val liveLabelX = liveEdge?.let { maxWidth * it + 4.dp * scale }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // Reserve the remaining-time label's width so the live marker cannot overlap it.
+            BoxWithConstraints(Modifier.weight(1f)) {
+                liveLabelX?.let { x -> Text(uiText("Эфир"), color = Color.White.copy(alpha = .8f), fontSize = 7.5.sp * scale,
+                    lineHeight = 8.sp * scale, modifier = Modifier.offset(x = x.coerceIn(0.dp, (maxWidth - 25.dp * scale).coerceAtLeast(0.dp)))) }
+            }
+            if (duration > 0) Text(uiText("До конца {0} мин", (duration - position + 59_999) / 60_000),
+                color = Color.White.copy(alpha = .7f), fontSize = 10.5.sp * scale, lineHeight = 14.sp * scale, maxLines = 1,
+                modifier = Modifier.testTag("overlay-programme-remaining"))
+        }
         Canvas(Modifier.fillMaxWidth().height(8.dp * scale).align(Alignment.BottomCenter).testTag("overlay-programme-progress")) {
             val middle = size.height / 2
             val width = 2.5.dp.toPx() * scale
@@ -127,8 +136,6 @@ private fun ProgrammeTimeline(programme: EpgProgramme?, position: Long, duration
             if (fraction > 0) drawLine(primary, Offset(width/2,middle), Offset((size.width*fraction).coerceAtLeast(width/2),middle), width, StrokeCap.Round)
             liveEdge?.let { x -> drawLine(Color.White.copy(alpha = .9f), Offset(size.width*x,0f), Offset(size.width*x,size.height), .8.dp.toPx()*scale) }
         }
-        liveEdge?.let { fraction -> Text(uiText("Эфир"), color = Color.White.copy(alpha = .8f), fontSize = 7.5.sp * scale,
-            lineHeight = 8.sp * scale, modifier = Modifier.offset(x = (maxWidth * fraction + 4.dp * scale).coerceAtMost(maxWidth - 25.dp * scale))) }
     }
     Row(Modifier.fillMaxWidth().testTag("overlay-programme-times"), horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
