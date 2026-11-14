@@ -58,7 +58,8 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:banner="@drawable/banner"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

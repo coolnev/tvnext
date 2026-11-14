@@ -84,6 +84,7 @@ sealed interface SettingsIntent : MviIntent {
     data class StartFullscreenChanged(val enabled: Boolean) : SettingsIntent
     data class ShowChannelNumbersChanged(val enabled: Boolean) : SettingsIntent
     data class OpenLastChannelChanged(val enabled: Boolean) : SettingsIntent
+    data class AutoFrameRateChanged(val preferences: com.tvnext.app.core.player.AutoFrameRatePreferences): SettingsIntent
     data class VideoDecodeModeChanged(val mode: VideoDecodeMode) : SettingsIntent
     /** Maximum archive depth in days; 0 = automatic (provider maximum). */
     data class ArchiveLimitChanged(val days: Int) : SettingsIntent
@@ -185,6 +186,7 @@ class DefaultSettingsComponent(
             state.copy(settings = state.settings.copy(showChannelNumbers = intent.enabled))
         is SettingsIntent.OpenLastChannelChanged ->
             state.copy(settings = state.settings.copy(openLastChannel = intent.enabled))
+        is SettingsIntent.AutoFrameRateChanged -> state.copy(settings=state.settings.copy(autoFrameRate=intent.preferences.normalized()))
         is SettingsIntent.VideoDecodeModeChanged ->
             state.copy(settings = state.settings.copy(videoDecodeMode = intent.mode))
         is SettingsIntent.ArchiveLimitChanged ->
@@ -254,6 +256,7 @@ class DefaultSettingsComponent(
             is SettingsIntent.StartFullscreenChanged,
             is SettingsIntent.ShowChannelNumbersChanged,
             is SettingsIntent.OpenLastChannelChanged,
+            is SettingsIntent.AutoFrameRateChanged,
             is SettingsIntent.VideoDecodeModeChanged,
             is SettingsIntent.NetworkCachingChanged,
             is SettingsIntent.ArchiveSeekStepChanged,

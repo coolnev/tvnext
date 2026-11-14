@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var playbackViewModel: PlaybackViewModel
     private lateinit var playbackDisplay: PlaybackDisplayLifecycle
+    private lateinit var autoFrameRate: AndroidAutoFrameRate
     private var recoveryScreen by mutableStateOf(RecoveryScreen.NONE)
     private var menuHomeRequested by mutableStateOf(false)
     private var textNotice by mutableStateOf<Pair<Long, String>?>(null)
@@ -189,6 +190,8 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         val koin = GlobalContext.get()
+        val frameRatePlayer=koin.get<com.tvnext.app.core.player.PlaybackController>() as com.tvnext.app.core.player.AndroidPlaybackController
+        autoFrameRate=AndroidAutoFrameRate(AndroidDisplayModeHost(this),frameRatePlayer.videoSignal,frameRatePlayer.state)
         // Live playback and EPG updates run together. Track decoder activity
         // so the dedicated low-priority XMLTV worker can yield more CPU while
         // preserving uninterrupted playback and the last published EPG.
@@ -208,6 +211,7 @@ class MainActivity : ComponentActivity() {
                 (koin.get<com.tvnext.app.core.player.PlaybackController>()
                     as? com.tvnext.app.core.player.AndroidPlaybackController)
                     ?.updateDecodeMode(settings.videoDecodeMode)
+                autoFrameRate.updatePreferences(settings.autoFrameRate)
             }
         }
         // Resolve the small LOCAL settings snapshot before constructing the
@@ -372,6 +376,11 @@ class MainActivity : ComponentActivity() {
             }
             val childStack by rootComponent.childStack.subscribeAsState()
             val activeTab = childStack.active.configuration
+            androidx.compose.runtime.SideEffect {
+                val recordingVideo=recoveryScreen==RecoveryScreen.RECORDING_PLAYBACK
+                val visible=recordingVideo || (activeTab!=AppTab.SETTINGS && recoveryScreen==RecoveryScreen.NONE)
+                autoFrameRate.setContext(visible,recordingVideo || (immersive && activeTab in setOf(AppTab.CHANNELS,AppTab.MEDIA_LIBRARY)))
+            }
             LaunchedEffect(activeTab) {
                 if (activeTab != AppTab.CHANNELS && activeTab != AppTab.MEDIA_LIBRARY) {
                     immersive = false
@@ -427,6 +436,7 @@ class MainActivity : ComponentActivity() {
                         androidSettingsContent = { settingsComponent, onBack ->
                             AndroidReferenceSettingsScreen(
                                 component = settingsComponent,
+                                autoFrameRateStatus = autoFrameRate.status,
                                 onBackHome = onBack,
                                 onOpen = { action ->
                                     recoveryScreen = when (action) {
@@ -553,6 +563,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (::autoFrameRate.isInitialized) autoFrameRate.close()
         if (::playbackDisplay.isInitialized) playbackDisplay.close()
         // Only a clean user exit (double-Back / finish) clears the boot marker;
         // a system kill (LMK/native crash) leaves it, so the next launch can
@@ -570,6 +581,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        if (::autoFrameRate.isInitialized) autoFrameRate.setForeground(false)
         com.tvnext.app.core.iptv.data.AndroidEpgPlaybackGate.setAppForeground(false)
         AndroidPerformanceDiagnostics.stop()
         super.onStop()
@@ -583,10 +595,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         playbackDisplay.onResume()
+        if (::autoFrameRate.isInitialized) autoFrameRate.setForeground(true)
         WakeLaunchSettings.onActivityResumed(this)
     }
 
     override fun onPause() {
+        if (::autoFrameRate.isInitialized) autoFrameRate.setForeground(false)
         playbackDisplay.onPause()
         super.onPause()
     }

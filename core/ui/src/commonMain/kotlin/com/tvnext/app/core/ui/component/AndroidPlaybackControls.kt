@@ -59,8 +59,8 @@ fun AndroidPlaybackControls(
             }
         }
     }
-    val badges = remember(diagnostics?.resolution, diagnostics?.audio) {
-        playbackFormatBadges(diagnostics?.resolution, diagnostics?.audio)
+    val badges = remember(diagnostics?.resolution, diagnostics?.audio, diagnostics?.fps, diagnostics?.actualMode, com.tvnext.app.core.ui.i18n.UiLocale.language) {
+        playbackFormatBadges(diagnostics?.resolution, diagnostics?.audio, diagnostics?.fps, diagnostics?.actualMode)
     }
     val buttonSize = if (compact) 28.dp else 52.dp
     val compactText = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.sp)
@@ -79,9 +79,10 @@ fun AndroidPlaybackControls(
                     style = compactText.copy(fontSize = 10.sp, lineHeight = 12.sp), maxLines = 1,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.End)) {
-                    badges.forEach { badge -> Text(badge,
-                        style = compactText.copy(fontSize = 9.sp, lineHeight = 11.sp), maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    badges.forEach { badge -> Box(Modifier.background(MaterialTheme.colorScheme.surfaceVariant,RoundedCornerShape(3.dp))
+                        .padding(horizontal=4.dp,vertical=2.dp)) {
+                        PlaybackFormatBadgeContent(badge,MaterialTheme.colorScheme.onSurfaceVariant,9.sp,11.sp)
+                    } }
                 }
             }
         } else {
@@ -117,12 +118,8 @@ fun AndroidPlaybackControls(
                                 .padding(horizontal = 7.dp, vertical = 3.dp),
                             contentAlignment = androidx.compose.ui.Alignment.Center,
                         ) {
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                            )
+                            PlaybackFormatBadgeContent(label,MaterialTheme.colorScheme.onSurfaceVariant,
+                                MaterialTheme.typography.labelSmall.fontSize,MaterialTheme.typography.labelSmall.lineHeight)
                         }
                     }
                 }

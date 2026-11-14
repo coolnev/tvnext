@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asSkiaBitmap
@@ -149,10 +150,41 @@ class SettingsAndPlayerOverlaysTest {
         runOnIdle{assertFalse(visibility.bottomPanelVisible);assertFalse(visibility.videoLoading)}
     }
 
+    @Test fun afrSettingsAreTranslatedAndDisplayModeListWorksWithRemote() = runDesktopComposeUiTest(width=750,height=700) {
+        var preferences by mutableStateOf(com.tvnext.app.core.player.AutoFrameRatePreferences())
+        val modes=(0..30).map {com.tvnext.app.core.player.VideoDisplayMode(it+1,1920,1080,24.0+it)}
+        val status=com.tvnext.app.core.player.AutoFrameRateStatus(modes,modes.first())
+        try {
+            setContent { MaterialTheme(darkColorScheme()) { Surface { Column(Modifier.fillMaxSize().padding(16.dp)) {
+                com.tvnext.app.feature.settings.ui.AutoFrameRateSettings(preferences,status,{preferences=it})
+            } } } }
+            for(language in UiLanguage.entries) {
+                runOnIdle{UiLocale.language=language}
+                val label=com.tvnext.app.core.ui.i18n.UiTranslations.text(language,"Включить автофреймрейт")
+                onNodeWithText(label).assertIsDisplayed()
+            }
+            runOnIdle{UiLocale.language=UiLanguage.RUSSIAN}
+            onNodeWithText("Включить автофреймрейт").performClick()
+            runOnIdle{assertTrue(preferences.enabled)}
+            onNodeWithText("Поддерживаемые режимы экрана").performClick()
+            onNodeWithTag("afr-mode-list").assertIsFocused()
+            repeat(20) {onNodeWithTag("afr-mode-list").performKeyInput {pressKey(Key.DirectionDown)};waitForIdle()}
+            onNodeWithText("1920 × 1080 · 44 Гц").assertIsDisplayed()
+            screenshot("afr-supported-display-modes.png")
+        }finally{UiLocale.language=UiLanguage.RUSSIAN}
+    }
+
+    @Test fun codecBadgesIdentifyTheActualDecoderAndAudioWithoutGuessingUnknownFacts() {
+        val badges=com.tvnext.app.core.ui.component.playbackFormatBadges("1920x1080","5.1 · EC-3","23.976","SOFTWARE")
+        assertEquals(listOf("П","1080p","23,976 кадр/с","5.1","Dolby D+"),badges)
+        assertEquals(listOf("Stereo"),com.tvnext.app.core.ui.component.playbackFormatBadges(null,"Стерео · AAC",null,"UNKNOWN"))
+        assertTrue(com.tvnext.app.core.ui.component.playbackFormatBadges("n/a",null,"NaN","UNKNOWN").isEmpty())
+    }
+
     private fun ComposeUiTest.screenshot(name:String) {
         System.getenv("TVNEXT_VALIDATION_DIR")?.let { root ->
             val f=java.io.File(root,name); f.parentFile.mkdirs()
-            org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use{ f.writeBytes(it.bytes) }
+            org.jetbrains.skia.Image.makeFromBitmap(onAllNodes(isRoot()).let {it[it.fetchSemanticsNodes().lastIndex]}.captureToImage().asSkiaBitmap()).encodeToData()?.use{ f.writeBytes(it.bytes) }
         }
     }
 }

@@ -39,6 +39,8 @@ class PlaybackSettingsReturnTest {
             controller.play(item)
             val before=nativePlayer(controller)
             assertNotNull("Media3 must have been created",before)
+            assertEquals(androidx.media3.common.C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF,
+                (before as androidx.media3.exoplayer.ExoPlayer).videoChangeFrameRateStrategy)
             owner.onPause() // Android permission settings: onStop is deliberately absent.
             assertNull(nativePlayer(controller))
             owner.onResume()

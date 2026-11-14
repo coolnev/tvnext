@@ -77,6 +77,8 @@ class FullscreenProgrammePanelUiTest {
     }
     @Test fun archiveUsesTwoEqualCardsAndOneTimelineWithoutSynopsisOrDescriptionButton() = at1080p {
         val controller = player(true)
+        controller.state.value=controller.state.value.copy(diagnostics=PlayerDiagnostics("AUTO","HARDWARE",false,
+            "fixture","Media3","avc","1920x1080","25","8 Mbps","5.1 · AC3"))
         val panelHeight = mutableIntStateOf(0)
         val panelOpen = mutableStateOf(true)
         val overlays = PlaybackOverlayVisibility()
@@ -113,6 +115,9 @@ class FullscreenProgrammePanelUiTest {
         assertTrue(archiveLabel.bottom < panel.top, "Persistent archive label must stay above the measured controls")
         assertTrue(archiveLabel.height < 50f, "Archive label remains compact at 1080p")
         ui.onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        val badges=listOf("А","1080p","25 кадр/с","5.1","AC3").map {ui.onNodeWithTag("format-badge-$it").fetchSemanticsNode().boundsInRoot}
+        assertTrue(badges.zipWithNext().all{(a,b)->a.right<=b.left},"Decoder, resolution, FPS, sound and Dolby must stay ordered")
+        ui.onNodeWithContentDescription("AC3").assertIsDisplayed()
         screenshot("fullscreen-two-cards-archive-1920.png")
         ui.onNodeWithTag("fullscreen-close").performClick()
         ui.onNodeWithText("Обработка EPG: 1800 каналов").assertIsDisplayed()

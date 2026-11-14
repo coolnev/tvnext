@@ -76,6 +76,23 @@ class AndroidPlaybackController(
     private var activeDecoderName: String? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var suspendedState: PlayerState? = null
+    private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
+    val videoSignal: StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
+    private val cadenceEstimator = VideoCadenceEstimator()
+    private val signalHandler = android.os.Handler(Looper.getMainLooper())
+    @Volatile private var signalGeneration = 0L
+
+    private fun resetVideoSignal() {
+        signalGeneration++
+        cadenceEstimator.reset()
+        _videoSignal.value = null
+    }
+
+    private fun updateVideoSignal(format: Format, estimatedFps: Double? = null) {
+        val fps = estimatedFps ?: format.frameRate.toDouble().takeIf {it.isFinite() && it in 10.0..240.0} ?: 0.0
+        _videoSignal.value = VideoFrameSignal(format.width.coerceAtLeast(0),format.height.coerceAtLeast(0),fps)
+        measuredFps=if(fps>0) frameRateNumber(fps) else null
+    }
 
     private fun checkMainThread() {
         check(Looper.myLooper() == Looper.getMainLooper()) { "Playback must run on Main" }
@@ -194,10 +211,14 @@ class AndroidPlaybackController(
             format: Format,
             decoderReuseEvaluation: androidx.media3.exoplayer.DecoderReuseEvaluation?,
         ) {
-            if (format.frameRate != C.RATE_UNSET && format.frameRate > 0f) {
-                measuredFps = java.lang.String.format(java.util.Locale.US, "%.2f", format.frameRate)
-                refreshState()
+            val timeline = eventTime.timeline
+            if (!timeline.isEmpty && eventTime.windowIndex in 0 until timeline.windowCount) {
+                val id = timeline.getWindow(eventTime.windowIndex, androidx.media3.common.Timeline.Window()).mediaItem.mediaId
+                if (id.isNotEmpty() && id != _state.value.item?.id) return
             }
+            cadenceEstimator.reset()
+            updateVideoSignal(format)
+            refreshState()
         }
 
         override fun onBandwidthEstimate(
@@ -236,6 +257,8 @@ class AndroidPlaybackController(
                 }
             }
         }
+
+        override fun onTracksChanged(tracks: Tracks) { refreshState() }
 
         override fun onPositionDiscontinuity(
             oldPosition: Player.PositionInfo,
@@ -325,6 +348,7 @@ class AndroidPlaybackController(
         if (!timeShift.opening) timeShift.cancel()
         cancelRetry()
         autoRestartCounts.clear()
+        resetVideoSignal()
         requestedDecodeMode = decodeModeFor(item)
         decoderPath = androidVideoDecoderPlan(requestedDecodeMode).first()
         activeDecoderName = null
@@ -399,6 +423,7 @@ class AndroidPlaybackController(
         positionTickerJob?.cancel()
         positionTickerJob = null
         autoRestartCounts.clear()
+        resetVideoSignal()
         _state.value = PlayerState(volume = desiredVolume, isMuted = muted)
         _player.value?.let { exoPlayer ->
             exoPlayer.stop()
@@ -496,6 +521,7 @@ class AndroidPlaybackController(
     }
 
     private fun disposePlayer() {
+        resetVideoSignal()
         positionTickerJob?.cancel()
         positionTickerJob = null
         mediaSession?.release()
@@ -527,7 +553,22 @@ class AndroidPlaybackController(
             .setRenderersFactory(renderers)
             .setMediaSourceFactory(createMediaSourceFactory())
             .setLoadControl(loadControlFor(kind))
+            // One authority for AFR: the Activity's mode matcher, including TextureView.
+            .setVideoChangeFrameRateStrategy(C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF)
             .build()
+        newPlayer.setVideoFrameMetadataListener { presentationTimeUs, _, format, _ ->
+            if (format.frameRate <= 0f || !format.frameRate.isFinite()) {
+                val token=signalGeneration
+                cadenceEstimator.frame(presentationTimeUs)?.let { fps ->
+                    signalHandler.post {
+                        if(token==signalGeneration && _player.value===newPlayer && _state.value.item!=null) {
+                            updateVideoSignal(format,fps)
+                            refreshState()
+                        }
+                    }
+                }
+            }
+        }
         // IPTV streams are network-delivered: WAKE_MODE_NETWORK holds a WiFi
         // lock ONLY while actually playing (ExoPlayer manages the acquire/
         // release itself), which prevents the radio's power-saving mode from
@@ -717,7 +758,7 @@ class AndroidPlaybackController(
         // fall back to the track format when the analytics have not fired yet.
         val fps = measuredFps
             ?: if (format.frameRate != C.RATE_UNSET && format.frameRate > 0f) {
-                java.lang.String.format(java.util.Locale.US, "%.2f", format.frameRate)
+                frameRateNumber(format.frameRate.toDouble())
             } else {
                 null
             }

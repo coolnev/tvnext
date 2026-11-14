@@ -80,6 +80,12 @@ internal fun AndroidProgrammeOverlay(
                             lineHeight = 12.sp * scale, modifier = Modifier.border(.5.dp * scale, Color.White.copy(alpha = .22f),
                                 RoundedCornerShape(3.dp * scale)).padding(horizontal = 5.dp * scale, vertical = 2.dp * scale))
                     }
+                    com.tvnext.app.core.ui.component.playbackFormatBadges(player.diagnostics?.resolution,player.diagnostics?.audio,
+                        player.diagnostics?.fps,player.diagnostics?.actualMode).forEach { label ->
+                        com.tvnext.app.core.ui.component.PlaybackFormatBadgeContent(label,Color.White.copy(alpha=.8f),9.5.sp*scale,12.sp*scale,
+                            Modifier.border(.5.dp*scale,Color.White.copy(alpha=.22f),RoundedCornerShape(3.dp*scale))
+                                .padding(horizontal=5.dp*scale,vertical=2.dp*scale))
+                    }
                     if (duration > 0) Text(uiText("До конца {0} мин", (duration - position + 59_999) / 60_000),
                         color = Color.White.copy(alpha = .7f), fontSize = 10.5.sp * scale, lineHeight = 14.sp * scale, maxLines = 1)
                 }

@@ -76,6 +76,13 @@ class SqlDelightSettingsRepository(
     override suspend fun load(): AppSettings = observe().first()
 
     override suspend fun save(settings: AppSettings) {
+        val afr=settings.autoFrameRate.normalized()
+        meta.setValue("settings.afr.enabled",afr.enabled.toString())
+        meta.setValue("settings.afr.strategy",afr.strategy.name)
+        meta.setValue("settings.afr.resolution",afr.matchResolution.toString())
+        meta.setValue("settings.afr.double",afr.doubleFrameRate.toString())
+        meta.setValue("settings.afr.fullscreen",afr.fullscreenOnly.toString())
+        meta.setValue("settings.afr.delay",afr.delayMs.toString())
         meta.setValue("settings.kinopoisk_enabled",settings.kinopoiskEnabled.toString())
         meta.setValue("settings.media.poster",settings.media.posterSize.name)
         meta.setValue("settings.media.sort",settings.media.filmSort.name)
@@ -180,6 +187,14 @@ class SqlDelightSettingsRepository(
             videoDecodeMode = rows.videoDecodeMode() ?: defaults.videoDecodeMode,
             epgEnabled = rows.bool(Keys.EPG_ENABLED) ?: defaults.epgEnabled,
             epgUrl = rows.string(Keys.EPG_URL) ?: defaults.epgUrl,
+            autoFrameRate = com.tvnext.app.core.player.AutoFrameRatePreferences(
+                enabled=rows.bool("settings.afr.enabled") ?: false,
+                strategy=rows.string("settings.afr.strategy")?.let {runCatching {com.tvnext.app.core.player.FrameRateSwitchStrategy.valueOf(it)}.getOrNull()} ?: com.tvnext.app.core.player.FrameRateSwitchStrategy.ALWAYS,
+                matchResolution=rows.bool("settings.afr.resolution") ?: false,
+                doubleFrameRate=rows.bool("settings.afr.double") ?: true,
+                fullscreenOnly=rows.bool("settings.afr.fullscreen") ?: true,
+                delayMs=rows.int("settings.afr.delay") ?: 1000,
+            ).normalized(),
             clockPosition = rows.clockPosition() ?: defaults.clockPosition,
             clockWithoutBackground = rows.bool(Keys.CLOCK_WITHOUT_BACKGROUND) ?: defaults.clockWithoutBackground,
             showArchiveLabel = rows.bool(Keys.SHOW_ARCHIVE_LABEL) ?: defaults.showArchiveLabel,

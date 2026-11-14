@@ -56,6 +56,7 @@ internal fun AndroidReferenceSettingsScreen(
     component: SettingsComponent,
     onBackHome: (() -> Unit)?,
     onOpen: (String) -> Unit,
+    autoFrameRateStatus: kotlinx.coroutines.flow.StateFlow<com.tvnext.app.core.player.AutoFrameRateStatus>? = null,
 ) {
     val state by component.state.collectAsState()
     val context = LocalContext.current
@@ -345,6 +346,10 @@ internal fun AndroidReferenceSettingsScreen(
                             }
                         }
                         3 -> {
+                            com.tvnext.app.feature.settings.ui.AutoFrameRateSettings(s.autoFrameRate,
+                                autoFrameRateStatus?.collectAsState()?.value ?: com.tvnext.app.core.player.AutoFrameRateStatus(),
+                                {component.dispatch(SettingsIntent.AutoFrameRateChanged(it))},compact=condensed)
+                            Spacer(Modifier.height(10.dp))
                             ReferenceRow(uiText("Индивидуальные настройки каналов"), height = entryHeight,
                                 onClick = { onOpen("editor") })
                             ReferenceRow(uiText("Соотношение сторон"), height = entryHeight,

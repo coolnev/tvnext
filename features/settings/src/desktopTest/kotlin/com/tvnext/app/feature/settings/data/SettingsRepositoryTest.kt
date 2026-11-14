@@ -36,6 +36,14 @@ class SettingsRepositoryTest {
         assertEquals(null,repo.getMediaBrowserPosition())
     }
 
+    @Test fun allAutoFrameRateOptionsSurviveReloadAndStartDisabled() = runBlocking {
+        val repo=createRepo()
+        assertEquals(false,repo.load().autoFrameRate.enabled)
+        val afr=com.tvnext.app.core.player.AutoFrameRatePreferences(true,com.tvnext.app.core.player.FrameRateSwitchStrategy.SEAMLESS,true,false,false,3000)
+        repo.save(repo.load().copy(autoFrameRate=afr))
+        assertEquals(afr,repo.load().autoFrameRate)
+    }
+
     @Test fun archiveLabelDefaultsOnAndItsOffSwitchSurvivesRestart() = runBlocking {
         val repo=createRepo()
         assertEquals(true,repo.load().showArchiveLabel)
