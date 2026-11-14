@@ -83,6 +83,10 @@ data class PlayerDiagnostics(
      * phase from a frozen decoder without guessing from the position.
      */
     val transportState: String = "",
+    /** Structured video facts for choosing a surface without parsing display labels. */
+    val videoWidth: Int = 0,
+    val videoHeight: Int = 0,
+    val nativeVideoSurfaceRequired: Boolean = false,
 ) {
     companion object {
         const val MODE_HARDWARE = "HARDWARE"

@@ -75,8 +75,16 @@ class AutoFrameRateTest {
         assertEquals(50.0,verifiedVideoFrameRate(50.0,25.0))
         assertEquals(60000.0/1001,verifiedVideoFrameRate(60.0,60000.0/1001),.0001)
     }
-    @Test fun androidUsesTheUhdSurfaceForAnimationAsWellAsSteadyVideo() {
-        for(animated in listOf(false,true))assertFalse(useTextureForVideoTransition(animated,true))
+    @Test fun androidRestoresTextureAnimationForHdButKeepsTheUhdPlane() {
+        for((w,h) in listOf(720 to 576,1280 to 720,1920 to 1080,1080 to 1920)) {
+            assertTrue(useTextureForVideoTransition(true,true,w,h))
+            assertFalse(useTextureForVideoTransition(false,true,w,h))
+        }
+        for(animated in listOf(false,true)) {
+            assertFalse(useTextureForVideoTransition(animated,true,3840,2160))
+            assertFalse(useTextureForVideoTransition(animated,true,1920,1080,true))
+            assertFalse(useTextureForVideoTransition(animated,true))
+        }
         assertTrue(useTextureForVideoTransition(true,false))
     }
     @Test fun stereoMixKeepsDialogueInBothSpeakersAndCannotOverflowFullScale() {

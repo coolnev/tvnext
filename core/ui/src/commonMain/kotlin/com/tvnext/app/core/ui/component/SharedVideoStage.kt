@@ -32,6 +32,13 @@ fun SharedVideoStage(
     surface: @Composable (Modifier, Boolean) -> Unit = { m, texture -> NativePlayerSurface(controller,m,texture) },
 ) {
     val target = scene.viewport
+    val android = com.tvnext.app.core.common.platform.isAndroidPlatform()
+    val surfaceSelection = remember(controller) { VideoSurfaceSelection().apply {
+        update(animated,android,controller.state.value.diagnostics)
+    } }
+    val texture by remember(controller, animated, android) {
+        controller.state.map { surfaceSelection.update(animated,android,it.diagnostics) }.distinctUntilChanged()
+    }.collectAsState(initial = surfaceSelection.usesTextureView)
     val hasItem by remember(controller) {
         controller.state.map { it.item != null }.distinctUntilChanged()
     }.collectAsState(initial = controller.state.value.item != null)
@@ -74,7 +81,7 @@ fun SharedVideoStage(
         if(animated && old!=null && (old.token!=next.token || resized) && !bounds.value.isEmpty) {
             moving=true
             try {
-                bounds.animateTo(next.bounds,tween(300,easing=FastOutSlowInEasing))
+                bounds.animateTo(next.bounds,tween(420,easing=FastOutSlowInEasing))
                 if(flightOwner[0]===owner)laidOutViewport=next
             }
             finally {if(flightOwner[0]===owner)moving=false}
@@ -109,6 +116,6 @@ fun SharedVideoStage(
         }
         .zIndex(if(flying)2f else 0f).testTag("shared-video-stage")) {
         if(viewport!=null || surfaceCreated) surface(Modifier.offset {IntOffset((full.left-clip.left).roundToInt(),(full.top-clip.top).roundToInt())}
-            .requiredSize(with(density){full.width.coerceAtLeast(1f).toDp()},with(density){full.height.coerceAtLeast(1f).toDp()}),useTextureForVideoTransition(animated,com.tvnext.app.core.common.platform.isAndroidPlatform()))
+            .requiredSize(with(density){full.width.coerceAtLeast(1f).toDp()},with(density){full.height.coerceAtLeast(1f).toDp()}),texture)
     }
 }

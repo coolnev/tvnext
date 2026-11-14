@@ -34,5 +34,21 @@ val LocalVideoScene = staticCompositionLocalOf<VideoScene?> { null }
 @Composable
 fun videoSurfaceBackground(fallback: Color): Color = if (LocalVideoScene.current != null) Color.Transparent else fallback
 
-/** API24+ SurfaceView synchronizes view animation and retains the native UHD video plane. */
-fun useTextureForVideoTransition(animated:Boolean, android:Boolean):Boolean = animated && !android
+/** Restore composited animation for SDR up to Full HD; keep the native UHD/HDR/protected plane. */
+fun useTextureForVideoTransition(animated:Boolean, android:Boolean, width:Int=0, height:Int=0,
+    nativeRequired:Boolean=false):Boolean = animated && (!android || (!nativeRequired &&
+    width>0 && height>0 && maxOf(width,height)<=1920 && minOf(width,height)<=1080))
+
+/** Missing metadata during a channel switch must not swap surfaces twice. */
+class VideoSurfaceSelection(initialTexture:Boolean=false) {
+    var usesTextureView:Boolean=initialTexture
+        private set
+    fun update(animated:Boolean, android:Boolean, facts:PlayerDiagnostics?):Boolean {
+        if (!animated || !android || facts?.nativeVideoSurfaceRequired==true ||
+            (facts!=null && facts.videoWidth>0 && facts.videoHeight>0)) {
+            usesTextureView=useTextureForVideoTransition(animated,android,facts?.videoWidth ?: 0,
+                facts?.videoHeight ?: 0,facts?.nativeVideoSurfaceRequired==true)
+        }
+        return usesTextureView
+    }
+}

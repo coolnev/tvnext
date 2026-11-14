@@ -72,7 +72,7 @@ class SharedVideoStageUiTest {
         assertTrue(extraCompositions<=1 && extraMeasures<=1 && extraSizes==0,
             "Eight animation frames must not rebuild/resize the surface: compositions=$extraCompositions measures=$extraMeasures sizes=$extraSizes")
         assertTrue(widths.zipWithNext().all{(a,b)->b<a},"Video must keep moving smoothly while its native layout stays fixed: $widths")
-        mainClock.advanceTimeBy(192);waitForIdle()
+        mainClock.advanceTimeBy(320);waitForIdle()
         assertEquals(224f,onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width,1f)
         assertEquals(IntSize(224,126),sizes.last())
         // A second Back may arrive before expansion has finished. Reverse the
@@ -80,7 +80,7 @@ class SharedVideoStageUiTest {
         runOnIdle{destination=0};mainClock.advanceTimeBy(96);waitForIdle()
         assertTrue(onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width>224f)
         assertEquals(IntSize(224,126),sizes.last())
-        runOnIdle{destination=1};mainClock.advanceTimeBy(384);waitForIdle()
+        runOnIdle{destination=1};mainClock.advanceTimeBy(520);waitForIdle()
         assertEquals(224f,onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width,1f)
         assertEquals(IntSize(224,126),sizes.last())
     }

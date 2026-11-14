@@ -70,6 +70,26 @@ class PlaybackFactsRegressionTest {
             assertEquals(.7f,c.state.value.volume);assertTrue(c.state.value.isMuted)
         }finally{c.release()}
     }
+    @Test fun actualHdDimensionsAndHdrFlagsDriveTheSurfaceWithoutParsingLabels() {
+        val c=controller()
+        try {
+            c.play(PlaybackItem("a","A","file:///missing-a.ts"))
+            val analytics=field(c,"analyticsListener").get(c) as AnalyticsListener
+            val event=AnalyticsListener.EventTime(0,Timeline.EMPTY,0,null,0,Timeline.EMPTY,0,null,0,0)
+            val hd=Format.Builder().setSampleMimeType("video/avc").setWidth(1920).setHeight(1080).build()
+            analytics.onVideoInputFormatChanged(event,hd,null)
+            assertEquals(1920,facts(c).videoWidth);assertEquals(1080,facts(c).videoHeight)
+            assertFalse(facts(c).nativeVideoSurfaceRequired)
+            val hdr=ColorInfo.Builder().setColorTransfer(C.COLOR_TRANSFER_ST2084).setColorSpace(C.COLOR_SPACE_BT2020).build()
+            analytics.onVideoInputFormatChanged(event,hd.buildUpon().setColorInfo(hdr).build(),null)
+            assertTrue(facts(c).nativeVideoSurfaceRequired)
+            analytics.onVideoInputFormatChanged(event,hd.buildUpon().setSampleMimeType("video/dolby-vision").build(),null)
+            assertTrue(facts(c).nativeVideoSurfaceRequired)
+            analytics.onVideoInputFormatChanged(event,hd,null)
+            field(c,"activeDecoderName").set(c,"OMX.vendor.avc.decoder.secure")
+            assertTrue(facts(c).nativeVideoSurfaceRequired)
+        }finally{c.release()}
+    }
     @Test fun stereoCompatibilityMixesTheCentreDialogueIntoBothSpeakers() {
         val mixer=Class.forName("com.tvnext.app.core.player.AndroidAudioRenderersFactoryKt")
             .getDeclaredMethod("createStereoPcmMixer").apply{isAccessible=true}.invoke(null) as androidx.media3.common.audio.ChannelMixingAudioProcessor

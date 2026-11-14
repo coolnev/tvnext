@@ -826,6 +826,13 @@ class AndroidPlaybackController(
             bitrate = bitrate,
             audio = firstAudioLabel(exoPlayer.currentTracks) ?: activeAudioFormat?.let(::audioFormatLabel),
             transportState = transportState,
+            videoWidth = width ?: 0,
+            videoHeight = height ?: 0,
+            nativeVideoSurfaceRequired = format?.drmInitData != null ||
+                format?.sampleMimeType == "video/dolby-vision" ||
+                format?.colorInfo?.colorTransfer == C.COLOR_TRANSFER_ST2084 ||
+                format?.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG ||
+                activeDecoderName?.endsWith(".secure", ignoreCase = true) == true,
         )
     }
 
