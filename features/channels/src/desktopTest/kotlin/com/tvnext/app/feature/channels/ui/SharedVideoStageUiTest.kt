@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -34,6 +36,53 @@ class SharedVideoStageUiTest {
         override fun setVolume(volume: Float)=Unit
         override fun setMuted(muted: Boolean)=Unit
         override fun release()=Unit
+    }
+
+    @Test fun animationMovesInLayerWithoutPerFrameSurfaceRemeasure() = runDesktopComposeUiTest(width=960,height=540) {
+        val scene=VideoScene();val player=Player();var destination by mutableStateOf(0)
+        var compositions=0;var measures=0
+        val sizes=mutableListOf<IntSize>()
+        setContent { CompositionLocalProvider(LocalVideoScene provides scene) { Box(Modifier.fillMaxSize()) {
+            SharedVideoStage(scene,player,true,transitionKey=destination,surface={m,_ ->
+                SideEffect{compositions++}
+                Box(m.layout{measurable,constraints ->
+                    measures++
+                    val placeable=measurable.measure(constraints)
+                    layout(placeable.width,placeable.height){placeable.place(0,0)}
+                }.onSizeChanged{sizes+=it}.background(Color.Cyan).testTag("native-video"))
+            })
+            if(destination==0)PlayerSurface(player,Modifier.fillMaxSize())
+            else PlayerSurface(player,Modifier.offset(700.dp,16.dp).size(224.dp,126.dp))
+        } } }
+        waitForIdle();mainClock.autoAdvance=false
+        runOnIdle{destination=1};mainClock.advanceTimeBy(64);waitForIdle()
+        val initialCompositions=compositions;val initialMeasures=measures;val initialSizes=sizes.size
+        val widths=mutableListOf<Float>()
+        repeat(8){
+            mainClock.advanceTimeByFrame();waitForIdle()
+            widths+=onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width
+        }
+        val extraCompositions=compositions-initialCompositions
+        val extraMeasures=measures-initialMeasures
+        val extraSizes=sizes.size-initialSizes
+        System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+            val file=java.io.File(root,"video-animation-work.json");file.parentFile.mkdirs()
+            file.writeText("""{"sampledFrames":8,"nativeCompositions":$extraCompositions,"nativeMeasures":$extraMeasures,"nativeSizeChanges":$extraSizes}""")
+        }
+        assertTrue(extraCompositions<=1 && extraMeasures<=1 && extraSizes==0,
+            "Eight animation frames must not rebuild/resize the surface: compositions=$extraCompositions measures=$extraMeasures sizes=$extraSizes")
+        assertTrue(widths.zipWithNext().all{(a,b)->b<a},"Video must keep moving smoothly while its native layout stays fixed: $widths")
+        mainClock.advanceTimeBy(192);waitForIdle()
+        assertEquals(224f,onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width,1f)
+        assertEquals(IntSize(224,126),sizes.last())
+        // A second Back may arrive before expansion has finished. Reverse the
+        // active flight without snapping/rebuilding its native surface.
+        runOnIdle{destination=0};mainClock.advanceTimeBy(96);waitForIdle()
+        assertTrue(onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width>224f)
+        assertEquals(IntSize(224,126),sizes.last())
+        runOnIdle{destination=1};mainClock.advanceTimeBy(384);waitForIdle()
+        assertEquals(224f,onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width,1f)
+        assertEquals(IntSize(224,126),sizes.last())
     }
 
     @Test fun navigationRaisesVideoBeforeTheSamePlaceholderReceivesItsNewBounds() = runDesktopComposeUiTest(width=960,height=540) {
