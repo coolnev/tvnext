@@ -378,6 +378,7 @@ internal fun AndroidMediaScreen(
                 state.error?.let { Text(it.toUserMessage(), color = MaterialTheme.colorScheme.error) }
             }
             if (pane == MediaPane.VIDEO && (controlsVisible || seekFeedback != 0L)) {
+                com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
                 AndroidPlaybackControls(
                     paused = playback.state == PlaybackState.PAUSED,
                     positionMs = playback.positionMs, durationMs = playback.durationMs,
@@ -420,6 +421,7 @@ internal fun AndroidMediaScreen(
             }
             if (pane == MediaPane.INFO && infoItem != null) Row(Modifier.align(Alignment.BottomCenter)
                 .fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f)).padding(24.dp)) {
+                com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
                 ChannelLogo(url = infoMetadata?.posterUrl ?: infoItem.logoUrl,
                     placeholderText = infoItem.name, modifier = Modifier.width(180.dp).height(270.dp))
                 Spacer(Modifier.width(22.dp))

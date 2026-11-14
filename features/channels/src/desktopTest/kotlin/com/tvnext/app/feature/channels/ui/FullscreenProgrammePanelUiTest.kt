@@ -17,6 +17,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
 import com.tvnext.app.core.ui.component.VideoPlaybackStatus
+import com.tvnext.app.core.ui.component.PlaybackOverlayVisibility
+import com.tvnext.app.core.ui.component.LocalPlaybackOverlayVisibility
+import com.tvnext.app.core.ui.component.EpgLoadingIndicator
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
@@ -75,13 +78,18 @@ class FullscreenProgrammePanelUiTest {
     @Test fun archiveUsesTwoEqualCardsAndOneTimelineWithoutSynopsisOrDescriptionButton() = at1080p {
         val controller = player(true)
         val panelHeight = mutableIntStateOf(0)
+        val panelOpen = mutableStateOf(true)
+        val overlays = PlaybackOverlayVisibility()
         ui.setContent { MaterialTheme(colorScheme=darkColorScheme(primary=Color(0xFF3DDC97))) {
             val density = LocalDensity.current
+            CompositionLocalProvider(LocalPlaybackOverlayVisibility provides overlays) {
             Box(Modifier.size(1920.dp,1080.dp).testTag("test-video-layout").background(Color(0xFF173036)),contentAlignment=Alignment.BottomCenter) {
                 VideoPlaybackStatus(PlaybackState.PLAYING, "КИНО ТВ • Архив • 14.11 20:00",
-                    bottomInset = with(density) { panelHeight.intValue.toDp() })
-                AndroidProgrammeOverlay(channel,epg,controller,true,{}, {},modifier=Modifier.fillMaxWidth()
+                    bottomInset = if(panelOpen.value) with(density) { panelHeight.intValue.toDp() } else 0.dp)
+                if(panelOpen.value) AndroidProgrammeOverlay(channel,epg,controller,true,{}, {panelOpen.value=false},modifier=Modifier.fillMaxWidth()
                     .onSizeChanged { panelHeight.intValue = it.height })
+                EpgLoadingIndicator("Обработка EPG: 1800 каналов",Modifier.align(Alignment.BottomCenter).padding(12.dp))
+            }
             }
         } }
         ui.waitForIdle()
@@ -104,7 +112,13 @@ class FullscreenProgrammePanelUiTest {
         val archiveLabel=ui.onNodeWithTag("archive-video-label").fetchSemanticsNode().boundsInRoot
         assertTrue(archiveLabel.bottom < panel.top, "Persistent archive label must stay above the measured controls")
         assertTrue(archiveLabel.height < 50f, "Archive label remains compact at 1080p")
+        ui.onNodeWithTag("epg-loading-status").assertDoesNotExist()
         screenshot("fullscreen-two-cards-archive-1920.png")
+        ui.onNodeWithTag("fullscreen-close").performClick()
+        ui.onNodeWithText("Обработка EPG: 1800 каналов").assertIsDisplayed()
+        val status=ui.onNodeWithTag("epg-loading-status").fetchSemanticsNode().boundsInRoot
+        assertEquals(960f,status.center.x,1f)
+        assertTrue(status.bottom>1040f)
     }
     @Test fun remoteActionsFireOnceAndPausedOrLiveModeChangesKeepUsableFocus() = at1080p {
         val paused=mutableStateOf(false);val live=mutableStateOf(false)

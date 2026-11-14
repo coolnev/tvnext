@@ -610,6 +610,8 @@ private fun WatchingLayout(
     // layout) dirty every second, purely because of a field it never uses.
     val playerItemKind by remember { derivedStateOf { playerState.item?.kind } }
     val playerDiagnostics by remember { derivedStateOf { playerState.diagnostics } }
+    val fullscreenProgrammePanelVisible = immersive && !categoriesOpen && (!isAndroidPlatform() || !drawerOpen) &&
+        (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible)
 
     // Show the full-screen «Телепрограмма» info block on every channel switch.
     LaunchedEffect(state.selectedChannelId, epgInfoDurationSeconds) {
@@ -1127,8 +1129,7 @@ private fun WatchingLayout(
                             playingEpg.current?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0 else null,
                         onProgrammeSeek = if (isAndroidPlatform() && playerItemKind == PlaybackContentKind.ARCHIVE)
                             { position -> playingEpg.current?.let { (controller as? TimeShiftController)?.seekToTime(it.start + position) }; Unit } else null,
-                        statusBottomInset = if (isAndroidPlatform() && immersive && !categoriesOpen && !drawerOpen &&
-                            (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible))
+                        statusBottomInset = if (isAndroidPlatform() && fullscreenProgrammePanelVisible)
                             with(overlayDensity) { fullscreenInfoHeightPx.toDp() }.takeIf { it > 0.dp } ?: 200.dp else 0.dp,
                         channelNameVisible = channelNameVisible,
                         clockPosition = clockPosition,
@@ -1152,6 +1153,7 @@ private fun WatchingLayout(
                         if (!immersive && isAndroidPlatform()) Modifier.weight(1f).fillMaxWidth() else Modifier,
                     ) {
                         if (!immersive && isAndroidPlatform()) {
+                            com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
                             val programme = playingEpg.current
                             val at = if (playerItemKind == PlaybackContentKind.ARCHIVE)
                                 (playerState.item?.archiveEpgAnchorMs ?: now) + playerState.positionMs else now
@@ -1456,8 +1458,7 @@ private fun WatchingLayout(
                     // инфо-полоса (LIVE при смене канала, RIGHT) + оверлей
                     // перемотки архива (появляется при UP/DOWN/OK, гаснет через 3 с).
                     // НЕ показываем инфо-панель когда открыты категории.
-                    if (immersive && !categoriesOpen && (!isAndroidPlatform() || !drawerOpen) &&
-                        (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible)) {
+                    if (fullscreenProgrammePanelVisible) {
                         if (isAndroidPlatform()) AndroidProgrammeOverlay(
                             channel = selectedChannel,
                             epg = playingEpg.takeIf { it.channelId == selectedChannel.id } ?: ChannelEpg(channelId = selectedChannel.id),

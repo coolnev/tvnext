@@ -28,9 +28,13 @@ fun VideoPlaybackStatus(
     modifier: Modifier = Modifier,
 ) {
     val showArchive = LocalArchiveLabelEnabled.current
+    val loading = state == PlaybackState.LOADING || state == PlaybackState.BUFFERING
+    ReportPlaybackOverlays(loadingVideo = loading)
+    val panelVisible = LocalPlaybackOverlayVisibility.current?.bottomPanelVisible == true || bottomInset > 0.dp
     Box(modifier.fillMaxSize()) {
-        if (state == PlaybackState.LOADING || state == PlaybackState.BUFFERING) {
-            Row(Modifier.align(Alignment.Center).testTag("video-loading-status")
+        if (loading && !panelVisible) {
+            Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp, start = 12.dp, end = 12.dp)
+                .testTag("video-loading-status")
                 .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(4.dp))
                 .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,

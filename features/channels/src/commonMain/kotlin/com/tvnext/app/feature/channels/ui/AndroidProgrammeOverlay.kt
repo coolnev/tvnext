@@ -41,6 +41,7 @@ internal fun AndroidProgrammeOverlay(
     onTogglePlayback: (() -> Unit)? = null,
     seekStepMs: Long = 60_000L,
 ) {
+    com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
     val player by controller.state.collectAsState()
     var now by remember { mutableLongStateOf(currentTimeMillis()) }
     val archived = player.item?.kind == PlaybackContentKind.ARCHIVE

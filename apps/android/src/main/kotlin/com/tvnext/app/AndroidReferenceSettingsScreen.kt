@@ -285,11 +285,11 @@ internal fun AndroidReferenceSettingsScreen(
                                     uiText("Верхний правый угол") to { component.dispatch(SettingsIntent.ClockPositionChanged(ClockPosition.TOP_RIGHT)) },
                                 ))
                             })
-                            ReferenceToggle(uiText("Подпись архива на видео"), s.showArchiveLabel, entryHeight) {
-                                component.dispatch(SettingsIntent.ShowArchiveLabelChanged(it))
-                            }
                             ReferenceToggle(uiText("Часы без фона"), s.clockWithoutBackground, entryHeight) {
                                 component.dispatch(SettingsIntent.ClockWithoutBackgroundChanged(it))
+                            }
+                            ReferenceToggle(uiText("Подпись архива на видео"), s.showArchiveLabel, entryHeight) {
+                                component.dispatch(SettingsIntent.ShowArchiveLabelChanged(it))
                             }
                             ReferenceRow(uiText("Информация о передаче"), s.epgInfoDurationSeconds?.let {
                                 if (it == 0) uiText("Всегда") else uiText("{0} секунды", it)

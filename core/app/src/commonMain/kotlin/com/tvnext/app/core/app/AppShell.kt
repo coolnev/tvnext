@@ -131,9 +131,11 @@ fun AppShell(
         accentColor = settings.accentColor,
         panelTransparencyPercent = settings.panelTransparencyPercent,
     ) {
+        val playbackOverlays = remember { com.tvnext.app.core.ui.component.PlaybackOverlayVisibility() }
         val scene = remember(sharedPlaybackController) { if(sharedPlaybackController!=null) VideoScene() else null }
         CompositionLocalProvider(LocalVideoScene provides scene,
-            com.tvnext.app.core.ui.component.LocalArchiveLabelEnabled provides settings.showArchiveLabel) {
+            com.tvnext.app.core.ui.component.LocalArchiveLabelEnabled provides settings.showArchiveLabel,
+            com.tvnext.app.core.ui.component.LocalPlaybackOverlayVisibility provides playbackOverlays) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .onGloballyPositioned {scene?.origin=it.positionInRoot()}) {
             if(scene!=null && sharedPlaybackController!=null) com.tvnext.app.core.ui.component.SharedVideoStage(
@@ -285,23 +287,14 @@ fun AppShell(
             // Only the management page is focusable while it is open; prevent D-pad
             // navigation from reaching Home controls hidden behind the page.
             if (isAndroidPlatform() && epgLoading && !overlayFullScreen &&
-                activeTab != AppTab.SETTINGS) {
-                Row(
-                    Modifier.align(Alignment.TopCenter)
-                        .padding(start = 12.dp, end = 12.dp, top = 112.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.82f))
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp,
-                        color = Color.White)
-                    Text(epgProgressText?.takeIf { it.isNotBlank() } ?: if (epgLoadedProgrammes > 0)
+                activeTab != AppTab.SETTINGS && textNotice == null) {
+                com.tvnext.app.core.ui.component.EpgLoadingIndicator(
+                    text = epgProgressText?.takeIf { it.isNotBlank() } ?: if (epgLoadedProgrammes > 0)
                         uiText("EPG: {0} каналов · {1} передач", epgLoadedChannels, epgLoadedProgrammes)
-                        else uiText("Загрузка EPG…"), color = Color.White,
-                        style = MaterialTheme.typography.labelSmall)
-                }
+                        else uiText("Загрузка EPG…"),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                )
             }
             overlayContent?.invoke()
 

@@ -50,7 +50,7 @@ compose.desktop {
             // Windows installer (setup.exe) via jpackage --type exe.
             targetFormats(TargetFormat.Exe)
             packageName = "TVNext"
-            packageVersion = "1.0.7"
+            packageVersion = "1.0.8"
             vendor = "TVNext"
             description = "TVNext — IPTV player (live TV, archives, VOD, EPG)"
             licenseFile.set(project.file("LICENSE.txt"))
@@ -163,8 +163,8 @@ tasks.register("buildWindowsInstaller") {
         val mainWixobj = File(workDir, "main.wixobj")
         val filesWixobj = File(workDir, "files.wixobj")
         val bundleWixobj = File(workDir, "bundle.wixobj")
-        val msi = File(workDir, "TVNext-1.0.7.msi")
-        val setupExe = File(exeOut, "TVNext-1.0.7.exe")
+        val msi = File(workDir, "TVNext-1.0.8.msi")
+        val setupExe = File(exeOut, "TVNext-1.0.8.exe")
 
         // 2. Harvest the app image into WiX components (INSTALLFOLDER root).
         runProc(

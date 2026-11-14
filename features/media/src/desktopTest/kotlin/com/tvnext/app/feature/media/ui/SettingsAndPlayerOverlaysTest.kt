@@ -90,18 +90,63 @@ class SettingsAndPlayerOverlaysTest {
         waitForIdle()
         val label=onNodeWithTag("archive-video-label").fetchSemanticsNode().boundsInRoot
         val panel=onNodeWithTag("bottom-controls").fetchSemanticsNode().boundsInRoot
-        val busy=onNodeWithTag("video-loading-status").fetchSemanticsNode().boundsInRoot
-        val name=onNodeWithTag("channel-name").fetchSemanticsNode().boundsInRoot
         assertTrue(label.bottom<panel.top)
-        assertTrue(busy.top>name.bottom)
-        assertTrue(busy.bottom<label.top)
+        onNodeWithTag("video-loading-status").assertDoesNotExist()
         screenshot("archive-label-loading-controls.png")
         runOnIdle{enabled=false}
         onNodeWithTag("archive-video-label").assertDoesNotExist()
+        runOnIdle { controls=false }
         onNodeWithTag("video-loading-status").assertIsDisplayed()
+        val busy=onNodeWithTag("video-loading-status").fetchSemanticsNode().boundsInRoot
+        assertEquals(480f,busy.center.x,1f)
+        assertTrue(busy.bottom>500f)
         runOnIdle{enabled=true;state=PlaybackState.PAUSED;controls=false}
         onNodeWithText(title).assertIsDisplayed()
         onNodeWithTag("video-loading-status").assertDoesNotExist()
+    }
+
+    @Test fun epgStatusIsBottomCentredHiddenByEveryOpenPanelAndRestoredAfterDispose() = runDesktopComposeUiTest(width=960,height=540) {
+        val visibility=PlaybackOverlayVisibility()
+        var controls by mutableStateOf(false)
+        var secondPanel by mutableStateOf(false)
+        var screenMounted by mutableStateOf(true)
+        var videoState by mutableStateOf(PlaybackState.PLAYING)
+        setContent { MaterialTheme(darkColorScheme()) {
+            CompositionLocalProvider(LocalPlaybackOverlayVisibility provides visibility) {
+                Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
+                    if(screenMounted) {
+                        ReportPlaybackOverlays(bottomPanel=controls)
+                        VideoPlaybackStatus(videoState,null)
+                    }
+                    if(secondPanel) ReportPlaybackOverlays(bottomPanel=true)
+                    if(controls && screenMounted) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                        .height(180.dp).background(Color.Black).testTag("bottom-controls"))
+                    EpgLoadingIndicator("Скачивание EPG: 12 МБ",Modifier.align(Alignment.BottomCenter).padding(12.dp))
+                }
+            }
+        } }
+        waitForIdle()
+        val bounds=onNodeWithTag("epg-loading-status").fetchSemanticsNode().boundsInRoot
+        assertEquals(480f,bounds.center.x,1f)
+        assertTrue(bounds.bottom>500f)
+        screenshot("epg-bottom-centre.png")
+        runOnIdle{controls=true}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        screenshot("epg-hidden-by-bottom-panel.png")
+        runOnIdle{secondPanel=true;controls=false}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        runOnIdle{secondPanel=false}
+        onNodeWithText("Скачивание EPG: 12 МБ").assertIsDisplayed()
+        runOnIdle{videoState=PlaybackState.BUFFERING}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        val loading=onNodeWithTag("video-loading-status").fetchSemanticsNode().boundsInRoot
+        assertEquals(480f,loading.center.x,1f);assertTrue(loading.bottom>500f)
+        runOnIdle{controls=true}
+        onNodeWithTag("video-loading-status").assertDoesNotExist()
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        runOnIdle{screenMounted=false}
+        onNodeWithText("Скачивание EPG: 12 МБ").assertIsDisplayed()
+        runOnIdle{assertFalse(visibility.bottomPanelVisible);assertFalse(visibility.videoLoading)}
     }
 
     private fun ComposeUiTest.screenshot(name:String) {
