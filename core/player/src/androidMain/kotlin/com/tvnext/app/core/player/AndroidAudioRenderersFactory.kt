@@ -8,8 +8,9 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 
 /** Audio-only LGPL extension: AC3/EAC3 can become PCM without a licensed system decoder. */
-internal class AndroidAudioRenderersFactory(context:Context,videoPath:AndroidVideoDecoderPath,
-    private val audioMode:AudioOutputMode):DefaultRenderersFactory(context) {
+internal class AndroidAudioRenderersFactory @JvmOverloads constructor(context:Context,videoPath:AndroidVideoDecoderPath,
+    private val audioMode:AudioOutputMode,
+    private val videoOutputPolicy: AndroidVideoOutputPolicy = AndroidVideoOutputPolicy()):DefaultRenderersFactory(context) {
     val videoCodecAdapters = AmlogicMediaCodecAdapterFactory(context)
     init {
         setMediaCodecSelector(androidVideoCodecSelector(videoPath))
@@ -17,6 +18,22 @@ internal class AndroidAudioRenderersFactory(context:Context,videoPath:AndroidVid
         setExtensionRendererMode(if(audioMode==AudioOutputMode.PASSTHROUGH)EXTENSION_RENDERER_MODE_ON else EXTENSION_RENDERER_MODE_PREFER)
     }
     override fun getCodecAdapterFactory(): androidx.media3.exoplayer.mediacodec.MediaCodecAdapter.Factory = videoCodecAdapters
+    override fun buildVideoRenderers(context: Context, extensionRendererMode: Int,
+        mediaCodecSelector: androidx.media3.exoplayer.mediacodec.MediaCodecSelector,
+        enableDecoderFallback: Boolean, eventHandler: android.os.Handler,
+        eventListener: androidx.media3.exoplayer.video.VideoRendererEventListener,
+        allowedVideoJoiningTimeMs: Long, out: ArrayList<androidx.media3.exoplayer.Renderer>) {
+        // Native video only; the optional FFmpeg extension remains audio-only.
+        val builder = androidx.media3.exoplayer.video.MediaCodecVideoRenderer.Builder(context)
+            .setCodecAdapterFactory(codecAdapterFactory)
+            .setMediaCodecSelector(mediaCodecSelector)
+            .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
+            .setEnableDecoderFallback(enableDecoderFallback)
+            .setEventHandler(eventHandler).setEventListener(eventListener)
+            .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY)
+            .experimentalSetParseAv1SampleDependencies(true)
+        out.add(TextureSafeVideoRenderer(builder, videoOutputPolicy))
+    }
     override fun buildAudioSink(context:Context,enableFloatOutput:Boolean,enableAudioOutputPlaybackParams:Boolean):AudioSink {
         val builder=DefaultAudioSink.Builder(context).setEnableFloatOutput(false)
             .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)

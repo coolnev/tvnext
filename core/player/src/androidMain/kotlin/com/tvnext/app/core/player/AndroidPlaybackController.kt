@@ -79,6 +79,8 @@ class AndroidPlaybackController(
     private var activeAudioFormat: Format? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
+    private val videoOutputPolicy = AndroidVideoOutputPolicy()
+    internal fun setTextureVideoOutput(texture: Boolean) { videoOutputPolicy.textureOutput = texture }
     private var suspendedState: PlayerState? = null
     private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
     val videoSignal: StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
@@ -577,7 +579,7 @@ class AndroidPlaybackController(
         val existing = _player.value
         if (existing != null && activeKind == kind && activeDecodePath == decoderPath && activeAudioOutputMode==audioOutputMode) return existing
         if (existing != null) disposePlayer()
-        val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode)
+        val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode,videoOutputPolicy)
         codecAdapters = renderers.videoCodecAdapters
         val newPlayer = ExoPlayer.Builder(context)
             .setRenderersFactory(renderers)

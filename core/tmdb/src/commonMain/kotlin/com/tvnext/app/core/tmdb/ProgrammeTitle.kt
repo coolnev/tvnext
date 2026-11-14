@@ -1,5 +1,8 @@
 package com.tvnext.app.core.tmdb
 
+// EPG providers use Cyrillic, Latin and mixed lookalikes for "телесериал".
+internal const val SERIES_EPG_MARKER = """[тt]\s*[/\.]\s*[сcs]\.?(?![.\p{L}\p{N}])"""
+
 /** Remove broadcast annotations, retaining sequel numbers and genuine subtitles. */
 internal fun cleanProgrammeTitle(raw: String): String {
     var title = raw.replace('\u00a0', ' ').replace('\u202f', ' ').trim()
@@ -7,7 +10,7 @@ internal fun cleanProgrammeTitle(raw: String): String {
         title = title.replace(Regex("""\s*[\[(]?\s*(?:0|6|12|16|18)\+\s*[\])]?\s*[.!]?\s*$"""), "")
             .replace(Regex("""\s*[\[(](?:19|20)\d{2}(?:\s*г\.?)?[\])]\s*[.!]?\s*$""", RegexOption.IGNORE_CASE), "")
             .replace(Regex("""\s+(?:19|20)\d{2}\s*г(?:од(?:а)?)?\.?\s*$""", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("""^(?:премьера!\s*|(?:х\s*[/\.]\s*ф\.?|т\s*[/\.]\s*с\.?|м\s*[/\.]\s*ф\.?|д\s*[/\.]\s*ф\.?|художественный фильм|фильм|сериал)(?:\s+|[:.—-]\s*))""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""^(?:премьера!\s*|(?:х\s*[/\.]\s*ф\.?|$SERIES_EPG_MARKER|м\s*[/\.]\s*ф\.?|д\s*[/\.]\s*ф\.?|художественный фильм|фильм|(?:теле)?сериал)(?=$|[\s: .—–\-«"“„'])[\s: .—–\-]*)""", RegexOption.IGNORE_CASE), "")
             .trim(' ', '«', '»', '"', '“', '”', '„', '\'', '.', ':')
     }
     title = title.replace(Regex("""(?:[\s,;:.—-]+)(?:(?:сезон|сез\.)\s*\d+\s*[,;:.—-]*\s*)?(?:серия|сер\.|эпизод)\s*\d+\s*$""", RegexOption.IGNORE_CASE), "")

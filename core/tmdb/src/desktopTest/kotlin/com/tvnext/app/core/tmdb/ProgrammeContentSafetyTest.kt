@@ -10,6 +10,43 @@ import java.lang.reflect.Proxy
 import kotlin.test.*
 
 class ProgrammeContentSafetyTest {
+    @Test fun latinSeriesEpgQueriesKinopoiskByCleanTitleAndRejectsTheSameTitleMovie()=runBlocking<Unit> {
+        val paths=mutableListOf<String>()
+        val client=HttpClient(MockEngine {r->
+            paths+=r.url.encodedPath
+            val body=when {
+                r.url.encodedPath.endsWith("search-by-keyword") -> {
+                    assertEquals("Оперативная память",r.url.parameters["keyword"])
+                    """{"films":[{"filmId":1,"nameRu":"Оперативная память","type":"FILM"},{"filmId":2,"nameRu":"Оперативная память","type":"TV_SERIES"}]}"""
+                }
+                r.url.encodedPath.endsWith("/2") -> """{"nameRu":"Оперативная память","type":"TV_SERIES","description":"Полное описание сериала, полученное из карточки Кинопоиска."}"""
+                else -> error("Unexpected request ${r.url}")
+            }
+            respond(body,headers=headersOf("Content-Type","application/json"))
+        }) {install(HttpTimeout)}
+        try {
+            val repo=ProgrammeMetadataRepository(tmdb{_,_->error("TMDB is disabled")},KinopoiskProgrammeLookup(client,keys),Settings(false))
+            val request=ProgrammeMetadataRequest("T/S — Оперативная память")
+            assertEquals("Полное описание сериала, полученное из карточки Кинопоиска.",repo.find(request)?.overview)
+            assertEquals(repo.find(request),repo.cached(request))
+            assertFalse(paths.any{it.endsWith("/1")})
+        } finally {client.close()}
+    }
+    @Test fun latinSeriesEpgUsesTmdbTvSearchAndTvDetailsWithoutSearchingMovies()=runBlocking<Unit> {
+        val calls=mutableListOf<String>()
+        val client=HttpClient(MockEngine{error("No Kinopoisk key")}) {install(HttpTimeout)}
+        val noKey=object:KinopoiskKeyStore{override suspend fun getKey()="";override suspend fun setKey(value:String)=Unit}
+        val api=tmdb {name,args->calls+=name;when(name) {
+            "searchTv"->{assertEquals("Оперативная память",args[0]);listOf(TmdbSearchResult(2,name="Оперативная память",overview="Описание сериала"))}
+            "getTvDetails"->TmdbDetails(2,name="Оперативная память",overview="Полное описание сериала")
+            else->error("Unexpected request $name")
+        }}
+        try {
+            val repo=ProgrammeMetadataRepository(api,KinopoiskProgrammeLookup(client,noKey),Settings(true))
+            assertEquals("Полное описание сериала",repo.find(ProgrammeMetadataRequest("T/С: «Оперативная память»"))?.overview)
+            assertEquals(listOf("searchTv","getTvDetails"),calls)
+        } finally {client.close()}
+    }
     private class Settings(private val enabled: Boolean): TmdbSettingsStore {
         override suspend fun isEnabled()=enabled
         override suspend fun setEnabled(enabled: Boolean)=Unit

@@ -110,8 +110,18 @@ class AmlogicVideoQueueTest {
             .apply{isAccessible=true}
         val method=renderer.getDeclaredMethod("getCodecAdapterFactory").apply{isAccessible=true}
         for(mode in AudioOutputMode.entries) {
-            val actual=method.invoke(constructor.newInstance(RuntimeEnvironment.getApplication(),hardware,mode))
+            val instance=constructor.newInstance(RuntimeEnvironment.getApplication(),hardware,mode)
+            val actual=method.invoke(instance)
             assertEquals("AmlogicMediaCodecAdapterFactory",actual.javaClass.simpleName)
+            val video=ArrayList<androidx.media3.exoplayer.Renderer>()
+            renderer.getDeclaredMethod("buildVideoRenderers",android.content.Context::class.java,Int::class.javaPrimitiveType,
+                androidx.media3.exoplayer.mediacodec.MediaCodecSelector::class.java,Boolean::class.javaPrimitiveType,
+                android.os.Handler::class.java,androidx.media3.exoplayer.video.VideoRendererEventListener::class.java,
+                Long::class.javaPrimitiveType,ArrayList::class.java).apply{isAccessible=true}.invoke(instance,
+                    RuntimeEnvironment.getApplication(),2,androidx.media3.exoplayer.mediacodec.MediaCodecSelector.DEFAULT,
+                    true,android.os.Handler(android.os.Looper.getMainLooper()),
+                    object:androidx.media3.exoplayer.video.VideoRendererEventListener{},5000L,video)
+            assertEquals("TextureSafeVideoRenderer",video.single().javaClass.simpleName)
         }
     }
 }
