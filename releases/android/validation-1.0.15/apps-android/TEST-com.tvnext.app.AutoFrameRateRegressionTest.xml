@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.AutoFrameRateRegressionTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:06:32.331Z" hostname="0fcc891603bc" time="1.527">
+  <properties/>
+  <testcase name="nativeWindowAdapterKeepsOtherAttributesAndReportsAndroidDisplayModes[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.413"/>
+  <testcase name="screenOffWhilePendingCannotApplyAnOldRequestAndWakeCanStartFresh[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.042"/>
+  <testcase name="previewDoesNotSwitchByDefaultAndSeamlessModeNeverRequestsAResolutionChange[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.027"/>
+  <testcase name="systemFullHdOrUhdIsPreservedWhenAfrIsOffEvenIfHigherModesAreAvailable[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.019"/>
+  <testcase name="deviceRefusalTimesOutAndIsNotRetriedOnBuffering[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.021"/>
+  <testcase name="unsupportedDeviceAndWindowFailureRemainUsable[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.07"/>
+  <testcase name="resolutionIsOptInAndTurningItOffReturnsToOriginalDimensions[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.019"/>
+  <testcase name="optInDelayAppliesOnlyOnceAndDisableRestoresTheExactWindowPreference[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.02"/>
+  <testcase name="channelChangeCancelsOldPendingRequestAndDoesNotRestoreBetweenTwoChannels[28]" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.045"/>
+  <testcase name="nativeWindowAdapterKeepsOtherAttributesAndReportsAndroidDisplayModes" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.611"/>
+  <testcase name="screenOffWhilePendingCannotApplyAnOldRequestAndWakeCanStartFresh" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.039"/>
+  <testcase name="previewDoesNotSwitchByDefaultAndSeamlessModeNeverRequestsAResolutionChange" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.044"/>
+  <testcase name="systemFullHdOrUhdIsPreservedWhenAfrIsOffEvenIfHigherModesAreAvailable" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.022"/>
+  <testcase name="deviceRefusalTimesOutAndIsNotRetriedOnBuffering" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.022"/>
+  <testcase name="unsupportedDeviceAndWindowFailureRemainUsable" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.021"/>
+  <testcase name="resolutionIsOptInAndTurningItOffReturnsToOriginalDimensions" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.041"/>
+  <testcase name="optInDelayAppliesOnlyOnceAndDisableRestoresTheExactWindowPreference" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.018"/>
+  <testcase name="channelChangeCancelsOldPendingRequestAndDoesNotRestoreBetweenTwoChannels" classname="com.tvnext.app.AutoFrameRateRegressionTest" time="0.018"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

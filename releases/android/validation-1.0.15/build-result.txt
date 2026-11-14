@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+361 checks: 83 Player, 107 Channels, 7 Home, 164 native API28/35.
+Native tests cover real PlayerView child view types, geometry identity, actual Media3 dimensions/HDR/secure facts. Physical TV smoothness not measured.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Source: 53f608d2852a2513724f048deded2c6f1788c3f7

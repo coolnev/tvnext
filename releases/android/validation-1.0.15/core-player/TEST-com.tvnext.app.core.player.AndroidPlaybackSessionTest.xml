@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidPlaybackSessionTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:05:05.739Z" hostname="0fcc891603bc" time="0.034">
+  <properties/>
+  <testcase name="loadingDoesNotOverwriteResumePosition[desktop]" classname="com.tvnext.app.core.player.AndroidPlaybackSessionTest" time="0.016"/>
+  <testcase name="resumeCacheIsBounded[desktop]" classname="com.tvnext.app.core.player.AndroidPlaybackSessionTest" time="0.006"/>
+  <testcase name="latestChannelAndMovieRemainIndependent[desktop]" classname="com.tvnext.app.core.player.AndroidPlaybackSessionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

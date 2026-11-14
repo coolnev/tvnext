@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.14`, versionCode 1014, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.15`, versionCode 1015, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,19 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.14.apk`.
-Описание: `RELEASE_ANDROID_1.0.14_RU.md`.
-Сводка: `releases/android/validation-1.0.14.json`.
+APK: `releases/android/TVNext-1.0.15.apk`.
+Описание: `RELEASE_ANDROID_1.0.15_RU.md`.
+Сводка: `releases/android/validation-1.0.15.json`.
+
+В 1.0.15 (14.11) пользователь отверг плавность 1.0.14 и потребовал сравнить последние 5–6 версий с первоначальной анимацией. Подтвердил рывки и на HD, и на 4K. Затем явно уточнил приоритет: можно допустить меньшую плавность 4K, но обычные SD/HD/Full HD должны получить прежний путь анимации.
+
+История Git: первоначальная 0066ad9 использовала TextureView при включённой анимации, tween 420 мс. В 1.0.9 это сохранялось. В 1.0.10/4423237 Android принудительно переведён на SurfaceView (`animated && !android`) ради UHD. 1.0.11 анимацию не меняла; 1.0.12/e6713a1 исправила flash; 1.0.13 касалась старого Amlogic. 1.0.14/f9e8e24 добавила graphicsLayer/fixed layout и сократила переход до 300 мс, сохранив SurfaceView. Замена 1.0.10 — основной кандидат, но физическая причинность здесь не измерена. Счётчики 0/0/0 не доказывают плавность телевизора. Подробности: docs/ANDROID_ANIMATION_HISTORY_1.0.15_RU.md.
+
+Реализована адаптивная поверхность: включённая анимация + Android + обычный SDR до Full HD (max dimension 1920, min dimension 1080) → TextureView. UHD/размеры выше Full HD, HDR PQ/HLG/Dolby Vision, DRM/secure → SurfaceView. При выключенной анимации также SurfaceView; Desktop сохраняет прежнее поведение. PlayerDiagnostics дополнен videoWidth/videoHeight/nativeVideoSurfaceRequired из действительного Format и имени secure-декодера. Текст EPG и значки не разбираются. VideoSurfaceSelection держит предыдущий тип в промежутке метаданных; первоначальный неизвестный формат использует Native. SharedStage наблюдает map/distinct только выбора типа. Назад/перелёт сами тип не меняют: он зависит от класса формата и настройки. ExoPlayer сохраняется, но Media3 может переинициализировать кодек при смене поверхности на конкретной прошивке.
+
+Восстановлены исходные tween 420 мс и easing; anti-flash 1.0.12 и fixed layout/graphicsLayer 1.0.14 сохранены. План новой native View-property анимации из промежуточного commentary не реализован: после уточнения приоритета HD выбран возврат прежнего TextureView. Не утверждать, что отгружен новый движок на native View.matrix.
+
+361 проверка: 83 Player, 107 Channels, 7 Home, 164 Android API 28/35. Native VideoSurfaceModeTest действительно создаёт PlayerView с TextureView для Full HD и SurfaceView для UHD/HDR, проверяет тип и сохранение экземпляра при изменении геометрии. PlaybackFacts проверяет действительные HDR/secure-факты, Core policy — отсутствие переключения типа в промежутке метаданных. Release/lint/encoding/Desktop compile, подпись/ZIP/zipalign, ключ, неизменность PNG и native libs относительно 1.0.14 проверены. Физического запуска Ugoos/TCL/эмулятора и измерения GPU FPS не было; не обещать доказанную плавность. Full HD HDR сознательно остаётся Native. Исходники 53f608d; версия 1.0.15/code1015; SHA-256 APK f9989a0ee2d4c3db1eb5568a3b977d9c8480f850623341cda1987d2680fbcad5.
 
 В 1.0.14 (14.11) пользователь: после устранения flash анимация сворачивания стала медленной/тяжёлой; просил исправить, а не объяснять необходимость. В SharedVideoStage Animatable.bounds читался в композиции и передавался в requiredSize обоих уровней: каждый кадр заново compose/measure/resize native child. Новый regression animationMovesInLayerWithoutPerFrameSurfaceRemeasure подтвердил на 1.0.13: 8/8/8 за8 виртуальных кадров (ожидаемо упал). После исправления 0/0/0, видимые границы продолжают двигаться.
 

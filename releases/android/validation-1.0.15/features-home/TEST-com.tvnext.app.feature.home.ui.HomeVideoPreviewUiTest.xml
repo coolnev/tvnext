@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="HomeVideoPreviewUiTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:05:33.022Z" hostname="0fcc891603bc" time="2.208">
+  <properties/>
+  <testcase name="currentChannelAndMovieHaveALivePreviewNextToTheCardWithoutRestartingPlayback[desktop]" classname="com.tvnext.app.feature.home.ui.HomeVideoPreviewUiTest" time="1.732"/>
+  <testcase name="historyCardDoesNotPretendThatVideoIsPlayingAfterStop[desktop]" classname="com.tvnext.app.feature.home.ui.HomeVideoPreviewUiTest" time="0.12"/>
+  <testcase name="languageChangesUpdateControlsWithoutTranslatingProviderTitlesOrRemountingVideo[desktop]" classname="com.tvnext.app.feature.home.ui.HomeVideoPreviewUiTest" time="0.356"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

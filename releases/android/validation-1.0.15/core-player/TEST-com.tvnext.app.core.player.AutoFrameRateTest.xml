@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AutoFrameRateTest[desktop]" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:05:05.812Z" hostname="0fcc891603bc" time="0.157">
+  <properties/>
+  <testcase name="resolutionChangesAreOptInAndFollowVideoWithoutDroppingItsPixels[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.035"/>
+  <testcase name="defaultsPreserveExistingOutputAndInvalidDelayIsNormalized[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.057"/>
+  <testcase name="stereoMixKeepsDialogueInBothSpeakersAndCannotOverflowFullScale[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.009"/>
+  <testcase name="unsupportedCadenceAndUnknownFpsDoNotGuessARefreshRate[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.001"/>
+  <testcase name="seamlessModeOnlyUsesReportedSameResolutionAlternatives[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.0"/>
+  <testcase name="rateMatchingChooses50And5994AndDoesNotForceAlreadyCompatibleModes[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.0"/>
+  <testcase name="exactCadencesKeepFractionalAndIntegerFamiliesSeparate[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.01"/>
+  <testcase name="roundedProviderRateCanBeCorrectedBeforeTheSwitchAndDroppedFramesDoNotHalveIt[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.008"/>
+  <testcase name="stereoIdentityAndMonoDuplicationDoNotLoseAnAudioChannel[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.003"/>
+  <testcase name="resolutionOffReturnsToTheOriginalGeometryAfterPreviousSwitch[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.0"/>
+  <testcase name="estimatorRejectsVariableCadenceDiscontinuitiesAndDuplicateTimestamps[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.002"/>
+  <testcase name="doublingIsOptionalButNeverDiscardsTheOnlyMatchingRate[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.0"/>
+  <testcase name="androidRestoresTextureAnimationForHdButKeepsTheUhdPlane[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.004"/>
+  <testcase name="estimatorUsesPresentationTimestampsAndDistinguishes23976From24[desktop]" classname="com.tvnext.app.core.player.AutoFrameRateTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

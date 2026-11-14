@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.15",
+  "versionCode": 1015,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "53f608d2852a2513724f048deded2c6f1788c3f7",
+  "sha256": "f9989a0ee2d4c3db1eb5568a3b977d9c8480f850623341cda1987d2680fbcad5",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "history": {
+    "reviewedVersions": [
+      "1.0.9",
+      "1.0.10",
+      "1.0.11",
+      "1.0.12",
+      "1.0.13",
+      "1.0.14"
+    ],
+    "originalAnimationCommit": "0066ad9",
+    "rendererChangeCommit": "4423237",
+    "rendererChangeVersion": "1.0.10",
+    "rendererChange": "TextureView for animation was replaced by forced SurfaceView on Android",
+    "timingChangeVersion": "1.0.14",
+    "physicalCausalityNotMeasured": true
+  },
+  "userPriority": "Restore smooth SD/HD/Full HD animation; reduced smoothness on 4K is explicitly acceptable",
+  "surfacePolicy": {
+    "animatedSdHdFullHdSdr": "TextureView",
+    "animatedUhdOrAboveFullHd": "SurfaceView",
+    "hdrAndProtected": "SurfaceView",
+    "animationOff": "SurfaceView",
+    "dimensionsFromActualVideoFormat": true,
+    "noEpgOrBadgeTextParsing": true,
+    "unknownMetadataRetainsPreviousChoice": true,
+    "initialUnknownIsNative": true,
+    "surfaceTypeStableAcrossNavigation": true,
+    "typeChangesOnlyWithFormatClassOrAnimationPreference": true
+  },
+  "animation": {
+    "durationMs": 420,
+    "originalTimingRestored": true,
+    "previousDurationMs": 300,
+    "antiFlashHandoffRetained": true,
+    "graphicsLayerWorkDeferralRetained": true,
+    "afrandDecoderPoliciesUnchanged": true
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "amlogicFactoryPresentInDex": true,
+    "newSurfaceSelectorPresentInDex": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1014": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 107,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 164,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 361,
+  "nativeChecks": "Android API28/35 instantiate real PlayerView TextureView/SurfaceView and verify selection/identity; Media3 input Format drives dimensions and HDR/secure facts",
+  "limitations": [
+    "APK was not run on a physical Ugoos/TCL or emulator; SurfaceFlinger/GPU smoothness was not measured.",
+    "Native widget/type tests and Compose movement fixtures do not establish physical frame pacing.",
+    "The original TextureView path is restored for ordinary SDR up to Full HD. HDR/protected Full HD deliberately retains the native surface.",
+    "UHD/HDR animation smoothness is not promised; native resolution/color output takes priority there per user steering.",
+    "When changing surface class Media3 may reinitialize a codec depending on firmware; no additional controller play() is invoked by this selection.",
+    "Desktop compiles; no Windows installer built."
+  ]
+}

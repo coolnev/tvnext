@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.EpgDownloadRegressionTest" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:06:35.137Z" hostname="0fcc891603bc" time="4.848">
+  <properties/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.068"/>
+  <testcase name="lastModifiedCanValidateRetainedFeedWithoutEtag[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.062"/>
+  <testcase name="compressedSourceCacheEvictsOldestFileAndValidatorWithinDiskBudget[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.048"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.029"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.023"/>
+  <testcase name="oneDeadlineCoversAllRetriesAndLeavesPartialBytesResumable[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.248"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.02"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.022"/>
+  <testcase name="savedPrefixDoesNotKeepRetryingWhenResumedRequestsDeliverNothing[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.225"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.025"/>
+  <testcase name="unchangedFeedUsesConditionalRequestAndRetainedFileWhileChangedFeedReplacesIt[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.027"/>
+  <testcase name="realAndroidHttpStallClosesConnectionAndNextRunResumesItsSavedPrefix[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="1.653"/>
+  <testcase name="aServerReturningNoGuideBytesStopsAfterTwoAttempts[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.022"/>
+  <testcase name="invalidRetainedDocumentIsDiscardedInsteadOfBeingCachedAgain[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.021"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes[28]" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.019"/>
+  <testcase name="gzipFileAndHttpContentEncodingAreBothDecodedWithoutCorruptRangeOffsets" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.051"/>
+  <testcase name="lastModifiedCanValidateRetainedFeedWithoutEtag" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.02"/>
+  <testcase name="compressedSourceCacheEvictsOldestFileAndValidatorWithinDiskBudget" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.018"/>
+  <testcase name="cancelledProcessCanResumeFromPersistedPartialFile" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.021"/>
+  <testcase name="interruptedDownloadResumesAndParsingStartsAfterAllBytesArrive" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.036"/>
+  <testcase name="oneDeadlineCoversAllRetriesAndLeavesPartialBytesResumable" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.22"/>
+  <testcase name="serverIgnoringRangeReplacesPartialInsteadOfAppending" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.022"/>
+  <testcase name="inconsistentPartialResponseIsDiscardedAndRetriedFromZero" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.02"/>
+  <testcase name="savedPrefixDoesNotKeepRetryingWhenResumedRequestsDeliverNothing" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.225"/>
+  <testcase name="completedDownloadSurvivesIndexFailureAndNeedsNoSecondHttpRequest" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.02"/>
+  <testcase name="unchangedFeedUsesConditionalRequestAndRetainedFileWhileChangedFeedReplacesIt" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.024"/>
+  <testcase name="realAndroidHttpStallClosesConnectionAndNextRunResumesItsSavedPrefix" classname="com.tvnext.app.EpgDownloadRegressionTest" time="1.564"/>
+  <testcase name="aServerReturningNoGuideBytesStopsAfterTwoAttempts" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.029"/>
+  <testcase name="invalidRetainedDocumentIsDiscardedInsteadOfBeingCachedAgain" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.027"/>
+  <testcase name="missingSourceDoesNotRetryFourTimes" classname="com.tvnext.app.EpgDownloadRegressionTest" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
