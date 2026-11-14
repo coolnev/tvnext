@@ -78,6 +78,7 @@ class AndroidPlaybackController(
     private var activeVideoFormat: Format? = null
     private var activeAudioFormat: Format? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
+    private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
     private var suspendedState: PlayerState? = null
     private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
     val videoSignal: StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
@@ -559,6 +560,7 @@ class AndroidPlaybackController(
         _player.value = null
         activeKind = null
         activeDecodePath = null
+        codecAdapters = null
         activeDecoderName = null
         activeVideoFormat=null;activeAudioFormat=null
         exo?.removeListener(listener)
@@ -576,6 +578,7 @@ class AndroidPlaybackController(
         if (existing != null && activeKind == kind && activeDecodePath == decoderPath && activeAudioOutputMode==audioOutputMode) return existing
         if (existing != null) disposePlayer()
         val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode)
+        codecAdapters = renderers.videoCodecAdapters
         val newPlayer = ExoPlayer.Builder(context)
             .setRenderersFactory(renderers)
             .setMediaSourceFactory(createMediaSourceFactory())
@@ -816,7 +819,7 @@ class AndroidPlaybackController(
             fallback = requestedDecodeMode == VideoDecodeMode.AUTO &&
                 decoderPath == AndroidVideoDecoderPath.SYSTEM_SOFTWARE,
             decoder = activeDecoderName ?: "Ожидание MediaCodec",
-            videoOutput = "Media3/ExoPlayer",
+            videoOutput = codecAdapters?.videoOutputDescription ?: "Media3/ExoPlayer",
             codec = codec,
             resolution = resolution,
             fps = fps,

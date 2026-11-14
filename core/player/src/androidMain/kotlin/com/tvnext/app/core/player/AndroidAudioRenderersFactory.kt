@@ -10,11 +10,13 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 /** Audio-only LGPL extension: AC3/EAC3 can become PCM without a licensed system decoder. */
 internal class AndroidAudioRenderersFactory(context:Context,videoPath:AndroidVideoDecoderPath,
     private val audioMode:AudioOutputMode):DefaultRenderersFactory(context) {
+    val videoCodecAdapters = AmlogicMediaCodecAdapterFactory(context)
     init {
         setMediaCodecSelector(androidVideoCodecSelector(videoPath))
         setEnableDecoderFallback(true)
         setExtensionRendererMode(if(audioMode==AudioOutputMode.PASSTHROUGH)EXTENSION_RENDERER_MODE_ON else EXTENSION_RENDERER_MODE_PREFER)
     }
+    override fun getCodecAdapterFactory(): androidx.media3.exoplayer.mediacodec.MediaCodecAdapter.Factory = videoCodecAdapters
     override fun buildAudioSink(context:Context,enableFloatOutput:Boolean,enableAudioOutputPlaybackParams:Boolean):AudioSink {
         val builder=DefaultAudioSink.Builder(context).setEnableFloatOutput(false)
             .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
