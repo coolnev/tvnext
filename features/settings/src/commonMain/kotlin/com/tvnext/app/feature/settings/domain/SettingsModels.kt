@@ -5,6 +5,8 @@ import com.tvnext.app.core.player.VideoDecodeMode
 import com.tvnext.app.core.ui.theme.AccentColor
 
 data class AppSettings(
+    val media: MediaPreferences = MediaPreferences(),
+    val kinopoiskEnabled: Boolean = true,
     val language: com.tvnext.app.core.common.UiLanguage = com.tvnext.app.core.common.UiLanguage.RUSSIAN,
     val theme: ThemePreference = ThemePreference.DARK,
     val accentColor: AccentColor = AccentColor.GREEN,

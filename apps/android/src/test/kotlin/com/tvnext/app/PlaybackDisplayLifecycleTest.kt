@@ -27,20 +27,37 @@ class PlaybackDisplayLifecycleTest {
             shadowOf(Looper.getMainLooper()).idle()
         }
         try {
-            owner.onStart()
+            owner.onStart(); owner.onResume()
             event(Intent.ACTION_SCREEN_OFF)
             event(Intent.ACTION_SCREEN_OFF)
-            assertEquals(listOf("resume", "release"), calls)
+            assertEquals(listOf("release", "resume", "release"), calls)
             event(Intent.ACTION_SCREEN_ON)
             event(Intent.ACTION_SCREEN_ON)
-            assertEquals(listOf("resume", "release", "resume"), calls)
+            assertEquals(listOf("release", "resume", "release", "resume"), calls)
             owner.onStop()
             event(Intent.ACTION_SCREEN_OFF)
             event(Intent.ACTION_SCREEN_ON)
-            assertEquals(listOf("resume", "release", "resume", "release"), calls)
-            owner.onStart()
+            assertEquals(listOf("release", "resume", "release", "resume", "release"), calls)
+            owner.onStart(); owner.onResume()
             assertEquals("resume", calls.last())
         } finally { owner.close() }
+    }
+
+    @Test fun returningFromTranslucentAndroidSettingsRecreatesPlaybackWithoutAnActivityStop() {
+        val context=RuntimeEnvironment.getApplication()
+        shadowOf(context).grantPermissions(context.packageName+".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+        shadowOf(context.getSystemService(PowerManager::class.java)).setIsInteractive(true)
+        val calls=mutableListOf<String>()
+        val owner=PlaybackDisplayLifecycle(context,{calls+="resume"},{calls+="release"})
+        try {
+            owner.onStart();owner.onResume()
+            assertEquals("resume",calls.last())
+            owner.onPause();owner.onPause()
+            assertEquals(listOf("release","resume","release"),calls)
+            // The Activity remained STARTED behind the system permission page.
+            owner.onResume();owner.onResume()
+            assertEquals(listOf("release","resume","release","resume"),calls)
+        } finally {owner.close()}
     }
 
     @Test fun activityStartingWhileScreenIsOffWaitsForWakeAndRecreationResumesRetainedPlayer() {
@@ -51,7 +68,7 @@ class PlaybackDisplayLifecycleTest {
         val calls = mutableListOf<String>()
         fun create() = PlaybackDisplayLifecycle(context, { calls += "resume" }, { calls += "release" })
         val first = create()
-        first.onStart()
+        first.onStart(); first.onResume()
         assertEquals(listOf("release"), calls)
         power.setIsInteractive(true)
         context.sendBroadcast(Intent(Intent.ACTION_SCREEN_ON))
@@ -59,8 +76,8 @@ class PlaybackDisplayLifecycleTest {
         first.onStop(); first.close()
         val recreated = create()
         try {
-            recreated.onStart()
-            assertEquals(listOf("release", "resume", "release", "resume"), calls)
+            recreated.onStart(); recreated.onResume()
+            assertEquals(listOf("release", "resume", "release", "release", "resume"), calls)
         } finally { recreated.close() }
     }
 }

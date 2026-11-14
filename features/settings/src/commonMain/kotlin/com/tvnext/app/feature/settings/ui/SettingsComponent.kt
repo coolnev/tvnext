@@ -67,6 +67,8 @@ data class SettingsState(
 ) : MviState
 
 sealed interface SettingsIntent : MviIntent {
+    data class MediaPreferencesChanged(val preferences: com.tvnext.app.feature.settings.domain.MediaPreferences): SettingsIntent
+    data class KinopoiskEnabledChanged(val enabled:Boolean): SettingsIntent
     data object Load : SettingsIntent
     data class LanguageChanged(val language: com.tvnext.app.core.common.UiLanguage) : SettingsIntent
     data class ThemeChanged(val theme: ThemePreference) : SettingsIntent
@@ -152,6 +154,8 @@ class DefaultSettingsComponent(
     ) {
 
     override fun reduce(state: SettingsState, intent: SettingsIntent): SettingsState = when (intent) {
+        is SettingsIntent.MediaPreferencesChanged -> state.copy(settings=state.settings.copy(media=intent.preferences))
+        is SettingsIntent.KinopoiskEnabledChanged -> state.copy(settings=state.settings.copy(kinopoiskEnabled=intent.enabled))
         SettingsIntent.Load -> state.copy(isLoading = true)
         is SettingsIntent.LanguageChanged -> state.copy(settings = state.settings.copy(language = intent.language))
         is SettingsIntent.ThemeChanged -> state.copy(settings = state.settings.copy(theme = intent.theme))
@@ -227,6 +231,8 @@ class DefaultSettingsComponent(
     override fun handle(intent: SettingsIntent) {
         when (intent) {
             SettingsIntent.Load -> load()
+            is SettingsIntent.MediaPreferencesChanged,
+            is SettingsIntent.KinopoiskEnabledChanged,
             is SettingsIntent.LanguageChanged,
             is SettingsIntent.ThemeChanged,
             is SettingsIntent.AccentColorChanged,

@@ -582,7 +582,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        playbackDisplay.onResume()
         WakeLaunchSettings.onActivityResumed(this)
+    }
+
+    override fun onPause() {
+        playbackDisplay.onPause()
+        super.onPause()
     }
 
     override fun onStart() {

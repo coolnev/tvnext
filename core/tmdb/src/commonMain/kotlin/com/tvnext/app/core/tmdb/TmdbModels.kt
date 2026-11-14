@@ -81,9 +81,11 @@ data class TmdbMetadata(
     val cast: List<String> = emptyList(),
     val originalLanguage: String? = null,
     val updatedAt: Long = 0L,
+    val externalPosterUrl: String? = null,
+    val externalBackdropUrl: String? = null,
 ) {
-    val posterUrl: String? get() = tmdbImageUrl(posterPath, "w500")
-    val backdropUrl: String? get() = tmdbImageUrl(backdropPath, "w1280")
+    val posterUrl: String? get() = externalPosterUrl ?: tmdbImageUrl(posterPath, "w500")
+    val backdropUrl: String? get() = externalBackdropUrl ?: tmdbImageUrl(backdropPath, "w1280")
 }
 
 internal fun tmdbImageUrl(path: String?, size: String): String? = path?.trim()

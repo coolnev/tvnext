@@ -108,6 +108,7 @@ fun SettingsScreen(
         ArchiveSection(state, component)
         InterfaceSection(state, component)
         PlaylistsSection(state, component)
+        MediaLibrarySettings(state.settings.media,{component.dispatch(SettingsIntent.MediaPreferencesChanged(it))})
         TmdbSection(state, component)
         EpgSection(state, component)
         DataSection(state, component)
@@ -663,12 +664,14 @@ private fun TmdbSection(
     state: SettingsState,
     component: SettingsComponent,
 ) {
-    SettingsSection(title = uiText("Медиатека · TMDB")) {
+    SettingsSection(title = uiText("Информация о фильмах")) {
         SettingsToggleRow(
             label = uiText("Использовать TMDB"),
             checked = state.tmdbEnabled,
             onToggle = { component.dispatch(SettingsIntent.TmdbEnabledChanged(it)) },
         )
+        SettingsToggleRow(label=uiText("Использовать Кинопоиск"),checked=state.settings.kinopoiskEnabled,
+            onToggle={component.dispatch(SettingsIntent.KinopoiskEnabledChanged(it))})
         Text(
             text = uiText("API-ключ The Movie Database"),
             style = MaterialTheme.typography.labelLarge,
@@ -1190,7 +1193,7 @@ private val TvRowPadding = PaddingValues(
 /** TV settings: stable section rail and one independently scrollable settings pane. */
 @Composable
 private fun AndroidSettingsLayout(state: SettingsState, component: SettingsComponent, modifier: Modifier, onBack: (() -> Unit)?) {
-    val titles = listOf(uiText("Воспроизведение"), uiText("Архив"), uiText("Интерфейс"), uiText("Плейлисты"), uiText("Фильмы / TMDB"), uiText("Телепрограмма"), uiText("Данные"), uiText("О приложении"))
+    val titles = listOf(uiText("Воспроизведение"), uiText("Архив"), uiText("Интерфейс"), uiText("Плейлисты"), uiText("Информация о фильмах"), uiText("Телепрограмма"), uiText("Данные"), uiText("О приложении"))
     var selected by remember { mutableStateOf(0) }
     var inDetails by remember { mutableStateOf(false) }
     val railRequests = remember { List(titles.size) { FocusRequester() } }

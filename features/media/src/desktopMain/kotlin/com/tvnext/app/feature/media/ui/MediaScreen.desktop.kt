@@ -101,6 +101,7 @@ actual fun MediaScreen(
     onToggleDiagnostics: () -> Unit,
 ) {
     val state by component.state.collectAsState()
+    MediaResumeDialog(component,state.pendingResume)
     var searchFocused by remember { mutableStateOf(false) }
     var infoDialogVisible by remember { mutableStateOf(false) }
     val seekStepMs = component.seekStepMs.collectAsState().value

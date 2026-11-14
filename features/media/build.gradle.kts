@@ -41,6 +41,12 @@ kotlin {
             implementation(project(":core:tmdb"))
             implementation(project(":features:settings"))
         }
+        getByName("desktopTest").dependencies {
+            implementation("io.ktor:ktor-client-mock:3.5.2")
+            implementation(libs.ktor.client.core)
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
+        }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.core)

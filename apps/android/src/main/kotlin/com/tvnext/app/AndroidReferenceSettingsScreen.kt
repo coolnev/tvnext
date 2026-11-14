@@ -1,6 +1,7 @@
 package com.tvnext.app
 
 import com.tvnext.app.core.ui.i18n.uiText
+import com.tvnext.app.feature.settings.ui.uiMessage
 
 import com.tvnext.app.core.ui.component.TvActionButton
 import android.app.NotificationManager
@@ -95,7 +96,7 @@ internal fun AndroidReferenceSettingsScreen(
     LaunchedEffect(Unit) { kinopoiskConfigured = kinopoiskStore.getKey().isNotBlank() }
     // A changed/disabled TMDB credential must invalidate in-memory programme
     // misses as well as successes. Otherwise cards can stay blank for an hour.
-    LaunchedEffect(state.tmdbApiKey, state.tmdbEnabled) {
+    LaunchedEffect(state.tmdbApiKey, state.tmdbEnabled,state.settings.kinopoiskEnabled) {
         GlobalContext.get().get<ProgrammeMetadataRepository>().clearCache()
     }
     var showReset by remember { mutableStateOf(false) }
@@ -118,7 +119,7 @@ internal fun AndroidReferenceSettingsScreen(
     }
     val sectionNames = remember(com.tvnext.app.core.ui.i18n.UiLocale.language) { listOf(
         uiText("Общие"), uiText("Оформление"), uiText("Плейлисты и EPG"), uiText("Воспроизведение"),
-        uiText("Медиатека"), uiText("Запись"), uiText("Родительский контроль"), uiText("Обслуживание"), uiText("О приложении"),
+        uiText("Информация о фильмах"), uiText("Медиатека"), uiText("Запись"), uiText("Родительский контроль"), uiText("Обслуживание"), uiText("О приложении"),
     ) }
     LaunchedEffect(Unit) { component.dispatch(SettingsIntent.Load) }
 
@@ -375,16 +376,21 @@ internal fun AndroidReferenceSettingsScreen(
                                     })
                                 })
                         }
+                        5 -> com.tvnext.app.feature.settings.ui.MediaLibrarySettings(s.media,
+                            {component.dispatch(SettingsIntent.MediaPreferencesChanged(it))},compact=condensed,showTitle=false)
                         4 -> {
-                            ReferenceToggle(uiText("Описания и постеры из TMDB"), state.tmdbEnabled, entryHeight) {
+                            ReferenceToggle(uiText("Использовать TMDB"), state.tmdbEnabled, entryHeight) {
                                 component.dispatch(SettingsIntent.TmdbEnabledChanged(it))
                             }
-                            ReferenceRow(uiText("Проверить соединение"), height = entryHeight,
+                            ReferenceRow(uiText("Проверить TMDB"), height = entryHeight,
                                 onClick = { component.dispatch(SettingsIntent.TmdbTestConnection) })
                             ReferenceRow(uiText("Собственный API-ключ"), "••••••••", height = entryHeight,
                                 onClick = { showTmdbKey = true })
                             ReferenceRow(uiText("Очистить кэш TMDB"), height = entryHeight,
                                 onClick = { component.dispatch(SettingsIntent.TmdbClearCache) })
+                            ReferenceToggle(uiText("Использовать Кинопоиск"),s.kinopoiskEnabled,entryHeight) {
+                                component.dispatch(SettingsIntent.KinopoiskEnabledChanged(it))
+                            }
                             ReferenceRow(uiText("Кинопоиск · Unofficial"),
                                 if (kinopoiskConfigured) uiText("Ключ задан") else uiText("Добавить ключ"),
                                 height = entryHeight, onClick = { showKinopoiskKey = true })
@@ -394,7 +400,7 @@ internal fun AndroidReferenceSettingsScreen(
                                         kinopoiskTesting = true
                                         kinopoiskMessage = uiText("Проверка соединения…")
                                         scope.launch {
-                                            try { kinopoiskMessage = kinopoiskLookup.checkConnection().message }
+                                            try { kinopoiskMessage = kinopoiskLookup.checkConnection().uiMessage() }
                                             finally { kinopoiskTesting = false }
                                         }
                                     }
@@ -414,7 +420,7 @@ internal fun AndroidReferenceSettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        5 -> {
+                        6 -> {
                             // All entries remain on one screen at 720p.
                             ReferenceNote(uiText("Запись продолжается при свёрнутом приложении."))
                             ReferenceRow(uiText("Папка записи"),
@@ -457,7 +463,7 @@ internal fun AndroidReferenceSettingsScreen(
                             ReferenceRow(uiText("Уведомления записи"), if(notifyEnabled) uiText("Включены") else uiText("Выключены"),
                                 height = entryHeight, onClick = { onOpen("recording_settings") })
                         }
-                        6 -> {
+                        7 -> {
                             val enabled = remember(parentalRevision) { parental.enabled }
                             ReferenceNote(uiText("Категории XXX, порно и эротика закрыты PIN-кодом. Доступ действует до выхода из программы."))
                             ReferenceRow(uiText("Родительский контроль"), if (enabled) uiText("Включён") else uiText("Выключен"),
@@ -469,7 +475,7 @@ internal fun AndroidReferenceSettingsScreen(
                                 onClick = { showPinChange = true })
                             ReferenceRow(uiText("Хранение PIN"), uiText("Только на устройстве"), height = entryHeight, enabled = false)
                         }
-                        7 -> {
+                        8 -> {
                             ReferenceRow(uiText("Резервная копия профилей"), height = entryHeight,
                                 onClick = { onOpen("backup") })
                             ReferenceRow(uiText("Очистить кэш TMDB"), height = entryHeight,

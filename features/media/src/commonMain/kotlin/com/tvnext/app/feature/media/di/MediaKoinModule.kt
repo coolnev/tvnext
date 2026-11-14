@@ -20,6 +20,7 @@ val mediaKoinModule: Module = module {
             settingsRepository = get(),
             playbackController = get(),
             mainContext = get(named("mainDispatcher")),
+            kinopoiskLookup = getOrNull(),
         ) as MediaComponent
     }
 }

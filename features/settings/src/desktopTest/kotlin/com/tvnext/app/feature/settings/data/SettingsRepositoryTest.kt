@@ -5,7 +5,7 @@ import com.tvnext.app.core.database.SqlDelightAppMetaRepository
 import com.tvnext.app.core.database.TvNextDatabase
 import com.tvnext.app.core.player.ClockPosition
 import com.tvnext.app.core.ui.theme.AccentColor
-import com.tvnext.app.feature.settings.domain.AppSettings
+import com.tvnext.app.feature.settings.domain.*
 import com.tvnext.app.feature.settings.domain.ThemePreference
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -21,6 +21,26 @@ class SettingsRepositoryTest {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         TvNextDatabase.Schema.create(driver)
         return SqlDelightSettingsRepository(SqlDelightAppMetaRepository(TvNextDatabase(driver)))
+    }
+
+    @Test fun allLibraryOptionsAndIndependentKinopoiskSwitchSurviveReload()=runBlocking {
+        val repo=createRepo()
+        val media=MediaPreferences(MediaPosterSize.LARGE,MediaFilmSort.NAME_DESC,MediaCategorySort.PROVIDER,true,MediaResumeMode.ASK)
+        repo.save(AppSettings(media=media,kinopoiskEnabled=false))
+        val cursor=MediaBrowserPosition("source","Категория","film",true,true)
+        repo.setMediaBrowserPosition(cursor)
+        assertEquals(media,repo.load().media)
+        assertEquals(false,repo.load().kinopoiskEnabled)
+        assertEquals(cursor,repo.getMediaBrowserPosition())
+        repo.save(repo.load().copy(media=media.copy(rememberPosition=false)))
+        assertEquals(null,repo.getMediaBrowserPosition())
+    }
+
+    @Test fun movieSettingsHaveEnglishAndChineseLabels() {
+        val keys=listOf("Информация о фильмах","Размер постеров","Сортировка фильмов","Порядок категорий","Запоминать место в каталоге","Начало просмотра","Спрашивать","Всегда с начала","Описания и постеры из Кинопоиска")
+        for(language in listOf(com.tvnext.app.core.common.UiLanguage.ENGLISH,com.tvnext.app.core.common.UiLanguage.CHINESE)) {
+            for(key in keys)kotlin.test.assertNotEquals(key,com.tvnext.app.core.ui.i18n.UiTranslations.text(language,key))
+        }
     }
 
     @Test

@@ -1,5 +1,9 @@
 package com.tvnext.app.feature.media.ui
 
+import androidx.compose.ui.platform.testTag
+import com.tvnext.app.feature.settings.domain.MediaBrowserPosition
+import com.tvnext.app.feature.settings.domain.MediaResumeMode
+
 import com.tvnext.app.core.ui.i18n.uiText
 
 import androidx.compose.foundation.background
@@ -51,6 +55,10 @@ internal fun AndroidMediaScreen(
     infoDurationSeconds: Int?,
 ) {
     val state by component.state.collectAsState()
+    MediaResumeDialog(component,state.pendingResume)
+    LaunchedEffect(component) {component.dispatch(MediaIntent.MetadataSettingsChanged)}
+    var requestedItemId by remember {mutableStateOf<String?>(null)}
+    var browserRestored by remember {mutableStateOf(false)}
     val playback by component.playbackController.state.collectAsState()
     var controlsVisible by remember { mutableStateOf(false) }
     // RIGHT shows a timed passive strip; OK opens an interactive transport bar.
@@ -61,6 +69,7 @@ internal fun AndroidMediaScreen(
     var pane by remember { mutableStateOf(MediaPane.CATEGORIES) }
     var categoryIndex by remember { mutableStateOf(0) }
     var filmIndex by remember { mutableStateOf(0) }
+    var highlightedFilmId by remember {mutableStateOf<String?>(null)}
     var favoritesOnly by remember { mutableStateOf(false) }
     var infoFromList by remember { mutableStateOf(false) }
     val selected = remember(state.content, state.selectedItemId) {
@@ -75,11 +84,39 @@ internal fun AndroidMediaScreen(
     val categoryScroll = rememberLazyGridState()
     val filmScroll = rememberLazyGridState()
     val cardFocus = remember { FocusRequester() }
-    val categories = remember(com.tvnext.app.core.ui.i18n.UiLocale.language, state.content, state.selectedSourceId) { listOf(uiText("Все"), uiText("Избранное")) + state.categories }
-    val films = remember(state.content, state.selectedSourceId, state.selectedCategory, state.query, favoritesOnly) {
+    val filmFocusRequesters=remember {mutableMapOf<String,FocusRequester>()}
+    val categories = remember(com.tvnext.app.core.ui.i18n.UiLocale.language, state.content, state.selectedSourceId,state.preferences.categorySort) { listOf(uiText("Все"), uiText("Избранное")) + state.categories }
+    val films = remember(state.content, state.selectedSourceId, state.selectedCategory, state.query, favoritesOnly,state.preferences.filmSort) {
         state.filteredItems.filter { !favoritesOnly || it.isFavorite }
     }
+    // Capture identity before LazyGrid applies a reorder and sends temporary
+    // focus events for its previous slots.
+    val focusBeforeLayout=remember(films){highlightedFilmId}
     val browsing = pane == MediaPane.CATEGORIES || pane == MediaPane.FILMS || (pane == MediaPane.INFO && infoFromList)
+    LaunchedEffect(state.isLoading) {
+        if(!state.isLoading && !browserRestored) {
+            browserRestored=true
+            if(state.preferences.rememberPosition) {
+                val saved=state.browser
+                favoritesOnly=saved.favorites
+                val savedFilms=state.filteredItems.filter{!saved.favorites||it.isFavorite}
+                filmIndex=savedFilms.indexOfFirst{it.id==saved.itemId}.coerceAtLeast(0)
+                highlightedFilmId=saved.itemId
+                categoryIndex=if(saved.favorites)1 else state.selectedCategory?.let{categories.indexOf(it)}?.coerceAtLeast(0) ?: 0
+                if(saved.inFilms)pane=MediaPane.FILMS
+            }
+        }
+    }
+    LaunchedEffect(pane,filmIndex,state.selectedSourceId,state.selectedCategory,favoritesOnly,films,browserRestored) {
+        if(browserRestored && browsing) component.dispatch(MediaIntent.BrowserMoved(MediaBrowserPosition(
+            state.selectedSourceId,state.selectedCategory,films.getOrNull(filmIndex)?.id,favoritesOnly,pane==MediaPane.FILMS || (pane==MediaPane.INFO && infoFromList))))
+    }
+    LaunchedEffect(playback.item?.id,state.selectedItemId,state.pendingResume) {
+        val target=requestedItemId
+        if(target!=null && playback.item?.id==target && playback.item?.kind==com.tvnext.app.core.player.PlaybackContentKind.VOD) {
+            pane=MediaPane.VIDEO;requestedItemId=null
+        } else if(target!=null && state.pendingResume==null && state.selectedItemId!=target) requestedItemId=null
+    }
     LaunchedEffect(pane) {
         if (pane != MediaPane.VIDEO) { controlsVisible = false; controlsFocused = false }
         onImmersiveChange(!browsing)
@@ -88,15 +125,19 @@ internal fun AndroidMediaScreen(
             videoFocus.requestFocus()
         }
     }
-    LaunchedEffect(pane, categories, films) {
+    LaunchedEffect(pane, categories, films,state.preferences.posterSize) {
         if (browsing) {
             val count = if (pane == MediaPane.CATEGORIES) categories.size else films.size
             if (count > 0) {
-                val index = (if (pane == MediaPane.CATEGORIES) categoryIndex else filmIndex).coerceIn(0, count - 1)
+                val remembered=if(pane==MediaPane.FILMS)films.indexOfFirst{it.id==focusBeforeLayout}.takeIf{it>=0} else null
+                val index = (remembered ?: if (pane == MediaPane.CATEGORIES) categoryIndex else filmIndex).coerceIn(0, count - 1)
                 if (pane == MediaPane.CATEGORIES) categoryIndex = index else filmIndex = index
                 (if (pane == MediaPane.CATEGORIES) categoryScroll else filmScroll).scrollToItem(index)
                 withFrameNanos { }
-                runCatching { cardFocus.requestFocus() }
+                runCatching {
+                    if(pane==MediaPane.FILMS) filmFocusRequesters[films[index].id]?.requestFocus()
+                    else cardFocus.requestFocus()
+                }
             }
         }
     }
@@ -115,8 +156,10 @@ internal fun AndroidMediaScreen(
     }
     fun play(id: String) {
         filmIndex = films.indexOfFirst { it.id == id }.coerceAtLeast(0)
+        requestedItemId=id
+        component.dispatch(MediaIntent.BrowserMoved(MediaBrowserPosition(state.selectedSourceId,state.selectedCategory,id,favoritesOnly,true)))
         if (id != state.selectedItemId) component.dispatch(MediaIntent.SelectItem(id))
-        pane = MediaPane.VIDEO
+        if(state.preferences.resumeMode!=MediaResumeMode.ASK || playback.item?.id==id) pane=MediaPane.VIDEO
     }
     fun back() {
         if (controlsVisible) {
@@ -281,7 +324,7 @@ internal fun AndroidMediaScreen(
                     }
                 } else {
                     if (films.isEmpty()) Text(uiText("В этой категории пока нет фильмов"), color = MaterialTheme.colorScheme.onSurface)
-                    LazyVerticalGrid(GridCells.Adaptive(160.dp), state = filmScroll,
+                    LazyVerticalGrid(GridCells.Adaptive(state.preferences.posterSize.width.dp), state = filmScroll,
                         modifier = Modifier.weight(1f).focusGroup().onPreviewKeyEvent { event ->
                             val direction = when (event.key) {
                                 Key.DirectionLeft -> FocusDirection.Left
@@ -296,12 +339,17 @@ internal fun AndroidMediaScreen(
                             } else false
                         }, horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         itemsIndexed(films, key = { _, item -> item.id }) { index, item ->
+                            val rowFocus=remember(item.id){FocusRequester()}
+                            DisposableEffect(item.id,rowFocus) {
+                                filmFocusRequesters[item.id]=rowFocus
+                                onDispose {if(filmFocusRequesters[item.id]===rowFocus)filmFocusRequesters.remove(item.id)}
+                            }
                             var okStarted by remember(item.id) { mutableStateOf(0L) }
                             var favoriteHandled by remember(item.id) { mutableStateOf(false) }
                             TvCardButton(onClick = { play(item.id) }, contentPadding = PaddingValues(8.dp),
-                                modifier = Modifier.fillMaxWidth().height(280.dp)
-                                    .then(if (index == filmIndex) Modifier.focusRequester(cardFocus) else Modifier)
-                                    .onFocusChanged { if (it.isFocused) filmIndex = index }
+                                modifier = Modifier.testTag("media-film-${item.id}").fillMaxWidth().height(state.preferences.posterSize.height.dp)
+                                    .focusRequester(rowFocus)
+                                    .onFocusChanged { if (it.isFocused) {filmIndex = index;highlightedFilmId=item.id} }
                                     .onPreviewKeyEvent { event ->
                                         if (event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.NumPadEnter) {
                                             val now = com.tvnext.app.core.common.util.currentTimeMillis()

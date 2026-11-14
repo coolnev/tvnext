@@ -26,12 +26,16 @@ data class ProgrammeMetadata(
 )
 
 interface KinopoiskKeyStore {
+    suspend fun isEnabled(): Boolean = true
+    suspend fun setEnabled(enabled:Boolean) = Unit
     suspend fun getKey(): String
     suspend fun setKey(value: String)
 }
 
 class SqlDelightKinopoiskKeyStore(private val meta: AppMetaRepository,
     private val defaultKey: String = "") : KinopoiskKeyStore {
+    override suspend fun isEnabled(): Boolean = meta.getValue("settings.kinopoisk_enabled")?.toBooleanStrictOrNull() ?: true
+    override suspend fun setEnabled(enabled:Boolean) {meta.setValue("settings.kinopoisk_enabled",enabled.toString())}
     override suspend fun getKey(): String = meta.getValue("settings.kinopoisk_unofficial_key")
         ?.trim()?.takeIf { it.isNotEmpty() } ?: defaultKey.trim()
     override suspend fun setKey(value: String) { meta.setValue("settings.kinopoisk_unofficial_key", value.trim()) }
@@ -68,6 +72,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
     }
     fun temporaryFailureRecently(): Boolean =
         currentTimeMillis() - temporaryFailureAt in 0L..60_000L
+    suspend fun isEnabled(): Boolean = keys.isEnabled()
     suspend fun hasKey(): Boolean = keys.getKey().isNotBlank()
 
     suspend fun checkConnection(): KinopoiskConnectionResult {
@@ -104,6 +109,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
     suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)? = null): ProgrammeMetadata? = lookup(name, onUpdate, ProgrammeKind.CATALOG)
 
     suspend fun lookup(name: String, onUpdate: ((ProgrammeMetadata) -> Unit)?, kind: ProgrammeKind, request: ProgrammeMetadataRequest? = null): ProgrammeMetadata? {
+        if (!keys.isEnabled()) return null
         val query = cleanProgrammeTitle(name)
         val token = keys.getKey().trim()
         if (query.isBlank() || token.isEmpty() || currentTimeMillis() < backoffUntil) return null
@@ -349,7 +355,7 @@ class ProgrammeMetadataRepository(
     private val kinopoisk: KinopoiskProgrammeLookup,
     private val tmdbSettings: TmdbSettingsStore,
 ) {
-    private data class Cached(val result: ProgrammeMetadata?, val time: Long, val complete: Boolean)
+    private data class Cached(val result: ProgrammeMetadata?, val time: Long, val complete: Boolean, val providers:Int)
     private val cache = LinkedHashMap<String, Cached>()
     private val cacheGuard = Any()
     private var cacheRevision = 0L
@@ -400,30 +406,36 @@ class ProgrammeMetadataRepository(
         if (query.length < 3) return null
         val year = (request?.releaseYear ?: programmeReleaseYear(raw))?.toString()
         val key = metadataCacheKey(title,kind,request)
-        val flight = mutex.withLock { lookups.getOrPut(key) { Lookup() }.also { it.readers++ } }
+        val flightKey=key+"|"+tmdbSettings.isEnabled()+"|"+kinopoisk.isEnabled()
+        val flight = mutex.withLock { lookups.getOrPut(flightKey) { Lookup() }.also { it.readers++ } }
         return try {
             coroutineScope {
                 val updates = onUpdate?.let { callback -> launch(start = CoroutineStart.UNDISPATCHED) {
                     flight.updates.filterNotNull().collect { callback(it) }
                 } }
                 try {
-                    flight.lock.withLock { networkSlots.withPermit {
+                    val result=flight.lock.withLock { networkSlots.withPermit {
                         withContext(Dispatchers.IO) { lookup(raw, query, year, key, kind, request) { flight.updates.value = it } }
                     } }
+                    // A fast cached/network completion can beat the collector's
+                    // dispatch. Deliver the final verified card before closing it.
+                    result?.let {onUpdate?.invoke(it)}
+                    result
                 } finally { updates?.cancelAndJoin() }
             }
         } finally { withContext(NonCancellable) {
-            mutex.withLock { if (--flight.readers == 0 && lookups[key] === flight) lookups.remove(key) }
+            mutex.withLock { if (--flight.readers == 0 && lookups[flightKey] === flight) lookups.remove(flightKey) }
         } }
     }
 
     private suspend fun lookup(raw: String, query: String, year: String?, key: String, kind: ProgrammeKind, request: ProgrammeMetadataRequest?,
         publish: (ProgrammeMetadata) -> Unit): ProgrammeMetadata? {
+        val providers=(if(tmdbSettings.isEnabled())1 else 0) or (if(kinopoisk.isEnabled())2 else 0)
         val now = currentTimeMillis()
         var retained: ProgrammeMetadata? = null
         val revision = synchronized(cacheGuard) {
-            retained = cache[key]?.result
-            cache[key]?.takeIf { (it.complete || hasProgrammeSynopsis(it.result?.overview)) && now - it.time < when {
+            retained = cache[key]?.takeIf {it.providers==providers}?.result
+            cache[key]?.takeIf { it.providers==providers && (it.complete || hasProgrammeSynopsis(it.result?.overview)) && now - it.time < when {
                 it.result == null -> 20_000L
                 !hasProgrammeSynopsis(it.result.overview) -> 2_000L
                 it.result.frameUrl == null || it.result.posterUrl == null -> 30_000L
@@ -452,7 +464,7 @@ class ProgrammeMetadataRepository(
         fun cacheResult(result: ProgrammeMetadata?, complete: Boolean = false) = synchronized(cacheGuard) {
             if (revision == cacheRevision) {
                 if (cache.size >= 256 && key !in cache) cache.remove(cache.keys.first())
-                cache[key] = Cached(result, currentTimeMillis(), complete)
+                cache[key] = Cached(result, currentTimeMillis(), complete, providers)
             }
         }
         fun progress(kino: Boolean, card: ProgrammeMetadata?) {
@@ -472,7 +484,7 @@ class ProgrammeMetadataRepository(
         coroutineScope {
             launch {
                 try {
-                    if (tmdbSettings.isEnabled()) {
+                    if (providers and 1 != 0) {
                         val card = withTimeoutOrNull(12_000L) { lookupTmdb(raw, query, year, kind, request) { progress(false, it) } }
                         progress(false, card)
                     }
@@ -480,7 +492,7 @@ class ProgrammeMetadataRepository(
                 catch (_: Exception) { /* The other provider can still supply a real card. */ }
             }
             launch {
-                try { progress(true, kinopoisk.lookup(raw, { progress(true, it) }, kind, request)) }
+                try { if(providers and 2 != 0) progress(true, kinopoisk.lookup(raw, { progress(true, it) }, kind, request)) }
                 catch (cancelled: CancellationException) { throw cancelled }
                 catch (_: Exception) { /* Keep already published metadata. */ }
             }

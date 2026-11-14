@@ -14,6 +14,7 @@ internal class PlaybackDisplayLifecycle(
     private val suspend: () -> Unit,
 ) {
     private var started = false
+    private var resumed = false
     private var running: Boolean? = null
     private var interactive = context.getSystemService(PowerManager::class.java).isInteractive
     private val receiver = object : BroadcastReceiver() {
@@ -40,7 +41,16 @@ internal class PlaybackDisplayLifecycle(
         update()
     }
 
-    fun onStop() { started = false; update() }
+    fun onResume() {
+        resumed = true
+        interactive = context.getSystemService(PowerManager::class.java).isInteractive
+        update()
+    }
+
+    // TV system settings may cover the app without ever calling onStop.
+    // Release MediaCodec and its SurfaceTexture before that hand-off too.
+    fun onPause() { resumed = false; update() }
+    fun onStop() { started = false; resumed = false; update() }
 
     fun close() {
         onStop()
@@ -48,7 +58,7 @@ internal class PlaybackDisplayLifecycle(
     }
 
     private fun update() {
-        val next = started && interactive
+        val next = started && resumed && interactive
         if (next == running) return
         running = next
         if (next) resume() else suspend()

@@ -6,7 +6,7 @@ import com.tvnext.app.core.player.ClockPosition
 import com.tvnext.app.core.player.VideoDecodeMode
 import com.tvnext.app.core.ui.theme.AccentColor
 import com.tvnext.app.feature.settings.domain.AppInfo
-import com.tvnext.app.feature.settings.domain.AppSettings
+import com.tvnext.app.feature.settings.domain.*
 import com.tvnext.app.feature.settings.domain.StartScreen
 import com.tvnext.app.feature.settings.domain.ThemePreference
 import com.tvnext.app.feature.settings.domain.WindowResolution
@@ -19,6 +19,8 @@ interface SettingsRepository {
     suspend fun load(): AppSettings
     suspend fun save(settings: AppSettings)
     fun observe(): Flow<AppSettings>
+    suspend fun getMediaBrowserPosition(): MediaBrowserPosition? = null
+    suspend fun setMediaBrowserPosition(position: MediaBrowserPosition?) = Unit
     suspend fun getAppInfo(): AppInfo
 
     /** Id of the last watched channel (used by the `openLastChannel` option). */
@@ -73,6 +75,13 @@ class SqlDelightSettingsRepository(
     override suspend fun load(): AppSettings = observe().first()
 
     override suspend fun save(settings: AppSettings) {
+        meta.setValue("settings.kinopoisk_enabled",settings.kinopoiskEnabled.toString())
+        meta.setValue("settings.media.poster",settings.media.posterSize.name)
+        meta.setValue("settings.media.sort",settings.media.filmSort.name)
+        meta.setValue("settings.media.categories",settings.media.categorySort.name)
+        meta.setValue("settings.media.remember",settings.media.rememberPosition.toString())
+        meta.setValue("settings.media.resume",settings.media.resumeMode.name)
+        if (!settings.media.rememberPosition) setMediaBrowserPosition(null)
         meta.setValue(Keys.LANGUAGE, settings.language.name)
         meta.setValue(Keys.THEME, settings.theme.name)
         meta.setValue(Keys.ACCENT_COLOR, settings.accentColor.name)
@@ -126,9 +135,33 @@ class SqlDelightSettingsRepository(
         meta.setValue(Keys.LAST_CATEGORY_ID, categoryId.orEmpty())
     }
 
+    override suspend fun getMediaBrowserPosition(): MediaBrowserPosition? {
+        if(meta.getValue("media.browser.saved")!="true")return null
+        return MediaBrowserPosition(meta.getValue("media.browser.source")?.ifBlank{null},
+            meta.getValue("media.browser.category")?.ifBlank{null},meta.getValue("media.browser.item")?.ifBlank{null},
+            meta.getValue("media.browser.favorites")=="true",meta.getValue("media.browser.films")=="true")
+    }
+    override suspend fun setMediaBrowserPosition(position: MediaBrowserPosition?) {
+        meta.setValue("media.browser.saved",(position!=null).toString())
+        meta.setValue("media.browser.source",position?.sourceId.orEmpty())
+        meta.setValue("media.browser.category",position?.category.orEmpty())
+        meta.setValue("media.browser.item",position?.itemId.orEmpty())
+        meta.setValue("media.browser.favorites",(position?.favorites==true).toString())
+        meta.setValue("media.browser.films",(position?.inFilms==true).toString())
+    }
+    private inline fun <reified T:Enum<T>> List<App_meta>.enumValue(key:String, fallback:T):T =
+        string(key)?.let {runCatching{enumValueOf<T>(it)}.getOrNull()} ?: fallback
+
     private fun fromRows(rows: List<App_meta>): AppSettings {
         val defaults = AppSettings()
         return AppSettings(
+            kinopoiskEnabled=rows.bool("settings.kinopoisk_enabled") ?: true,
+            media=MediaPreferences(
+                rows.enumValue("settings.media.poster",MediaPosterSize.MEDIUM),
+                rows.enumValue("settings.media.sort",MediaFilmSort.PROVIDER),
+                rows.enumValue("settings.media.categories",MediaCategorySort.NAME),
+                rows.bool("settings.media.remember") ?: false,
+                rows.enumValue("settings.media.resume",MediaResumeMode.CONTINUE)),
             language = rows.string(Keys.LANGUAGE)?.let { value ->
                 com.tvnext.app.core.common.UiLanguage.entries.firstOrNull { it.name == value }
             } ?: defaults.language,
