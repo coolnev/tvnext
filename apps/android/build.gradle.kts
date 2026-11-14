@@ -29,7 +29,7 @@ android {
         applicationId = "com.tvnext.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1009
+        versionCode = 1010
         versionName = project.version.toString()
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")

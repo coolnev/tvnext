@@ -76,6 +76,7 @@ class SqlDelightSettingsRepository(
     override suspend fun load(): AppSettings = observe().first()
 
     override suspend fun save(settings: AppSettings) {
+        meta.setValue("settings.audio_output_mode",settings.audioOutputMode.name)
         val afr=settings.autoFrameRate.normalized()
         meta.setValue("settings.afr.enabled",afr.enabled.toString())
         meta.setValue("settings.afr.strategy",afr.strategy.name)
@@ -187,6 +188,7 @@ class SqlDelightSettingsRepository(
             videoDecodeMode = rows.videoDecodeMode() ?: defaults.videoDecodeMode,
             epgEnabled = rows.bool(Keys.EPG_ENABLED) ?: defaults.epgEnabled,
             epgUrl = rows.string(Keys.EPG_URL) ?: defaults.epgUrl,
+            audioOutputMode=rows.string("settings.audio_output_mode")?.let{runCatching{com.tvnext.app.core.player.AudioOutputMode.valueOf(it)}.getOrNull()} ?: com.tvnext.app.core.player.AudioOutputMode.AUTO,
             autoFrameRate = com.tvnext.app.core.player.AutoFrameRatePreferences(
                 enabled=rows.bool("settings.afr.enabled") ?: false,
                 strategy=rows.string("settings.afr.strategy")?.let {runCatching {com.tvnext.app.core.player.FrameRateSwitchStrategy.valueOf(it)}.getOrNull()} ?: com.tvnext.app.core.player.FrameRateSwitchStrategy.ALWAYS,

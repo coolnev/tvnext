@@ -33,6 +33,7 @@ kotlin {
             implementation(project(":core:common"))
         }
         androidMain.dependencies {
+            implementation(project(":core:dolby"))
             implementation(project(":core:iptv"))
             implementation(compose.ui)
             implementation(libs.media3.exoplayer)

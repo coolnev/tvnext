@@ -211,6 +211,7 @@ class MainActivity : ComponentActivity() {
                 (koin.get<com.tvnext.app.core.player.PlaybackController>()
                     as? com.tvnext.app.core.player.AndroidPlaybackController)
                     ?.updateDecodeMode(settings.videoDecodeMode)
+                (koin.get<com.tvnext.app.core.player.PlaybackController>() as? com.tvnext.app.core.player.AndroidPlaybackController)?.updateAudioOutputMode(settings.audioOutputMode)
                 autoFrameRate.updatePreferences(settings.autoFrameRate)
             }
         }

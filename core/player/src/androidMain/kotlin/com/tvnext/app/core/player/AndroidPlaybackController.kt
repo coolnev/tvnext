@@ -10,7 +10,6 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.LoadControl
@@ -70,10 +69,14 @@ class AndroidPlaybackController(
     private var desiredVolume = 1f
     private var muted = false
     private var foreground = true
+    private var audioOutputMode = AudioOutputMode.AUTO
+    private var activeAudioOutputMode: AudioOutputMode? = null
     private var globalDecodeMode = VideoDecodeMode.AUTO
     private var requestedDecodeMode = VideoDecodeMode.AUTO
     private var decoderPath = AndroidVideoDecoderPath.HARDWARE
     private var activeDecoderName: String? = null
+    private var activeVideoFormat: Format? = null
+    private var activeAudioFormat: Format? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var suspendedState: PlayerState? = null
     private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
@@ -81,6 +84,7 @@ class AndroidPlaybackController(
     private val cadenceEstimator = VideoCadenceEstimator()
     private val signalHandler = android.os.Handler(Looper.getMainLooper())
     @Volatile private var signalGeneration = 0L
+    @Volatile private var fpsVerifiedGeneration = -1L
 
     private fun resetVideoSignal() {
         signalGeneration++
@@ -111,6 +115,19 @@ class AndroidPlaybackController(
         play(item) // mode changes require a newly configured ExoPlayer
         if (item.kind != PlaybackContentKind.LIVE && position > 0L) seekLocal(position)
         if (paused) pause()
+    }
+
+    fun updateAudioOutputMode(mode:AudioOutputMode) {
+        checkMainThread()
+        if(audioOutputMode==mode)return
+        audioOutputMode=mode
+        val item=_state.value.item ?: return
+        if(!foreground)return
+        val paused=_state.value.state==PlaybackState.PAUSED
+        val position=_player.value?.currentPosition?.coerceAtLeast(0L) ?: _state.value.positionMs
+        play(item)
+        if(item.kind!=PlaybackContentKind.LIVE && position>0)seekLocal(position)
+        if(paused)pause()
     }
 
     private fun decodeModeFor(item: PlaybackItem): VideoDecodeMode =
@@ -201,6 +218,15 @@ class AndroidPlaybackController(
             refreshState()
         }
 
+        override fun onVideoDecoderReleased(eventTime: AnalyticsListener.EventTime, decoderName: String) {
+            if(activeDecoderName==decoderName)activeDecoderName=null
+            refreshState()
+        }
+        override fun onAudioInputFormatChanged(eventTime: AnalyticsListener.EventTime, format: Format,
+            decoderReuseEvaluation: androidx.media3.exoplayer.DecoderReuseEvaluation?) {
+            activeAudioFormat=format
+            refreshState()
+        }
         override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
             AndroidPerformanceCounters.increment("video.droppedFrames", droppedFrames.toLong())
             AndroidPerformanceCounters.set("video.droppedWindowMs", elapsedMs)
@@ -216,6 +242,10 @@ class AndroidPlaybackController(
                 val id = timeline.getWindow(eventTime.windowIndex, androidx.media3.common.Timeline.Window()).mediaItem.mediaId
                 if (id.isNotEmpty() && id != _state.value.item?.id) return
             }
+            signalGeneration++
+            activeVideoFormat=format
+            if(decoderReuseEvaluation!=null && decoderReuseEvaluation.result!=androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_NO)
+                activeDecoderName=decoderReuseEvaluation.decoderName
             cadenceEstimator.reset()
             updateVideoSignal(format)
             refreshState()
@@ -351,7 +381,7 @@ class AndroidPlaybackController(
         resetVideoSignal()
         requestedDecodeMode = decodeModeFor(item)
         decoderPath = androidVideoDecoderPlan(requestedDecodeMode).first()
-        activeDecoderName = null
+        activeVideoFormat=null;activeAudioFormat=null
         positionTickerJob?.cancel()
         positionTickerJob = null
         if (!foreground) {
@@ -363,7 +393,6 @@ class AndroidPlaybackController(
         suspendedState = null
         measuredFps = null
         measuredBitrate = null
-        activeDecoderName = null
         _state.value = PlayerState(
             state = PlaybackState.LOADING,
             item = item,
@@ -531,6 +560,7 @@ class AndroidPlaybackController(
         activeKind = null
         activeDecodePath = null
         activeDecoderName = null
+        activeVideoFormat=null;activeAudioFormat=null
         exo?.removeListener(listener)
         exo?.removeAnalyticsListener(analyticsListener)
         exo?.release()
@@ -543,12 +573,9 @@ class AndroidPlaybackController(
      */
     private fun ensurePlayer(kind: PlaybackContentKind): ExoPlayer {
         val existing = _player.value
-        if (existing != null && activeKind == kind && activeDecodePath == decoderPath) return existing
+        if (existing != null && activeKind == kind && activeDecodePath == decoderPath && activeAudioOutputMode==audioOutputMode) return existing
         if (existing != null) disposePlayer()
-        val renderers = DefaultRenderersFactory(context)
-            .setMediaCodecSelector(androidVideoCodecSelector(decoderPath))
-            .setEnableDecoderFallback(true) // within the SAME selected video backend only
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+        val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode)
         val newPlayer = ExoPlayer.Builder(context)
             .setRenderersFactory(renderers)
             .setMediaSourceFactory(createMediaSourceFactory())
@@ -557,14 +584,16 @@ class AndroidPlaybackController(
             .setVideoChangeFrameRateStrategy(C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF)
             .build()
         newPlayer.setVideoFrameMetadataListener { presentationTimeUs, _, format, _ ->
-            if (format.frameRate <= 0f || !format.frameRate.isFinite()) {
-                val token=signalGeneration
-                cadenceEstimator.frame(presentationTimeUs)?.let { fps ->
-                    signalHandler.post {
-                        if(token==signalGeneration && _player.value===newPlayer && _state.value.item!=null) {
-                            updateVideoSignal(format,fps)
-                            refreshState()
-                        }
+            val token=signalGeneration
+            val known=format.frameRate.isFinite() && format.frameRate in 10f..240f
+            if(known && fpsVerifiedGeneration==token)return@setVideoFrameMetadataListener
+            cadenceEstimator.frame(presentationTimeUs,if(known)12 else 24)?.let { measured ->
+                val fps=verifiedVideoFrameRate(format.frameRate.toDouble(),measured)
+                if(known)fpsVerifiedGeneration=token
+                if(!known || kotlin.math.abs(fps-format.frameRate)>.002)signalHandler.post {
+                    if(token==signalGeneration && _player.value===newPlayer && _state.value.item!=null) {
+                        updateVideoSignal(format,fps)
+                        refreshState()
                     }
                 }
             }
@@ -581,6 +610,7 @@ class AndroidPlaybackController(
         _player.value = newPlayer
         activeKind = kind
         activeDecodePath = decoderPath
+        activeAudioOutputMode=audioOutputMode
         // External media controls become available once the player exists
         // (i.e. after the first play()). Media3 wires the callbacks itself.
         runCatching { mediaSession = MediaSession.Builder(context, newPlayer).build() }
@@ -607,6 +637,7 @@ class AndroidPlaybackController(
                 if (live) LIVE_REBUFFER_AFTER_MS else VOD_REBUFFER_AFTER_MS,
             )
             .setTargetBufferBytes(if (live) LIVE_TARGET_BUFFER_BYTES else VOD_TARGET_BUFFER_BYTES)
+            .setPrioritizeTimeOverSizeThresholds(live)
             .build()
     }
 
@@ -748,22 +779,22 @@ class AndroidPlaybackController(
      * The selector enforces a specific path, avoiding false hardware claims.
      */
     private fun buildDiagnostics(exoPlayer: ExoPlayer): PlayerDiagnostics? {
-        val format = firstVideoFormat(exoPlayer.currentTracks) ?: return null
-        val width = if (format.width != C.LENGTH_UNSET && format.width > 0) format.width else null
-        val height = if (format.height != C.LENGTH_UNSET && format.height > 0) format.height else null
-        val codec = format.codecs?.takeIf { it.isNotBlank() }
-            ?: format.sampleMimeType?.substringAfterLast('/')?.uppercase()
+        val format = activeVideoFormat ?: exoPlayer.videoFormat ?: firstVideoFormat(exoPlayer.currentTracks)
+        val width = format?.width?.takeIf{it>0}
+        val height = format?.height?.takeIf{it>0}
+        val codec = format?.codecs?.takeIf { it.isNotBlank() }
+            ?: format?.sampleMimeType?.substringAfterLast('/')?.uppercase()
         val resolution = if (width != null && height != null) "${width}x${height}" else "n/a"
         // Prefer the live measurements (HLS formats usually omit fps/bitrate),
         // fall back to the track format when the analytics have not fired yet.
         val fps = measuredFps
-            ?: if (format.frameRate != C.RATE_UNSET && format.frameRate > 0f) {
+            ?: if (format!=null && format.frameRate != C.RATE_UNSET && format.frameRate > 0f) {
                 frameRateNumber(format.frameRate.toDouble())
             } else {
                 null
             }
         val bitrate = measuredBitrate
-            ?: if (format.bitrate != C.LENGTH_UNSET && format.bitrate > 0) {
+            ?: if (format!=null && format.bitrate != C.LENGTH_UNSET && format.bitrate > 0) {
                 java.lang.String.format(java.util.Locale.US, "%.1f Mbps", format.bitrate / 1_000_000.0)
             } else {
                 null
@@ -790,7 +821,7 @@ class AndroidPlaybackController(
             resolution = resolution,
             fps = fps,
             bitrate = bitrate,
-            audio = firstAudioLabel(exoPlayer.currentTracks),
+            audio = firstAudioLabel(exoPlayer.currentTracks) ?: activeAudioFormat?.let(::audioFormatLabel),
             transportState = transportState,
         )
     }
@@ -819,7 +850,13 @@ class AndroidPlaybackController(
             val selected = (0 until group.length).firstOrNull { group.isTrackSelected(it) }
                 ?: continue
             val format = group.getTrackFormat(selected)
-            val parts = buildList {
+            return audioFormatLabel(format)
+        }
+        return null
+    }
+
+    private fun audioFormatLabel(format:Format):String? {
+        val parts = buildList {
                 when (format.channelCount) {
                     1 -> add("Моно")
                     2 -> add("Стерео")
@@ -837,9 +874,7 @@ class AndroidPlaybackController(
                         ?.let { add(it) }
                 if (format.sampleRate > 0) add("${format.sampleRate / 1000} кГц")
             }
-            return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
-        }
-        return null
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
     }
 
     private companion object {
@@ -858,7 +893,7 @@ class AndroidPlaybackController(
         const val LIVE_MAX_BUFFER_MS = 15_000
         const val LIVE_BUFFER_FOR_PLAYBACK_MS = 1_500
         const val LIVE_REBUFFER_AFTER_MS = 3_000
-        const val LIVE_TARGET_BUFFER_BYTES = 4 * 1024 * 1024
+        const val LIVE_TARGET_BUFFER_BYTES = 16 * 1024 * 1024
 
         // VOD/ARCHIVE buffering: generous headroom, smooth scrubbing.
         const val VOD_MIN_BUFFER_MS = 15_000

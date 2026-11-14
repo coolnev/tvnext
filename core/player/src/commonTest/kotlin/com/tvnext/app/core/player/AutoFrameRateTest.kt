@@ -68,6 +68,30 @@ class AutoFrameRateTest {
         for(i in 0..100){stamp+=if(i%2==0)40000 else 33367;assertNull(estimator.frame(stamp))}
         estimator.reset();assertNull(estimator.frame(0));assertNull(estimator.frame(5_000_000));assertNull(estimator.frame(5_000_000))
     }
+    @Test fun roundedProviderRateCanBeCorrectedBeforeTheSwitchAndDroppedFramesDoNotHalveIt() {
+        val sampler=VideoCadenceEstimator();var estimate:Double?=null
+        for(i in 0..12)sampler.frame((i*1_000_000.0/(24000.0/1001)).toLong(),12)?.let{estimate=it}
+        assertNotNull(estimate);assertEquals(24000.0/1001,verifiedVideoFrameRate(24.0,estimate!!),.003)
+        assertEquals(50.0,verifiedVideoFrameRate(50.0,25.0))
+        assertEquals(60000.0/1001,verifiedVideoFrameRate(60.0,60000.0/1001),.0001)
+    }
+    @Test fun androidUsesTheUhdSurfaceForAnimationAsWellAsSteadyVideo() {
+        for(animated in listOf(false,true))assertFalse(useTextureForVideoTransition(animated,true))
+        assertTrue(useTextureForVideoTransition(true,false))
+    }
+    @Test fun stereoMixKeepsDialogueInBothSpeakersAndCannotOverflowFullScale() {
+        for(channels in 3..8) {
+            val matrix=stereoMixCoefficients(channels)
+            val centre=if(channels==4)0 else 2
+            if(channels!=4) {assertTrue(matrix[centre*2]>0);assertEquals(matrix[centre*2],matrix[centre*2+1])}
+            assertTrue((0 until channels).sumOf{matrix[it*2].toDouble()}<=1.00001)
+            assertTrue((0 until channels).sumOf{matrix[it*2+1].toDouble()}<=1.00001)
+        }
+    }
+    @Test fun stereoIdentityAndMonoDuplicationDoNotLoseAnAudioChannel() {
+        assertContentEquals(floatArrayOf(1f,0f,0f,1f),stereoMixCoefficients(2))
+        assertContentEquals(floatArrayOf(1f,1f),stereoMixCoefficients(1))
+    }
     @Test fun defaultsPreserveExistingOutputAndInvalidDelayIsNormalized() {
         assertFalse(AutoFrameRatePreferences().enabled);assertFalse(AutoFrameRatePreferences().matchResolution)
         assertEquals(1000,AutoFrameRatePreferences(delayMs=-7).normalized().delayMs)

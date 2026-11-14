@@ -36,6 +36,12 @@ class SettingsRepositoryTest {
         assertEquals(null,repo.getMediaBrowserPosition())
     }
 
+    @Test fun audioOutputModeSurvivesRestart() = runBlocking {
+        val repo=createRepo()
+        for(mode in com.tvnext.app.core.player.AudioOutputMode.entries){
+            repo.save(repo.load().copy(audioOutputMode=mode));assertEquals(mode,repo.load().audioOutputMode)
+        }
+    }
     @Test fun allAutoFrameRateOptionsSurviveReloadAndStartDisabled() = runBlocking {
         val repo=createRepo()
         assertEquals(false,repo.load().autoFrameRate.enabled)

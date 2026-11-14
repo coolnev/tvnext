@@ -24,9 +24,13 @@ internal class AndroidDisplayModeHost(private val activity: Activity): FrameRate
     private fun display() = activity.window.decorView.display ?: activity.windowManager.defaultDisplay
     override fun snapshot(): DisplayModeSnapshot = try {
         val d=display()
-        fun mode(m:android.view.Display.Mode)=VideoDisplayMode(m.modeId,m.physicalWidth,m.physicalHeight,m.refreshRate.toDouble(),
-            if(Build.VERSION.SDK_INT>=31)m.alternativeRefreshRates.map(Float::toDouble) else emptyList())
-        DisplayModeSnapshot(mode(d.mode),d.supportedModes.map(::mode).distinctBy{it.id})
+        fun mode(compat:androidx.core.view.DisplayCompat.ModeCompat):VideoDisplayMode {
+            val native=compat.toMode() ?: d.mode
+            return VideoDisplayMode(native.modeId,compat.physicalWidth,compat.physicalHeight,native.refreshRate.toDouble(),
+                if(Build.VERSION.SDK_INT>=31)native.alternativeRefreshRates.map(Float::toDouble) else emptyList())
+        }
+        DisplayModeSnapshot(mode(androidx.core.view.DisplayCompat.getMode(activity,d)),
+            androidx.core.view.DisplayCompat.getSupportedModes(activity,d).map(::mode).distinctBy{it.id})
     } catch(_:Exception){DisplayModeSnapshot(null,emptyList())}
     override fun preference()=activity.window.attributes.let {DisplayWindowPreference(it.preferredDisplayModeId,it.preferredRefreshRate)}
     override fun apply(preference:DisplayWindowPreference) {

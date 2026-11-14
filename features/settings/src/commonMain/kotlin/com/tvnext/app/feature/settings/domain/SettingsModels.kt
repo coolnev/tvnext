@@ -5,6 +5,7 @@ import com.tvnext.app.core.player.VideoDecodeMode
 import com.tvnext.app.core.ui.theme.AccentColor
 
 data class AppSettings(
+    val audioOutputMode: com.tvnext.app.core.player.AudioOutputMode = com.tvnext.app.core.player.AudioOutputMode.AUTO,
     val autoFrameRate: com.tvnext.app.core.player.AutoFrameRatePreferences = com.tvnext.app.core.player.AutoFrameRatePreferences(),
     val media: MediaPreferences = MediaPreferences(),
     val kinopoiskEnabled: Boolean = true,

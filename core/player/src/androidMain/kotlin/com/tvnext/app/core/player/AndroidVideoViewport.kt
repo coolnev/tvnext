@@ -17,6 +17,7 @@ internal class AndroidVideoViewport(context: Context, useTextureView: Boolean = 
         LayoutInflater.from(context).inflate(com.tvnext.app.core.player.R.layout.tvnext_texture_player, this, false) as PlayerView
         else PlayerView(context)).apply {
         useController = false
+        if(!useTextureView)setEnableComposeSurfaceSyncWorkaround(true)
         setBackgroundColor(Color.BLACK)
         isFocusable = false
         isFocusableInTouchMode = false

@@ -83,13 +83,13 @@ class VideoCadenceEstimator {
     private val deltas = LongArray(48)
     private var size=0; private var cursor=0;private var last=Long.MIN_VALUE;private var published=0.0
     @Synchronized fun reset() {size=0;cursor=0;last=Long.MIN_VALUE;published=0.0}
-    @Synchronized fun frame(presentationTimeUs:Long): Double? {
+    @Synchronized fun frame(presentationTimeUs:Long, minimumSamples:Int=24): Double? {
         if(last==Long.MIN_VALUE){last=presentationTimeUs;return null}
         val delta=presentationTimeUs-last;last=presentationTimeUs
         if(delta==0L)return null
         if(delta !in 3_000L..120_000L){size=0;cursor=0;return null}
         deltas[cursor]=delta;cursor=(cursor+1)%deltas.size;size=(size+1).coerceAtMost(deltas.size)
-        if(size<24 || cursor%12!=0)return null
+        if(size<minimumSamples.coerceIn(12,48) || cursor%12!=0 || (published>0 && cursor!=0))return null
         val sorted=deltas.copyOf(size).sorted();val median=sorted[size/2].toDouble()
         if(sorted.count {abs(it-median)<median*.015}<size*.9)return null
         var fps=1_000_000.0/median
@@ -99,3 +99,7 @@ class VideoCadenceEstimator {
         published=fps;return fps
     }
 }
+
+/** Reject a dropped-frame half-rate, but correct 24/30/60 provider rounding from stable PTS. */
+fun verifiedVideoFrameRate(nominal:Double,measured:Double):Double =
+    if(nominal.isFinite() && nominal in 10.0..240.0 && kotlin.math.abs(measured-nominal)/nominal>.005)nominal else measured

@@ -110,6 +110,21 @@ class AutoFrameRateRegressionTest {
         val denied=AndroidAutoFrameRate(bad,signal,playback)
         try{enabled(denied);waitMs(1100);assertEquals(FrameRateMatchState.UNAVAILABLE,denied.status.value.state)}finally{denied.close()}
     }
+    @Test fun systemFullHdOrUhdIsPreservedWhenAfrIsOffEvenIfHigherModesAreAvailable() {
+        val hd=VideoDisplayMode(10,1920,1080,60.0)
+        val uhd=VideoDisplayMode(11,3840,2160,60.0)
+        for(current in listOf(hd,uhd)) {
+            val host=Host(listOf(hd,uhd));host.current=current
+            val engine=AndroidAutoFrameRate(host,signal,playback)
+            try {
+                engine.setContext(true,true);engine.setForeground(true);waitMs(2000)
+                assertEquals(current,engine.status.value.current)
+                assertEquals(3840,engine.status.value.modes.maxOf{it.width})
+                assertTrue("Do not force UHD over the user's Android output mode",host.writes.isEmpty())
+            }finally{engine.close()}
+        }
+    }
+
     @Test fun nativeWindowAdapterKeepsOtherAttributesAndReportsAndroidDisplayModes() {
         val activity=Robolectric.buildActivity(Activity::class.java).setup().get()
         val fixture=org.robolectric.util.ReflectionHelpers.callStaticMethod<android.view.Display.Mode>(

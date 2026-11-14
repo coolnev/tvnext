@@ -1,0 +1,10 @@
+TVNext Dolby audio compatibility module
+
+Media3 FFmpeg Java/JNI glue: Copyright The Android Open Source Project, Apache License 2.0.
+FFmpeg n6.0.1: Copyright the FFmpeg developers, LGPL 2.1 or later. AC3 and EAC3 decoding only; no GPL or nonfree configuration flags.
+
+Complete source, native build/relink instructions and checksums:
+https://github.com/coolnev/tvnext/tree/main/core/dolby
+https://github.com/coolnev/tvnext/tree/main/source-archives
+
+The LGPL source and object code are supplied for replacement/relinking. This module identifies audio formats; it does not imply Dolby certification or promise passthrough/Atmos support.

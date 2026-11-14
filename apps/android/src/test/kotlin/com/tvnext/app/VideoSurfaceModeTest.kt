@@ -14,15 +14,16 @@ import org.robolectric.annotation.Config
 @RunWith(org.robolectric.RobolectricTestRunner::class)
 @Config(sdk=[28,35],application=Application::class)
 class VideoSurfaceModeTest {
-    @Test fun animationsUseTextureWhileTheDefaultUsesSurfaceAndResizingKeepsTheSameVideoView() {
+    @Test fun animationsAndFrameRateOptionsUseOneNativeUhdSurfaceAndResizingKeepsIt() {
         val context=RuntimeEnvironment.getApplication()
         val constructor=Class.forName("com.tvnext.app.core.player.AndroidVideoViewport")
             .getDeclaredConstructor(Context::class.java,Boolean::class.javaPrimitiveType).apply {isAccessible=true}
-        for(animated in listOf(false,true)) {
-            val viewport=constructor.newInstance(context,animated) as ViewGroup
+        for(animated in listOf(false,true)) for(afr in listOf(false,true)) {
+            val texture=com.tvnext.app.core.player.useTextureForVideoTransition(animated,true)
+            val viewport=constructor.newInstance(context,texture) as ViewGroup
             val playerView=viewport.getChildAt(0)
             val surface=playerView.javaClass.getMethod("getVideoSurfaceView").invoke(playerView)
-            assertTrue(if(animated) surface is TextureView else surface is SurfaceView)
+            assertTrue("SurfaceView must keep UHD video independent of the UI buffer (AFR=$afr)",surface is SurfaceView)
             viewport.layout(0,0,960,540);viewport.layout(700,16,924,142);viewport.layout(0,0,960,540)
             assertSame(surface,playerView.javaClass.getMethod("getVideoSurfaceView").invoke(playerView))
         }

@@ -346,6 +346,16 @@ internal fun AndroidReferenceSettingsScreen(
                             }
                         }
                         3 -> {
+                            fun audioModeLabel(mode:com.tvnext.app.core.player.AudioOutputMode)=uiText(when(mode){
+                                com.tvnext.app.core.player.AudioOutputMode.AUTO->"Авто — Dolby в PCM"
+                                com.tvnext.app.core.player.AudioOutputMode.PCM_STEREO->"Совместимый PCM стерео"
+                                com.tvnext.app.core.player.AudioOutputMode.PASSTHROUGH->"HDMI — сквозной звук"
+                            })
+                            ReferenceRow(uiText("Вывод звука"),audioModeLabel(s.audioOutputMode),height=entryHeight,onClick={
+                                select(uiText("Вывод звука"),com.tvnext.app.core.player.AudioOutputMode.entries.map {mode->
+                                    audioModeLabel(mode) to {component.dispatch(SettingsIntent.AudioOutputModeChanged(mode))}
+                                })
+                            })
                             com.tvnext.app.feature.settings.ui.AutoFrameRateSettings(s.autoFrameRate,
                                 autoFrameRateStatus?.collectAsState()?.value ?: com.tvnext.app.core.player.AutoFrameRateStatus(),
                                 {component.dispatch(SettingsIntent.AutoFrameRateChanged(it))},compact=condensed)

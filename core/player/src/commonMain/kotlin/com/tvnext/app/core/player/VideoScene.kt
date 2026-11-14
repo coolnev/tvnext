@@ -30,3 +30,6 @@ val LocalVideoScene = staticCompositionLocalOf<VideoScene?> { null }
 
 @Composable
 fun videoSurfaceBackground(fallback: Color): Color = if (LocalVideoScene.current != null) Color.Transparent else fallback
+
+/** API24+ SurfaceView synchronizes view animation and retains the native UHD video plane. */
+fun useTextureForVideoTransition(animated:Boolean, android:Boolean):Boolean = animated && !android

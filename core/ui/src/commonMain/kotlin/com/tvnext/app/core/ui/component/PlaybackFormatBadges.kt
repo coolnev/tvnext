@@ -11,6 +11,7 @@ fun playbackFormatBadges(resolution: String?, audio: String?, fps: String? = nul
     when(actualMode) {
         com.tvnext.app.core.player.PlayerDiagnostics.MODE_HARDWARE -> labels.add(uiText("А"))
         com.tvnext.app.core.player.PlayerDiagnostics.MODE_SOFTWARE -> labels.add(uiText("П"))
+        else -> labels.add("…")
     }
     val dimensions = resolution?.trim()?.let {
         Regex("^(\\d{2,5})\\s*[x×]\\s*(\\d{2,5})$").matchEntire(it)

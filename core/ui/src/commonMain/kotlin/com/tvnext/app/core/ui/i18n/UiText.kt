@@ -29,6 +29,10 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Вывод звука" to ("Audio output" to "音频输出"),
+        "Авто — Dolby в PCM" to ("Auto — Dolby to PCM" to "自动 — Dolby 解码为 PCM"),
+        "Совместимый PCM стерео" to ("Compatible stereo PCM" to "兼容模式：立体声 PCM"),
+        "HDMI — сквозной звук" to ("HDMI — passthrough" to "HDMI — 音频直通"),
         "Режим экрана применён" to ("Display mode applied" to "已应用显示模式"),
         "А" to ("H" to "硬"),
         "П" to ("S" to "软"),

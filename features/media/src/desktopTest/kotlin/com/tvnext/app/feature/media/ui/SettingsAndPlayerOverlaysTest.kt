@@ -177,8 +177,8 @@ class SettingsAndPlayerOverlaysTest {
     @Test fun codecBadgesIdentifyTheActualDecoderAndAudioWithoutGuessingUnknownFacts() {
         val badges=com.tvnext.app.core.ui.component.playbackFormatBadges("1920x1080","5.1 · EC-3","23.976","SOFTWARE")
         assertEquals(listOf("П","1080p","23,976 кадр/с","5.1","Dolby D+"),badges)
-        assertEquals(listOf("Stereo"),com.tvnext.app.core.ui.component.playbackFormatBadges(null,"Стерео · AAC",null,"UNKNOWN"))
-        assertTrue(com.tvnext.app.core.ui.component.playbackFormatBadges("n/a",null,"NaN","UNKNOWN").isEmpty())
+        assertEquals(listOf("…","Stereo"),com.tvnext.app.core.ui.component.playbackFormatBadges(null,"Стерео · AAC",null,"UNKNOWN"))
+        assertEquals(listOf("…"),com.tvnext.app.core.ui.component.playbackFormatBadges("n/a",null,"NaN","UNKNOWN"))
     }
 
     private fun ComposeUiTest.screenshot(name:String) {

@@ -70,6 +70,6 @@ fun SharedVideoStage(
         .graphicsLayer {alpha=if(usable)1f else 0f}
         .clipToBounds().zIndex(if(flying)2f else 0f).testTag("shared-video-stage")) {
         if(viewport!=null || surfaceCreated) surface(Modifier.offset {IntOffset((full.left-clip.left).roundToInt(),(full.top-clip.top).roundToInt())}
-            .requiredSize(with(density){full.width.coerceAtLeast(1f).toDp()},with(density){full.height.coerceAtLeast(1f).toDp()}),animated)
+            .requiredSize(with(density){full.width.coerceAtLeast(1f).toDp()},with(density){full.height.coerceAtLeast(1f).toDp()}),useTextureForVideoTransition(animated,com.tvnext.app.core.common.platform.isAndroidPlatform()))
     }
 }

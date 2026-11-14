@@ -84,6 +84,7 @@ sealed interface SettingsIntent : MviIntent {
     data class StartFullscreenChanged(val enabled: Boolean) : SettingsIntent
     data class ShowChannelNumbersChanged(val enabled: Boolean) : SettingsIntent
     data class OpenLastChannelChanged(val enabled: Boolean) : SettingsIntent
+    data class AudioOutputModeChanged(val mode:com.tvnext.app.core.player.AudioOutputMode):SettingsIntent
     data class AutoFrameRateChanged(val preferences: com.tvnext.app.core.player.AutoFrameRatePreferences): SettingsIntent
     data class VideoDecodeModeChanged(val mode: VideoDecodeMode) : SettingsIntent
     /** Maximum archive depth in days; 0 = automatic (provider maximum). */
@@ -186,6 +187,7 @@ class DefaultSettingsComponent(
             state.copy(settings = state.settings.copy(showChannelNumbers = intent.enabled))
         is SettingsIntent.OpenLastChannelChanged ->
             state.copy(settings = state.settings.copy(openLastChannel = intent.enabled))
+        is SettingsIntent.AudioOutputModeChanged -> state.copy(settings=state.settings.copy(audioOutputMode=intent.mode))
         is SettingsIntent.AutoFrameRateChanged -> state.copy(settings=state.settings.copy(autoFrameRate=intent.preferences.normalized()))
         is SettingsIntent.VideoDecodeModeChanged ->
             state.copy(settings = state.settings.copy(videoDecodeMode = intent.mode))
@@ -256,6 +258,7 @@ class DefaultSettingsComponent(
             is SettingsIntent.StartFullscreenChanged,
             is SettingsIntent.ShowChannelNumbersChanged,
             is SettingsIntent.OpenLastChannelChanged,
+            is SettingsIntent.AudioOutputModeChanged,
             is SettingsIntent.AutoFrameRateChanged,
             is SettingsIntent.VideoDecodeModeChanged,
             is SettingsIntent.NetworkCachingChanged,

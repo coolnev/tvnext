@@ -1,0 +1,21 @@
+{
+  "media3Tag": "1.11.0",
+  "media3Source": "https://github.com/androidx/media/tree/1.11.0/libraries/decoder_ffmpeg",
+  "ffmpegTag": "n6.0.1",
+  "ffmpegSource": "https://github.com/FFmpeg/FFmpeg/tree/n6.0.1",
+  "ffmpegArchive": "source-archives/ffmpeg-n6.0.1.tar.gz",
+  "ffmpegArchiveSha256": "98cb563487d6a652067bfb12a4b4f7fb533fc93e278f6a1821008c0b864c387f",
+  "decoders": [
+    "ac3",
+    "eac3"
+  ],
+  "ndk": "r28b",
+  "minNativeApi": 24,
+  "elfPageAlignment": 16384,
+  "jniLibraries": {
+    "src/main/jniLibs/arm64-v8a/libffmpegJNI.so": "41d3f71ad96ecb8d0ea7624dffab2e57b3d424f48a67b51ae03b1c3cf56bc773",
+    "src/main/jniLibs/x86/libffmpegJNI.so": "f5b2f2d5776cbf0bc33d43cbf7d1f10fe4bc4cd8fc2ea6664d3b04a2954e175c",
+    "src/main/jniLibs/armeabi-v7a/libffmpegJNI.so": "6cc830ca4ea8a7f4998933ccd3e76f0808a820ceed73dc611702d22bcfc639f1",
+    "src/main/jniLibs/x86_64/libffmpegJNI.so": "507233b77a30aef8b2d36223b93073e038a3855e1510757708ac447df276ad1f"
+  }
+}

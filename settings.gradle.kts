@@ -44,3 +44,5 @@ include(":features:tvg")
 include(":features:search")
 include(":apps:desktop")
 include(":apps:android")
+
+include(":core:dolby")
