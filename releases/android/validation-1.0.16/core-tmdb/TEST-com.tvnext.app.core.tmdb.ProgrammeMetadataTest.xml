@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeMetadataTest[desktop]" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:57:25.026Z" hostname="0fcc891603bc" time="0.007">
+  <properties/>
+  <testcase name="kinopoiskFixturePrefersExactNameAndHttpsImage[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.0"/>
+  <testcase name="kinopoiskSearchPosterWithoutDescriptionCanBeEnrichedById[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.0"/>
+  <testcase name="realShortSynopsisWinsOverAPlaceholderInTheFullDescription[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.001"/>
+  <testcase name="episodeMarkersDoNotBlockSeriesDescriptions[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.0"/>
+  <testcase name="kinopoiskAliasesAndReleaseYearSelectOneConsistentMovie[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.001"/>
+  <testcase name="russianTitleAndYearAreMatched[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.0"/>
+  <testcase name="unrelatedMoviesAreRejected[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.001"/>
+  <testcase name="kinopoiskFullCardUsesShortDescriptionIfFullIsAbsent[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.0"/>
+  <testcase name="missingDescriptionSentencesAreNotTreatedAsEpgSynopses[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.001"/>
+  <testcase name="broadcastWrappersAreRemovedWithoutLosingTheSequelNumber[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeMetadataTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

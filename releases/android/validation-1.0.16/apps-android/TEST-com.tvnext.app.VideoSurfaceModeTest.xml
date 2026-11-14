@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.VideoSurfaceModeTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:55:15.766Z" hostname="0fcc891603bc" time="1.493">
+  <properties/>
+  <testcase name="hdAnimationUsesTheOriginalTextureViewWhileUhdAndHdrKeepTheNativePlane[28]" classname="com.tvnext.app.VideoSurfaceModeTest" time="0.697"/>
+  <testcase name="hdAnimationUsesTheOriginalTextureViewWhileUhdAndHdrKeepTheNativePlane" classname="com.tvnext.app.VideoSurfaceModeTest" time="0.75"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

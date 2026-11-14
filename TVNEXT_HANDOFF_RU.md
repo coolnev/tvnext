@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.15`, versionCode 1015, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.16`, versionCode 1016, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,17 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.15.apk`.
-Описание: `RELEASE_ANDROID_1.0.15_RU.md`.
-Сводка: `releases/android/validation-1.0.15.json`.
+APK: `releases/android/TVNext-1.0.16.apk`.
+Описание: `RELEASE_ANDROID_1.0.16_RU.md`.
+Сводка: `releases/android/validation-1.0.16.json`.
+
+В 1.0.16 (14.11) пользователь подтвердил повтор кадров SDR при нормальном звуке на TCL / Google TV; HDR нормально; выключение анимации устраняет сбой. Явно требует анимацию сохранить. Нельзя советовать выключить её как готовое решение. В Media3 1.11.0 найден штатный workaround b/362904942: c2.mtk flush портит BufferQueue SurfaceTexture, но shouldReleaseCodecInsteadOfFlushing final и ограничен videoSink!=null. Наш PlayerView direct path туда не попадает. Это гипотеза по исходникам и симптому, фактический codec TCL не получен, физической репродукции нет.
+
+Добавлен TextureSafeVideoRenderer через AndroidAudioRenderersFactory, штатные параметры Builder и Amlogic adapter сохранены. AndroidVideoOutputPolicy передаёт volatile textureOutput из AndroidView.update перед присоединением PlayerView.player. Защищается аппаратный c2.mtk/OMX.MTK/OMX.MediaTek либо аппаратный декодер TCL, только TextureView. На onStreamChanged/onPositionReset(keyframe)/onDisabled/MSG_SET_VIDEO_OUTPUT releaseCodec до super вместо flush/setOutputSurface. previousTextureOutput защищает выход Texture→Native. На этом пути maybeDropBuffersToKeyframe возвращает false (избегает flush), обычное позднее отбрасывание остаётся. Software/SurfaceView/другие устройства без изменений. Android Compose key дополнен PlaybackItem только для TextureView: новый источник получает свежую очередь; навигация/позиция/420ms animation не пересоздают вид. UHD/HDR защищённый native путь, AFR/аудио/EPG не менялись. Нельзя утверждать доказанное устранение на физическом TCL.
+
+Также пользователь просит описания сериалов с EPG приставкой T/S, пример Оперативная память. Ранее только кириллическая т/с распознавалась, а cleanProgrammeTitle мог оставлять тире. Общая SERIES_EPG_MARKER распознаёт кириллицу/латиницу/смеси; cleaner съедает все разделители и кавычки, сохраняет номера продолжений; kind=SERIES использует Kino type filter и TMDB searchTv/getTvDetails. Новости/broadcast имеют прежний приоритет. Без hardcode названия. Публичная карточка https://www.kinopoisk.ru/series/5599922/ есть. Прямая API-проверка невозможна: CONNECT403 среды, не ошибка ключа. Не утверждать полученное живое описание. HTTP fixtures проверяют оба источника и отказ от одноимённого FILM.
+
+433 проверок:83 Player+60 metadata+107 Channels+7 Home+176 Android API28/35. TextureCodecResetTest использует настоящий Media3 renderer/его callbacks и fake adapter: release, не flush; native controls реально flush; фабрика действительно добавляет новый renderer во всех AudioOutputMode. Existing lifecycle/settings/animation/focus tests прошли. Release/lint/encoding/Desktop compile/sign/ZIP/zipalign16KiB/key/PNG/native libs unchanged vs1.0.15 passed. Физического TCL/Ugoos/GPU-теста нет, API в этой сети заблокирован. Версия1.0.16/code1016, source c62d0bc839b65f89a817e55cf16601e314e4967b, APK SHA256 66bfd693909cc5c2980ac4642a22c04583bc0a6a1781169640c344b7c5f7fefe.
 
 В 1.0.15 (14.11) пользователь отверг плавность 1.0.14 и потребовал сравнить последние 5–6 версий с первоначальной анимацией. Подтвердил рывки и на HD, и на 4K. Затем явно уточнил приоритет: можно допустить меньшую плавность 4K, но обычные SD/HD/Full HD должны получить прежний путь анимации.
 

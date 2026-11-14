@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="KinopoiskUnofficialTest[desktop]" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:57:20.512Z" hostname="0fcc891603bc" time="0.418">
+  <properties/>
+  <testcase name="missingKeyDoesNotRequestTheNetworkAndHtmlIsNotReportedAsSuccess[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.166"/>
+  <testcase name="responseThatFinishesAfterClearCannotRepopulateTheCache[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.067"/>
+  <testcase name="legacyDevKeyCannotOverrideTheUnofficialDefaultOnUpgrade[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.127"/>
+  <testcase name="connectionCheckValidatesAuthorizedJsonFromTheActiveProvider[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.005"/>
+  <testcase name="clearingCacheRefetchesTheCardAndDoesNotChangeTheKeyOrEnableSwitch[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.015"/>
+  <testcase name="keyQuotaAndServerFailuresHaveDistinctMessages[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.009"/>
+  <testcase name="leavingSettingsCancelsTheConnectionCheck[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.007"/>
+  <testcase name="onlyUnofficialSearchDetailsAndStillsAreRequestedWithTheConfiguredKey[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.012"/>
+  <testcase name="networkFailureIsShownWithoutConfusingItWithAnInvalidKey[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

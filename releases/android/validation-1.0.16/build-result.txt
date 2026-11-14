@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+433 checks: 83 Player, 60 metadata, 107 Channels, 7 Home, 176 native API28/35.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Physical TV and live API not verified.
+Source: c62d0bc839b65f89a817e55cf16601e314e4967b

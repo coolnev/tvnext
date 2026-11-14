@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="WindowedDescriptionProgrammeTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:54:39.904Z" hostname="0fcc891603bc" time="0.003">
+  <properties/>
+  <testcase name="playingProgrammeFollowsPlaybackInsteadOfAnOldBrowseCursor[desktop]" classname="com.tvnext.app.feature.channels.ui.WindowedDescriptionProgrammeTest" time="0.0"/>
+  <testcase name="anotherChannelsProgrammeIsNotShownWhileEpgIsLoading[desktop]" classname="com.tvnext.app.feature.channels.ui.WindowedDescriptionProgrammeTest" time="0.0"/>
+  <testcase name="matchingArchiveCursorStillShowsTheSelectedProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.WindowedDescriptionProgrammeTest" time="0.0"/>
+  <testcase name="oldArchiveCursorCannotLeakIntoAnotherChannelsTimeline[desktop]" classname="com.tvnext.app.feature.channels.ui.WindowedDescriptionProgrammeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

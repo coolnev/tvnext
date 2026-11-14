@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.TextureCodecResetTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-14T20:55:15.353Z" hostname="0fcc891603bc" time="0.399">
+  <properties/>
+  <testcase name="nonKeyframePositionUpdatesDoNotRestartTheCodec[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.016"/>
+  <testcase name="nativeOutputOtherVendorsAndSoftwareKeepTheNormalMedia3Flush[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.014"/>
+  <testcase name="textureToNativeHandoffStillProtectsThePreviousTextureQueue[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.013"/>
+  <testcase name="disableAndNewChannelReleaseTheAffectedCodecBeforeMedia3CanFlushIt[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.016"/>
+  <testcase name="actualMedia3SeekReleasesAffectedTextureCodecWithoutFlushingItsQueue[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.014"/>
+  <testcase name="lateFrameCatchupCannotFlushTheAffectedQueue[28]" classname="com.tvnext.app.TextureCodecResetTest" time="0.103"/>
+  <testcase name="nonKeyframePositionUpdatesDoNotRestartTheCodec" classname="com.tvnext.app.TextureCodecResetTest" time="0.033"/>
+  <testcase name="nativeOutputOtherVendorsAndSoftwareKeepTheNormalMedia3Flush" classname="com.tvnext.app.TextureCodecResetTest" time="0.048"/>
+  <testcase name="textureToNativeHandoffStillProtectsThePreviousTextureQueue" classname="com.tvnext.app.TextureCodecResetTest" time="0.02"/>
+  <testcase name="disableAndNewChannelReleaseTheAffectedCodecBeforeMedia3CanFlushIt" classname="com.tvnext.app.TextureCodecResetTest" time="0.017"/>
+  <testcase name="actualMedia3SeekReleasesAffectedTextureCodecWithoutFlushingItsQueue" classname="com.tvnext.app.TextureCodecResetTest" time="0.017"/>
+  <testcase name="lateFrameCatchupCannotFlushTheAffectedQueue" classname="com.tvnext.app.TextureCodecResetTest" time="0.076"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.16",
+  "versionCode": 1016,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "c62d0bc839b65f89a817e55cf16601e314e4967b",
+  "sha256": "66bfd693909cc5c2980ac4642a22c04583bc0a6a1781169640c344b7c5f7fefe",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "video": {
+    "animationRetained": true,
+    "animationDurationMs": 420,
+    "hdSdr": "TextureView",
+    "uhdHdrProtected": "SurfaceView",
+    "media3Version": "1.11.0",
+    "upstreamIssue": "b/362904942",
+    "upstreamSource": "https://github.com/androidx/media/blob/1.11.0/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/video/MediaCodecVideoRenderer.java",
+    "protectedPath": "Hardware MediaTek or TCL using TextureView; software and native SurfaceView retain normal Media3 resets",
+    "operations": [
+      "stream change",
+      "keyframe position reset",
+      "disable",
+      "output surface handoff"
+    ],
+    "flushBasedKeyframeCatchupAvoided": true,
+    "ordinaryLateFrameDroppingRetained": true,
+    "freshSurfaceTexturePerSource": true,
+    "surfaceStableDuringNavigation": true,
+    "tclRootCauseHypothesis": true,
+    "actualTclCodecNotObserved": true
+  },
+  "series": {
+    "cyrillicLatinAndMixedPrefixes": true,
+    "cleanTitleWithoutSeparators": true,
+    "kinopoiskSeriesTypeFilterRetained": true,
+    "tmdbTvSearchAndDetails": true,
+    "noSameTitleMovieFallback": true,
+    "programmeExists": "https://www.kinopoisk.ru/series/5599922/",
+    "liveApiProbe": "Blocked by environment HTTP CONNECT 403; no live catalogue response verified"
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "amlogicFactoryPresentInDex": true,
+    "textureSafeRendererPresentInDex": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1015": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 60,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 107,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 176,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 433,
+  "limitations": [
+    "No physical TCL/Ugoos or GPU playback test; the reported looping-frame failure was not reproduced here.",
+    "Robolectric invokes the real Media3 reset/disable/stream/output callbacks with a fake codec adapter and checks release instead of flush.",
+    "Provider routing and description tests use HTTP fixtures; the live Kinopoisk API is blocked by this environment.",
+    "Desktop compiles; no Windows installer built."
+  ]
+}
