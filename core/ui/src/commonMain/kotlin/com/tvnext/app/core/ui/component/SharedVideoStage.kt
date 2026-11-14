@@ -13,6 +13,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import com.tvnext.app.core.player.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -24,9 +27,25 @@ private val RectAnimation = TwoWayConverter<Rect, AnimationVector4D>(
 fun SharedVideoStage(
     scene: VideoScene, controller: PlaybackController, animated: Boolean,
     modifier: Modifier = Modifier,
+    transitionKey: Any? = Unit,
+    hasVideoDestination: Boolean = true,
     surface: @Composable (Modifier, Boolean) -> Unit = { m, texture -> NativePlayerSurface(controller,m,texture) },
 ) {
     val target = scene.viewport
+    val hasItem by remember(controller) {
+        controller.state.map { it.item != null }.distinctUntilChanged()
+    }.collectAsState(initial = controller.state.value.item != null)
+    var presentedNavigation by remember { mutableStateOf(transitionKey) }
+    val navigationLayout = remember(transitionKey) { scene.layoutRevision }
+    val navigationPending = animated && presentedNavigation != transitionKey
+    LaunchedEffect(transitionKey, animated) {
+        if (navigationPending) {
+            // Keep the old video above destination chrome from its first frame,
+            // before the new placeholder has been measured and flight can start.
+            snapshotFlow { scene.layoutRevision }.first { it > navigationLayout }
+        }
+        presentedNavigation = transitionKey
+    }
     var held by remember { mutableStateOf<VideoViewport?>(null) }
     var previous by remember { mutableStateOf<VideoViewport?>(null) }
     var visible by remember { mutableStateOf(false) }
@@ -36,8 +55,9 @@ fun SharedVideoStage(
     val density = LocalDensity.current
     val flightOwner = remember { arrayOf<Any?>(null) }
     SideEffect { if(target!=null) {held=target;visible=true;surfaceCreated=true} }
-    LaunchedEffect(target==null) {
+    LaunchedEffect(target==null, navigationPending, hasVideoDestination, hasItem, animated) {
         if(target==null) {
+            if (animated && navigationPending && hasVideoDestination && hasItem) return@LaunchedEffect
             // Destination subcomposition attaches on the following frame.
             delay(100)
             visible=false;previous=null;moving=false
@@ -48,6 +68,7 @@ fun SharedVideoStage(
         val next=target ?: return@LaunchedEffect
         val old=previous
         previous=next
+        presentedNavigation=transitionKey
         val resized=old!=null && (abs(old.bounds.width-next.bounds.width)>1f || abs(old.bounds.height-next.bounds.height)>1f)
         if(animated && old!=null && (old.token!=next.token || resized) && !bounds.value.isEmpty) {
             moving=true
@@ -59,8 +80,8 @@ fun SharedVideoStage(
     val old=previous
     val awaitingFlight=animated && old!=null && target!=null && (old.token!=target.token ||
         abs(old.bounds.width-target.bounds.width)>1f || abs(old.bounds.height-target.bounds.height)>1f)
-    val handoffFlight=target==null && visible && viewport!=null && !bounds.value.isEmpty && bounds.value!=viewport.bounds
-    val flying=moving || awaitingFlight || handoffFlight
+    val handoffFlight=animated && target==null && visible && viewport!=null && !bounds.value.isEmpty
+    val flying=moving || awaitingFlight || handoffFlight || navigationPending
     val full=(if(bounds.value.isEmpty || old==null)viewport?.bounds ?: Rect.Zero else bounds.value).translate(-scene.origin)
     val clip=if(flying)full else (viewport?.clip ?: Rect.Zero).translate(-scene.origin)
     val usable=(target!=null || visible) && !clip.isEmpty && !full.isEmpty

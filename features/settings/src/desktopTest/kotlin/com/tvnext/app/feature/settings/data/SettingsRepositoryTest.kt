@@ -59,8 +59,20 @@ class SettingsRepositoryTest {
         assertEquals(true,repo.load().showArchiveLabel)
     }
 
+    @Test fun epgStatusSwitchPersistsWithoutDisablingEpgOrChangingItsSource() = runBlocking {
+        val repo=createRepo()
+        assertEquals(true,repo.load().showEpgUpdateStatus)
+        repo.save(repo.load().copy(epgUrl="https://example.invalid/epg.xml.gz", showEpgUpdateStatus=false))
+        val loaded=repo.load()
+        assertEquals(false,loaded.showEpgUpdateStatus)
+        assertEquals(true,loaded.epgEnabled)
+        assertEquals("https://example.invalid/epg.xml.gz",loaded.epgUrl)
+        repo.save(loaded.copy(showEpgUpdateStatus=true))
+        assertEquals(true,repo.load().showEpgUpdateStatus)
+    }
+
     @Test fun movieSettingsHaveEnglishAndChineseLabels() {
-        val keys=listOf("Кинопоиск","Подпись архива на видео","Использовать источник","Ключ не задан","API-ключ · {0}","Кэш очищен","Не удалось очистить кэш","Проверить соединение","Очистить кэш","Информация о фильмах","Размер постеров","Сортировка фильмов","Порядок категорий","Запоминать место в каталоге","Начало просмотра","Спрашивать","Всегда с начала","Описания и постеры из Кинопоиска")
+        val keys=listOf("Кинопоиск","Подпись архива на видео","Статус обновления EPG","Использовать источник","Ключ не задан","API-ключ · {0}","Кэш очищен","Не удалось очистить кэш","Проверить соединение","Очистить кэш","Информация о фильмах","Размер постеров","Сортировка фильмов","Порядок категорий","Запоминать место в каталоге","Начало просмотра","Спрашивать","Всегда с начала","Описания и постеры из Кинопоиска")
         for(language in listOf(com.tvnext.app.core.common.UiLanguage.ENGLISH,com.tvnext.app.core.common.UiLanguage.CHINESE)) {
             for(key in keys)kotlin.test.assertNotEquals(key,com.tvnext.app.core.ui.i18n.UiTranslations.text(language,key))
         }

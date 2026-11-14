@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.test.*
@@ -33,6 +34,67 @@ class SharedVideoStageUiTest {
         override fun setVolume(volume: Float)=Unit
         override fun setMuted(muted: Boolean)=Unit
         override fun release()=Unit
+    }
+
+    @Test fun navigationRaisesVideoBeforeTheSamePlaceholderReceivesItsNewBounds() = runDesktopComposeUiTest(width=960,height=540) {
+        val scene=VideoScene();val player=Player();val token=Any()
+        var destination by mutableStateOf(0)
+        val videoColor=Color(0xFF178A87)
+        scene.update(VideoViewport(token,Rect(0f,0f,960f,540f),Rect(0f,0f,960f,540f),player))
+        setContent { Box(Modifier.fillMaxSize()) {
+            SharedVideoStage(scene,player,true,transitionKey=destination,surface={m,_ -> Box(m.background(videoColor))})
+            if(destination!=0) Box(Modifier.width(400.dp).fillMaxHeight().background(Color.Magenta))
+        } }
+        waitForIdle();mainClock.autoAdvance=false
+        // A navigation composition precedes the destination's layout callback.
+        // Keep the old viewport registered while the new chrome has appeared.
+        runOnIdle{destination=1}
+        mainClock.advanceTimeByFrame();waitForIdle()
+        assertEquals(videoColor,onRoot().captureToImage().toPixelMap()[100,100])
+        runOnIdle{scene.update(VideoViewport(token,Rect(400f,32f,720f,212f),Rect(400f,32f,720f,212f),player))}
+        mainClock.advanceTimeBy(650);waitForIdle()
+        assertEquals(Color.Magenta,onRoot().captureToImage().toPixelMap()[100,100])
+        assertEquals(320f,onNodeWithTag("shared-video-stage").fetchSemanticsNode().boundsInRoot.width,1f)
+    }
+
+    @Test fun destinationChromeCannotFlashBeforeVideoShrinksIntoWindowOrHome() = runDesktopComposeUiTest(width=960,height=540) {
+        val scene=VideoScene();val player=Player()
+        var destination by mutableStateOf(0)
+        var attached by mutableStateOf(true)
+        var mounts=0
+        val videoColor=Color(0xFF178A87)
+        setContent { CompositionLocalProvider(LocalVideoScene provides scene) { Box(Modifier.fillMaxSize()) {
+            SharedVideoStage(scene,player,true,transitionKey=destination,surface={m,_ ->
+                DisposableEffect(Unit){mounts++;onDispose{}}
+                Box(m.background(videoColor).testTag("native-video"))
+            })
+            if(destination!=0) Box(Modifier.width((if(destination==1)400 else 650).dp).fillMaxHeight()
+                .background(Color.Magenta).testTag("destination-chrome"))
+            if(attached) when(destination) {
+                0 -> PlayerSurface(player,Modifier.fillMaxSize())
+                1 -> PlayerSurface(player,Modifier.offset(400.dp,32.dp).size(320.dp,180.dp))
+                else -> PlayerSurface(player,Modifier.offset(650.dp,80.dp).size(240.dp,135.dp))
+            }
+        } } }
+        waitForIdle()
+        mainClock.autoAdvance=false
+        for((next,width,point) in listOf(Triple(1,320f,100 to 100),Triple(2,240f,450 to 60))) {
+            runOnIdle{destination=next;attached=false}
+            mainClock.advanceTimeBy(160);waitForIdle()
+            val frame=onRoot().captureToImage()
+            assertEquals(videoColor,frame.toPixelMap()[point.first,point.second],
+                "Destination $next must stay behind the old video before its preview is measured")
+            System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+                val file=java.io.File(root,"video-handoff-before-shrink-$next.png");file.parentFile.mkdirs()
+                org.jetbrains.skia.Image.makeFromBitmap(frame.asSkiaBitmap()).encodeToData()?.use {file.writeBytes(it.bytes)}
+            }
+            runOnIdle{attached=true}
+            mainClock.advanceTimeBy(650);waitForIdle()
+            assertEquals(width,onNodeWithTag("native-video").fetchSemanticsNode().boundsInRoot.width,1f)
+            assertEquals(Color.Magenta,onRoot().captureToImage().toPixelMap()[point.first,point.second])
+        }
+        assertEquals(1,mounts)
+        assertEquals("live",player.state.value.item?.id)
     }
 
     @Test fun oneSurfaceAnimatesAcrossFullscreenGuideWindowAndHomeWithoutRemounting() = runDesktopComposeUiTest(width=960,height=540) {

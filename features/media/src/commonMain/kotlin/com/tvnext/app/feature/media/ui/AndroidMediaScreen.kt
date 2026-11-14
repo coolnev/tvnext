@@ -67,6 +67,9 @@ internal fun AndroidMediaScreen(
     var pauseFeedback by remember { mutableStateOf(false) }
     var seekFeedback by remember { mutableStateOf(0L) }
     var pane by remember { mutableStateOf(MediaPane.CATEGORIES) }
+    com.tvnext.app.core.ui.component.ReportPlaybackOverlays(
+        contentOverlay = pane != MediaPane.VIDEO || state.pendingResume != null,
+    )
     var categoryIndex by remember { mutableStateOf(0) }
     var filmIndex by remember { mutableStateOf(0) }
     var highlightedFilmId by remember {mutableStateOf<String?>(null)}

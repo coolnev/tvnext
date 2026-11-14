@@ -110,19 +110,21 @@ class SettingsAndPlayerOverlaysTest {
         val visibility=PlaybackOverlayVisibility()
         var controls by mutableStateOf(false)
         var secondPanel by mutableStateOf(false)
+        var browserOpen by mutableStateOf(false)
+        var statusEnabled by mutableStateOf(true)
         var screenMounted by mutableStateOf(true)
         var videoState by mutableStateOf(PlaybackState.PLAYING)
         setContent { MaterialTheme(darkColorScheme()) {
             CompositionLocalProvider(LocalPlaybackOverlayVisibility provides visibility) {
                 Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
                     if(screenMounted) {
-                        ReportPlaybackOverlays(bottomPanel=controls)
+                        ReportPlaybackOverlays(bottomPanel=controls,contentOverlay=browserOpen)
                         VideoPlaybackStatus(videoState,null)
                     }
                     if(secondPanel) ReportPlaybackOverlays(bottomPanel=true)
                     if(controls && screenMounted) Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                         .height(180.dp).background(Color.Black).testTag("bottom-controls"))
-                    EpgLoadingIndicator("Скачивание EPG: 12 МБ",Modifier.align(Alignment.BottomCenter).padding(12.dp))
+                    EpgLoadingIndicator("Скачивание EPG: 12 МБ",Modifier.align(Alignment.BottomCenter).padding(12.dp),statusEnabled)
                 }
             }
         } }
@@ -131,6 +133,14 @@ class SettingsAndPlayerOverlaysTest {
         assertEquals(480f,bounds.center.x,1f)
         assertTrue(bounds.bottom>500f)
         screenshot("epg-bottom-centre.png")
+        runOnIdle{browserOpen=true}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        runOnIdle{browserOpen=false;statusEnabled=false}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        runOnIdle{browserOpen=true;statusEnabled=true}
+        onNodeWithTag("epg-loading-status").assertDoesNotExist()
+        runOnIdle{browserOpen=false}
+        onNodeWithText("Скачивание EPG: 12 МБ").assertIsDisplayed()
         runOnIdle{controls=true}
         onNodeWithTag("epg-loading-status").assertDoesNotExist()
         screenshot("epg-hidden-by-bottom-panel.png")

@@ -472,6 +472,7 @@ class MainActivity : ComponentActivity() {
                         animateVideoTransitions = videoAnimation,
                         overlayFullScreen = recoveryScreen == RecoveryScreen.CHANNEL_EDITOR ||
                             recoveryScreen == RecoveryScreen.RECORDINGS || recoveryScreen == RecoveryScreen.RECORDING_PLAYBACK,
+                        overlayVisible = recoveryScreen != RecoveryScreen.NONE || parentalPrompt != null || epgRecordingRequest != null,
                         overlayContent = {
                     parentalPrompt?.let { request ->
                         ParentalPinEntryDialog(

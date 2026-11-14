@@ -29,6 +29,8 @@ data class AppSettings(
     val clockWithoutBackground: Boolean = false,
     /** Persistent compact label while playing catch-up television. */
     val showArchiveLabel: Boolean = true,
+    /** Passive update status only; never disables background EPG loading. */
+    val showEpgUpdateStatus: Boolean = true,
     /** Android TV EPG description placement; the default is the full-width bottom strip. */
     val programmeDescriptionRight: Boolean = false,
     /**

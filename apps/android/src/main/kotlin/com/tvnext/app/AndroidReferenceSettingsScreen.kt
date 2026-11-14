@@ -292,6 +292,9 @@ internal fun AndroidReferenceSettingsScreen(
                             ReferenceToggle(uiText("Подпись архива на видео"), s.showArchiveLabel, entryHeight) {
                                 component.dispatch(SettingsIntent.ShowArchiveLabelChanged(it))
                             }
+                            ReferenceToggle(uiText("Статус обновления EPG"), s.showEpgUpdateStatus, entryHeight) {
+                                component.dispatch(SettingsIntent.ShowEpgUpdateStatusChanged(it))
+                            }
                             ReferenceRow(uiText("Информация о передаче"), s.epgInfoDurationSeconds?.let {
                                 if (it == 0) uiText("Всегда") else uiText("{0} секунды", it)
                             } ?: uiText("Выключено"), height = entryHeight, onClick = {

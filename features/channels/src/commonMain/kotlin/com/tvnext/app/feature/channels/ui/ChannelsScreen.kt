@@ -613,6 +613,10 @@ private fun WatchingLayout(
     val fullscreenProgrammePanelVisible = immersive && !categoriesOpen && (!isAndroidPlatform() || !drawerOpen) &&
         (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible)
 
+    com.tvnext.app.core.ui.component.ReportPlaybackOverlays(
+        contentOverlay = !immersive || drawerOpen || categoriesOpen,
+    )
+
     // Show the full-screen «Телепрограмма» info block on every channel switch.
     LaunchedEffect(state.selectedChannelId, epgInfoDurationSeconds) {
         val duration = epgInfoDurationSeconds ?: return@LaunchedEffect

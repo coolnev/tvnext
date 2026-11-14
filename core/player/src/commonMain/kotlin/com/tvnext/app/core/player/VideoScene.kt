@@ -14,11 +14,14 @@ class VideoScene {
     var viewport by mutableStateOf<VideoViewport?>(null)
         private set
     var origin by mutableStateOf(Offset.Zero)
+    var layoutRevision by mutableLongStateOf(0L)
+        private set
 
     fun update(viewport: VideoViewport) {
         if (viewport.bounds.width <= 0 || viewport.bounds.height <= 0) return
         viewports[viewport.token] = viewport
         this.viewport = viewports.values.lastOrNull()
+        layoutRevision++
     }
     fun remove(token: Any) {
         viewports.remove(token)

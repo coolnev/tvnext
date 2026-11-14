@@ -80,6 +80,7 @@ sealed interface SettingsIntent : MviIntent {
     data class ClockPositionChanged(val position: ClockPosition) : SettingsIntent
     data class ClockWithoutBackgroundChanged(val enabled: Boolean) : SettingsIntent
     data class ShowArchiveLabelChanged(val enabled: Boolean) : SettingsIntent
+    data class ShowEpgUpdateStatusChanged(val enabled: Boolean) : SettingsIntent
     data class ProgrammeDescriptionPlacementChanged(val right: Boolean) : SettingsIntent
     data class StartFullscreenChanged(val enabled: Boolean) : SettingsIntent
     data class ShowChannelNumbersChanged(val enabled: Boolean) : SettingsIntent
@@ -179,6 +180,8 @@ class DefaultSettingsComponent(
             state.copy(settings = state.settings.copy(clockWithoutBackground = intent.enabled))
         is SettingsIntent.ShowArchiveLabelChanged ->
             state.copy(settings = state.settings.copy(showArchiveLabel = intent.enabled))
+        is SettingsIntent.ShowEpgUpdateStatusChanged ->
+            state.copy(settings = state.settings.copy(showEpgUpdateStatus = intent.enabled))
         is SettingsIntent.ProgrammeDescriptionPlacementChanged ->
             state.copy(settings = state.settings.copy(programmeDescriptionRight = intent.right))
         is SettingsIntent.StartFullscreenChanged ->
@@ -254,6 +257,7 @@ class DefaultSettingsComponent(
             is SettingsIntent.ClockPositionChanged,
             is SettingsIntent.ClockWithoutBackgroundChanged,
             is SettingsIntent.ShowArchiveLabelChanged,
+            is SettingsIntent.ShowEpgUpdateStatusChanged,
             is SettingsIntent.ProgrammeDescriptionPlacementChanged,
             is SettingsIntent.StartFullscreenChanged,
             is SettingsIntent.ShowChannelNumbersChanged,

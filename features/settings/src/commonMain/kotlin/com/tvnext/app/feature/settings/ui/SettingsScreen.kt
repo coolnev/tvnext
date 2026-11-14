@@ -296,6 +296,13 @@ private fun InterfaceSection(
             selected = state.settings.showArchiveLabel,
             onClick = { component.dispatch(SettingsIntent.ShowArchiveLabelChanged(!state.settings.showArchiveLabel)) },
         )
+        if (isAndroidPlatform()) {
+            SettingsSelectRow(
+                label = uiText("Статус обновления EPG"),
+                selected = state.settings.showEpgUpdateStatus,
+                onClick = { component.dispatch(SettingsIntent.ShowEpgUpdateStatusChanged(!state.settings.showEpgUpdateStatus)) },
+            )
+        }
         if (!isAndroidPlatform()) {
         Text(
             text = uiText("Разрешение окна (Windows)"),

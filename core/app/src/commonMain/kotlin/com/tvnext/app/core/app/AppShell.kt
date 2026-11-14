@@ -101,7 +101,9 @@ fun AppShell(
     overlayContent: (@Composable () -> Unit)? = null,
     /** Hide ordinary focusable navigation while a full-screen Android page is visible. */
     overlayFullScreen: Boolean = false,
-    /** Global EPG import status: visible even while a channel is playing. */
+    /** Any Android management dialog or page covers clean playback. */
+    overlayVisible: Boolean = false,
+    /** Passive EPG import status, shown only over unobstructed full-screen playback. */
     epgLoading: Boolean = false,
     epgLoadedChannels: Int = 0,
     epgLoadedProgrammes: Int = 0,
@@ -139,7 +141,12 @@ fun AppShell(
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .onGloballyPositioned {scene?.origin=it.positionInRoot()}) {
             if(scene!=null && sharedPlaybackController!=null) com.tvnext.app.core.ui.component.SharedVideoStage(
-                scene,sharedPlaybackController,animateVideoTransitions)
+                scene,sharedPlaybackController,animateVideoTransitions,
+                transitionKey = Triple(activeTab, activeTab == AppTab.CHANNELS && immersive, overlayFullScreen),
+                hasVideoDestination = !overlayFullScreen && when(activeTab) {
+                    AppTab.HOME, AppTab.CHANNELS, AppTab.TV_GUIDE, AppTab.MEDIA_LIBRARY -> true
+                    else -> false
+                })
             if (!overlayFullScreen) {
             Column(
                 modifier = Modifier
@@ -284,11 +291,13 @@ fun AppShell(
             }
 
             }
-            // Only the management page is focusable while it is open; prevent D-pad
-            // navigation from reaching Home controls hidden behind the page.
-            if (isAndroidPlatform() && epgLoading && !overlayFullScreen &&
-                activeTab != AppTab.SETTINGS && textNotice == null) {
+            // Browsing and dialogs must never have import status over their content.
+            if (isAndroidPlatform() && epgLoading && immersive &&
+                (activeTab == AppTab.CHANNELS || activeTab == AppTab.MEDIA_LIBRARY) &&
+                scene?.viewport != null && !overlayFullScreen && !overlayVisible &&
+                !showDiagnostics && textNotice == null && reminder == null) {
                 com.tvnext.app.core.ui.component.EpgLoadingIndicator(
+                    enabled = settings.showEpgUpdateStatus,
                     text = epgProgressText?.takeIf { it.isNotBlank() } ?: if (epgLoadedProgrammes > 0)
                         uiText("EPG: {0} каналов · {1} передач", epgLoadedChannels, epgLoadedProgrammes)
                         else uiText("Загрузка EPG…"),

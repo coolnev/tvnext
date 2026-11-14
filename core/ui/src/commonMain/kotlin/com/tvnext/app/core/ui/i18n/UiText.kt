@@ -64,6 +64,7 @@ object UiTranslations {
         "Устройство не сообщает доступные режимы экрана" to ("The device does not report supported display modes" to "设备未报告支持的显示模式"),
         "Кинопоиск" to ("Kinopoisk" to "Kinopoisk"),
         "Подпись архива на видео" to ("Archive label on video" to "显示回看标注"),
+        "Статус обновления EPG" to ("EPG update status" to "节目单更新状态"),
         "Использовать источник" to ("Use source" to "使用此来源"),
         "Ключ не задан" to ("Key not set" to "未设置密钥"),
         "API-ключ · {0}" to ("API key · {0}" to "API 密钥 · {0}"),

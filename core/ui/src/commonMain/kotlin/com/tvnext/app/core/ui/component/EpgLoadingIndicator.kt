@@ -13,9 +13,10 @@ import androidx.compose.ui.unit.dp
 
 /** Visibility affects only this passive label; EPG import continues in the background. */
 @Composable
-fun EpgLoadingIndicator(text: String, modifier: Modifier = Modifier) {
+fun EpgLoadingIndicator(text: String, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val visibility = LocalPlaybackOverlayVisibility.current
-    if (visibility?.bottomPanelVisible == true || visibility?.videoLoading == true) return
+    if (!enabled || visibility?.bottomPanelVisible == true || visibility?.videoLoading == true ||
+        visibility?.contentOverlayVisible == true) return
     Row(modifier.testTag("epg-loading-status")
         .background(Color.Black.copy(alpha = 0.82f), RoundedCornerShape(4.dp))
         .padding(horizontal = 10.dp, vertical = 7.dp),
