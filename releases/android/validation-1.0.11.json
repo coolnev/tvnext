@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.11",
+  "versionCode": 1011,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "8621a3d5e69f3b954d5f2f59ec7ab7ec366bb8c4",
+  "sha256": "3830d7e678bf17d4dd97d641b35dbc1ffc30e18cba976906476f559aea12981c",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "changes": {
+    "remainingTimeOnSeparateLineAboveProgress": true,
+    "formatBadgesAlignedRight": true,
+    "compactPanelRetained": true
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1010": true
+  },
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "suite": "FullscreenProgrammePanelUiTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 5,
+  "visualReview": [
+    "1080p archive panel: separate remaining line just above timeline, format badges at right edge",
+    "Live panel with long programme names; controls fit at 720/1280/1920 widths"
+  ],
+  "limitations": [
+    "Compose UI fixtures reviewed; APK was not run on a physical Android TV or emulator.",
+    "Existing player/audio/EPG mechanisms unchanged; their full regression suites were not rerun for this layout change.",
+    "Desktop compiles; no Windows installer built."
+  ]
+}

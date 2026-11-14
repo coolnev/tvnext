@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="FullscreenProgrammePanelUiTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-14T13:39:51.574Z" hostname="0fcc891603bc" time="2.001">
+  <properties/>
+  <testcase name="doubleRightPassesThroughPassivePanelAndOpensASeparateDescriptionView[desktop]" classname="com.tvnext.app.feature.channels.ui.FullscreenProgrammePanelUiTest" time="1.037"/>
+  <testcase name="liveWithoutEpgSkipsDisabledSeekButtonsAndOffersRecording[desktop]" classname="com.tvnext.app.feature.channels.ui.FullscreenProgrammePanelUiTest" time="0.13"/>
+  <testcase name="remoteActionsFireOnceAndPausedOrLiveModeChangesKeepUsableFocus[desktop]" classname="com.tvnext.app.feature.channels.ui.FullscreenProgrammePanelUiTest" time="0.17"/>
+  <testcase name="longTitlesAndThreeDifferentWidthsDoNotWrapTheControls[desktop]" classname="com.tvnext.app.feature.channels.ui.FullscreenProgrammePanelUiTest" time="0.322"/>
+  <testcase name="archiveUsesTwoEqualCardsAndOneTimelineWithoutSynopsisOrDescriptionButton[desktop]" classname="com.tvnext.app.feature.channels.ui.FullscreenProgrammePanelUiTest" time="0.337"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
