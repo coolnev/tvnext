@@ -13,7 +13,8 @@ import org.koin.core.context.GlobalContext
 /** Each title owns its state: old callbacks cannot paint a different selected film. */
 @Composable
 internal fun rememberProgrammeMetadata(programme: EpgProgramme?, debounceMs: Long = 150): ProgrammeMetadata? =
-    rememberProgrammeMetadataRequest(programme?.let { ProgrammeMetadataRequest(it.title, it.category, it.description) }, debounceMs)
+    rememberProgrammeMetadataRequest(programme?.let { ProgrammeMetadataRequest(it.title, it.category, it.description,
+        ((it.stop-it.start)/60_000L).takeIf { minutes -> minutes in 1..600 }?.toInt(), it.episodeNum) }, debounceMs)
 
 // Explicit catalogue helper retained for catalogue fixtures; live EPG always supplies its context.
 @Composable

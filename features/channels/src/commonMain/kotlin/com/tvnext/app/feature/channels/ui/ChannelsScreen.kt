@@ -489,6 +489,11 @@ private fun WatchingLayout(
      * RIGHT arrow behaves the same way).
      */
     fun selectCategory(category: String?) {
+        // A windowed programme pane replaces the channel list. It belongs to
+        // the old browsing session and must close before categories disappear.
+        onHideTimeline()
+        timelineFocused = false
+        archivePreview = null
         onCategorySelected(category)
         categoriesOpen = false
         if (isAndroidPlatform() || category == null || selectedChannel.category == category) {

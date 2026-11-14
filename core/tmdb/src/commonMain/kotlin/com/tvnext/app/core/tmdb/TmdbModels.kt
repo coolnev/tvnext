@@ -39,6 +39,7 @@ data class TmdbDetails(
     val genres: List<TmdbGenre> = emptyList(),
     val runtime: Int? = null,
     val episode_run_time: List<Int> = emptyList(),
+    val type: String? = null,
     val original_language: String? = null,
     val credits: TmdbCredits? = null,
 )

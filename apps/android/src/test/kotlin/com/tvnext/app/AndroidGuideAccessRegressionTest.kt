@@ -32,6 +32,15 @@ import java.lang.reflect.Proxy
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28, 35], application = Application::class)
 class AndroidGuideAccessRegressionTest {
+    @Test fun guideSystemBackUsesTheVisibleUiHandlerAndReleasesItOnDisposal()=guide(null) { f ->
+        assertFalse(f.component.consumeBack())
+        var calls=0
+        f.component.setBackHandler {calls++;true}
+        assertTrue(f.component.consumeBack());assertEquals(1,calls)
+        f.component.setBackHandler {false}
+        assertFalse(f.component.consumeBack())
+    }
+
     @Test fun unlockingNotifiesAllViewsWithoutPersistingAccess() {
         val context = RuntimeEnvironment.getApplication()
         val prefs = context.getSharedPreferences("parental_access_v1", Context.MODE_PRIVATE)

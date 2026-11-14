@@ -138,6 +138,8 @@ interface TvgComponent {
     val focusState: StateFlow<TvgFocusState>
     val playbackController: PlaybackController
     fun dispatch(intent: TvgIntent)
+    fun setBackHandler(handler: () -> Boolean) = Unit
+    fun consumeBack(): Boolean = false
 }
 
 /**
@@ -177,6 +179,10 @@ class DefaultTvgComponent(
         ),
         scope = componentContext.coroutineScope(mainContext),
     ) {
+
+    private var uiBackHandler: () -> Boolean = { false }
+    override fun setBackHandler(handler: () -> Boolean) { uiBackHandler = handler }
+    override fun consumeBack(): Boolean = uiBackHandler()
 
     // Main.immediate/cache hits can run loadGrid before the constructor returns.
     // Create every state/query field before starting any coroutine.

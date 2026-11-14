@@ -187,9 +187,10 @@ class DefaultAppComponent(
     private fun handleAppBack() {
         val activeTab = childStack.value.active.configuration
         if (activeTab == AppTab.TV_GUIDE) {
-            // TV Guide is a transient overlay over the player. One Back closes
-            // it and returns directly to clean fullscreen video. It must never
-            // fall through to the generic "tab -> Home" rule.
+            val guide = (childStack.value.active.instance as? AppTabComponent.Tvg)?.component
+            if (guide?.consumeBack() == true) return
+            // The UI first returns focus to Categories. A subsequent Back
+            // closes the guide and restores clean fullscreen playback.
             backExitTimer?.cancel()
             _backExit.value = BackExitState.IDLE
             requestForceImmersive()

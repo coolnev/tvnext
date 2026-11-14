@@ -42,6 +42,7 @@ class IndexedEpgRepository(
     private val importSignatures = ConcurrentHashMap<String,String>()
     @Volatile private var configuration: Configuration? = null
     @Volatile private var autoJob: Job? = null
+    @Volatile private var maintenanceJob: Job? = null
     @Volatile private var nextRefreshAt = 0L
     private val _state = MutableStateFlow(EpgState())
     private val _version = MutableStateFlow(0L)
@@ -71,6 +72,14 @@ class IndexedEpgRepository(
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { /* Storage cleanup retries without hiding the active guide. */ }
         finally { importLock.unlock() }
+    }
+
+    private fun scheduleMaintenance() {
+        if (!store.storageManaged) return
+        synchronized(this) {
+            if (maintenanceJob?.isActive == true) return
+            maintenanceJob = scope.launch { maintainStorage() }
+        }
     }
 
     private fun maintain(cfg: Configuration) {
@@ -176,7 +185,6 @@ class IndexedEpgRepository(
             val result = withTimeoutOrNull(refreshTimeoutMs) { withContext(worker) {
                 val cfg = sources()
                 for (source in cfg.sources) if (store.snapshot(source.id) == null) migrate(source)
-                maintain(cfg)
                 if (!cfg.enabled) return@withContext AppResult.Success(Unit)
                 var failure = false
                 var failureNotice: String? = null
@@ -203,7 +211,9 @@ class IndexedEpgRepository(
                     } else source
                     if(effective.channels.isNotEmpty() && !import(effective)) { failure = true; failureNotice = _state.value.lastError ?: failureNotice }
                 }
-                maintain(cfg)
+                // Import has committed. Disk housekeeping is independent of
+                // visible loading and must not leave a "Saving" spinner up.
+                _state.update { it.copy(isLoading = false, notice = null) }
                 refreshState()
                 _state.update { it.copy(isLoading = false, lastError = if (failure)
                     (failureNotice ?: "Один из источников EPG не обновился. Сохранённая программа доступна.") else null) }
@@ -223,7 +233,11 @@ class IndexedEpgRepository(
             nextRefreshAt = clock() + RETRY_MS
             _state.update { it.copy(lastError = "Не удалось обновить EPG. Сохранённая программа доступна.") }
             AppResult.Failure(AppError.Database(error))
-        } finally { _state.update { it.copy(isLoading = false, notice = null) }; importLock.unlock() }
+        } finally {
+            _state.update { it.copy(isLoading = false, notice = null) }
+            importLock.unlock()
+            scheduleMaintenance()
+        }
     }
 
     private fun needsBackup(cfg: Configuration, source: Source, allChannels: Boolean = false): Boolean {
@@ -298,6 +312,7 @@ class IndexedEpgRepository(
                 return false
             }
             onSourceImported(source.url)
+            _state.update { it.copy(isLoading = false, notice = null) }
             val noCurrent = store.storageManaged && store.now(source.id,source.channels.map(::key),clock()).isEmpty()
             if (noCurrent) {
                 store.failed(source.id,generation,clock()+RETRY_MS)

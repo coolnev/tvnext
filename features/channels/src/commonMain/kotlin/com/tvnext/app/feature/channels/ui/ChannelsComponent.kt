@@ -496,6 +496,9 @@ class DefaultChannelsComponent(
                 loadNowPlaying()
             }
             is ChannelsIntent.CategorySelected -> {
+                timelineJob?.cancel()
+                timelineJob = null
+                _timeline.value = ChannelTimelineState()
                 rebuildFilteredAsync()
                 // Смена категории: visibleChannelIds всё ещё хранит ID каналов
                 // старой категории (LazyColumn ещё не перекомпонован). Без сброса

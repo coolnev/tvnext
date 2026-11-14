@@ -226,6 +226,28 @@ class ChannelsComponentTest {
         return component
     }
 
+    @Test fun changingCategoryClosesTheOldProgrammePaneAndLateEpgCannotRestoreIt()=runBlocking<Unit> {
+        val entered=kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release=kotlinx.coroutines.CompletableDeferred<Unit>()
+        val finished=kotlinx.coroutines.CompletableDeferred<Unit>()
+        val epg=object:FakeEpgRepository() {
+            override suspend fun getProgrammesInRange(channels:List<Channel>,from:Long,to:Long):Map<String,List<EpgProgramme>> {
+                entered.complete(Unit)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {release.await();finished.complete(Unit)}
+                return emptyMap()
+            }
+        }
+        val component=createComponent(FakePlaybackController(),epg=epg)
+        component.dispatch(ChannelsIntent.ShowChannelTimeline("7"))
+        withTimeout(5000){entered.await()}
+        component.dispatch(ChannelsIntent.CategorySelected("Другая категория"))
+        assertNull(component.timeline.value.channelId)
+        release.complete(Unit)
+        withTimeout(5000){finished.await()}
+        delay(50)
+        assertNull(component.timeline.value.channelId)
+    }
+
     @Test fun refreshingAnOpenTimelineNeverPublishesAnEmptyOrSingleRowPlaceholder() = runBlocking<Unit> {
         val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
         val release = kotlinx.coroutines.CompletableDeferred<Unit>()

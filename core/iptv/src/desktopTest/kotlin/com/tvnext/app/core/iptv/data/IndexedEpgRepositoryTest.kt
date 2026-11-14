@@ -59,14 +59,30 @@ class IndexedEpgRepositoryTest {
             override suspend fun getFavoriteIds(): Set<String> = emptySet()
             override suspend fun setFavorite(channelId: String, favorite: Boolean) = Unit
         }
-        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(), timeoutMs: Long = 20 * 60_000L, refreshTimeoutMs: Long = 8 * 60_000L,
+        fun repo(automatic: Boolean = false, fallback: List<String> = emptyList(), legacy: List<String> = emptyList(), timeoutMs: Long = 20 * 60_000L, refreshTimeoutMs: Long = 8 * 60_000L, maintenance: (Boolean)->Unit = {},
             stream: suspend (String, suspend (EpgTextSource) -> Unit) -> Boolean): IndexedEpgRepository =
             IndexedEpgRepository({ store }, playlistRepo, channelRepo, object : EpgConfigProvider {
                 override suspend fun isEnabled() = true
                 override suspend fun userEpgUrl(): String? = null
             }, { fallback }, stream, { _, _ -> legacy }, worker = Dispatchers.IO.limitedParallelism(1),
-                clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs, refreshTimeoutMs = refreshTimeoutMs).also { repos.add(it) }
+                clock = { time }, automaticRefresh = automatic, importTimeoutMs = timeoutMs, refreshTimeoutMs = refreshTimeoutMs, onMaintenance=maintenance).also { repos.add(it) }
         suspend fun close() { repos.forEach { it.close() }; driver.close() }
+    }
+
+    @Test fun committedImportClearsSavingBeforeSlowMaintenanceAndWithoutChannelSwitch()=runBlocking<Unit> {
+        val f=Fixture(managed=true)
+        val entered=CountDownLatch(1);val release=CountDownLatch(1)
+        try {
+            val r=f.repo(maintenance={
+                entered.countDown()
+                check(release.await(5,TimeUnit.SECONDS)) { "Maintenance never released" }
+            }) {_,consume->StringEpgTextSource("<tv>${programme()}</tv>").use{consume(it)};true}
+            assertIs<AppResult.Success<Unit>>(withTimeout(2000){r.refreshIfStale(true)})
+            assertTrue(entered.await(2,TimeUnit.SECONDS))
+            assertFalse(r.observeState().value.isLoading)
+            assertNull(r.observeState().value.notice)
+            assertEquals("Новости",r.getNowPlaying(f.roster,now)["c"]?.title)
+        } finally {release.countDown();f.close()}
     }
 
     @Test fun managedIndexStoresOnlyMissingBackupChannelsAndRevalidatesWithoutAnotherGeneration()=runBlocking<Unit> {

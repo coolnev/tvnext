@@ -86,7 +86,8 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     val gridFocus = remember { FocusRequester() }
     var gridReady by remember { mutableStateOf(false) }
     val toolbarFocus = remember { FocusRequester() }
-    var toolbarFocused by remember { mutableStateOf(false) }
+    var categoryButtonFocused by remember { mutableStateOf(false) }
+    var returningToCategories by remember { mutableStateOf(false) }
     var okHeld by remember { mutableStateOf(false) }
     var okLong by remember { mutableStateOf(false) }
     var okJob by remember { mutableStateOf<Job?>(null) }
@@ -104,6 +105,18 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     var nowRequest by remember { mutableIntStateOf(0) }
     var categoriesOpen by remember { mutableStateOf(false) }
     var details by remember { mutableStateOf<ProgrammeInfo?>(null) }
+    fun consumeGuideBack(): Boolean {
+        if (categoryButtonFocused && !categoriesOpen && details == null) return false
+        details = null
+        categoriesOpen = false
+        returningToCategories = true
+        runCatching { toolbarFocus.requestFocus() }
+        return true
+    }
+    DisposableEffect(component) {
+        component.setBackHandler { consumeGuideBack() }
+        onDispose { component.setBackHandler { false } }
+    }
     val categoryMemory = remember { mutableMapOf<String?, String>() }
     val hourPx = with(density) { GuideHourWidth.toPx() }
     val selectedChannel = rows.firstOrNull { it.id == channelId }
@@ -168,7 +181,8 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
     LaunchedEffect(categoriesOpen, details, rows.isNotEmpty(), gridReady) {
         if (!categoriesOpen && details == null && gridReady) {
             withFrameNanos { }
-            if (rows.isNotEmpty() || state.isLoading) gridFocus.requestFocus() else toolbarFocus.requestFocus()
+            if (returningToCategories) toolbarFocus.requestFocus()
+            else if (rows.isNotEmpty() || state.isLoading) gridFocus.requestFocus() else toolbarFocus.requestFocus()
         }
     }
     val hasVisibleProgrammes = visibleChannelIds.any { !state.programmes[it].isNullOrEmpty() }
@@ -197,9 +211,9 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 else selectedChannel?.let { showDetails(it, selectedProgramme) }
             }
             true
-        } else if (event.key == Key.Back && !categoriesOpen && details == null) {
+        } else if (event.key == Key.Back || event.key == Key.Escape) {
             if (event.type == KeyEventType.KeyUp) {
-                if (toolbarFocused && onBack != null) onBack() else toolbarFocus.requestFocus()
+                if (!consumeGuideBack()) onBack?.invoke()
             }
             true
         } else false
@@ -209,7 +223,8 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
             category = state.selectedCategory ?: uiText("Все каналы"),
             date = formatDate(if (state.from > 0) state.from else now),
             toolbarFocus = toolbarFocus, gridFocus = gridFocus,
-            onFocus = { toolbarFocused = it }, onCategories = { categoriesOpen = true },
+            onFocus = {}, onCategoriesFocus = { categoryButtonFocused = it },
+            onCategories = { returningToCategories = false; categoriesOpen = true },
             onPreviousDay = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(-1)) },
             onNow = { pendingDayCursor = null; component.dispatch(TvgIntent.DaySet(0)); cursorTime = now; nowRequest++ },
             onNextDay = { pendingDayCursor = null; component.dispatch(TvgIntent.DayDelta(1)) },
@@ -256,6 +271,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                         .clipToBounds()
                         .onGloballyPositioned { gridReady = it.size.width > 0 && it.size.height > 0 }
                         .testTag("tvg-grid").focusRequester(gridFocus)
+                        .onFocusChanged { if(it.isFocused) returningToCategories=false }
                         .onPreviewKeyEvent { event ->
                             val navigation = event.key in listOf(Key.DirectionUp, Key.DirectionDown, Key.DirectionLeft, Key.DirectionRight)
                             val ok = event.key == Key.Enter || event.key == Key.DirectionCenter
@@ -356,7 +372,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
         }
     }
     if (categoriesOpen) AlertDialog(
-        onDismissRequest = { categoriesOpen = false }, title = { Text(uiText("Категории")) },
+        onDismissRequest = { consumeGuideBack() }, title = { Text(uiText("Категории")) },
         text = {
             val categories = remember(state.channels) { listOf<String?>(null) + channelCategoriesInOrder(state.channels) }
             val categoryList = rememberLazyListState(initialFirstVisibleItemIndex = categories.indexOf(state.selectedCategory).coerceAtLeast(0))
@@ -370,11 +386,11 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                         if (category == state.selectedCategory) Modifier.focusRequester(selectedFocus) else Modifier))
                 }
             }
-        }, confirmButton = { TvActionButton(onClick = { categoriesOpen = false }) { Text(uiText("Закрыть")) } },
+        }, confirmButton = { TvActionButton(onClick = { consumeGuideBack() }) { Text(uiText("Закрыть")) } },
     )
     details?.let { info ->
         val p = info.programme
-        AlertDialog(onDismissRequest = { details = null }, title = { Text(p.title) },
+        AlertDialog(onDismissRequest = { consumeGuideBack() }, title = { Text(p.title) },
             text = { AutoScrollText("${info.channel.name} • ${formatDateTime(p.start)}–${formatTimeOfDay(p.stop)}\n${p.description.orEmpty()}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 9) },
             confirmButton = {
                 Row {

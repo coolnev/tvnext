@@ -28,6 +28,44 @@ class AndroidGuideTimelineUiTest {
     private fun guideTest(width: Int = 1100, height: Int = 700, body: ComposeUiTest.() -> Unit) =
         runDesktopComposeUiTest(width=width,height=height) {ui=this;body()}
 
+    @Test fun systemBackFocusesCategoriesAndLateInitialDataCannotStealFocusBeforeSecondBack()=guideTest(960,540) {
+        val component=Guide();val loaded=component.state.value
+        component.state.value=TvgState(isLoading=true)
+        var closed=0
+        setContent {MaterialTheme {AndroidTvgScreen(component,Modifier,{closed++})}}
+        waitForIdle()
+        runOnIdle {if(!component.consumeBack())closed++}
+        waitForIdle()
+        onNodeWithTag("tvg-categories").assertIsFocused()
+        assertEquals(0,closed)
+        runOnIdle {component.state.value=loaded}
+        waitForIdle()
+        onNodeWithTag("tvg-categories").assertIsFocused()
+        System.getenv("TVNEXT_VALIDATION_DIR")?.let {root ->
+            val f=java.io.File(root,"tv-guide-first-back-categories.png");f.parentFile.mkdirs()
+            org.jetbrains.skia.Image.makeFromBitmap(onRoot().captureToImage().asSkiaBitmap()).encodeToData()?.use {f.writeBytes(it.bytes)}
+        }
+        runOnIdle {if(!component.consumeBack())closed++}
+        assertEquals(1,closed)
+    }
+
+    @Test fun backFromGridOrAnotherToolbarButtonVisitsCategoriesBeforeClosing()=guideTest(960,540) {
+        val component=Guide();var closed=0
+        setContent {MaterialTheme {AndroidTvgScreen(component,Modifier,{closed++})}}
+        waitForIdle()
+        onRoot().performKeyInput{pressKey(Key.Back)}
+        waitForIdle()
+        onNodeWithTag("tvg-categories").assertIsFocused()
+        assertEquals(0,closed)
+        onNodeWithTag("tvg-now").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus){it()}
+        onRoot().performKeyInput{pressKey(Key.Back)}
+        waitForIdle()
+        onNodeWithTag("tvg-categories").assertIsFocused()
+        assertEquals(0,closed)
+        onRoot().performKeyInput{pressKey(Key.Back)}
+        assertEquals(1,closed)
+    }
+
     @Test fun coldEntryConsumesOpeningOkBeforeItCanActivateCategoriesAndKeepsGridFocus() = guideTest(960,540) {
         val component = Guide()
         val loaded = component.state.value
@@ -234,6 +272,9 @@ class AndroidGuideTimelineUiTest {
     }
 
     private class Guide : TvgComponent {
+        private var backAction:()->Boolean={false}
+        override fun setBackHandler(handler:()->Boolean){backAction=handler}
+        override fun consumeBack()=backAction()
         val now = currentTimeMillis()
         val channel = Channel("channel", "Проверка", 1, "Тест", "https://unused.invalid/live")
         var pendingDay: Int? = null

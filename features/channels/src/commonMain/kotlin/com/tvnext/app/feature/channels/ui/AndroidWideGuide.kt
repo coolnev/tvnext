@@ -95,7 +95,7 @@ internal fun AndroidWideGuide(
     val activeId = focusedChannelId?.takeIf { id -> channels.any { it.id == id } }
         // Reopening may reset a category asynchronously. Hold playback focus
         // while the filtered list catches up, for both live TV and archive.
-        ?: playingChannelId.takeIf { focusedChannelId == playingChannelId }
+        ?: playingChannelId.takeIf { focusedChannelId == playingChannelId && selectedCategory == null }
         ?: channels.firstOrNull { it.id == playingChannelId }?.id
         ?: channels.firstOrNull()?.id ?: playingChannelId
     val programmeList = remember(timeline.channelId, timeline.programmes, activeId) {
@@ -135,8 +135,10 @@ internal fun AndroidWideGuide(
     var activeColumn by remember { mutableStateOf(GuideFocusColumn.CHANNELS) }
     var initialFocusApplied by remember { mutableStateOf(false) }
 
-    LaunchedEffect(showCategories, playingChannelId) {
-        if (!showCategories && focusedChannelId == null && channels.isNotEmpty()) {
+    LaunchedEffect(showCategories, activeId) {
+        // Category filtering can finish after the picker has closed. Keep the
+        // logical highlight and its EPG on the first valid row in the new list.
+        if (!showCategories && focusedChannelId != activeId && channels.any {it.id==activeId}) {
             onChannelFocus(activeId)
         }
     }
@@ -172,16 +174,19 @@ internal fun AndroidWideGuide(
             // Focus never follows recycled row children. The focused element is the
             // stable column container, even as channel/EPG data arrives asynchronously.
             LaunchedEffect(showCategories) {
+                val restoreArchive = !initialFocusApplied && !showCategories &&
+                    initialProgrammeTimeMs != null && activeId == playingChannelId
+                // Entering categories consumes the initial-entry choice too.
+                // Closing them always returns to channels, even if EPG was late.
+                initialFocusApplied = true
                 withFrameNanos { }
                 runCatching {
                     if (showCategories) {
                         activeColumn = GuideFocusColumn.CATEGORIES
                         categoryFocus.requestFocus()
                     } else {
-                        val restoreArchive = !initialFocusApplied && initialProgrammeTimeMs != null && activeId == playingChannelId
                         activeColumn = if (restoreArchive) GuideFocusColumn.PROGRAMMES else GuideFocusColumn.CHANNELS
                         if (restoreArchive) programmeFocus.requestFocus() else channelFocus.requestFocus()
-                        initialFocusApplied = true
                     }
                 }
             }
@@ -258,7 +263,7 @@ internal fun AndroidWideGuide(
                         viewportCapacity = viewportCapacity,
                         clampChannelEdges = true,
                         modifier = Modifier.weight(1f).fillMaxWidth()
-                            .focusRequester(channelFocus)
+                            .testTag("guide-channels").focusRequester(channelFocus)
                             .onPreviewKeyEvent { event ->
                                 when (event.key) {
                                     Key.DirectionUp -> {
@@ -371,7 +376,7 @@ internal fun AndroidWideGuide(
                     viewportCapacity = viewportCapacity * 2,
                     anchorSlot = channelAnchorSlot * 2,
                     modifier = Modifier.weight(1f).fillMaxWidth()
-                        .focusRequester(programmeFocus)
+                        .testTag("guide-programmes").focusRequester(programmeFocus)
                         .onPreviewKeyEvent { event ->
                             when (event.key) {
                                 Key.DirectionUp -> {

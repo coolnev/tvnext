@@ -33,6 +33,7 @@ internal fun AndroidGuideHeader(
     toolbarFocus: FocusRequester, gridFocus: FocusRequester, onFocus: (Boolean) -> Unit,
     onCategories: () -> Unit, onPreviousDay: () -> Unit, onNow: () -> Unit,
     onNextDay: () -> Unit, onRefresh: () -> Unit, onVideo: (() -> Unit)?,
+    onCategoriesFocus: (Boolean) -> Unit = {},
 ) {
     val playback by controller.state.collectAsState()
     val previous = remember { FocusRequester() }
@@ -51,6 +52,7 @@ internal fun AndroidGuideHeader(
                 }
                 GuideOutlineButton(category, onCategories, Modifier.widthIn(max = 260.dp)
                     .testTag("tvg-categories").focusRequester(toolbarFocus)
+                    .onFocusChanged { onCategoriesFocus(it.isFocused) }
                     .guideDirections(right = previous, down = now))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     GuideOutlineButton(uiText("- День"), onPreviousDay, Modifier.testTag("tvg-day-previous")

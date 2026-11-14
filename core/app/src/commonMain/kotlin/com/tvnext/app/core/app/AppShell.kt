@@ -230,7 +230,7 @@ fun AppShell(
                                 )
                                 is AppTabComponent.Tvg -> TvgScreen(
                                     component = tab.component,
-                                    // Back from the TV Guide returns directly to clean
+                                    // Closing the TV Guide returns directly to clean
                                     // full-screen video. Do not leave the user in the
                                     // browse layout after closing the programme grid.
                                     onBackHome = {

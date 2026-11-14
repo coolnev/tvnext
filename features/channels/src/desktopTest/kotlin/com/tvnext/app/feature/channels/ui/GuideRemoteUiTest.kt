@@ -99,6 +99,40 @@ class GuideRemoteUiTest {
         return roster
     }
 
+    @Test fun choosingCategoryDuringArchiveEpgLoadAlwaysReturnsFocusToChannels() {
+        val open=mutableStateOf(true)
+        val roster=mutableStateOf(listOf(channel))
+        val focused=mutableStateOf<String?>(channel.id)
+        val category=mutableStateOf<String?>("Тест")
+        val timeline=mutableStateOf(ChannelTimelineState(channel.id,true,emptyList()))
+        ui.setContent {MaterialTheme {
+            AndroidWideGuide(channels=roster.value,playingChannelId=channel.id,focusedChannelId=focused.value,
+                timeline=timeline.value,nowPlaying=emptyMap(),now=now,showNumbers=false,
+                showCategories=open.value,descriptionOnRight=false,categories=listOf("Тест","Другая категория"),selectedCategory=category.value,
+                onToggleCategories={open.value=!open.value},onChooseCategory={category.value=it;open.value=false;focused.value=null},
+                onChannelFocus={focused.value=it},onVisibleChannelsChanged={},onPlayChannel={},onPlayArchive={_,_->},onClose={},
+                initialProgrammeTimeMs=now-hour,modifier=Modifier.size(1100.dp,540.dp))
+        }}
+        ui.waitForIdle()
+        press(Key.DirectionDown)
+        press(Key.Enter)
+        ui.onNodeWithTag("guide-channels").assertIsFocused()
+        val other=channel.copy(id="late-category",name="Канал новой категории",category="Другая категория")
+        ui.runOnIdle {roster.value=listOf(other)}
+        ui.waitForIdle()
+        assertEquals(other.id,focused.value,"Late category filtering must update the highlighted channel")
+        ui.onNodeWithTag("guide-channels").assertIsFocused()
+        ui.runOnIdle {timeline.value=ChannelTimelineState(other.id,false,programmes.map{it.copy(channelId=other.id)})}
+        ui.waitForIdle()
+        ui.onNodeWithTag("guide-channels").assertIsFocused()
+        press(Key.DirectionRight)
+        ui.onNodeWithTag("guide-programmes").assertIsFocused()
+        press(Key.DirectionLeft)
+        press(Key.DirectionLeft)
+        press(Key.Enter)
+        ui.onNodeWithTag("guide-channels").assertIsFocused()
+    }
+
     @Test fun bottomDescriptionShowsTenProgrammesBesideFiveChannels() {
         showDensityGuide(false)
         ui.onAllNodesWithTag("guide-channel-row").assertCountEquals(5)
