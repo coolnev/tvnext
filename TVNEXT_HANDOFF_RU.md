@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.11`, versionCode 1011, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.12`, versionCode 1012, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,15 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.11.apk`.
-Описание: `RELEASE_ANDROID_1.0.11_RU.md`.
-Сводка: `releases/android/validation-1.0.11.json`.
+APK: `releases/android/TVNext-1.0.12.apk`.
+Описание: `RELEASE_ANDROID_1.0.12_RU.md`.
+Сводка: `releases/android/validation-1.0.12.json`.
+
+В 1.0.12 (14.11) пользователь просил скрыть импорт EPG во всех открытых окнах и добавить отключение показа. AppShell теперь допускает статус только при immersive на Channels/Media с активным viewport, без management overlays/dialogs, diagnostics, notices/reminders. PlaybackOverlayVisibility получил независимый contentOverlay; WatchingLayout сообщает drawer/categories/windowed, AndroidMediaScreen — browser/info/resume. Нижняя панель и video buffering по-прежнему подавляют EPG-баннер. Новая showEpgUpdateStatus=true, ключ settings.show_epg_update_status; SettingsIntent/reducer/save/load и пункт «Статус обновления EPG» в Оформлении Android/common UI, RU/EN/ZH. Это только UI: EPG import/network/cache не менялись.
+
+Также исправлен flash списка/главного экрана перед уменьшением видео. SharedVideoStage получает transitionKey (tab, Channels immersive, full overlay) и hasVideoDestination из AppShell. Пока новый viewport не измерен (VideoScene.layoutRevision), прежний surface поднимается над chrome с первого кадра навигации. target=null handoff также держит верхний слой. Если ожидается видео и item активен, прежняя поверхность не скрывается по прежнему таймеру 100 мс: ждёт измерения назначения. Экраны без видео/остановка не удерживают её. SurfaceView/плеер и 4K-политика не менялись. Проверены оба случая: тот же placeholder до новой геометрии и detach/attach с задержкой 160 мс; новые pixel asserts, одна surface mount, без play().
+
+142 проверки: 106 Channels, 10 Settings, 17 Media, 7 Home, 2 native API28/35 VideoSurfaceModeTest. Полный первоначальный запуск и после окончательной правки SharedVideoStage/Home + release/lint/encoding/Desktop compile. XML Channels объединены: исходные suite results из /workspace/work/tests-112-full, последний SharedVideoStage заменяет прежний. Подпись, ZIP/zipalign16KiB, ключ, неизменность PNG и native libs относительно 1.0.11 проверены. Макеты переходов используют цветной stand-in; APK на физическом Android TV/эмуляторе не запускался, timing GPU не измерен. Исходники e6713a1, версия 1.0.12/code1012, SHA-256 APK 05fbdf83d3e54e962d4567961e5ba80b01733cbfc2659219badefc9a54d8b036.
 
 В 1.0.11 (14.11) по просьбе пользователя подпись «До конца … мин» перенесена из строки значков на отдельную строку непосредственно над прогрессом в AndroidProgrammeOverlay/ProgrammeTimeline. Значки А/П, разрешения, FPS, аудио и Dolby сдвинуты к правому краю. Геометрия панели остаётся компактной. Прошли 5 существующих FullscreenProgrammePanelUiTest (архив/эфир/пульт/720–1920/отдельное описание), release/lint/encoding/Desktop compile, подпись, ZIP/zipalign 16 KiB; PNG и нативные библиотеки совпадают с 1.0.10. Скриншоты просмотрены. На физическом Android TV APK не запускался, полные регрессии плеера/EPG не повторялись: изменение только раскладки. Исходники 8621a3d; версия 1.0.11/code1011; SHA-256 APK 3830d7e678bf17d4dd97d641b35dbc1ffc30e18cba976906476f559aea12981c.
 

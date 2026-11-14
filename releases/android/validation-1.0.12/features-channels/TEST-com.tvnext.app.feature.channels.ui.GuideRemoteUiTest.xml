@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideRemoteUiTest[desktop]" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-11-14T15:28:55.529Z" hostname="0fcc891603bc" time="12.484">
+  <properties/>
+  <testcase name="coyoteMissingEpgTextCannotHideSynopsisInWindowedPane[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.359"/>
+  <testcase name="coyoteMissingEpgTextCannotHideSynopsisInDetails[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.083"/>
+  <testcase name="bottomDescriptionShowsTenProgrammesBesideFiveChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.25"/>
+  <testcase name="rightDescriptionShowsTwiceAsManyProgrammesAsChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.272"/>
+  <testcase name="remoteWalksFromCurrentDayIntoTwoPreviousDaysWithoutDateSelection[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.064"/>
+  <testcase name="descriptionArrivesAfterThePosterInWindowedDetails[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.061"/>
+  <testcase name="briefEpgExpandsWhenSynopsisArrivesBelowGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.222"/>
+  <testcase name="narrowWindowedControlsStayVisibleAndDoNotStealVideoFocus[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.13"/>
+  <testcase name="choosingCategoryDuringArchiveEpgLoadAlwaysReturnsFocusToChannels[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="1.093"/>
+  <testcase name="leavingUnplayedArchiveReturnsToCurrentProgrammeOnTheSameChannel[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="1.556"/>
+  <testcase name="windowedProgrammeCursorSurvivesAsyncDataAndMovesAcrossMidnight[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.074"/>
+  <testcase name="windowedListFillsAllSlotsAtBothArchiveEdges[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="1.607"/>
+  <testcase name="successfulPinImmediatelyRemovesChannelLockUntilSessionCloses[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.119"/>
+  <testcase name="coyoteMissingEpgTextCannotHideSynopsisBelowGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.196"/>
+  <testcase name="windowedListUsesAllSixteenSlotsWithoutSubtitleOrDates[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.082"/>
+  <testcase name="descriptionArrivesAfterThePosterBesideTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.188"/>
+  <testcase name="coyoteMissingEpgTextCannotHideSynopsisBesideGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.191"/>
+  <testcase name="descriptionArrivesAfterThePosterBelowTheFullGuide[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.184"/>
+  <testcase name="briefEpgExpandsWhenSynopsisArrivesInWindowedPane[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.079"/>
+  <testcase name="inlineWindowedSynopsisArrivesAfterThePoster[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.077"/>
+  <testcase name="programmeRowsDoNotRepeatTheSeparateDateColumn[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.135"/>
+  <testcase name="portraitTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.211"/>
+  <testcase name="bottomOverlayChannelIsLargerAndProgressPrecedesProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.116"/>
+  <testcase name="kinopoiskSynopsisReplacesTheEpgMissingDescriptionSentence[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.049"/>
+  <testcase name="landscapeTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.2"/>
+  <testcase name="compactPortraitTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.109"/>
+  <testcase name="windowedRightSelectsProgrammesThenVideoAndOkOpensFullscreenOnRelease[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.241"/>
+  <testcase name="openingArchiveFocusesItsProgrammeEvenWhenEpgArrivesAfterOpening[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.2"/>
+  <testcase name="compactLandscapeTextWrapHasUniformBaselines[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="0.108"/>
+  <testcase name="anUnplayedArchiveTimeNeverMovesTheNextChannelAwayFromItsLiveProgramme[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideRemoteUiTest" time="2.221"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

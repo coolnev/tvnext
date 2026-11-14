@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="GuideNavigationTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-14T15:28:55.501Z" hostname="0fcc891603bc" time="0.002">
+  <properties/>
+  <testcase name="unselectedColumnStartsAtBoundary[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideNavigationTest" time="0.001"/>
+  <testcase name="dpadDownMovesOneRowAtATime[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideNavigationTest" time="0.0"/>
+  <testcase name="noItemsNeverCrash[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideNavigationTest" time="0.0"/>
+  <testcase name="edgesStayWithinList[desktop]" classname="com.tvnext.app.feature.channels.ui.GuideNavigationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
