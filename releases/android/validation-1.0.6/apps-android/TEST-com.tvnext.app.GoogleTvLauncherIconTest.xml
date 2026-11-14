@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.GoogleTvLauncherIconTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:49:01.430Z" hostname="0fcc891603bc" time="0.38">
+  <properties/>
+  <testcase name="androidTvKeepsItsRectangularBannerResource[28]" classname="com.tvnext.app.GoogleTvLauncherIconTest" time="0.112"/>
+  <testcase name="googleTvMaskReceivesAnOpaqueDarkBackdropInsteadOfLightArcs[28]" classname="com.tvnext.app.GoogleTvLauncherIconTest" time="0.057"/>
+  <testcase name="androidTvKeepsItsRectangularBannerResource" classname="com.tvnext.app.GoogleTvLauncherIconTest" time="0.164"/>
+  <testcase name="googleTvMaskReceivesAnOpaqueDarkBackdropInsteadOfLightArcs" classname="com.tvnext.app.GoogleTvLauncherIconTest" time="0.037"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

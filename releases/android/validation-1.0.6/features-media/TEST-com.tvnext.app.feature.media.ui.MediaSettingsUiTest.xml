@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MediaSettingsUiTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:49:06.264Z" hostname="0fcc891603bc" time="1.535">
+  <properties/>
+  <testcase name="theResumeQuestionOffersResumeAndStartOverWithoutStartingBehindTheDialog[desktop]" classname="com.tvnext.app.feature.media.ui.MediaSettingsUiTest" time="0.854"/>
+  <testcase name="browserRestoresTheSelectedFilmAndPosterResizeKeepsRemoteFocus[desktop]" classname="com.tvnext.app.feature.media.ui.MediaSettingsUiTest" time="0.343"/>
+  <testcase name="allFiveSettingsTranslateAndTheChineseSortOptionChangesThePreference[desktop]" classname="com.tvnext.app.feature.media.ui.MediaSettingsUiTest" time="0.337"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

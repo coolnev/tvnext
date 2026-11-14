@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="XmltvParserTest[desktop]" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:32.870Z" hostname="0fcc891603bc" time="0.862">
+  <properties/>
+  <testcase name="handlesCommentsAndDoctype[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.041"/>
+  <testcase name="truncatedDocumentYieldsParsedPortion[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.009"/>
+  <testcase name="tokensStraddlingThe4mbBufferBoundaryAreParsed[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.396"/>
+  <testcase name="parsesChannelsAndProgrammes[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.015"/>
+  <testcase name="selfClosingChannelWithoutChildren[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.005"/>
+  <testcase name="hugeCommentBeyondTheBufferDoesNotTruncateParsing[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.099"/>
+  <testcase name="episodeNumIsParsed[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.003"/>
+  <testcase name="skipsUnknownElements[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.011"/>
+  <testcase name="programmeWithoutValidTimestampsIsSkipped[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.007"/>
+  <testcase name="largeDocumentParsesFastEnough[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.212"/>
+  <testcase name="handlesMissingOptionalFields[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.036"/>
+  <testcase name="handlesUtcOffsetAndColonTimezones[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.001"/>
+  <testcase name="malformedWithoutTvRootIsFailure[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.003"/>
+  <testcase name="emptyDocumentIsFailure[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.006"/>
+  <testcase name="handlesEntitiesAndCdata[desktop]" classname="com.tvnext.app.core.iptv.xmltv.XmltvParserTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="AndroidGuideTimelineUiTest[desktop]" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:38:02.274Z" hostname="0fcc891603bc" time="5.516">
+  <properties/>
+  <testcase name="compactGuideKeepsPlayingPreviewStableWhileBrowsingAndLoading[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="2.899"/>
+  <testcase name="systemBackFocusesCategoriesAndLateInitialDataCannotStealFocusBeforeSecondBack[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.34"/>
+  <testcase name="categoryPickerMatchesChannelNumberOrderInsteadOfAlphabet[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.467"/>
+  <testcase name="delayedProgrammeReadShowsPassiveWaitAndEmptyOrSuccessfulResultClearsIt[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.21"/>
+  <testcase name="playingChannelOpensInCentreOfAllChannelsWithoutCategoryDialog[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.283"/>
+  <testcase name="outlinedToolbarNavigatesBothRowsAndReturnsToGridAndVideo[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.316"/>
+  <testcase name="rapidLeftAcrossMidnightThenRightRestoresVisibleProgrammes[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.335"/>
+  <testcase name="coldEntryConsumesOpeningOkBeforeItCanActivateCategoriesAndKeepsGridFocus[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.313"/>
+  <testcase name="reverseBeforeDayQueryFinishesKeepsCurrentGridAndCursor[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.182"/>
+  <testcase name="backFromGridOrAnotherToolbarButtonVisitsCategoriesBeforeClosing[desktop]" classname="com.tvnext.app.feature.tvg.ui.AndroidGuideTimelineUiTest" time="0.13"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

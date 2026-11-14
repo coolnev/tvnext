@@ -1,6 +1,6 @@
 # TVNext — IPTV-клиент для Android TV и Windows
 
-Текущий релиз: **TVNext 1.0.5**. [Android APK](releases/android/TVNext-1.0.5.apk) · [Описание релиза](RELEASE_ANDROID_1.0.5_RU.md). Полные исходники находятся в ветке **main**: Android — `apps/android`, Desktop — `apps/desktop`, общие модули — `core` и `features`.
+Текущий релиз: **TVNext 1.0.6**. [Android APK](releases/android/TVNext-1.0.6.apk) · [Описание релиза](RELEASE_ANDROID_1.0.6_RU.md). Полные исходники находятся в ветке **main**: Android — `apps/android`, Desktop — `apps/desktop`, общие модули — `core` и `features`.
 
 Мультиплатформенное IPTV-приложение (Kotlin Multiplatform + Compose Multiplatform) с поддержкой **Android TV** и **Windows desktop**. Работает с плейлистами формата **M3U**: LIVE-каналы, VOD-медиатека, телепрограмма (EPG/XMLTV), ТВ-гид, архив передач (catch-up), поиск, напоминания и история просмотров.
 

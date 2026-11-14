@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="LiteEpgRepositoryCacheTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:30.546Z" hostname="0fcc891603bc" time="0.168">
+  <properties/>
+  <testcase name="interruptedCacheReadIsNotReportedAsComplete[desktop]" classname="com.tvnext.app.core.iptv.data.LiteEpgRepositoryCacheTest" time="0.007"/>
+  <testcase name="getProgrammesInRangeReturnsCachedData[desktop]" classname="com.tvnext.app.core.iptv.data.LiteEpgRepositoryCacheTest" time="0.115"/>
+  <testcase name="getNowNextUsesCachedData[desktop]" classname="com.tvnext.app.core.iptv.data.LiteEpgRepositoryCacheTest" time="0.003"/>
+  <testcase name="freshCacheIsReusedOnColdStartWithoutNetwork[desktop]" classname="com.tvnext.app.core.iptv.data.LiteEpgRepositoryCacheTest" time="0.043"/>
+  <system-out><![CDATA[[LiteEpg] EPG cache loaded: 2 programmes across 2 channels
+[LiteEpg] EPG cache loaded: 2 programmes across 1 channels
+[LiteEpg] EPG cache loaded: 1 programmes across 1 channels
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

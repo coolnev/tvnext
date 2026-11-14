@@ -1,0 +1,151 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.6",
+  "versionCode": 1006,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "19b62a2eb5c039e4d9390472181d8121c8e89b43",
+  "sha256": "3108fd304d4c7f982bff18e25152d6e3dd607ab79b6016ad095fda46090e7d58",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "playback": {
+    "startedResumedAndInteractiveRequired": true,
+    "pauseWithoutStopReleasesMedia3": true,
+    "systemSettingsReturnCreatesNewPlayer": true,
+    "existingPlayerKeyRecreatesNativeViewport": true,
+    "sleepAndWakeStillCoalesced": true,
+    "channelVolumeAndMuteRetained": true,
+    "animationRemainsEnabled": true,
+    "recordingsUnaffected": true
+  },
+  "settings": {
+    "movieInformationTitle": "Информация о фильмах",
+    "separateLibrarySection": true,
+    "independentTmdbAndKinopoiskSwitches": true,
+    "allFourProviderCombinationsTested": true,
+    "disabledProviderCannotReuseOldProgrammeCard": true,
+    "sourceSelectionIsPartOfInflightIdentity": true,
+    "epgDescriptionsRetainedWhenBothOff": true,
+    "kinopoiskLibraryFallback": true,
+    "fastLibrarySynopsisPublishedBeforeOtherProviderCompletes": true
+  },
+  "library": {
+    "posterSizes": [
+      "small",
+      "medium",
+      "large"
+    ],
+    "filmSorts": [
+      "provider",
+      "name ascending",
+      "name descending"
+    ],
+    "categorySorts": [
+      "provider",
+      "name"
+    ],
+    "rememberSourceCategoryFilmAndFavorites": true,
+    "browserRestoreOptional": true,
+    "removedItemsSafelyIgnored": true,
+    "resumeModes": [
+      "continue",
+      "ask",
+      "start over"
+    ],
+    "askDoesNotStartBeforeUserChoice": true,
+    "cancelDoesNotStart": true,
+    "startOverClearsStoredPosition": true,
+    "stablePerFilmFocusRequesters": true,
+    "sortingAndResizingRetainSelectedFilm": true,
+    "defaultsPreserved": true
+  },
+  "languages": [
+    "Russian",
+    "English",
+    "Simplified Chinese"
+  ],
+  "newMenuLabelsChoicesResumePromptAndKinopoiskStatusTranslated": true,
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 54,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 233,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/media",
+      "task": "desktopTest",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 122,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 540,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "PNG resources unchanged",
+    "Compose screenshots visually reviewed"
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitations": [
+    "The exact old-frame oscillation on the user Google TV was not reproduced on that device; lifecycle events and actual Media3 player release/recreation were tested under Android API28/35",
+    "Native tests do not exercise physical MediaCodec/SurfaceTexture composition",
+    "Library poster sizes and full browser restoration are implemented in the Android catalogue; shared sorting/resume settings compile on Desktop, no Windows installer produced",
+    "Live external metadata and provider EPG hosts are blocked by environment network policy; API behaviour uses deterministic fixtures"
+  ]
+}

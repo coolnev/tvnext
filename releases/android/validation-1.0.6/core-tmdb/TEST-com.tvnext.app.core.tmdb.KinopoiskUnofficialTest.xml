@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="KinopoiskUnofficialTest[desktop]" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:50.659Z" hostname="0fcc891603bc" time="0.462">
+  <properties/>
+  <testcase name="missingKeyDoesNotRequestTheNetworkAndHtmlIsNotReportedAsSuccess[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.012"/>
+  <testcase name="legacyDevKeyCannotOverrideTheUnofficialDefaultOnUpgrade[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.337"/>
+  <testcase name="connectionCheckValidatesAuthorizedJsonFromTheActiveProvider[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.009"/>
+  <testcase name="keyQuotaAndServerFailuresHaveDistinctMessages[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.018"/>
+  <testcase name="leavingSettingsCancelsTheConnectionCheck[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.01"/>
+  <testcase name="onlyUnofficialSearchDetailsAndStillsAreRequestedWithTheConfiguredKey[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.025"/>
+  <testcase name="networkFailureIsShownWithoutConfusingItWithAnInvalidKey[desktop]" classname="com.tvnext.app.core.tmdb.KinopoiskUnofficialTest" time="0.048"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

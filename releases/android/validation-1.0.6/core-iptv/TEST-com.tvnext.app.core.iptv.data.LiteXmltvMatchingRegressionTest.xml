@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="LiteXmltvMatchingRegressionTest[desktop]" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:30.715Z" hostname="0fcc891603bc" time="0.037">
+  <properties/>
+  <testcase name="idMatchDoesNotHideOtherPlaylistVariantsOrOtherDisplayAliases[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.005"/>
+  <testcase name="exactIdsBeatOverlappingNamesAndSeparateHdSchedules[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.001"/>
+  <testcase name="punctuationInExplicitIdsDoesNotMergeDifferentServices[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.001"/>
+  <testcase name="duplicatedChannelIdsInDifferentPlaylistsBothReceiveTheirGuide[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.0"/>
+  <testcase name="decimalAndHexEntitiesUnicodeSpacesAndYoAreMatchedAndSupplementaryTitlesSurvive[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.022"/>
+  <testcase name="exactQualityNameWinsBeforeQualityFallbackAndCodecTagsDoNotBlockIt[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.001"/>
+  <testcase name="ambiguousNamesAreNotRandomlyAssignedAndTimeShiftVariantsStaySeparate[desktop]" classname="com.tvnext.app.core.iptv.data.LiteXmltvMatchingRegressionTest" time="0.006"/>
+  <system-out><![CDATA[[LiteEpgParser] Parsed 1 channels / 1 programmes
+[LiteEpgParser] Parsed 2 channels / 2 programmes
+[LiteEpgParser] Parsed 0 channels / 2 programmes
+[LiteEpgParser] Parsed 1 channels / 1 programmes
+[LiteEpgParser] Parsed 1 channels / 1 programmes
+[LiteEpgParser] Parsed 2 channels / 2 programmes
+[LiteEpgParser] Parsed 4 channels / 4 programmes
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

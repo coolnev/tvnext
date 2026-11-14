@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MediaPreferencesTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:49:05.733Z" hostname="0fcc891603bc" time="0.529">
+  <properties/>
+  <testcase name="startingOverDoesNotSeekAndClearsTheOldResumePoint[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.111"/>
+  <testcase name="libraryInformationCanComeFromKinopoiskWhileTmdbReturnsNoCard[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.14"/>
+  <testcase name="aFastTmdbSynopsisAppearsBeforeASlowKinopoiskRequestFinishes[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.006"/>
+  <testcase name="savedBrowserPositionRestoresSourceCategoryAndSelectedFilmAndTracksNewFocus[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.259"/>
+  <testcase name="askModeWaitsForUserAndContinueSeeksToTheSavedPosition[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.002"/>
+  <testcase name="missingProviderCategoryAndRemovedFilmDoNotPreventCatalogueOpening[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.001"/>
+  <testcase name="sortingChangesRealCatalogueAndProviderCategoryOrderCanBeRestored[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.004"/>
+  <testcase name="cancellingTheResumeQuestionDoesNotStartTheFilm[desktop]" classname="com.tvnext.app.feature.media.ui.MediaPreferencesTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

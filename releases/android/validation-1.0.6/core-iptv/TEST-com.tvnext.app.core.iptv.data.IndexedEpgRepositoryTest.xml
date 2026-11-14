@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="IndexedEpgRepositoryTest[desktop]" tests="30" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:25.123Z" hostname="0fcc891603bc" time="5.418">
+  <properties/>
+  <testcase name="anAlreadyCachedBackupRefreshesWhenItsCoverageEndsWithAFreshPrimary[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.135"/>
+  <testcase name="oneUrlIsFetchedOnceForMultiplePlaylistsAndArchiveSurvivesRollingFeed[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.069"/>
+  <testcase name="largeGeneratedFeedIsIndexedInBoundedBatchesAndQueriesOnlyRequestedTimeRange[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.428"/>
+  <testcase name="forcedPrimaryRefreshDoesNotDownloadRedundantBackupGuides[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.023"/>
+  <testcase name="persistedBackupIsReadableImmediatelyAfterRestartWithoutWarmingOrHttp[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.054"/>
+  <testcase name="managedIndexStoresOnlyMissingBackupChannelsAndRevalidatesWithoutAnotherGeneration[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.148"/>
+  <testcase name="anInterruptedFirstImportKeepsRealPartialRowsWithoutClaimingFreshness[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.041"/>
+  <testcase name="overnightRestartKeepsACompleteUsableGuideWithoutHttp[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.036"/>
+  <testcase name="connectionRetriesAreNotCalledResumeAndSmallTransfersDoNotShowZeroMegabytes[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.051"/>
+  <testcase name="refreshDoesNotPublishPartialVersionsOverACompleteGuide[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.119"/>
+  <testcase name="committedImportClearsSavingBeforeSlowMaintenanceAndWithoutChannelSwitch[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.095"/>
+  <testcase name="wholeRefreshHasOneDeadlineAcrossPrimaryAndBackupAndBrowsingCannotRestartIt[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.61"/>
+  <testcase name="primaryAndBackupCoverageCountIsTheUnionNotTheLargestSource[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="2.204"/>
+  <testcase name="timedOutRefreshStopsLoadingAndKeepsThePreviousGuide[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.123"/>
+  <testcase name="noCacheAutomaticallyPreloadsVisibleSourceFirst[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.127"/>
+  <testcase name="browsingMissingChannelFetchesBackupOnceWithoutDownloadingFreshPrimaryAgain[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.055"/>
+  <testcase name="aVisibleChannelAbsentFromAFreshFeedDoesNotRestartTheSameDownload[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.019"/>
+  <testcase name="expiredCoverageIsRefreshedEvenWhenDownloadedLessThanADayAgo[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.058"/>
+  <testcase name="brokenRefreshKeepsCompleteCacheAndItsOriginalFreshness[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.051"/>
+  <testcase name="cosmeticChannelRenameDoesNotInvalidateTheDownloadedSource[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.054"/>
+  <testcase name="restartingFromDiskAndCrossingMidnightDoesNotDownloadFreshGuide[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.037"/>
+  <testcase name="legacyCurrentAndArchiveFilesMigrateWithoutHttp[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.07"/>
+  <testcase name="forcedRefreshFillsMissingOffscreenChannelsFromBackup[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.092"/>
+  <testcase name="stopsDownloadingBackupSourcesOnceVisibleChannelsAreCovered[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.03"/>
+  <testcase name="optionalOrInvalidStopTimesAreInferredFromNextStartRegardlessOfFileOrder[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.06"/>
+  <testcase name="visibleChannelIsPublishedWhileTheRestOfTheStreamIsStillBlocked[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.042"/>
+  <testcase name="thousandsOfOmittedStopTimesUseBoundedIndexedBatches[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.402"/>
+  <testcase name="missingChannelDeclarationsAndWhitespaceAttributesStillProduceEpg[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.059"/>
+  <testcase name="cleanupRetainsANewerImportAndTheActiveArchive[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.014"/>
+  <testcase name="forcedRefreshWaitsForAutomaticRefreshInsteadOfSilentlyReturningSuccess[desktop]" classname="com.tvnext.app.core.iptv.data.IndexedEpgRepositoryTest" time="0.101"/>
+  <system-out><![CDATA[[LiteEpgParser] Parsed 0 channels / 49 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 2 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 10000 programmes
+Indexed 10000 streamed programmes in 415 ms; day query returned 25 rows
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 2 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 73 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1533 programmes
+[LiteEpgParser] Parsed 0 channels / 267 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 2 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 3 programmes
+[LiteEpgParser] Parsed 0 channels / 601 programmes
+[LiteEpgParser] Parsed 0 channels / 9000 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+[LiteEpgParser] Parsed 0 channels / 1 programmes
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

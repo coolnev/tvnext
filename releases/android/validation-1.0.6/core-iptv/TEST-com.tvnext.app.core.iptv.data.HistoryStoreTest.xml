@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="HistoryStoreTest[desktop]" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:25.050Z" hostname="0fcc891603bc" time="0.07">
+  <properties/>
+  <testcase name="clearRemovesEverything[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.005"/>
+  <testcase name="repositoryOrderAndDedupWithClock[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.003"/>
+  <testcase name="reAddMovesToTopWithoutDuplicates[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.002"/>
+  <testcase name="getRecentByTypeFilters[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.003"/>
+  <testcase name="sameIdDifferentTypesAreSeparateEntries[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.002"/>
+  <testcase name="getRecentRespectsLimit[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.005"/>
+  <testcase name="cappedAtTwenty[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.008"/>
+  <testcase name="addIsNewestFirst[desktop]" classname="com.tvnext.app.core.iptv.data.HistoryStoreTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

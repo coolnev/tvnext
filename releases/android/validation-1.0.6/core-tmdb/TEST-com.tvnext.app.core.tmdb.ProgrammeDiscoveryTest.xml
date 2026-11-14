@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeDiscoveryTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-14T06:37:49.930Z" hostname="0fcc891603bc" time="0.726">
+  <properties/>
+  <testcase name="epgEpisodeAndStructuredYearWorkWithoutFilmPrefixAndBroadcastContextStillWins[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.035"/>
+  <testcase name="catalogueRuntimeAndGenresAreRequiredBeforeTmdbPublishesBareTitle[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.387"/>
+  <testcase name="filmCardCannotBeReusedForSameTitleShortNewsSlot[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.264"/>
+  <testcase name="identicallyNamedTelevisionShowMakesUnclassifiedFilmMatchAmbiguous[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.011"/>
+  <testcase name="bareFilmTitleLoadsFullSynopsisAndNeverPublishesUnverifiedSearchArtwork[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>
