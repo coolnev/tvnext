@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.13",
+  "versionCode": 1013,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "86283e25cc928d32d8c53ddb2f5cca28c8417a3f",
+  "sha256": "499ac8b3a139909ac4c35424868caabfa71f0c09473273f7e1b87c36864e3082",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "userObservation": "Ugoos X3: steady audio, stuttering 4K video with AFR on and off; no exact failing channel provided",
+  "vendorReference": "https://ugoos.com/x3-tv-box-family-series-devices-based-on-android-9-0",
+  "media3Reference": "https://developer.android.com/media/media3/exoplayer/customization#enabling-asynchronous-buffer-queueing",
+  "optimization": {
+    "codecNamePrefixes": [
+      "OMX.amlogic.",
+      "c2.amlogic."
+    ],
+    "sdkRange": [
+      23,
+      30
+    ],
+    "hardwareVideoOnly": true,
+    "media3AsyncQueueing": true,
+    "configurationPreserved": true,
+    "initFailureRetriesSameHardwareSynchronously": true,
+    "failedCodecRememberedForPlayerLifetime": true,
+    "audioSoftwareOtherVendorsAndApi31PlusKeepDefaults": true,
+    "afrIndependent": true,
+    "outputResolutionUnchanged": true,
+    "noNewTextureViewOrVideoProcessing": true,
+    "diagnosticsReportSuccessfulQueueMode": true
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "newFactoryPresentInDex": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1012": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 80,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 162,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 242,
+  "newNativeTests": {
+    "suite": "AmlogicVideoQueueTest",
+    "tests": 12,
+    "androidApiLevels": [
+      28,
+      35
+    ],
+    "policySdkMatrix": [
+      22,
+      23,
+      28,
+      30,
+      31,
+      35
+    ],
+    "coverage": [
+      "hardware HEVC 3840x2160/50 configuration forwarding",
+      "audio/software/vendor/API exclusions",
+      "bounded same-hardware initialization fallback and per-codec memory",
+      "both init errors preserved",
+      "factory wiring in all audio output modes"
+    ]
+  },
+  "limitations": [
+    "APK was not run on a physical Ugoos X3/TCL or emulator.",
+    "Robolectric tests verify actual Media3 configuration objects and factory dispatch with injected codec adapters; they do not execute Amlogic firmware/VDEC or measure physical 4K FPS.",
+    "No exact failing channel/stream was available; no measured improvement or elimination of the user-visible stutter can be claimed here.",
+    "The synchronous fallback handles async initialization failures; subsequent runtime codec errors retain the previous application error handling.",
+    "Desktop compiles; no Windows installer or Windows video optimization built."
+  ]
+}

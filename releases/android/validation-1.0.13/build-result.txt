@@ -1,0 +1,4 @@
+BUILD SUCCESSFUL
+242 checks: 80 Player + 162 Android API28/35, including 12 Amlogic queue regression checks.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed. Physical Ugoos performance not measured.
+Source: 86283e25cc928d32d8c53ddb2f5cca28c8417a3f

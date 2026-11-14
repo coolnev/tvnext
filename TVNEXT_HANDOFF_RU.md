@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.12`, versionCode 1012, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.13`, versionCode 1013, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,15 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.12.apk`.
-Описание: `RELEASE_ANDROID_1.0.12_RU.md`.
-Сводка: `releases/android/validation-1.0.12.json`.
+APK: `releases/android/TVNext-1.0.13.apk`.
+Описание: `RELEASE_ANDROID_1.0.13_RU.md`.
+Сводка: `releases/android/validation-1.0.13.json`.
+
+В 1.0.13 (14.11) пользователь: на Ugoos X3 дёргается 4K при ровном звуке, независимо от AFR; точный канал не назван. Проверены официальные Ugoos/Google/Media3 1.11.0: S905X3, Cortex-A55/Mali-G31MP2, штатный Android9; HEVC 4K60 заявлен. Google рекомендует async MediaCodec queue для пропусков кадров API23–30; прежняя фабрика TVNext оставляла sync на старом Android (кроме штатного Media3 исключения AmazonTV).
+
+Новая AmlogicMediaCodecAdapterFactory подключена через AndroidAudioRenderersFactory.getCodecAdapterFactory. ONLY actual hardware video, codec OMX.amlogic. / c2.amlogic., SDK23–30: Media3 DefaultMediaCodecAdapterFactory.forceEnableAsynchronous(). Остальное (audio, software, other vendors, API31+) — прежние defaults. Оригинальная Configuration без копирования/изменения размера/FPS/Surface/DRM. IOException/RuntimeException при async init: Media3 освобождает failed adapter; один sync retry того же HW и cache имени до конца ExoPlayer. При двух ошибках suppressed original, без циклов. Runtime errors уже запущенного decoder — прежняя обработка, отдельного runtime retry async→sync не добавляли. Codec adapter reference очищается при dispose. Diagnostics Output сообщает успешный Amlogic async / sync fallback, numeric counters video.amlogicAsyncQueue / video.amlogicAsyncInitFallbacks. Новый пункт меню не добавлялся. Буферы/AFR/SurfaceView/resolution/FFmpeg НЕ менялись. Docs: docs/ANDROID_AMLOGIC_VIDEO_1.0.13_RU.md.
+
+242 проверки: 80 Player +162 native API28/35 (12 новых Amlogic dispatch/config/init-fallback/wiring checks). Policy matrix SDK22/23/28/30/31/35 проверяется через injection. Первоначально попытка включить отдельный Robolectric SDK30 не скачала android-all-instrumented11 из Maven; тесты используют установленные SDK28/35, Android30 policy остаётся в матрице. Финальный /workspace/work/release-113-final.log успешен: release/lint/encoding/Desktop compile/signature/ZIP/zipalign/key/PNG/native libs unchanged vs1.0.12. Реального Ugoos/TCL/APK runtime/4K-stream/GPU benchmark здесь НЕ было. Не обещать доказанное устранение рывков/приростFPS. Исходники 86283e2; версия 1.0.13/code1013; SHA-256 APK 499ac8b3a139909ac4c35424868caabfa71f0c09473273f7e1b87c36864e3082.
 
 В 1.0.12 (14.11) пользователь просил скрыть импорт EPG во всех открытых окнах и добавить отключение показа. AppShell теперь допускает статус только при immersive на Channels/Media с активным viewport, без management overlays/dialogs, diagnostics, notices/reminders. PlaybackOverlayVisibility получил независимый contentOverlay; WatchingLayout сообщает drawer/categories/windowed, AndroidMediaScreen — browser/info/resume. Нижняя панель и video buffering по-прежнему подавляют EPG-баннер. Новая showEpgUpdateStatus=true, ключ settings.show_epg_update_status; SettingsIntent/reducer/save/load и пункт «Статус обновления EPG» в Оформлении Android/common UI, RU/EN/ZH. Это только UI: EPG import/network/cache не менялись.
 
