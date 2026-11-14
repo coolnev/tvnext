@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="androidx.media3.decoder.ffmpeg.DolbyNativeDecodeTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T11:05:02.910Z" hostname="0fcc891603bc" time="3.827">
+  <properties/>
+  <testcase name="ac3FivePointOneReallyProducesNonSilentPcmWithTheDialogueInTheCentre" classname="androidx.media3.decoder.ffmpeg.DolbyNativeDecodeTest" time="3.52"/>
+  <testcase name="eac3FivePointOneReallyProducesNonSilentPcm" classname="androidx.media3.decoder.ffmpeg.DolbyNativeDecodeTest" time="0.036"/>
+  <testcase name="libraryContainsOnlyTheRequiredDolbyDecoders" classname="androidx.media3.decoder.ffmpeg.DolbyNativeDecodeTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

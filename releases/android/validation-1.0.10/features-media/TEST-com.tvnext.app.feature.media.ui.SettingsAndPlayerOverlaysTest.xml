@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SettingsAndPlayerOverlaysTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T11:10:04.977Z" hostname="0fcc891603bc" time="1.87">
+  <properties/>
+  <testcase name="codecBadgesIdentifyTheActualDecoderAndAudioWithoutGuessingUnknownFacts[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.002"/>
+  <testcase name="archiveLabelPersistsMovesAboveControlsAndCanBeDisabledWithoutHidingLoading[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.129"/>
+  <testcase name="bothMovieSourcesHaveTheSameRowsAndIndependentActions[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.431"/>
+  <testcase name="compactLibraryRowsDoNotClipInAnyLanguageOrWithLargeFonts[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.229"/>
+  <testcase name="epgStatusIsBottomCentredHiddenByEveryOpenPanelAndRestoredAfterDispose[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.147"/>
+  <testcase name="afrSettingsAreTranslatedAndDisplayModeListWorksWithRemote[desktop]" classname="com.tvnext.app.feature.media.ui.SettingsAndPlayerOverlaysTest" time="0.932"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

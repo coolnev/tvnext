@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.RecordingPlaybackRegressionTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-14T11:10:56.142Z" hostname="0fcc891603bc" time="0.49">
+  <properties/>
+  <testcase name="lateCompletionCannotClearANewerRecordingIndicator[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.019"/>
+  <testcase name="localTransportAndRelativeHlsMediaAreReadableWithoutHttp[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.019"/>
+  <testcase name="orphanedRecordingFlagDoesNotPreventDeletionAfterTheServiceHasStopped[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.032"/>
+  <testcase name="stoppedServiceClearsRecAndFinalizesPlayableOfflineHls[28]" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.181"/>
+  <testcase name="lateCompletionCannotClearANewerRecordingIndicator" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.019"/>
+  <testcase name="localTransportAndRelativeHlsMediaAreReadableWithoutHttp" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.021"/>
+  <testcase name="orphanedRecordingFlagDoesNotPreventDeletionAfterTheServiceHasStopped" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.024"/>
+  <testcase name="stoppedServiceClearsRecAndFinalizesPlayableOfflineHls" classname="com.tvnext.app.RecordingPlaybackRegressionTest" time="0.168"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

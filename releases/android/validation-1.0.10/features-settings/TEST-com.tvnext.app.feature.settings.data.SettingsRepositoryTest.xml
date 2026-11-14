@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SettingsRepositoryTest[desktop]" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-14T11:09:58.237Z" hostname="0fcc891603bc" time="0.538">
+  <properties/>
+  <testcase name="allAutoFrameRateOptionsSurviveReloadAndStartDisabled[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.429"/>
+  <testcase name="clockPositionPersistsAcrossRestart[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.045"/>
+  <testcase name="audioOutputModeSurvivesRestart[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.016"/>
+  <testcase name="archiveLabelDefaultsOnAndItsOffSwitchSurvivesRestart[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.01"/>
+  <testcase name="fullSettingsRoundTrip[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.005"/>
+  <testcase name="themePersistsAcrossRestart[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.005"/>
+  <testcase name="movieSettingsHaveEnglishAndChineseLabels[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.006"/>
+  <testcase name="accentColorPersistsAcrossRestart[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.005"/>
+  <testcase name="allLibraryOptionsAndIndependentKinopoiskSwitchSurviveReload[desktop]" classname="com.tvnext.app.feature.settings.data.SettingsRepositoryTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+]]></system-err>
+</testsuite>

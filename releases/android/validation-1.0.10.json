@@ -1,0 +1,178 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.10",
+  "versionCode": 1010,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "44232374b5377460e0a6eb6f25d589c09fffa162",
+  "sha256": "9d039230e059ccacd346d9a770b5a60ce15f17a0eb5da93a04bb1e4ccc6de026",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "decoderFacts": {
+    "reusedVideoDecoderNameRetained": true,
+    "reuseEvaluationNameRecovered": true,
+    "diagnosticsSurviveMissingSelectedGroups": true,
+    "actualInputVideoFormatPreferred": true,
+    "pendingBadgeIsEllipsis": true,
+    "noFakeHardwareClaim": true
+  },
+  "uhd": {
+    "surfaceViewForAndroidWithAndWithoutAnimation": true,
+    "sameNativeVideoViewAcrossResizing": true,
+    "composeSurfaceSyncWorkaroundEnabled": true,
+    "texturePolicyUnchangedOnDesktop": true,
+    "liveTargetBufferMiB": 16,
+    "liveMinimumTimeSeconds": 3,
+    "liveTimePriorityWithMedia3HeapGuard": true,
+    "unchangedStartupBufferSeconds": 1.5,
+    "nominalFractionalFpsCheckedAgainstStablePts": true,
+    "halfRateFromDroppedFramesRejected": true
+  },
+  "audio": {
+    "module": "Media3 1.11.0 FFmpeg audio-only",
+    "ffmpeg": "n6.0.1",
+    "enabledDecoders": [
+      "ac3",
+      "eac3"
+    ],
+    "modes": [
+      "Auto Dolby to PCM",
+      "Stereo PCM",
+      "HDMI passthrough when supported"
+    ],
+    "default": "Auto Dolby to PCM",
+    "autoStereoOnPre29OrWithoutReportedDirectSurroundPcm": true,
+    "explicitStereoMatrixIncludesDialogue": true,
+    "coefficientsNormalized": true,
+    "noFfmpegVideoDecoder": true,
+    "nativeTest": "real generated AC3/EAC3 5.1 packets -> real Java/JNI/FFmpeg -> nonzero PCM 48000 Hz, centre channel preserved; actual Media3 stereo processor tested separately",
+    "licensesAndRebuildSourcesBundled": true
+  },
+  "resolution": {
+    "userRetractionHonored": true,
+    "systemModeNotForcedToUhd": true,
+    "fullHdAndUhdCurrentModesBothTested": true,
+    "displayCompatUsedForTvDimensionReporting": true,
+    "existingAfrResolutionOptInKept": true
+  },
+  "nativeLibraries": [
+    {
+      "abi": "armeabi-v7a",
+      "bytes": 711808,
+      "sha256": "6cc830ca4ea8a7f4998933ccd3e76f0808a820ceed73dc611702d22bcfc639f1",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "uncompressed": true
+    },
+    {
+      "abi": "arm64-v8a",
+      "bytes": 884696,
+      "sha256": "41d3f71ad96ecb8d0ea7624dffab2e57b3d424f48a67b51ae03b1c3cf56bc773",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "uncompressed": true
+    },
+    {
+      "abi": "x86",
+      "bytes": 880360,
+      "sha256": "f5b2f2d5776cbf0bc33d43cbf7d1f10fe4bc4cd8fc2ea6664d3b04a2954e175c",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "uncompressed": true
+    },
+    {
+      "abi": "x86_64",
+      "bytes": 891248,
+      "sha256": "507233b77a30aef8b2d36223b93073e038a3855e1510757708ac447df276ad1f",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "uncompressed": true
+    }
+  ],
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true
+  },
+  "tests": [
+    {
+      "module": "core/dolby",
+      "task": "testDebugUnitTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 80,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/media",
+      "task": "desktopTest",
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 150,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 363,
+  "limitations": [
+    "APK 1.0.10 was not run on a physical Ugoos X3/TCL or emulator.",
+    "Real YoSO 4K stream and the originally stuttering unnamed channel were not available in this environment.",
+    "Dolby decoding ran on Linux host JNI from the same sources; Android ABI ELF integrity and alignment were verified, but physical Android AudioTrack/HDMI sound was not heard here.",
+    "Surface identity/geometry, mode reporting, buffering and lifecycle use native Android API28/35 tests; these do not measure physical UHD GPU performance.",
+    "Desktop compiles; no Windows installer or Windows audio change was built."
+  ]
+}
