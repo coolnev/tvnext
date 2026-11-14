@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="HlsPrefetchServerTest[desktop]" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-14T09:22:51.450Z" hostname="0fcc891603bc" time="1.771">
+  <properties/>
+  <testcase name="rewrites playlist to loopback and serves prefetched segments[desktop]" classname="com.tvnext.app.core.player.HlsPrefetchServerTest" time="0.771"/>
+  <testcase name="parallel segment fetches all succeed[desktop]" classname="com.tvnext.app.core.player.HlsPrefetchServerTest" time="1.0"/>
+  <system-out><![CDATA[[HlsPrefetch] resolved 5 segments; local playlist:
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:11
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:10.4,
+http://127.0.0.1:43397/seg/0.ts
+#EXTINF:10.4,
+http://127.0.0.1:43397/seg/1.ts
+#EXTINF:10.4,
+http://127.0.0.1:43397/seg/2.ts
+#EXTINF:10.4,
+http://127.0.0.1:43397/seg/3.ts
+#EXTINF:10.4,
+http://127.0.0.1:43397/seg/4.ts
+#EXT-X-ENDLIST
+
+[HlsPrefetch] playlist request from /127.0.0.1:37908
+[HlsPrefetch] stream request seg/0 done=true file=true len=15
+[HlsPrefetch] seg/0 expectedSize=-1 done=true len=15
+[HlsPrefetch] segment 4 FAILED: Job was cancelled
+[HlsPrefetch] segment 2 FAILED: Job was cancelled
+[HlsPrefetch] segment 3 FAILED: Job was cancelled
+[HlsPrefetch] resolved 5 segments; local playlist:
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-TARGETDURATION:11
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:10.4,
+http://127.0.0.1:38461/seg/0.ts
+#EXTINF:10.4,
+http://127.0.0.1:38461/seg/1.ts
+#EXTINF:10.4,
+http://127.0.0.1:38461/seg/2.ts
+#EXTINF:10.4,
+http://127.0.0.1:38461/seg/3.ts
+#EXTINF:10.4,
+http://127.0.0.1:38461/seg/4.ts
+#EXT-X-ENDLIST
+
+[HlsPrefetch] stream request seg/0 done=false file=true len=0
+[HlsPrefetch] seg/0 expectedSize=-1 done=true len=15
+[HlsPrefetch] stream request seg/1 done=true file=true len=15
+[HlsPrefetch] seg/1 expectedSize=-1 done=true len=15
+[HlsPrefetch] stream request seg/2 done=true file=true len=15
+[HlsPrefetch] seg/2 expectedSize=-1 done=true len=15
+[HlsPrefetch] stream request seg/3 done=false file=true len=0
+[HlsPrefetch] seg/3 expectedSize=-1 done=true len=15
+[HlsPrefetch] stream request seg/4 done=true file=true len=15
+[HlsPrefetch] seg/4 expectedSize=-1 done=true len=15
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="PlaybackStateTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T09:22:53.240Z" hostname="0fcc891603bc" time="0.005">
+  <properties/>
+  <testcase name="bufferingBackendMapsToBuffering[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.005"/>
+  <testcase name="readyBackendWhilePlayingMapsToPlaying[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.0"/>
+  <testcase name="readyBackendWhilePausedMapsToPaused[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.0"/>
+  <testcase name="endedBackendMapsToEnded[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.0"/>
+  <testcase name="idleBackendMapsToIdle[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.0"/>
+  <testcase name="pauseThenResumeCyclesPlayingAndPaused[desktop]" classname="com.tvnext.app.core.player.PlaybackStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

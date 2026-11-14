@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SharedVideoStageUiTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T09:32:39.739Z" hostname="0fcc891603bc" time="0.157">
+  <properties/>
+  <testcase name="offSwitchSnapsAndClippedPreviewKeepsFullVideoDimensions[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.022"/>
+  <testcase name="gapsBetweenDestinationsDoNotDisposeTheNativeVideoSurface[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.017"/>
+  <testcase name="oneSurfaceAnimatesAcrossFullscreenGuideWindowAndHomeWithoutRemounting[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.118"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

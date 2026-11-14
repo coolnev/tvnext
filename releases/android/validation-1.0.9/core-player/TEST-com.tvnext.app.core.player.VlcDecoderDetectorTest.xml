@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VlcDecoderDetectorTest[desktop]" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-14T09:22:53.269Z" hostname="0fcc891603bc" time="0.042">
+  <properties/>
+  <testcase name="resetClearsForcedSoftware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.001"/>
+  <testcase name="softwareMarkerAloneIsNotAnInstantFailure[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.002"/>
+  <testcase name="softwareMarkerBeforeHardwareStillConfirmsHardware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="forceSoftwarePinsDetectorToSoftware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="initFailureIsHardwareFailed[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.037"/>
+  <testcase name="pixFmtMarkerConfirmsHardware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="dxva2MarkerConfirmsHardware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="hardwareThenSoftwareStillHardwareConfirmed[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="failureDetailForSoftwareFallback[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="d3d11vaMarkerConfirmsHardware[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.0"/>
+  <testcase name="initFailureMarkerAfterForceSoftwareIsIgnored[desktop]" classname="com.tvnext.app.core.player.VlcDecoderDetectorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

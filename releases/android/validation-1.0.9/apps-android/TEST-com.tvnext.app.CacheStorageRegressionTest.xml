@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.CacheStorageRegressionTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-14T09:32:12.961Z" hostname="0fcc891603bc" time="1.285">
+  <properties/>
+  <testcase name="indexMaintenanceActuallyShrinksLargeSqliteAndPreservesCurrentGuideAndArchiveTitles[28]" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.328"/>
+  <testcase name="legacyAppGuideAndOldMovieCardsAreRemovedWithoutTouchingPlaylistOrSettings[28]" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.117"/>
+  <testcase name="committedSourceRetainsOnlyValidatorAnd304NeverCreatesAnotherGuideFile[28]" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.023"/>
+  <testcase name="lowFreeSpaceShrinksIndexFurtherWhileKeepingEveryCurrentProgramme[28]" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.177"/>
+  <testcase name="fileCleanupBoundsImagesAndRemovesStaleEpgCopiesButKeepsRecordingsAndRecentImport[28]" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.021"/>
+  <testcase name="indexMaintenanceActuallyShrinksLargeSqliteAndPreservesCurrentGuideAndArchiveTitles" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.301"/>
+  <testcase name="legacyAppGuideAndOldMovieCardsAreRemovedWithoutTouchingPlaylistOrSettings" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.093"/>
+  <testcase name="committedSourceRetainsOnlyValidatorAnd304NeverCreatesAnotherGuideFile" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.023"/>
+  <testcase name="lowFreeSpaceShrinksIndexFurtherWhileKeepingEveryCurrentProgramme" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.144"/>
+  <testcase name="fileCleanupBoundsImagesAndRemovesStaleEpgCopiesButKeepsRecordingsAndRecentImport" classname="com.tvnext.app.CacheStorageRegressionTest" time="0.051"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

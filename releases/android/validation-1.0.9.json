@@ -1,0 +1,135 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.9",
+  "versionCode": 1009,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "c166be99ff5145388ab564f528aa956b882ce24e",
+  "sha256": "46fd53e51309fde025dab7218f0970629443d21507dc2a15519c7a7eb06adfe7",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "afr": {
+    "defaultEnabled": false,
+    "defaultStrategy": "allow display mode changes",
+    "defaultMatchResolution": false,
+    "defaultDoubleLowFrameRate": true,
+    "defaultFullscreenOnly": true,
+    "defaultDelayMs": 1000,
+    "availableDelaysMs": [
+      500,
+      1000,
+      2000,
+      3000
+    ],
+    "displayModes": "Android Display.getSupportedModes",
+    "seamlessAlternatives": "Display.Mode.alternativeRefreshRates API31+",
+    "fractionalRatesKept": true,
+    "integerCadenceToleranceHz": 0.015,
+    "resolutionNeverForcedBelowContentIfLargerModeAvailable": true,
+    "frameRateSource": "Media3 input Format; fallback stable PTS median with 48 intervals",
+    "noPerFrameUiUpdates": true,
+    "windowPreferencesOnly": true,
+    "noRootOrNewPermissions": true,
+    "restoreOnDisableExitEndErrorBackgroundDestroy": true,
+    "pausedOrBufferingDoesNotOscillate": true,
+    "obsoleteRequestsCancelled": true,
+    "deviceRefusalTimeoutMs": 5000,
+    "sameRefusalNotRetriedOnEveryBuffer": true,
+    "media3SurfaceFrameRateHintsDisabled": true,
+    "activityHandlesResolutionAndDensityChanges": true
+  },
+  "badges": {
+    "order": [
+      "actual decoder",
+      "resolution",
+      "video frames per second",
+      "audio channel layout",
+      "audio codec"
+    ],
+    "russianDecoderLabels": [
+      "А",
+      "П"
+    ],
+    "fractionalFpsExample": "23,976 кадр/с",
+    "displayRefreshHzNotUsedForVideoFps": true,
+    "actualSelectedTracksOnly": true,
+    "dolbyVectorMark": true,
+    "dolbyDigitalPlusMark": true,
+    "trueHdSupported": true,
+    "noPassthroughOrAtmosClaim": true,
+    "normalCompactAndFullscreenPanels": true,
+    "translations": [
+      "ru",
+      "en",
+      "zh"
+    ]
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 76,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/settings",
+      "task": "desktopTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/media",
+      "task": "desktopTest",
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 138,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 343,
+  "research": [
+    "https://developer.android.com/media/optimize/performance/frame-rate",
+    "https://developer.android.com/reference/android/view/WindowManager.LayoutParams",
+    "https://developer.android.com/reference/android/view/Display.Mode",
+    "https://developer.android.com/reference/androidx/media3/exoplayer/ExoPlayer#setVideoChangeFrameRateStrategy(int)"
+  ],
+  "limitations": [
+    "APK 1.0.9 was not run on a physical television or emulator.",
+    "Physical HDMI handshakes, vendor mode acceptance and blackout duration require a TV/set-top-box; native tests use Robolectric API28/35 and configured Display modes.",
+    "The displayed mode list comes from Android and cannot expose HDMI modes hidden by device firmware.",
+    "Other unchanged EPG/metadata suites were not rerun.",
+    "Desktop compiles; Windows display switching and a Windows installer are not part of this Android feature."
+  ]
+}
