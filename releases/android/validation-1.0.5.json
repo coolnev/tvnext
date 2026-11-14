@@ -1,0 +1,115 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.5",
+  "versionCode": 1005,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "eeaa7abe499b1d3dfaa866e56a739a54f4a42b2d",
+  "sha256": "d0e690b2f49da2e5a3298736cdf6fd50d6b860a82c5c1da8061c868d5887de09",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "epg": {
+    "savingNoticeClearedAtCommit": true,
+    "noticeAndSpinnerClearedBeforeStateReads": true,
+    "storageMaintenanceScheduledOutsideVisibleRefresh": true,
+    "maintenanceCoalesced": true,
+    "slowMaintenanceDoesNotNeedChannelSwitchToDismissProgress": true,
+    "storageLimitsFrom104Retained": true
+  },
+  "focus": {
+    "categoryChangeClosesOldTimeline": true,
+    "cancelsOldProgrammeQuery": true,
+    "lateResultCannotReopenOldPane": true,
+    "lateCategoryProjectionSelectsAValidChannel": true,
+    "archiveEntryFocusNeverReusedAfterChoosingCategory": true
+  },
+  "discovery": {
+    "unmarkedFilmTitleSupported": true,
+    "epgDurationAndEpisodeNumberUsed": true,
+    "structuredYearAndSynopsisCompared": true,
+    "exactIdentityAndKnownYearChecked": true,
+    "fullKinopoiskCardVerifiedBeforePublishing": true,
+    "missingSearchTypeAllowedUntilFullCardVerification": true,
+    "unmarkedTmdbRequiresFullDetails": true,
+    "broadcastGenresAndTypesRejected": true,
+    "ambiguousTitlesIncludingTvShowsRejected": true,
+    "programmeDurationIsPartOfCacheKey": true,
+    "shortNewsSlotCannotReuseLongFilmCard": true,
+    "matchedCardsBounded128": true,
+    "artworkStoragePolicyFrom104Retained": true
+  },
+  "tvGuideBack": {
+    "androidSystemBackDelegatesToVisibleGuide": true,
+    "firstBackFocusesCategoryButton": true,
+    "secondBackClosesToFullscreen": true,
+    "anotherToolbarButtonBackVisitsCategoriesFirst": true,
+    "lateInitialEpgCannotStealCategoryButtonFocus": true,
+    "dialogsDismissToCategoryButton": true
+  },
+  "tests": [
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 53,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/iptv",
+      "task": "desktopTest",
+      "tests": 233,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/tvg",
+      "task": "desktopTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 518,
+  "nativeTestApis": [
+    28,
+    35
+  ],
+  "checks": [
+    "checkEncoding",
+    "assembleRelease",
+    "lintVitalRelease",
+    "Desktop compileKotlin",
+    "signature",
+    "zipalign -c -P 16 4",
+    "ZIP integrity",
+    "default API key retained in DEX and absent from tracked plaintext",
+    "PNG resources unchanged",
+    "Compose screenshot visually reviewed"
+  ],
+  "releaseApkRunOnEmulator": false,
+  "physicalTV": false,
+  "limitations": [
+    "The user TV was not available; intermittent hardware behaviour is covered by delayed-query, focus and native component regressions",
+    "An unclassified title with insufficient duration/year/synopsis evidence or conflicting catalogue identities keeps the original EPG",
+    "Live external metadata and provider EPG hosts are blocked by environment network policy; network behaviour uses deterministic API fixtures"
+  ]
+}

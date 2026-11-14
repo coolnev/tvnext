@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="RealWorldM3uParserTest[desktop]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-14T05:25:22.650Z" hostname="0fcc891603bc" time="0.011">
+  <properties/>
+  <testcase name="parsesRealWorldPlaylist[desktop]" classname="com.tvnext.app.core.iptv.m3u.RealWorldM3uParserTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

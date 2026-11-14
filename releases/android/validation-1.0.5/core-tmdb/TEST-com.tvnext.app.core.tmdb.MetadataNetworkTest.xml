@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="MetadataNetworkTest[desktop]" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-14T05:28:36.514Z" hostname="0fcc891603bc" time="4.104">
+  <properties/>
+  <testcase name="aNumberedSequelWithASubtitleCanBeFoundByItsBroadcastShortName[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.045"/>
+  <testcase name="transientSearchAndDetailsFailuresAreRetried[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.829"/>
+  <testcase name="aVisiblePosterOnlyCardRetriesTheSynopsisWithoutAnotherSearch[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="2.552"/>
+  <testcase name="aTemporaryErrorExpiresAfterSecondsInsteadOfBeingCachedForAWeek[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.032"/>
+  <testcase name="buildDefaultKeyWorksBeforeSettingsAndManualKeysSurviveStoreRecreation[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.019"/>
+  <testcase name="badKeyIsNotRetried[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.006"/>
+  <testcase name="searchArtworkSurvivesAFullCardOutage[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.015"/>
+  <testcase name="placeholderInFullCardCannotEraseASearchSynopsis[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.015"/>
+  <testcase name="kinopoiskDownloadsStillFromImageEndpointWhenBackdropIsAbsent[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.013"/>
+  <testcase name="aServerFailureDoesNotEraseTheLastGoodVodCard[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.013"/>
+  <testcase name="simultaneousProgrammeCardsShareOneLookupAndCacheItsResult[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.087"/>
+  <testcase name="kholopSequelDescriptionArrivesWhileTmdbIsStillWaiting[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.014"/>
+  <testcase name="kinopoiskFillsMissingFrameEvenWhenTmdbHasSynopsisAndPoster[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.014"/>
+  <testcase name="actualUserSampleContainsAReadableFullAndShortSynopsis[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.005"/>
+  <testcase name="kinopoiskRetriesTheFullCardAfterAnImageOnlySearchResult[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.413"/>
+  <testcase name="synopsisIsPublishedBeforeSlowKinopoiskDetailsAndImages[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.01"/>
+  <testcase name="reopeningAnImageOnlyCardResumesItsDescriptionImmediately[desktop]" classname="com.tvnext.app.core.tmdb.MetadataNetworkTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
