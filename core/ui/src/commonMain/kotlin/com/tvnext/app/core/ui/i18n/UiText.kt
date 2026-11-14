@@ -29,6 +29,13 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Кинопоиск" to ("Kinopoisk" to "Kinopoisk"),
+        "Подпись архива на видео" to ("Archive label on video" to "显示回看标注"),
+        "Использовать источник" to ("Use source" to "使用此来源"),
+        "Ключ не задан" to ("Key not set" to "未设置密钥"),
+        "API-ключ · {0}" to ("API key · {0}" to "API 密钥 · {0}"),
+        "Кэш очищен" to ("Cache cleared" to "缓存已清除"),
+        "Не удалось очистить кэш" to ("Could not clear cache" to "无法清除缓存"),
         "{0} · сохранено на {1}" to ("{0} · saved at {1}" to "{0} · 上次播放到 {1}"),
         "Кинопоиск: соединение установлено" to ("Kinopoisk: connected" to "Kinopoisk：已连接"),
         "Кинопоиск: ключ не задан" to ("Kinopoisk: API key is missing" to "Kinopoisk：未设置 API 密钥"),

@@ -103,6 +103,8 @@ fun TvPlayerPanel(
     rounded: Boolean = true,
     /** Whether the on-screen diagnostics plaque is visible (global toggle, key I). */
     showDiagnostics: Boolean = true,
+    /** Space occupied by the host fullscreen controls over the video. */
+    statusBottomInset: androidx.compose.ui.unit.Dp = 0.dp,
     /**
      * Reports whether the VIDEO SURFACE (the player's own focusable node) is
      * focused. The host screens track this to decide whether OK/Enter toggles
@@ -150,16 +152,17 @@ fun TvPlayerPanel(
     val currentShowDiagnostics by rememberUpdatedState(showDiagnostics)
 
     // Archive items carry their full label in PlaybackItem.title
-    // («Россия-1 • Архив • 09.08 20:00»): the title overlay shows it instead of
-    // the bare channel name, so the user always sees what they are watching.
+    // («Россия-1 • Архив • 09.08 20:00»). Android uses a compact persistent
+    // bottom label; live channels retain the temporary top title.
     val effectiveTitle: String =
         if (playerState.item?.kind == PlaybackContentKind.ARCHIVE) {
             playerState.item?.title ?: channelName
         } else {
             channelName
         }
-    val effectiveTitleVisible = currentChannelNameVisible ||
-        playerState.item?.kind == PlaybackContentKind.ARCHIVE
+    val isArchive = playerState.item?.kind == PlaybackContentKind.ARCHIVE
+    val effectiveTitleVisible = if (isArchive) !isAndroidPlatform() && LocalArchiveLabelEnabled.current
+        else currentChannelNameVisible
 
     // Archive playback supports seek/pause/progress like VOD — a seek bar is
     // shown whenever the active content is archive (or the caller opted in).
@@ -233,24 +236,7 @@ fun TvPlayerPanel(
                     PlaybackState.LOADING,
                     PlaybackState.BUFFERING,
                     -> {
-                        if (isAndroidPlatform()) {
-                            Row(
-                                Modifier.align(if (clockPosition == ClockPosition.TOP_LEFT)
-                                    Alignment.TopEnd else Alignment.TopStart)
-                                    .padding(12.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.Black.copy(alpha = 0.80f))
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                            ) {
-                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp,
-                                    color = Color.White)
-                                Text(if (playerState.state == PlaybackState.BUFFERING)
-                                    uiText("Восстановление…") else uiText("Загрузка…"), color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall)
-                            }
-                        } else CircularProgressIndicator(
+                        if (!isAndroidPlatform()) CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center).size(40.dp),
                             color = Color.White,
                         )
@@ -307,12 +293,18 @@ fun TvPlayerPanel(
 
                     else -> Unit
                 }
+                if (isAndroidPlatform()) VideoPlaybackStatus(
+                    state = playerState.state,
+                    archiveTitle = effectiveTitle.takeIf { isArchive },
+                    bottomInset = statusBottomInset,
+                )
                 if (showDiagnostics) {
                     playerState.diagnostics?.let { diag ->
                         DiagnosticsPanel(
                             diagnostics = diag,
                             modifier = Modifier
-                                .align(Alignment.BottomStart)
+                                .align(if (isAndroidPlatform() && isArchive) Alignment.BottomEnd else Alignment.BottomStart)
+                                .padding(bottom = statusBottomInset + if (isAndroidPlatform() && isArchive) 48.dp else 0.dp)
                                 .padding(TVNextDimens.ItemSpacing),
                         )
                     }
@@ -322,6 +314,8 @@ fun TvPlayerPanel(
                         text = effectiveTitle,
                         style = MaterialTheme.typography.titleMedium,
                         color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(

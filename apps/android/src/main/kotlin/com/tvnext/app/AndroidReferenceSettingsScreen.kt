@@ -285,6 +285,9 @@ internal fun AndroidReferenceSettingsScreen(
                                     uiText("Верхний правый угол") to { component.dispatch(SettingsIntent.ClockPositionChanged(ClockPosition.TOP_RIGHT)) },
                                 ))
                             })
+                            ReferenceToggle(uiText("Подпись архива на видео"), s.showArchiveLabel, entryHeight) {
+                                component.dispatch(SettingsIntent.ShowArchiveLabelChanged(it))
+                            }
                             ReferenceToggle(uiText("Часы без фона"), s.clockWithoutBackground, entryHeight) {
                                 component.dispatch(SettingsIntent.ClockWithoutBackgroundChanged(it))
                             }
@@ -379,46 +382,42 @@ internal fun AndroidReferenceSettingsScreen(
                         5 -> com.tvnext.app.feature.settings.ui.MediaLibrarySettings(s.media,
                             {component.dispatch(SettingsIntent.MediaPreferencesChanged(it))},compact=condensed,showTitle=false)
                         4 -> {
-                            ReferenceToggle(uiText("Использовать TMDB"), state.tmdbEnabled, entryHeight) {
-                                component.dispatch(SettingsIntent.TmdbEnabledChanged(it))
-                            }
-                            ReferenceRow(uiText("Проверить TMDB"), height = entryHeight,
-                                onClick = { component.dispatch(SettingsIntent.TmdbTestConnection) })
-                            ReferenceRow(uiText("Собственный API-ключ"), "••••••••", height = entryHeight,
-                                onClick = { showTmdbKey = true })
-                            ReferenceRow(uiText("Очистить кэш TMDB"), height = entryHeight,
-                                onClick = { component.dispatch(SettingsIntent.TmdbClearCache) })
-                            ReferenceToggle(uiText("Использовать Кинопоиск"),s.kinopoiskEnabled,entryHeight) {
-                                component.dispatch(SettingsIntent.KinopoiskEnabledChanged(it))
-                            }
-                            ReferenceRow(uiText("Кинопоиск · Unofficial"),
-                                if (kinopoiskConfigured) uiText("Ключ задан") else uiText("Добавить ключ"),
-                                height = entryHeight, onClick = { showKinopoiskKey = true })
-                            ReferenceRow(uiText("Проверить Кинопоиск"), height = entryHeight,
-                                onClick = {
-                                    if (!kinopoiskTesting) {
-                                        kinopoiskTesting = true
-                                        kinopoiskMessage = uiText("Проверка соединения…")
-                                        scope.launch {
-                                            try { kinopoiskMessage = kinopoiskLookup.checkConnection().uiMessage() }
-                                            finally { kinopoiskTesting = false }
-                                        }
-                                    }
+                            val tmdbMessage = state.tmdbConnectionResult?.let { result ->
+                                uiText(when (result.kind) {
+                                    TmdbConnectionResult.Kind.SUCCESS -> "TMDB: соединение установлено"
+                                    TmdbConnectionResult.Kind.INVALID_KEY -> "TMDB: ключ отклонён (HTTP 401/403)"
+                                    TmdbConnectionResult.Kind.NO_CONNECTION -> "TMDB: нет ответа от сервера — проверьте сеть, DNS и доступность API"
+                                    TmdbConnectionResult.Kind.ERROR -> "TMDB: сервер вернул ошибку"
                                 })
-                            if (kinopoiskMessage.isNotEmpty()) {
-                                Text(kinopoiskMessage, style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            state.tmdbConnectionResult?.let { result ->
-                                val message = when (result.kind) {
-                                    TmdbConnectionResult.Kind.SUCCESS -> uiText("TMDB: соединение установлено")
-                                    TmdbConnectionResult.Kind.INVALID_KEY -> uiText("TMDB: ключ отклонён (HTTP 401/403)")
-                                    TmdbConnectionResult.Kind.NO_CONNECTION -> uiText("TMDB: нет ответа от сервера — проверьте сеть, DNS и доступность API")
-                                    TmdbConnectionResult.Kind.ERROR -> uiText("TMDB: сервер вернул ошибку")
-                                }
-                                Text(message, style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            com.tvnext.app.feature.settings.ui.MovieSourceSettings(
+                                name = "TMDB", enabled = state.tmdbEnabled,
+                                keyConfigured = state.tmdbApiKey.isNotBlank(), testing = state.tmdbTesting,
+                                compact = condensed,
+                                onEnabled = { component.dispatch(SettingsIntent.TmdbEnabledChanged(it)) },
+                                onEditKey = { showTmdbKey = true },
+                                onTest = { component.dispatch(SettingsIntent.TmdbTestConnection) },
+                                onClearCache = { component.dispatch(SettingsIntent.TmdbClearCache) },
+                                message = listOfNotNull(tmdbMessage, state.tmdbCacheMessage?.let { uiText(it) }).joinToString(" · "),
+                            )
+                            com.tvnext.app.feature.settings.ui.MovieSourceSettings(
+                                name = uiText("Кинопоиск · Unofficial"), enabled = s.kinopoiskEnabled,
+                                keyConfigured = kinopoiskConfigured, testing = kinopoiskTesting,
+                                compact = condensed,
+                                onEnabled = { component.dispatch(SettingsIntent.KinopoiskEnabledChanged(it)) },
+                                onEditKey = { showKinopoiskKey = true },
+                                onTest = {
+                                    kinopoiskTesting = true
+                                    kinopoiskMessage = uiText("Проверка соединения…")
+                                    scope.launch {
+                                        try { kinopoiskMessage = kinopoiskLookup.checkConnection().uiMessage() }
+                                        finally { kinopoiskTesting = false }
+                                    }
+                                },
+                                onClearCache = { component.dispatch(SettingsIntent.KinopoiskClearCache) },
+                                message = listOfNotNull(kinopoiskMessage.takeIf { it.isNotBlank() },
+                                    state.kinopoiskCacheMessage?.let { uiText(it) }).joinToString(" · "),
+                            )
                         }
                         6 -> {
                             // All entries remain on one screen at 720p.
@@ -620,8 +619,9 @@ internal fun AndroidReferenceSettingsScreen(
     if (showTmdbKey) {
         var key by remember { mutableStateOf(state.tmdbApiKey) }
         AlertDialog(onDismissRequest = { showTmdbKey = false },
-            title = { Text(uiText("Собственный ключ TMDB")) }, text = {
-                OutlinedTextField(key, { key = it }, label = { Text(uiText("API-ключ")) }, singleLine = true)
+            title = { Text(uiText("API-ключ · {0}", "TMDB")) }, text = {
+                OutlinedTextField(key, { key = it }, label = { Text(uiText("API-ключ")) }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation())
             }, confirmButton = { TvActionButton(onClick = {
                 component.dispatch(SettingsIntent.TmdbApiKeyChanged(key))
                 showTmdbKey = false
@@ -632,13 +632,13 @@ internal fun AndroidReferenceSettingsScreen(
     if (showKinopoiskKey) {
         var key by remember { mutableStateOf("") }
         AlertDialog(onDismissRequest = { showKinopoiskKey = false },
-            title = { Text(uiText("Кинопоиск · Unofficial — резервный API-ключ")) },
+            title = { Text(uiText("API-ключ · {0}", uiText("Кинопоиск"))) },
             text = {
                 Column {
                     Text(uiText("Можно задать другой API-ключ. Пустое поле использует ключ по умолчанию."),
                         style = MaterialTheme.typography.bodySmall)
                     OutlinedTextField(value = key, onValueChange = { key = it },
-                        label = { Text(uiText("Полный API-ключ")) }, singleLine = true,
+                        label = { Text(uiText("API-ключ")) }, singleLine = true,
                         visualTransformation = PasswordVisualTransformation())
                 }
             }, confirmButton = { TvActionButton(onClick = {

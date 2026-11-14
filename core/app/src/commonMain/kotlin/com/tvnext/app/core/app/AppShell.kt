@@ -132,7 +132,8 @@ fun AppShell(
         panelTransparencyPercent = settings.panelTransparencyPercent,
     ) {
         val scene = remember(sharedPlaybackController) { if(sharedPlaybackController!=null) VideoScene() else null }
-        CompositionLocalProvider(LocalVideoScene provides scene) {
+        CompositionLocalProvider(LocalVideoScene provides scene,
+            com.tvnext.app.core.ui.component.LocalArchiveLabelEnabled provides settings.showArchiveLabel) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .onGloballyPositioned {scene?.origin=it.positionInRoot()}) {
             if(scene!=null && sharedPlaybackController!=null) com.tvnext.app.core.ui.component.SharedVideoStage(
@@ -286,10 +287,8 @@ fun AppShell(
             if (isAndroidPlatform() && epgLoading && !overlayFullScreen &&
                 activeTab != AppTab.SETTINGS) {
                 Row(
-                    Modifier.align(
-                        if (settings.clockPosition == ClockPosition.TOP_LEFT) Alignment.TopEnd
-                        else Alignment.TopStart
-                    ).padding(start = 12.dp, end = 12.dp, top = 12.dp)
+                    Modifier.align(Alignment.TopCenter)
+                        .padding(start = 12.dp, end = 12.dp, top = 112.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color.Black.copy(alpha = 0.82f))
                         .padding(horizontal = 10.dp, vertical = 7.dp),

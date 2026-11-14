@@ -291,6 +291,11 @@ private fun InterfaceSection(
                 onClick = { component.dispatch(SettingsIntent.ClockWithoutBackgroundChanged(!state.settings.clockWithoutBackground)) },
             )
         }
+        SettingsSelectRow(
+            label = uiText("Подпись архива на видео"),
+            selected = state.settings.showArchiveLabel,
+            onClick = { component.dispatch(SettingsIntent.ShowArchiveLabelChanged(!state.settings.showArchiveLabel)) },
+        )
         if (!isAndroidPlatform()) {
         Text(
             text = uiText("Разрешение окна (Windows)"),

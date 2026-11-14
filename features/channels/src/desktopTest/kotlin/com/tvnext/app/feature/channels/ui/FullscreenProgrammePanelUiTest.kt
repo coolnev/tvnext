@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import com.tvnext.app.core.ui.component.VideoPlaybackStatus
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
@@ -71,9 +74,14 @@ class FullscreenProgrammePanelUiTest {
     }
     @Test fun archiveUsesTwoEqualCardsAndOneTimelineWithoutSynopsisOrDescriptionButton() = at1080p {
         val controller = player(true)
+        val panelHeight = mutableIntStateOf(0)
         ui.setContent { MaterialTheme(colorScheme=darkColorScheme(primary=Color(0xFF3DDC97))) {
+            val density = LocalDensity.current
             Box(Modifier.size(1920.dp,1080.dp).testTag("test-video-layout").background(Color(0xFF173036)),contentAlignment=Alignment.BottomCenter) {
-                AndroidProgrammeOverlay(channel,epg,controller,true,{}, {},modifier=Modifier.fillMaxWidth())
+                VideoPlaybackStatus(PlaybackState.PLAYING, "КИНО ТВ • Архив • 14.11 20:00",
+                    bottomInset = with(density) { panelHeight.intValue.toDp() })
+                AndroidProgrammeOverlay(channel,epg,controller,true,{}, {},modifier=Modifier.fillMaxWidth()
+                    .onSizeChanged { panelHeight.intValue = it.height })
             }
         } }
         ui.waitForIdle()
@@ -93,6 +101,9 @@ class FullscreenProgrammePanelUiTest {
         val panel=ui.onNodeWithTag("fullscreen-programme-panel").fetchSemanticsNode().boundsInRoot
         assertEquals(1920f,ui.onNodeWithTag("test-video-layout").fetchSemanticsNode().boundsInRoot.width,1.1f)
         assertTrue(panel.height<360f,"Panel must retain the approved compact proportions: $panel")
+        val archiveLabel=ui.onNodeWithTag("archive-video-label").fetchSemanticsNode().boundsInRoot
+        assertTrue(archiveLabel.bottom < panel.top, "Persistent archive label must stay above the measured controls")
+        assertTrue(archiveLabel.height < 50f, "Archive label remains compact at 1080p")
         screenshot("fullscreen-two-cards-archive-1920.png")
     }
     @Test fun remoteActionsFireOnceAndPausedOrLiveModeChangesKeepUsableFocus() = at1080p {

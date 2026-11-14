@@ -61,6 +61,8 @@ data class SettingsState(
     val tmdbEnabled: Boolean = false,
     val tmdbApiKey: String = "",
     val tmdbTesting: Boolean = false,
+    val tmdbCacheMessage: String? = null,
+    val kinopoiskCacheMessage: String? = null,
     val tmdbConnectionResult: TmdbConnectionResult? = null,
     /** True while the «Сбросить все данные» confirmation is shown. */
     val confirmDataReset: Boolean = false,
@@ -77,6 +79,7 @@ sealed interface SettingsIntent : MviIntent {
     data class StartScreenChanged(val screen: StartScreen) : SettingsIntent
     data class ClockPositionChanged(val position: ClockPosition) : SettingsIntent
     data class ClockWithoutBackgroundChanged(val enabled: Boolean) : SettingsIntent
+    data class ShowArchiveLabelChanged(val enabled: Boolean) : SettingsIntent
     data class ProgrammeDescriptionPlacementChanged(val right: Boolean) : SettingsIntent
     data class StartFullscreenChanged(val enabled: Boolean) : SettingsIntent
     data class ShowChannelNumbersChanged(val enabled: Boolean) : SettingsIntent
@@ -122,6 +125,7 @@ sealed interface SettingsIntent : MviIntent {
     data class TmdbApiKeyChanged(val apiKey: String) : SettingsIntent
     data object TmdbTestConnection : SettingsIntent
     data object TmdbClearCache : SettingsIntent
+    data object KinopoiskClearCache : SettingsIntent
 
     // Data reset
     data object DataResetStart : SettingsIntent
@@ -146,6 +150,8 @@ class DefaultSettingsComponent(
     private val dataReset: AppDataReset,
     private val autostart: com.tvnext.app.core.common.platform.AppAutostart,
     mainContext: CoroutineContext,
+    private val kinopoiskLookup: com.tvnext.app.core.tmdb.KinopoiskProgrammeLookup? = null,
+    private val programmeMetadata: com.tvnext.app.core.tmdb.ProgrammeMetadataRepository? = null,
 ) : SettingsComponent,
     ComponentContext by componentContext,
     MviComponent<SettingsState, SettingsIntent, SettingsEffect>(
@@ -169,6 +175,8 @@ class DefaultSettingsComponent(
             state.copy(settings = state.settings.copy(clockPosition = intent.position))
         is SettingsIntent.ClockWithoutBackgroundChanged ->
             state.copy(settings = state.settings.copy(clockWithoutBackground = intent.enabled))
+        is SettingsIntent.ShowArchiveLabelChanged ->
+            state.copy(settings = state.settings.copy(showArchiveLabel = intent.enabled))
         is SettingsIntent.ProgrammeDescriptionPlacementChanged ->
             state.copy(settings = state.settings.copy(programmeDescriptionRight = intent.right))
         is SettingsIntent.StartFullscreenChanged ->
@@ -222,7 +230,8 @@ class DefaultSettingsComponent(
         is SettingsIntent.TmdbEnabledChanged -> state.copy(tmdbEnabled = intent.enabled, tmdbConnectionResult = null)
         is SettingsIntent.TmdbApiKeyChanged -> state.copy(tmdbApiKey = intent.apiKey, tmdbConnectionResult = null)
         SettingsIntent.TmdbTestConnection -> state.copy(tmdbTesting = true, tmdbConnectionResult = null)
-        SettingsIntent.TmdbClearCache -> state
+        SettingsIntent.TmdbClearCache -> state.copy(tmdbCacheMessage = null)
+        SettingsIntent.KinopoiskClearCache -> state.copy(kinopoiskCacheMessage = null)
         SettingsIntent.DataResetStart -> state.copy(confirmDataReset = true)
         SettingsIntent.DataResetCancel -> state.copy(confirmDataReset = false)
         SettingsIntent.DataResetConfirm -> state.copy(confirmDataReset = false)
@@ -240,6 +249,7 @@ class DefaultSettingsComponent(
             is SettingsIntent.StartScreenChanged,
             is SettingsIntent.ClockPositionChanged,
             is SettingsIntent.ClockWithoutBackgroundChanged,
+            is SettingsIntent.ShowArchiveLabelChanged,
             is SettingsIntent.ProgrammeDescriptionPlacementChanged,
             is SettingsIntent.StartFullscreenChanged,
             is SettingsIntent.ShowChannelNumbersChanged,
@@ -293,7 +303,8 @@ class DefaultSettingsComponent(
                     .onFailure { error -> Logger.e(TAG, "Failed to save TMDB API key", error) }
             }
             SettingsIntent.TmdbTestConnection -> testTmdbConnection()
-            SettingsIntent.TmdbClearCache -> clearTmdbCache()
+            SettingsIntent.TmdbClearCache -> clearMetadataCache(kinopoisk = false)
+            SettingsIntent.KinopoiskClearCache -> clearMetadataCache(kinopoisk = true)
             SettingsIntent.DataResetStart -> Unit
             SettingsIntent.DataResetCancel -> Unit
             SettingsIntent.DataResetConfirm -> dataReset.requestResetAndRestart()
@@ -465,13 +476,18 @@ class DefaultSettingsComponent(
         }
     }
 
-    private fun clearTmdbCache() {
+    private fun clearMetadataCache(kinopoisk: Boolean) {
         launch {
             try {
-                tmdbRepository.clearCache()
+                if (kinopoisk) kinopoiskLookup?.clearCache() else tmdbRepository.clearCache()
+                programmeMetadata?.clearCache()
+                setState { if (kinopoisk) it.copy(kinopoiskCacheMessage = "Кэш очищен")
+                    else it.copy(tmdbCacheMessage = "Кэш очищен") }
             } catch (error: Throwable) {
                 error.rethrowAndroidCancellation()
-                Logger.e(TAG, "Failed to clear TMDB cache", error)
+                Logger.e(TAG, "Failed to clear movie information cache", error)
+                setState { if (kinopoisk) it.copy(kinopoiskCacheMessage = "Не удалось очистить кэш")
+                    else it.copy(tmdbCacheMessage = "Не удалось очистить кэш") }
             }
         }
     }

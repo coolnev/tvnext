@@ -56,6 +56,7 @@ class SqlDelightSettingsRepository(
         const val EPG_URL = "settings.epg_url"
         const val CLOCK_POSITION = "settings.clock_position"
         const val CLOCK_WITHOUT_BACKGROUND = "settings.clock_without_background"
+        const val SHOW_ARCHIVE_LABEL = "settings.show_archive_label"
         const val PROGRAMME_DESCRIPTION_RIGHT = "settings.programme_description_right"
         const val ARCHIVE_LIMIT_DAYS = "settings.archive_limit_days"
         const val NETWORK_CACHING_MS = "settings.network_caching_ms"
@@ -95,6 +96,7 @@ class SqlDelightSettingsRepository(
         meta.setValue(Keys.EPG_URL, settings.epgUrl)
         meta.setValue(Keys.CLOCK_POSITION, settings.clockPosition.name)
         meta.setValue(Keys.CLOCK_WITHOUT_BACKGROUND, settings.clockWithoutBackground.toString())
+        meta.setValue(Keys.SHOW_ARCHIVE_LABEL, settings.showArchiveLabel.toString())
         meta.setValue(Keys.PROGRAMME_DESCRIPTION_RIGHT, settings.programmeDescriptionRight.toString())
         meta.setValue(Keys.ARCHIVE_LIMIT_DAYS, settings.archiveLimitDays.toString())
         meta.setValue(Keys.NETWORK_CACHING_MS, settings.networkCachingMs.toString())
@@ -180,6 +182,7 @@ class SqlDelightSettingsRepository(
             epgUrl = rows.string(Keys.EPG_URL) ?: defaults.epgUrl,
             clockPosition = rows.clockPosition() ?: defaults.clockPosition,
             clockWithoutBackground = rows.bool(Keys.CLOCK_WITHOUT_BACKGROUND) ?: defaults.clockWithoutBackground,
+            showArchiveLabel = rows.bool(Keys.SHOW_ARCHIVE_LABEL) ?: defaults.showArchiveLabel,
             programmeDescriptionRight = rows.bool(Keys.PROGRAMME_DESCRIPTION_RIGHT) ?: defaults.programmeDescriptionRight,
             archiveLimitDays = rows.int(Keys.ARCHIVE_LIMIT_DAYS) ?: defaults.archiveLimitDays,
             networkCachingMs = rows.int(Keys.NETWORK_CACHING_MS) ?: defaults.networkCachingMs,

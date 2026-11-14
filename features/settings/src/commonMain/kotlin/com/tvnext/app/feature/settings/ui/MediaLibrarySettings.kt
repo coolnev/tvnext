@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tvnext.app.feature.settings.domain.*
 import com.tvnext.app.core.ui.component.TvCardButton
@@ -21,10 +23,11 @@ fun MediaLibrarySettings(preferences:MediaPreferences,onChange:(MediaPreferences
     Column(verticalArrangement=Arrangement.spacedBy(6.dp)) {
         if(showTitle)Text(uiText("Медиатека"),style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.onSurface)
         @Composable fun row(label:String,value:String,click:()->Unit) {
-            TvCardButton(onClick=click,modifier=Modifier.fillMaxWidth().height(if(compact)38.dp else 50.dp),shape=RoundedCornerShape(4.dp)) {
-                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+            TvCardButton(onClick=click,modifier=Modifier.fillMaxWidth().heightIn(min=if(compact)38.dp else 50.dp),shape=RoundedCornerShape(4.dp),
+                contentPadding=PaddingValues(horizontal=12.dp,vertical=6.dp)) {
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.CenterVertically) {
                     Text(uiText(label),color=MaterialTheme.colorScheme.onSurface,modifier=Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium)
-                    Text(value,color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodyMedium)
+                    Text(value,color=MaterialTheme.colorScheme.primary,style=MaterialTheme.typography.bodyMedium,modifier=Modifier.weight(1f),textAlign=TextAlign.End)
                 }
             }
         }

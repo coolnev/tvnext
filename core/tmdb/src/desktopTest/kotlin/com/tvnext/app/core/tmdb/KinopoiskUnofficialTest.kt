@@ -50,6 +50,53 @@ class KinopoiskUnofficialTest {
         } finally { client.close() }
     }
 
+    @Test fun clearingCacheRefetchesTheCardAndDoesNotChangeTheKeyOrEnableSwitch() = runBlocking<Unit> {
+        var calls=0
+        val keys=Keys()
+        val client=HttpClient(MockEngine { request ->
+            calls++
+            respond(if(request.url.encodedPath.endsWith("search-by-keyword"))
+                """{"films":[{"filmId":2,"nameRu":"Холоп 2","type":"FILM"}]}""" else
+                """{"type":"FILM","description":"${"Полное описание фильма. ".repeat(8)}","posterUrl":"https://fixture/p.jpg","coverUrl":"https://fixture/f.jpg"}""",
+                headers=headersOf("Content-Type","application/json"))
+        }) { install(HttpTimeout) }
+        try {
+            val lookup=KinopoiskProgrammeLookup(client,keys)
+            assertNotNull(lookup.lookup("Холоп 2"))
+            val initial=calls
+            assertNotNull(lookup.lookup("Холоп 2"))
+            assertEquals(initial,calls,"Second lookup must use the completed card")
+            lookup.clearCache()
+            assertEquals("unofficial-test-key",keys.getKey())
+            assertTrue(keys.isEnabled())
+            assertNotNull(lookup.lookup("Холоп 2"))
+            assertEquals(initial*2,calls,"Clear must evict the search and full card")
+        } finally {client.close()}
+    }
+
+    @Test fun responseThatFinishesAfterClearCannotRepopulateTheCache() = runBlocking<Unit> {
+        var searches=0
+        val entered=CompletableDeferred<Unit>(); val release=CompletableDeferred<Unit>()
+        val client=HttpClient(MockEngine { request ->
+            val body=if(request.url.encodedPath.endsWith("search-by-keyword")) {
+                searches++
+                """{"films":[{"filmId":2,"nameRu":"Холоп 2","type":"FILM"}]}"""
+            } else {
+                if(!entered.isCompleted) {entered.complete(Unit);release.await()}
+                """{"type":"FILM","description":"${"Полное описание фильма. ".repeat(8)}","posterUrl":"https://fixture/p.jpg","coverUrl":"https://fixture/f.jpg"}"""
+            }
+            respond(body,headers=headersOf("Content-Type","application/json"))
+        }) {install(HttpTimeout)}
+        try {
+            val lookup=KinopoiskProgrammeLookup(client,Keys())
+            val pending=async{lookup.lookup("Холоп 2")}
+            entered.await();lookup.clearCache();release.complete(Unit)
+            assertNotNull(pending.await())
+            assertNotNull(lookup.lookup("Холоп 2"))
+            assertEquals(2,searches,"An old in-flight card must not reappear in the cleared cache")
+        } finally {client.close()}
+    }
+
     @Test fun legacyDevKeyCannotOverrideTheUnofficialDefaultOnUpgrade() = runBlocking<Unit> {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         try {

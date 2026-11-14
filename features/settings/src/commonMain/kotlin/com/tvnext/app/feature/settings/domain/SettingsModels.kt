@@ -25,6 +25,8 @@ data class AppSettings(
     /** On-screen clock over the video (Windows). */
     val clockPosition: ClockPosition = ClockPosition.OFF,
     val clockWithoutBackground: Boolean = false,
+    /** Persistent compact label while playing catch-up television. */
+    val showArchiveLabel: Boolean = true,
     /** Android TV EPG description placement; the default is the full-width bottom strip. */
     val programmeDescriptionRight: Boolean = false,
     /**

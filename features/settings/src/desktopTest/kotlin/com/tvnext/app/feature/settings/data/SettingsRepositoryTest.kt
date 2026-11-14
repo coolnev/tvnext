@@ -36,8 +36,17 @@ class SettingsRepositoryTest {
         assertEquals(null,repo.getMediaBrowserPosition())
     }
 
+    @Test fun archiveLabelDefaultsOnAndItsOffSwitchSurvivesRestart() = runBlocking {
+        val repo=createRepo()
+        assertEquals(true,repo.load().showArchiveLabel)
+        repo.save(repo.load().copy(showArchiveLabel=false))
+        assertEquals(false,repo.load().showArchiveLabel)
+        repo.save(repo.load().copy(showArchiveLabel=true))
+        assertEquals(true,repo.load().showArchiveLabel)
+    }
+
     @Test fun movieSettingsHaveEnglishAndChineseLabels() {
-        val keys=listOf("Информация о фильмах","Размер постеров","Сортировка фильмов","Порядок категорий","Запоминать место в каталоге","Начало просмотра","Спрашивать","Всегда с начала","Описания и постеры из Кинопоиска")
+        val keys=listOf("Кинопоиск","Подпись архива на видео","Использовать источник","Ключ не задан","API-ключ · {0}","Кэш очищен","Не удалось очистить кэш","Проверить соединение","Очистить кэш","Информация о фильмах","Размер постеров","Сортировка фильмов","Порядок категорий","Запоминать место в каталоге","Начало просмотра","Спрашивать","Всегда с начала","Описания и постеры из Кинопоиска")
         for(language in listOf(com.tvnext.app.core.common.UiLanguage.ENGLISH,com.tvnext.app.core.common.UiLanguage.CHINESE)) {
             for(key in keys)kotlin.test.assertNotEquals(key,com.tvnext.app.core.ui.i18n.UiTranslations.text(language,key))
         }

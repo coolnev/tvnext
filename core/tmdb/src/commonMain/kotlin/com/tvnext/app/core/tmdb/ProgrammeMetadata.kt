@@ -66,9 +66,13 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
     private data class MatchedCard(val id: Int, val card: ProgrammeMetadata, val token: String, val time: Long)
     private val matchedGuard = Any()
     private val matched = LinkedHashMap<String, MatchedCard>()
+    private var matchedRevision = 0L
+    fun clearCache() {
+        synchronized(matchedGuard) { matched.clear(); matchedRevision++ }
+    }
     fun resetAfterKeyChange() {
         backoffUntil = 0L; temporaryFailureAt = 0L
-        synchronized(matchedGuard) { matched.clear() }
+        clearCache()
     }
     fun temporaryFailureRecently(): Boolean =
         currentTimeMillis() - temporaryFailureAt in 0L..60_000L
@@ -115,6 +119,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
         if (query.isBlank() || token.isEmpty() || currentTimeMillis() < backoffUntil) return null
         return permits.withPermit {
             if (currentTimeMillis() < backoffUntil) return@withPermit null
+            val revision = synchronized(matchedGuard) { matchedRevision }
             val matchKey = metadataCacheKey(name,kind,request)
             val matchingName = if (programmeReleaseYear(name)==null && request?.releaseYear!=null) "$name (${request.releaseYear})" else name
             val known = synchronized(matchedGuard) { matched[matchKey]?.takeIf {
@@ -164,8 +169,10 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                         ?: return@withTimeoutOrNull null
                     val movieId = known?.id ?: body?.let { kinopoiskMatchedId(it, matchingName, kind) }
                     if (movieId != null && (known != null || kind == ProgrammeKind.CATALOG)) synchronized(matchedGuard) {
-                        if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
-                        matched[matchKey] = MatchedCard(movieId, card, token, currentTimeMillis())
+                        if (revision == matchedRevision) {
+                            if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
+                            matched[matchKey] = MatchedCard(movieId, card, token, currentTimeMillis())
+                        }
                     }
                     if (known != null || kind == ProgrammeKind.CATALOG) { best = card; onUpdate?.invoke(card) }
                     if ((known != null || kind == ProgrammeKind.CATALOG) && !card.overview.isNullOrBlank() && card.overview.length >= 120 &&
@@ -194,7 +201,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                                     if ((!type.isNullOrBlank() && !kind.accepts(type)) ||
                                         (kind != ProgrammeKind.CATALOG && (type.isNullOrBlank() || !kind.accepts(type))) ||
                                         (programmeReleaseYear(matchingName) != null && fullYear != null && programmeReleaseYear(matchingName) != fullYear)) {
-                                        synchronized(matchedGuard) { matched.remove(matchKey) }
+                                        synchronized(matchedGuard) { if (revision == matchedRevision) matched.remove(matchKey) }
                                         best = null
                                         return@withTimeoutOrNull null
                                     }
@@ -209,7 +216,7 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                                         ?: full["shortDescription"]?.jsonPrimitive?.content
                                     if (request != null && !request.acceptsCard(runtime,fullYear,genres,synopsis,type in setOf("TV_SERIES","MINI_SERIES"))) {
                                         best = null
-                                        synchronized(matchedGuard) { matched.remove(matchKey) }
+                                        synchronized(matchedGuard) { if (revision == matchedRevision) matched.remove(matchKey) }
                                         return@withTimeoutOrNull null
                                     }
                                     detail = parseKinopoiskDetails(text)
@@ -233,8 +240,10 @@ class KinopoiskProgrammeLookup(private val client: HttpClient, private val keys:
                     )
                     best = combined
                     if (movieId != null) synchronized(matchedGuard) {
-                        if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
-                        matched[matchKey] = MatchedCard(movieId, combined, token, currentTimeMillis())
+                        if (revision == matchedRevision) {
+                            if (matched.size >= 128 && matchKey !in matched) matched.remove(matched.keys.first())
+                            matched[matchKey] = MatchedCard(movieId, combined, token, currentTimeMillis())
+                        }
                     }
                     onUpdate?.invoke(combined)
                     if (movieId != null && hasProgrammeSynopsis(combined.overview) && (combined.frameUrl == null || combined.posterUrl == null)) {

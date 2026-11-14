@@ -58,6 +58,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.clip
@@ -423,6 +425,8 @@ private fun WatchingLayout(
     // 3 s. DOWN while the bar is visible activates the seek handle (LEFT/RIGHT
     // then scrub); centred play/pause icons also fade out after 3 s.
     var archiveOverlayVisible by remember { mutableStateOf(false) }
+    var fullscreenInfoHeightPx by remember { mutableIntStateOf(0) }
+    val overlayDensity = LocalDensity.current
     var seekMode by remember { mutableStateOf(false) }
     var playPauseIconVisible by remember { mutableStateOf(false) }
     var playPauseIconPlaying by remember { mutableStateOf(true) }
@@ -1123,6 +1127,9 @@ private fun WatchingLayout(
                             playingEpg.current?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0 else null,
                         onProgrammeSeek = if (isAndroidPlatform() && playerItemKind == PlaybackContentKind.ARCHIVE)
                             { position -> playingEpg.current?.let { (controller as? TimeShiftController)?.seekToTime(it.start + position) }; Unit } else null,
+                        statusBottomInset = if (isAndroidPlatform() && immersive && !categoriesOpen && !drawerOpen &&
+                            (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible))
+                            with(overlayDensity) { fullscreenInfoHeightPx.toDp() }.takeIf { it > 0.dp } ?: 200.dp else 0.dp,
                         channelNameVisible = channelNameVisible,
                         clockPosition = clockPosition,
                         showControls = !immersive && !isAndroidPlatform(),
@@ -1469,7 +1476,8 @@ private fun WatchingLayout(
                                 infoPanelFocused = false
                                 focusRequester.requestFocus()
                             },
-                            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(8f),
+                            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(8f)
+                                .onSizeChanged { fullscreenInfoHeightPx = it.height },
                         ) else EpgInfoOverlay(
                             channel = selectedChannel,
                             programme = nowPlaying[selectedChannel.id],
