@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+116 checks: 107 Channels, 7 Home, 2 native API28/35 surface checks.
+Before fix: expected regression failure (8 child compositions/measures/resizes over 8 virtual frames). After fix: 0/0/0; same rendered motion and final geometry.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed. Physical TV performance not measured.
+Source: f9e8e243298d98d4ba995e7ae89645307807ffc5

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.VideoSurfaceModeTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-14T19:30:15.515Z" hostname="0fcc891603bc" time="6.784">
+  <properties/>
+  <testcase name="animationsAndFrameRateOptionsUseOneNativeUhdSurfaceAndResizingKeepsIt[28]" classname="com.tvnext.app.VideoSurfaceModeTest" time="2.586"/>
+  <testcase name="animationsAndFrameRateOptionsUseOneNativeUhdSurfaceAndResizingKeepsIt" classname="com.tvnext.app.VideoSurfaceModeTest" time="3.69"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

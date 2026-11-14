@@ -1,0 +1,87 @@
+{
+  "date": "2026-11-14",
+  "versionName": "1.0.14",
+  "versionCode": 1014,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "f9e8e243298d98d4ba995e7ae89645307807ffc5",
+  "sha256": "a0f7ef1b6db2ba4d41d6d8ca2416070ac52fc1a26c620e181bee1f505a5a5d34",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "animation": {
+    "frameStateReadInGraphicsLayerOnly": true,
+    "nativePlaneLayoutFixedDuringFlight": true,
+    "nativeDimensionsUpdatedOnSettle": true,
+    "durationMs": 300,
+    "previousDurationMs": 420,
+    "singleGraphicsLayerWithClip": true,
+    "topLeftTransformOrigin": true,
+    "rapidReversalTested": true,
+    "antiFlashHandoffRetained": true,
+    "surfaceAndPlayerNotRemounted": true,
+    "offSwitchAndClippedPreviewRetained": true
+  },
+  "animationWork": {
+    "environment": "Compose desktop fixture with stand-in video composable, eight virtual animation frames; not a physical GPU/FPS measurement",
+    "before": {
+      "sampledFrames": 8,
+      "nativeCompositions": 8,
+      "nativeMeasures": 8,
+      "nativeSizeChanges": 8
+    },
+    "after": {
+      "sampledFrames": 8,
+      "nativeCompositions": 0,
+      "nativeMeasures": 0,
+      "nativeSizeChanges": 0
+    }
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "amlogicFactoryPresentInDex": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1013": true
+  },
+  "tests": [
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 107,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 116,
+  "limitations": [
+    "APK was not run on a physical Android TV or emulator; physical SurfaceView/SurfaceFlinger frame timing was not measured.",
+    "Before/after work counters measure the supplied stand-in video composable; they are structural UI-work checks, not TV/GPU FPS measurements.",
+    "Native API28/35 tests verify SurfaceView selection and identity across resizing, not rendered GPU animation.",
+    "Amlogic decoder/audio/EPG/AFR mechanisms unchanged; their full regression suites were not repeated.",
+    "Desktop compiles; no Windows installer built."
+  ]
+}

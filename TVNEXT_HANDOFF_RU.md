@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-14
 
-Текущая версия TVNext: `1.0.13`, versionCode 1013, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.14`, versionCode 1014, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,15 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.13.apk`.
-Описание: `RELEASE_ANDROID_1.0.13_RU.md`.
-Сводка: `releases/android/validation-1.0.13.json`.
+APK: `releases/android/TVNext-1.0.14.apk`.
+Описание: `RELEASE_ANDROID_1.0.14_RU.md`.
+Сводка: `releases/android/validation-1.0.14.json`.
+
+В 1.0.14 (14.11) пользователь: после устранения flash анимация сворачивания стала медленной/тяжёлой; просил исправить, а не объяснять необходимость. В SharedVideoStage Animatable.bounds читался в композиции и передавался в requiredSize обоих уровней: каждый кадр заново compose/measure/resize native child. Новый regression animationMovesInLayerWithoutPerFrameSurfaceRemeasure подтвердил на 1.0.13: 8/8/8 за8 виртуальных кадров (ожидаемо упал). После исправления 0/0/0, видимые границы продолжают двигаться.
+
+SharedVideoStage хранит laidOutViewport, во время flight использует его стабильные размеры. bounds.value читается только в graphicsLayer lambda (кроме управляющего LaunchedEffect), top-left TransformOrigin, scale/translation/clip/alpha в одном слое. Нативная раскладка меняется в конце; клип/выключенная анимация сохранены. Tween420→300ms. Guard/owner сохраняет непрерывное движение при быстрых повторных Back, проверен разворот расширения. Anti-flash navigationPending/expected destination из1.0.12 сохранён. SurfaceView, PlayerView Compose sync workaround, Amlogic async1.0.13, EPG/audio/AFR не менялись. docs/ANDROID_VIDEO_ANIMATION_1.0.14_RU.md с Google primary refs и оговоркой PlayerView/AndroidView compatibility.
+
+116 проверок: 107 Channels +7 Home +2 Android API28/35 VideoSurfaceModeTest; release/lint/encoding/Desktop compile, подпись/ZIP/zipalign/key/PNG/native libs unchanged vs1.0.13. Первая точечная проверка +финальный полный Channels/Home прошли. Источники work counters: /workspace/work/validation-114-before/video-animation-work.json и validation-114/...; опубликованы в validation-1.0.14. Это Compose stand-in и виртуальные часы, НЕ физический FPS/GPU benchmark. Реальный APK на Ugoos/TCL/эмуляторе не запускался, физическая плавность SurfaceFlinger не подтверждена. Исходники f9e8e24; версия1.0.14/code1014; SHA-256 APK a0f7ef1b6db2ba4d41d6d8ca2416070ac52fc1a26c620e181bee1f505a5a5d34.
 
 В 1.0.13 (14.11) пользователь: на Ugoos X3 дёргается 4K при ровном звуке, независимо от AFR; точный канал не назван. Проверены официальные Ugoos/Google/Media3 1.11.0: S905X3, Cortex-A55/Mali-G31MP2, штатный Android9; HEVC 4K60 заявлен. Google рекомендует async MediaCodec queue для пропусков кадров API23–30; прежняя фабрика TVNext оставляла sync на старом Android (кроме штатного Media3 исключения AmazonTV).
 

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SharedVideoStageUiTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T19:29:47.961Z" hostname="0fcc891603bc" time="0.347">
+  <properties/>
+  <testcase name="offSwitchSnapsAndClippedPreviewKeepsFullVideoDimensions[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.021"/>
+  <testcase name="animationMovesInLayerWithoutPerFrameSurfaceRemeasure[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.046"/>
+  <testcase name="gapsBetweenDestinationsDoNotDisposeTheNativeVideoSurface[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.016"/>
+  <testcase name="destinationChromeCannotFlashBeforeVideoShrinksIntoWindowOrHome[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.152"/>
+  <testcase name="navigationRaisesVideoBeforeTheSamePlaceholderReceivesItsNewBounds[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.043"/>
+  <testcase name="oneSurfaceAnimatesAcrossFullscreenGuideWindowAndHomeWithoutRemounting[desktop]" classname="com.tvnext.app.feature.channels.ui.SharedVideoStageUiTest" time="0.069"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
