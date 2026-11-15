@@ -48,7 +48,7 @@ class FullscreenProgrammePanelUiTest {
     private val programme = EpgProgramme(channel.id, now-3_600_000, now+3_600_000, "Холоп 2", "Сюжет, который не должен появляться в обычной панели.")
     private val next = EpgProgramme(channel.id, programme.stop, programme.stop+5_400_000, "СуперБобровы", "Описание следующего фильма.")
     private val epg = ChannelEpg(current = programme, next = next, channelId = channel.id)
-    private val buttonTags = listOf("aspect","previous","rewind","pause","forward","live","record","close")
+    private val buttonTags = listOf("aspect","previous","rewind","pause","forward","live","record","close","info")
     @Before fun start() { startKoin {} }
     @After fun stop() { stopKoin() }
     private class Player : PlaybackController {
@@ -106,7 +106,7 @@ class FullscreenProgrammePanelUiTest {
         ui.onNodeWithText("Архив").assertIsDisplayed()
         ui.onNodeWithTag("fullscreen-pause").assertIsFocused()
         val buttons=buttonTags.flatMap { ui.onAllNodesWithTag("fullscreen-$it").fetchSemanticsNodes() }.map { it.boundsInRoot }
-        assertEquals(7,buttons.size)
+        assertEquals(8,buttons.size)
         assertTrue(buttons.all { kotlin.math.abs(it.top-buttons.first().top)<1.1f && kotlin.math.abs(it.height-buttons.first().height)<1.1f })
         val panel=ui.onNodeWithTag("fullscreen-programme-panel").fetchSemanticsNode().boundsInRoot
         assertEquals(1920f,ui.onNodeWithTag("test-video-layout").fetchSemanticsNode().boundsInRoot.width,1.1f)
@@ -163,7 +163,7 @@ class FullscreenProgrammePanelUiTest {
             ui.runOnIdle {width.value=w};ui.waitForIdle()
             assertEquals(w.toFloat(),ui.onNodeWithTag("test-video-layout").fetchSemanticsNode().boundsInRoot.width,1.1f)
             val bs=buttonTags.flatMap {ui.onAllNodesWithTag("fullscreen-$it").fetchSemanticsNodes()}.map {it.boundsInRoot}
-            assertEquals(6,bs.size)
+            assertEquals(7,bs.size)
             assertTrue(bs.all {kotlin.math.abs(it.top-bs.first().top)<1.1f && it.left>=0 && it.right<=w+1})
             ui.onNodeWithText("Описание").assertDoesNotExist()
         }

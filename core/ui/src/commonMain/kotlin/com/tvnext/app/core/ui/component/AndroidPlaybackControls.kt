@@ -193,6 +193,12 @@ fun AndroidPlaybackControls(
                         style = if (compact) compactText else MaterialTheme.typography.labelMedium, maxLines = 1)
                 }
             }
+            TvCardButton(onClick = PlaybackUiRequests::showStreamInfo, enabled = interactive,
+                modifier = Modifier.size(buttonSize).testTag("playback-stream-info")
+                    .semantics {contentDescription=uiText("Информация о потоке")},
+                contentPadding=PaddingValues(0.dp)) {
+                Text("i",color=MaterialTheme.colorScheme.onSurface,style=MaterialTheme.typography.titleMedium)
+            }
         }
         if (compact) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {

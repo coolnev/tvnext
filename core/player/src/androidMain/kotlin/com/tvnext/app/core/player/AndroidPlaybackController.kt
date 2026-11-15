@@ -77,6 +77,14 @@ class AndroidPlaybackController(
     private var activeDecoderName: String? = null
     private var activeVideoFormat: Format? = null
     private var activeAudioFormat: Format? = null
+    private var lastAudioDecoder: String? = null
+    private var lastVideoDecoder: String? = null
+    private var lastStreamError: String? = null
+    private var lastRequestUrl: String? = null
+    private var lastHttpResult: String? = null
+    private var lastContentType: String? = null
+    private var sessionDroppedFrames = 0L
+    private var playbackNetworkSession: AndroidPlaybackNetworkSession? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
     private val videoOutputPolicy = AndroidVideoOutputPolicy()
@@ -209,6 +217,33 @@ class AndroidPlaybackController(
     private var measuredBitrate: String? = null
 
     private val analyticsListener = object : AnalyticsListener {
+        override fun onLoadStarted(eventTime:AnalyticsListener.EventTime,
+            loadEventInfo:androidx.media3.exoplayer.source.LoadEventInfo,
+            mediaLoadData:androidx.media3.exoplayer.source.MediaLoadData) {
+            if(!isCurrentStreamEvent(eventTime))return
+            lastRequestUrl=loadEventInfo.uri.toString()
+            lastHttpResult=null;lastContentType=null
+        }
+        override fun onLoadCompleted(eventTime:AnalyticsListener.EventTime,
+            loadEventInfo:androidx.media3.exoplayer.source.LoadEventInfo,
+            mediaLoadData:androidx.media3.exoplayer.source.MediaLoadData) {
+            if(!isCurrentStreamEvent(eventTime))return
+            lastRequestUrl=loadEventInfo.uri.toString()
+            lastHttpResult=if(lastRequestUrl?.startsWith("http")==true)"2xx" else null
+            lastContentType=loadEventInfo.responseHeaders.entries.firstOrNull {it.key.equals("content-type",true)}?.value?.firstOrNull()
+        }
+        override fun onLoadError(eventTime:AnalyticsListener.EventTime,
+            loadEventInfo:androidx.media3.exoplayer.source.LoadEventInfo,
+            mediaLoadData:androidx.media3.exoplayer.source.MediaLoadData,error:java.io.IOException,wasCanceled:Boolean) {
+            if(wasCanceled || !isCurrentStreamEvent(eventTime))return
+            lastRequestUrl=loadEventInfo.uri.toString()
+            lastHttpResult=(error as? androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)?.responseCode?.toString()
+            lastStreamError=streamErrorText(error)
+        }
+        override fun onAudioDecoderInitialized(eventTime:AnalyticsListener.EventTime,decoderName:String,
+            initializedTimestampMs:Long,initializationDurationMs:Long) {
+            if(isCurrentStreamEvent(eventTime))lastAudioDecoder=decoderName
+        }
         override fun onVideoDecoderInitialized(
             eventTime: AnalyticsListener.EventTime,
             decoderName: String,
@@ -216,6 +251,7 @@ class AndroidPlaybackController(
             initializationDurationMs: Long,
         ) {
             activeDecoderName = decoderName
+            if(isCurrentStreamEvent(eventTime))lastVideoDecoder=decoderName
             AndroidPerformanceCounters.increment("video.decoderStarts")
             AndroidPerformanceCounters.set("video.decoderInitMs", initializationDurationMs)
             refreshState()
@@ -231,6 +267,7 @@ class AndroidPlaybackController(
             refreshState()
         }
         override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
+            if(isCurrentStreamEvent(eventTime))sessionDroppedFrames+=droppedFrames
             AndroidPerformanceCounters.increment("video.droppedFrames", droppedFrames.toLong())
             AndroidPerformanceCounters.set("video.droppedWindowMs", elapsedMs)
         }
@@ -302,6 +339,7 @@ class AndroidPlaybackController(
         }
 
         override fun onPlayerError(error: PlaybackException) {
+            lastStreamError=error.errorCodeName+"\n"+streamErrorText(error)
             val item = _state.value.item
             val category = error.toPlaybackError()
             val failedVideoDecoder = error is ExoPlaybackException &&
@@ -378,6 +416,10 @@ class AndroidPlaybackController(
     override fun play(item: PlaybackItem) {
         AndroidPlaybackSession.record(_state.value)
         checkMainThread()
+        if(_state.value.item?.let {it.id!=item.id || it.url!=item.url}!=false) {
+            lastStreamError=null;lastRequestUrl=null;lastHttpResult=null;lastContentType=null
+            lastAudioDecoder=null;lastVideoDecoder=null;sessionDroppedFrames=0
+        }
         if (!timeShift.opening) timeShift.cancel()
         cancelRetry()
         autoRestartCounts.clear()
@@ -408,7 +450,7 @@ class AndroidPlaybackController(
             applyChannelTrackPreferences(exoPlayer,
                 if (item.kind == PlaybackContentKind.VOD) AndroidChannelPreferences()
                 else readChannelPreferences(context, item.id))
-            exoPlayer.setMediaItem(MediaItem.Builder().setMediaId(item.id).setUri(item.url).build())
+            setPlaybackSource(exoPlayer,item)
             exoPlayer.prepare()
             if (item.kind == PlaybackContentKind.ARCHIVE && !timeShift.opening) {
                 archiveResume.resume(item)?.let { exoPlayer.seekTo(it) }
@@ -416,6 +458,8 @@ class AndroidPlaybackController(
             exoPlayer.play()
             timeShift.itemOpened(item)
         } catch (e: Exception) {
+            lastStreamError=streamErrorText(e)
+            playbackNetworkSession?.cancel()
             _state.value = PlayerState(
                 state = PlaybackState.ERROR,
                 item = item,
@@ -449,6 +493,8 @@ class AndroidPlaybackController(
 
     override fun stop() {
         checkMainThread()
+        playbackNetworkSession?.cancel()
+        playbackNetworkSession=null
         timeShift.cancel()
         cancelRetry()
         suspendedState = null
@@ -553,6 +599,8 @@ class AndroidPlaybackController(
     }
 
     private fun disposePlayer() {
+        playbackNetworkSession?.cancel()
+        playbackNetworkSession=null
         resetVideoSignal()
         positionTickerJob?.cancel()
         positionTickerJob = null
@@ -624,6 +672,62 @@ class AndroidPlaybackController(
 
     private fun createMediaSourceFactory(): DefaultMediaSourceFactory {
         return DefaultMediaSourceFactory(AndroidPlaybackDataSources.factory(context))
+    }
+
+    private fun setPlaybackSource(player:ExoPlayer,item:PlaybackItem) {
+        playbackNetworkSession?.cancel()
+        val session=AndroidPlaybackNetworkSession(context)
+        playbackNetworkSession=session
+        val source=DefaultMediaSourceFactory(session.factory).createMediaSource(
+            MediaItem.Builder().setMediaId(item.id).setUri(item.url).build())
+        player.setMediaSource(source)
+    }
+
+    private fun isCurrentStreamEvent(event:AnalyticsListener.EventTime):Boolean {
+        val timeline=event.timeline
+        if(timeline.isEmpty || event.windowIndex !in 0 until timeline.windowCount)return true
+        val id=timeline.getWindow(event.windowIndex,androidx.media3.common.Timeline.Window()).mediaItem.mediaId
+        return id.isEmpty() || id==_state.value.item?.id
+    }
+
+    private fun streamErrorText(error:Throwable):String = generateSequence(error) {it.cause?.takeUnless {cause->cause===it}}
+        .take(5).joinToString("\n") {it.javaClass.simpleName+": "+it.message.orEmpty().take(600)}
+
+    override fun streamInfo():PlaybackStreamInfo {
+        checkMainThread()
+        val exo=_player.value
+        val base=basicPlaybackStreamInfo(_state.value)
+        val video=activeVideoFormat ?: exo?.videoFormat
+        val audio=activeAudioFormat ?: exo?.audioFormat
+        val facts=base.facts.associate {it.label to it.value}.toMutableMap()
+        fun fact(label:String,value:Any?) {facts[label]=value?.toString()?.takeIf {it.isNotBlank()} ?: "—"}
+        fact("Устройство","${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · Android ${android.os.Build.VERSION.RELEASE} / API ${android.os.Build.VERSION.SDK_INT}")
+        fact("Движок","Media3 1.11.0 / ExoPlayer")
+        val screen=runCatching {context.getSystemService(android.hardware.display.DisplayManager::class.java)
+            ?.getDisplay(android.view.Display.DEFAULT_DISPLAY)?.mode}.getOrNull()
+        fact("Экран",screen?.let {"${it.physicalWidth} × ${it.physicalHeight} · ${it.refreshRate} Hz"})
+        fact("Вывод видео",if(videoOutputPolicy.textureOutput)"TextureView" else "SurfaceView")
+        fact("Видеокодек",listOfNotNull(video?.sampleMimeType,video?.codecs).joinToString(" · "))
+        fact("Видеодекодер",activeDecoderName ?: lastVideoDecoder)
+        if(video!=null && video.width>0 && video.height>0)fact("Разрешение","${video.width} × ${video.height}")
+        fact("Частота кадров",measuredFps ?: video?.frameRate?.takeIf {it>0}?.let {frameRateNumber(it.toDouble())})
+        fact("Битрейт видео",video?.bitrate?.takeIf {it>0}?.let {"$it bit/s"})
+        fact("Цвет",when {
+            video?.sampleMimeType=="video/dolby-vision"->"Dolby Vision"
+            video?.colorInfo?.colorTransfer==C.COLOR_TRANSFER_ST2084->"HDR / PQ · ${video.colorInfo}"
+            video?.colorInfo?.colorTransfer==C.COLOR_TRANSFER_HLG->"HDR / HLG · ${video.colorInfo}"
+            else->video?.colorInfo?.toString() ?: "—"
+        })
+        fact("Аудиокодек",listOfNotNull(audio?.sampleMimeType,audio?.codecs).joinToString(" · "))
+        fact("Аудиодекодер",lastAudioDecoder)
+        fact("Параметры звука",audio?.let {"${it.channelCount.takeIf {v->v>0} ?: "—"} ch · ${it.sampleRate.takeIf {v->v>0} ?: "—"} Hz · ${audioOutputMode.name}"})
+        fact("Буфер",exo?.totalBufferedDuration?.coerceAtLeast(0)?.let {"$it ms"})
+        fact("Скорость загрузки",measuredBitrate)
+        fact("Потери кадров",sessionDroppedFrames)
+        fact("Восстановления",_state.value.item?.id?.let {autoRestartCounts[it]} ?: 0)
+        fact("HTTP",listOfNotNull(lastHttpResult,lastContentType).joinToString(" · "))
+        return base.copy(facts=facts.map {StreamInfoFact(it.key,it.value)},lastRequestUrl=lastRequestUrl,
+            lastError=lastStreamError ?: base.lastError)
     }
 
     /**
@@ -707,13 +811,15 @@ class AndroidPlaybackController(
             applyChannelTrackPreferences(exoPlayer,
                 if (item.kind == PlaybackContentKind.VOD) AndroidChannelPreferences()
                 else readChannelPreferences(context, item.id))
-            exoPlayer.setMediaItem(MediaItem.Builder().setMediaId(item.id).setUri(item.url).build())
+            setPlaybackSource(exoPlayer,item)
             exoPlayer.prepare()
             if (item.kind != PlaybackContentKind.LIVE && positionMs > 0L) {
                 exoPlayer.seekTo(positionMs)
             }
             exoPlayer.play()
         } catch (e: Exception) {
+            lastStreamError=streamErrorText(e)
+            playbackNetworkSession?.cancel()
             _state.update {
                 it.copy(
                     state = PlaybackState.ERROR,

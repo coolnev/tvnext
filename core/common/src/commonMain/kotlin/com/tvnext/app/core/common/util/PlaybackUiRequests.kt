@@ -9,13 +9,17 @@ object PlaybackUiRequests {
     private val aspectClicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val recordClicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val previousClicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val streamInfoClicks = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val aspectRequests = aspectClicks.asSharedFlow()
     val recordRequests = recordClicks.asSharedFlow()
     val previousRequests = previousClicks.asSharedFlow()
+    val streamInfoRequests = streamInfoClicks.asSharedFlow()
+    val streamInfoVisible = MutableStateFlow(false)
     val aspectLabel = MutableStateFlow("Авто")
     fun chooseAspect() { aspectClicks.tryEmit(Unit) }
     fun toggleRecording() { recordClicks.tryEmit(Unit) }
     fun previousChannel() { previousClicks.tryEmit(Unit) }
+    fun showStreamInfo() { streamInfoClicks.tryEmit(Unit) }
 }
 
 /** One step back; another click returns to the channel we just left. */

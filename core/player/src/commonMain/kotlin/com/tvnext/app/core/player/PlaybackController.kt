@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface PlaybackController {
     val state: StateFlow<PlayerState>
+    fun streamInfo(): PlaybackStreamInfo = basicPlaybackStreamInfo(state.value)
 
     fun play(item: PlaybackItem)
     fun pause()

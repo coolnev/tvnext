@@ -7,10 +7,10 @@ import androidx.media3.datasource.DefaultHttpDataSource
 
 /** IPTV HTTP settings plus Media3's local file/content/asset dispatch for saved media. */
 object AndroidPlaybackDataSources {
+    internal const val USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
     fun factory(context: Context): DataSource.Factory {
         val http = DefaultHttpDataSource.Factory()
-            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-                "(KHTML, like Gecko) Chrome/126.0 Safari/537.36")
+            .setUserAgent(USER_AGENT)
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)

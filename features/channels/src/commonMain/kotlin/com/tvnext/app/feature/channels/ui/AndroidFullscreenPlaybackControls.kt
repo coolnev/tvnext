@@ -37,7 +37,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private enum class PanelAction { ASPECT, PREVIOUS, REWIND, PAUSE, FORWARD, LIVE, RECORD, CLOSE }
+private enum class PanelAction { ASPECT, PREVIOUS, REWIND, PAUSE, FORWARD, LIVE, RECORD, CLOSE, INFO }
 
 /** Three fixed groups; changing focus/paused state cannot wrap or resize a control. */
 @Composable
@@ -57,9 +57,19 @@ internal fun AndroidFullscreenPlaybackControls(
     onAspect: () -> Unit = PlaybackUiRequests::chooseAspect,
     onPrevious: () -> Unit = PlaybackUiRequests::previousChannel,
     onRecord: () -> Unit = PlaybackUiRequests::toggleRecording,
+    onInfo: () -> Unit = PlaybackUiRequests::showStreamInfo,
 ) {
     val aspect by PlaybackUiRequests.aspectLabel.collectAsState()
     val requesters = remember { PanelAction.entries.associateWith { FocusRequester() } }
+    val streamInfoOpen by PlaybackUiRequests.streamInfoVisible.collectAsState()
+    var hadStreamInfo by remember {mutableStateOf(false)}
+    LaunchedEffect(streamInfoOpen) {
+        if(hadStreamInfo && !streamInfoOpen && interactive) {
+            withFrameNanos{}
+            runCatching {requesters.getValue(PanelAction.INFO).requestFocus()}
+        }
+        hadStreamInfo=streamInfoOpen
+    }
     var lastFocused by remember { mutableStateOf<PanelAction?>(null) }
     var initialFocusSet by remember { mutableStateOf(false) }
     val visible = buildList {
@@ -68,6 +78,7 @@ internal fun AndroidFullscreenPlaybackControls(
         add(PanelAction.FORWARD)
         if (onLive != null) add(PanelAction.LIVE) else if (isLiveChannel) add(PanelAction.RECORD)
         add(PanelAction.CLOSE)
+        add(PanelAction.INFO)
     }
     val active = visible.filter { canSeek || it !in listOf(PanelAction.REWIND, PanelAction.FORWARD) }
     LaunchedEffect(interactive, active) {
@@ -90,6 +101,7 @@ internal fun AndroidFullscreenPlaybackControls(
             PanelAction.LIVE -> uiText("К эфиру")
             PanelAction.RECORD -> uiText("Записать эфир")
             PanelAction.CLOSE -> uiText("Закрыть")
+            PanelAction.INFO -> uiText("Информация о потоке")
         }
         val caption = when (action) {
             PanelAction.ASPECT -> uiText(aspect)
@@ -120,6 +132,7 @@ internal fun AndroidFullscreenPlaybackControls(
                     PanelAction.LIVE -> onLive?.invoke()
                     PanelAction.RECORD -> onRecord()
                     PanelAction.CLOSE -> onClose()
+                    PanelAction.INFO -> onInfo()
                 }
             })
     }
@@ -137,6 +150,7 @@ internal fun AndroidFullscreenPlaybackControls(
             if (onLive != null) key(PanelAction.LIVE) { button(PanelAction.LIVE) }
             else if (isLiveChannel) key(PanelAction.RECORD) { button(PanelAction.RECORD) }
             key(PanelAction.CLOSE) { button(PanelAction.CLOSE) }
+            key(PanelAction.INFO) { button(PanelAction.INFO) }
         }
     }
 }
@@ -160,6 +174,7 @@ private fun FullscreenPanelButton(
         PanelAction.REWIND, PanelAction.FORWARD, PanelAction.PAUSE -> 38.dp
         PanelAction.LIVE, PanelAction.RECORD -> 78.dp
         PanelAction.CLOSE -> 76.dp
+        PanelAction.INFO -> 28.dp
     } * scale
     val shape = RoundedCornerShape(5.dp * scale)
     val primary = MaterialTheme.colorScheme.primary
@@ -241,6 +256,7 @@ private fun PanelActionIcon(action: PanelAction, paused: Boolean, tint: Color, m
             PanelAction.LIVE -> { line(5f,12f,20f,12f);line(5f,12f,11f,6f);line(5f,12f,11f,18f) }
             PanelAction.RECORD -> drawCircle(tint, size.minDimension*.26f)
             PanelAction.CLOSE -> { line(6f,6f,18f,18f);line(6f,18f,18f,6f) }
+            PanelAction.INFO -> { drawCircle(tint,size.minDimension*.065f,point(12f,5f));line(12f,10f,12f,20f);line(10f,10f,12f,10f);line(9f,20f,15f,20f) }
         }
     }
 }

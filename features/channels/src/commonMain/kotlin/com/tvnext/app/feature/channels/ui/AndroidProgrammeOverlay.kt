@@ -43,12 +43,15 @@ internal fun AndroidProgrammeOverlay(
 ) {
     com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
     val player by controller.state.collectAsState()
+    val streamInfoOpen by com.tvnext.app.core.common.util.PlaybackUiRequests.streamInfoVisible.collectAsState()
+    var panelFocused by remember {mutableStateOf(false)}
+    LaunchedEffect(streamInfoOpen,panelFocused) {onFocus(panelFocused || streamInfoOpen)}
     var now by remember { mutableLongStateOf(currentTimeMillis()) }
     val archived = player.item?.kind == PlaybackContentKind.ARCHIVE
     val at = if (archived) (player.item?.archiveEpgAnchorMs ?: now) + player.positionMs else now
     LaunchedEffect(Unit) { while (true) { delay(1000); now = currentTimeMillis() } }
     DisposableEffect(Unit) { onDispose { onFocus(false) } }
-    BoxWithConstraints(modifier.fillMaxWidth().onFocusChanged { onFocus(it.hasFocus) }.focusGroup()
+    BoxWithConstraints(modifier.fillMaxWidth().onFocusChanged { panelFocused=it.hasFocus;onFocus(it.hasFocus || streamInfoOpen) }.focusGroup()
         .onPreviewKeyEvent { event ->
             if (event.key == Key.Back || (interactive && !detailsVisible && event.key == Key.DirectionUp)) {
                 if (event.type == KeyEventType.KeyUp) onClose()

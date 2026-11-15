@@ -324,6 +324,7 @@ fun AppShell(
                 com.tvnext.app.core.ui.component.TextOnlyNotice(message,
                     Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 28.dp))
             }
+            sharedPlaybackController?.let { com.tvnext.app.core.ui.component.PlaybackStreamInfoHost(it) }
         }
         }
     }
