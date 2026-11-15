@@ -2,6 +2,21 @@
 
 Текущая версия TVNext: `1.0.24`, versionCode 1024, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
+
+## Windows portable 1.0.24 — 15.11.2026
+
+Пользователь запросил Windows с текущими Android-экранами и портативный архив, явно сохранив версию **1.0.24**. Реализован общий актуальный интерфейс, DesktopServices (профили/PIN/редактор/записи/планирование), индексированный DesktopEpgRepository, общая broadcast timeshift-сессия, MPV ABI/init/event/source guards/pause/FPS/buffering/file fixes и временный Windows AFR. Подробности и ограничения: `RELEASE_WINDOWS_1.0.24_RU.md`.
+
+Исходный код Windows: коммит `8a46d79`; тег публикации `windows-v1.0.24`. Android APK и тег `v1.0.24` сохранены, SHA Android `85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438`.
+
+Готовый ZIP: `/workspace/TVNext-1.0.24-windows-x64-portable.zip` (162845456 байт), SHA-256 `5368d7df3f8aa661430778b3bd3d9d348c07529c2586c112a888b30032a9c184`. Дубликат: `apps/desktop/build/distributions/TVNext-1.0.24-windows-x64-portable.zip`. Бинарный ZIP 155 МиБ превышает GitHub git-file limit100MB; в Git лежат исходники и manifest/checksum `releases/windows`, ZIP выдать отдельной ссылкой на файл рабочей области. `/mnt/data` этой среде недоступен (OS permission), не пытаться выдавать несуществующий файл оттуда. Запуск `TVNext.exe`, fallback `TVNext.cmd`; Java21 и DLL включены, data рядом, без установки. Сборка: prepare_windows_runtime.py + build_windows_launcher.py + gradle :apps:desktop:windowsPortableZip -PdesktopTarget=windows.
+
+788 прошедших проверок (543 JVM/UI/EPG/metadata/Desktop +242 Android API28/35 +3 DB), дополнительный реальный DesktopEpgPersistenceTest импорт/reopen/noHTTP/noXML. Windows JRE+DLL/libmpv под Wine10: AVC/AAC25 и HEVC Main10/AC3 23.976,4switches,pause/resume/seek/stop/release, финальный native smoke exit0. Null audio device: слышимость/HDMI не проверялись. `TVNext.exe` штатно запускает Windows JRE/Main из распакованной ASCII-папки (созданы tvnext.db и epg-index). Wine10 требует свой набор Windows-шрифтов для полного GUI; тест с кириллическим путём в Wine не подтверждён (could not find java.dll), physicalWindows не тестировался. Не выдавать эмуляцию за проверку GPU/HDMI/HDR на ПК. Общие UI screenshots и полный Desktop startup на Linux/Xvfb без Koin/runtime исключений. Последняя проверка initial keyboard focus добавлена перед окончательной упаковкой.
+
+MPV вывод сейчас через память→Compose; не обещать полноценный нативный HDR и оптимальную 4K-производительность. AFR использует целые Hz EnumDisplaySettings, не угадывает59.94; по умолчанию выключен. Scheduled recording только пока приложение работает. Исходники/ключи: ключ Кинопоиска взят из приватного Gradle property в generated/defaults и бинарный JAR, не коммитить generated/plainkey. DLL/JRE pin+hash в scripts и runtime manifests, licenses внутри ZIP.
+
+По webOS пользователю объяснено: перенос возможен отдельным приложением HTML/JS с плеером LG, APK туда не устанавливается; запись/фон/кодеки зависят от webOS. Задача сейчас — Windows, порт webOS ещё не начат.
+
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
 ИСТОРИЯ МАКЕТА 07.11.2026: design/fullscreen-panel-2026-11-07/ содержит первые три предложения с описанием. Они заменены вариантами 08.11 без описания; согласованный вариант 3 от 08.11 уже реализован. Повторное согласование не требуется.

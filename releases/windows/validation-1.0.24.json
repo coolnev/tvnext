@@ -33,7 +33,10 @@
     "windowsPlayback": "AVC/AAC 25fps + HEVC Main10/AC3 23.976fps, four loads, pause/resume/seek/stop/release, Windows JRE+DLLs under Wine 10",
     "audioDevice": "null (audible/HDMI not tested)",
     "physicalWindowsGpu": false,
-    "windowsFullGui": "Wine system font limitation; shared UI validated on Linux/Xvfb"
+    "windowsFullGui": "Wine system font limitation; shared UI validated on Linux/Xvfb",
+    "nativeSmokeExit": 0,
+    "nativeExeAsciiLaunch": "Main initialized portable SQLite databases"
   },
-  "gitTag": "windows-v1.0.24"
+  "gitTag": "windows-v1.0.24",
+  "sourceCommit": "8a46d79"
 }
