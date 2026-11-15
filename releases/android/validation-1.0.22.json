@@ -5,14 +5,14 @@
   "applicationId": "com.tvnext.app",
   "variant": "release",
   "debuggable": false,
-  "sourceCommit": "03e817fd308f11adae9e80329d3d64ae3067c93d",
-  "sha256": "ddcb04f6df08d1b824719e089406c39b8ef515e23c7c42014b9c8be793d7a156",
+  "sourceCommit": "3219e124a4759f48f232036b7a7832002c1cd069",
+  "sha256": "32f9d4375ace174bfcc3c8a91986cefdcc5de954f88f6d19324c91320432c665",
   "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
   "userObservation": "Intermittent frozen picture during channel switches, including the same channel sometimes starting normally. Prior confirmed path: TCL Realtek hardware AVC with TextureView.",
   "changes": {
     "sourceBoundary": "Stop old source, cancel its HTTP, clear media items, apply incoming track preferences, select source-specific codec profile, then set/prepare/play the new source. Same player/session/surface retained. One common path for tune and retry.",
     "codecReuse": "Metadata-only id/bitrate changes retain a codec when Media3 reports reuse without reconfiguration; true codec/DRM changes retain the vendor no-flush workaround.",
-    "outputGate": "For a known-size format in the Android app, delay codec creation until an actual matching Surface is attached. While waiting, renderer is not ready and skipSource returns0, preserving the first keyframe and preventing an early audio clock. The format event still reaches UI. Matching outputs initialize immediately; no timer.",
+    "outputGate": "For a known-size format in the Android app, delay codec creation until an actual matching Surface is attached. While waiting, renderer is not ready and skipSource returns0, preserving the first keyframe and preventing an early audio clock. The format event still reaches UI. Matching outputs initialize immediately; no timer. The known current format is authoritative for both gate and UI; a stale .secure decoder name cannot hold a new clear HD stream on the wrong view.",
     "configuration": "Gate classification and diagnostics share native HDR/DRM rules; animation reads the existing tvnext_animation_v1 preference, with no new setting.",
     "diagnostics": [
       "First video frame elapsed time from play request to Media3 rendered-first-frame event",
@@ -99,5 +99,6 @@
     "The output gate coordinates known positive dimensions. Unknown-dimension formats retain normal Media3 behavior.",
     "First-frame timing is a Media3 callback timestamp, not a measurement of physical TV pixels.",
     "Original BOX HLS/TS bytes remain inaccessible from this environment. No Windows installer."
-  ]
+  ],
+  "releaseTag": "v1.0.22-final"
 }

@@ -1,5 +1,6 @@
 BUILD SUCCESSFUL
 490 checks.
-Source: 03e817fd308f11adae9e80329d3d64ae3067c93d
+Source: 3219e124a4759f48f232036b7a7832002c1cd069
+Final tag: v1.0.22-final
 Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
-Native renderer/source handoff tested with controlled adapters; physical TCL/Ugoos and original BOX bytes unavailable.
+Physical TCL/Ugoos and original BOX bytes unavailable.

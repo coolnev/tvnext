@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tvnext.app.RecordingFailureRegressionTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:08:48.825Z" hostname="586b87a70f06" time="0.388">
+<testsuite name="com.tvnext.app.RecordingFailureRegressionTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:20:25.137Z" hostname="586b87a70f06" time="0.393">
   <properties/>
-  <testcase name="actualFileOpenFailureIsClassifiedAsStorageWrite[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.049"/>
-  <testcase name="refusedConnectionRemainsANetworkFailure[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.021"/>
-  <testcase name="quotaKeepsCompletedHlsSegmentsAndReportsTheTvnextLimit[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.113"/>
-  <testcase name="lowDiskSpaceIsNotReportedAsNetworkFailure[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.021"/>
-  <testcase name="actualFileOpenFailureIsClassifiedAsStorageWrite" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.027"/>
-  <testcase name="refusedConnectionRemainsANetworkFailure" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.022"/>
-  <testcase name="quotaKeepsCompletedHlsSegmentsAndReportsTheTvnextLimit" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.107"/>
-  <testcase name="lowDiskSpaceIsNotReportedAsNetworkFailure" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.021"/>
+  <testcase name="actualFileOpenFailureIsClassifiedAsStorageWrite[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.032"/>
+  <testcase name="refusedConnectionRemainsANetworkFailure[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.019"/>
+  <testcase name="quotaKeepsCompletedHlsSegmentsAndReportsTheTvnextLimit[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.111"/>
+  <testcase name="lowDiskSpaceIsNotReportedAsNetworkFailure[28]" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.017"/>
+  <testcase name="actualFileOpenFailureIsClassifiedAsStorageWrite" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.051"/>
+  <testcase name="refusedConnectionRemainsANetworkFailure" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.024"/>
+  <testcase name="quotaKeepsCompletedHlsSegmentsAndReportsTheTvnextLimit" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.109"/>
+  <testcase name="lowDiskSpaceIsNotReportedAsNetworkFailure" classname="com.tvnext.app.RecordingFailureRegressionTest" time="0.023"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

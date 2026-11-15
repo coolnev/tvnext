@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tvnext.app.AndroidEpgRegressionTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:08:30.305Z" hostname="586b87a70f06" time="8.044">
+<testsuite name="com.tvnext.app.AndroidEpgRegressionTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:20:06.393Z" hostname="586b87a70f06" time="7.705">
   <properties/>
-  <testcase name="openingEpgStateForSettingsUsesTheRealAndroidDatabaseDriver[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="1.649"/>
-  <testcase name="guideFor1800ChannelsCommitsAndPreservesArchiveOnNativeAndroidSqlite[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="2.735"/>
-  <testcase name="largeGuideFinishesWhileVideoIsActiveAndActivityLeavesForeground[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.412"/>
-  <testcase name="androidImportThenFreshRepositoryImmediatelyReadsCurrentAndArchivedProgrammes[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.072"/>
-  <testcase name="allPlaylistVariantsAndOffscreenBackupPersistAndManualRefreshUses304[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.1"/>
-  <testcase name="settingsRemainUsableWhenReadingEpgCacheFails[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.072"/>
-  <testcase name="openingEpgStateForSettingsUsesTheRealAndroidDatabaseDriver" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.216"/>
-  <testcase name="guideFor1800ChannelsCommitsAndPreservesArchiveOnNativeAndroidSqlite" classname="com.tvnext.app.AndroidEpgRegressionTest" time="2.043"/>
-  <testcase name="largeGuideFinishesWhileVideoIsActiveAndActivityLeavesForeground" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.499"/>
-  <testcase name="androidImportThenFreshRepositoryImmediatelyReadsCurrentAndArchivedProgrammes" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.076"/>
-  <testcase name="allPlaylistVariantsAndOffscreenBackupPersistAndManualRefreshUses304" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.103"/>
-  <testcase name="settingsRemainUsableWhenReadingEpgCacheFails" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.05"/>
-  <system-out><![CDATA[ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=2685
-ANDROID_INDEX_BENCHMARK programmes=20000 elapsedMs=340
-ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=2007
-ANDROID_INDEX_BENCHMARK programmes=20000 elapsedMs=418
+  <testcase name="openingEpgStateForSettingsUsesTheRealAndroidDatabaseDriver[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="1.36"/>
+  <testcase name="guideFor1800ChannelsCommitsAndPreservesArchiveOnNativeAndroidSqlite[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="2.466"/>
+  <testcase name="largeGuideFinishesWhileVideoIsActiveAndActivityLeavesForeground[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.475"/>
+  <testcase name="androidImportThenFreshRepositoryImmediatelyReadsCurrentAndArchivedProgrammes[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.078"/>
+  <testcase name="allPlaylistVariantsAndOffscreenBackupPersistAndManualRefreshUses304[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.11"/>
+  <testcase name="settingsRemainUsableWhenReadingEpgCacheFails[28]" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.095"/>
+  <testcase name="openingEpgStateForSettingsUsesTheRealAndroidDatabaseDriver" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.236"/>
+  <testcase name="guideFor1800ChannelsCommitsAndPreservesArchiveOnNativeAndroidSqlite" classname="com.tvnext.app.AndroidEpgRegressionTest" time="2.026"/>
+  <testcase name="largeGuideFinishesWhileVideoIsActiveAndActivityLeavesForeground" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.614"/>
+  <testcase name="androidImportThenFreshRepositoryImmediatelyReadsCurrentAndArchivedProgrammes" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.068"/>
+  <testcase name="allPlaylistVariantsAndOffscreenBackupPersistAndManualRefreshUses304" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.102"/>
+  <testcase name="settingsRemainUsableWhenReadingEpgCacheFails" classname="com.tvnext.app.AndroidEpgRegressionTest" time="0.061"/>
+  <system-out><![CDATA[ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=2424
+ANDROID_INDEX_BENCHMARK programmes=20000 elapsedMs=373
+ANDROID_INDEX_1800 channels=1800 imported=86400 retained=45000 elapsedMs=1994
+ANDROID_INDEX_BENCHMARK programmes=20000 elapsedMs=521
 ]]></system-out>
   <system-err><![CDATA[SLF4J(W): No SLF4J providers were found.
 SLF4J(W): Defaulting to no-operation (NOP) logger implementation

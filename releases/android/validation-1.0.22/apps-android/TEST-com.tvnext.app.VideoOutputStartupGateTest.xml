@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tvnext.app.VideoOutputStartupGateTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:08:18.598Z" hostname="586b87a70f06" time="10.895">
+<testsuite name="com.tvnext.app.VideoOutputStartupGateTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:20:26.531Z" hostname="586b87a70f06" time="0.059">
   <properties/>
-  <testcase name="theFirstKeyframeAndAudioClockWaitForTheActualMatchingSurfaceAcrossStartupAndHdUhdHdrChanges[28]" classname="com.tvnext.app.VideoOutputStartupGateTest" time="5.278"/>
-  <testcase name="theFirstKeyframeAndAudioClockWaitForTheActualMatchingSurfaceAcrossStartupAndHdUhdHdrChanges" classname="com.tvnext.app.VideoOutputStartupGateTest" time="4.788"/>
+  <testcase name="theFirstKeyframeAndAudioClockWaitForTheActualMatchingSurfaceAcrossStartupAndHdUhdHdrChanges[28]" classname="com.tvnext.app.VideoOutputStartupGateTest" time="0.032"/>
+  <testcase name="theFirstKeyframeAndAudioClockWaitForTheActualMatchingSurfaceAcrossStartupAndHdUhdHdrChanges" classname="com.tvnext.app.VideoOutputStartupGateTest" time="0.022"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

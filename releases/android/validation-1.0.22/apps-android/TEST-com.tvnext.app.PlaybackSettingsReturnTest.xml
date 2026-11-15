@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tvnext.app.PlaybackSettingsReturnTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:08:48.433Z" hostname="586b87a70f06" time="0.074">
+<testsuite name="com.tvnext.app.PlaybackSettingsReturnTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-15T12:20:24.732Z" hostname="586b87a70f06" time="0.098">
   <properties/>
-  <testcase name="systemSettingsPauseReleasesTheOldPlayerAndReturnBuildsANewVideoSessionForTheSameChannel[28]" classname="com.tvnext.app.PlaybackSettingsReturnTest" time="0.032"/>
-  <testcase name="systemSettingsPauseReleasesTheOldPlayerAndReturnBuildsANewVideoSessionForTheSameChannel" classname="com.tvnext.app.PlaybackSettingsReturnTest" time="0.038"/>
+  <testcase name="systemSettingsPauseReleasesTheOldPlayerAndReturnBuildsANewVideoSessionForTheSameChannel[28]" classname="com.tvnext.app.PlaybackSettingsReturnTest" time="0.058"/>
+  <testcase name="systemSettingsPauseReleasesTheOldPlayerAndReturnBuildsANewVideoSessionForTheSameChannel" classname="com.tvnext.app.PlaybackSettingsReturnTest" time="0.036"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[android.os.ServiceManager$ServiceNotFoundException: No service published for: media_metrics
 	at android.os.ServiceManager.getServiceOrThrow(ServiceManager.java:203)
@@ -12,7 +12,7 @@
 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1812)
 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2241)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-	at org.robolectric.shadows.ShadowContextImpl$ContextImplReflector$$Reflector48.getSystemService(Unknown Source)
+	at org.robolectric.shadows.ShadowContextImpl$ContextImplReflector$$Reflector45.getSystemService(Unknown Source)
 	at org.robolectric.shadows.ShadowContextImpl.getSystemService(ShadowContextImpl.java:83)
 	at android.app.ContextImpl.getSystemService(ContextImpl.java)
 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:936)
@@ -23,7 +23,7 @@
 	at android.os.Looper.loopOnce(Looper.java:232)
 	at android.os.Looper.loop(Looper.java:317)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-	at org.robolectric.shadows.ShadowPausedLooper$LooperReflector$$Reflector43.loop(Unknown Source)
+	at org.robolectric.shadows.ShadowPausedLooper$LooperReflector$$Reflector40.loop(Unknown Source)
 	at org.robolectric.shadows.ShadowPausedLooper.loop(ShadowPausedLooper.java:509)
 	at android.os.Looper.loop(Looper.java)
 	at android.os.HandlerThread.run(HandlerThread.java:85)
@@ -35,7 +35,7 @@ android.os.ServiceManager$ServiceNotFoundException: No service published for: me
 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1812)
 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2241)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-	at org.robolectric.shadows.ShadowContextImpl$ContextImplReflector$$Reflector48.getSystemService(Unknown Source)
+	at org.robolectric.shadows.ShadowContextImpl$ContextImplReflector$$Reflector45.getSystemService(Unknown Source)
 	at org.robolectric.shadows.ShadowContextImpl.getSystemService(ShadowContextImpl.java:83)
 	at android.app.ContextImpl.getSystemService(ContextImpl.java)
 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:936)
@@ -46,7 +46,7 @@ android.os.ServiceManager$ServiceNotFoundException: No service published for: me
 	at android.os.Looper.loopOnce(Looper.java:232)
 	at android.os.Looper.loop(Looper.java:317)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
-	at org.robolectric.shadows.ShadowPausedLooper$LooperReflector$$Reflector43.loop(Unknown Source)
+	at org.robolectric.shadows.ShadowPausedLooper$LooperReflector$$Reflector40.loop(Unknown Source)
 	at org.robolectric.shadows.ShadowPausedLooper.loop(ShadowPausedLooper.java:509)
 	at android.os.Looper.loop(Looper.java)
 	at android.os.HandlerThread.run(HandlerThread.java:85)
