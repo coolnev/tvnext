@@ -7,6 +7,8 @@ import androidx.media3.common.C
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import android.media.MediaCodec
 import androidx.media3.decoder.DecoderInputBuffer
+import androidx.media3.exoplayer.FormatHolder
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
@@ -18,6 +20,7 @@ internal class AndroidVideoOutputPolicy @JvmOverloads constructor(
 ) {
     @Volatile var textureOutput: Boolean = false
     @Volatile var coordinateOutput: Boolean = false
+    @Volatile var onCadenceChanged: ((Format, Double) -> Unit)? = null
 
     fun expectsTexture(format: Format): Boolean = useTextureForVideoTransition(animationEnabled(), true,
         format.width, format.height, requiresNativeVideoOutput(format))
@@ -34,6 +37,33 @@ internal fun requiresNativeVideoOutput(format: Format): Boolean = format.drmInit
     format.cryptoType != C.CRYPTO_TYPE_NONE || format.sampleMimeType == "video/dolby-vision" ||
     format.colorInfo?.colorTransfer == C.COLOR_TRANSFER_ST2084 || format.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG
 
+/** Metadata-only HLS id/bitrate changes do not change the encoded timeline. */
+internal fun sameVideoTiming(a: Format?, b: Format): Boolean = a != null &&
+    a.sampleMimeType == b.sampleMimeType && a.width == b.width && a.height == b.height &&
+    a.frameRate == b.frameRate && a.initializationData.size == b.initializationData.size &&
+    a.initializationData.indices.all { a.initializationData[it].contentEquals(b.initializationData[it]) }
+
+/** Runs solely on the playback thread, independently of decode speed and the output Surface. */
+internal class VideoSourceCadence {
+    private val estimator=VideoCadenceEstimator()
+    private var format: Format?=null
+    private var listener: ((Format, Double) -> Unit)?=null
+
+    fun start(listener: ((Format, Double) -> Unit)?) {
+        this.listener=listener;format=null;estimator.reset()
+    }
+    fun reset() { estimator.reset() }
+    fun formatChanged(next: Format) {
+        if(!sameVideoTiming(format,next)) estimator.reset()
+        format=next
+    }
+    fun frame(ptsUs: Long) {
+        val current=format ?: return
+        if(listener==null) return
+        estimator.frame(ptsUs)?.let { listener?.invoke(current,it) }
+    }
+}
+
 /**
  * Protect direct SurfaceTexture output from vendor flush/setOutputSurface bugs.
  * Seeks, disable and keyframe catch-up release instead of flushing. Format/DRM
@@ -47,6 +77,19 @@ internal class TextureSafeVideoRenderer(
     private var attachedSurface: Surface? = null
     private var pendingCodecBuffers = 0
     private var expectedTexture: Boolean? = null
+    private val sourceCadence = VideoSourceCadence()
+
+    override fun onStreamChanged(formats: Array<Format>, startPositionUs: Long, offsetUs: Long,
+        mediaPeriodId: MediaSource.MediaPeriodId) {
+        super.onStreamChanged(formats,startPositionUs,offsetUs,mediaPeriodId)
+        sourceCadence.start(outputPolicy.onCadenceChanged)
+    }
+
+    override fun onInputFormatChanged(formatHolder: FormatHolder): DecoderReuseEvaluation? {
+        val evaluation=super.onInputFormatChanged(formatHolder)
+        formatHolder.format?.let(sourceCadence::formatChanged)
+        return evaluation
+    }
 
     private fun waitingForOutput(): Boolean = expectedTexture?.let {
         attachedSurface == null || previousTextureOutput != it
@@ -74,6 +117,7 @@ internal class TextureSafeVideoRenderer(
     }
 
     override fun onPositionReset(positionUs: Long, joining: Boolean, sampleStreamIsResetToKeyFrame: Boolean) {
+        sourceCadence.reset()
         if (sampleStreamIsResetToKeyFrame) releaseAffectedCodec()
         super.onPositionReset(positionUs, joining, sampleStreamIsResetToKeyFrame)
     }
@@ -82,6 +126,7 @@ internal class TextureSafeVideoRenderer(
         releaseAffectedCodec()
         super.onDisabled()
         expectedTexture = null
+        sourceCadence.start(null)
     }
 
     override fun canReuseCodec(info: MediaCodecInfo, oldFormat: Format, newFormat: Format,
@@ -118,6 +163,7 @@ internal class TextureSafeVideoRenderer(
 
     override fun onQueueInputBuffer(buffer: DecoderInputBuffer) {
         super.onQueueInputBuffer(buffer)
+        if(!buffer.isEndOfStream && buffer.timeUs!=C.TIME_UNSET) sourceCadence.frame(buffer.timeUs)
         if (!configuration.tunneling &&
             (Build.VERSION.SDK_INT < 34 || getCodecBufferFlags(buffer) and MediaCodec.BUFFER_FLAG_DECODE_ONLY == 0)) {
             pendingCodecBuffers++

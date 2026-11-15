@@ -78,28 +78,75 @@ fun chooseVideoDisplayMode(
     ))
 }
 
-/** Bounded PTS sample, used only when extractor FPS is absent. Never measures UI/render wall time. */
+/**
+ * Source cadence from access-unit PTS, before decoder/display drops. Samples may arrive in
+ * decode order (B pictures). A bounded window is sorted only every 12/48 inputs; no wall
+ * clock, Surface refresh rate, network timing or pixel data participates in this estimate.
+ */
 class VideoCadenceEstimator {
-    private val deltas = LongArray(48)
-    private var size=0; private var cursor=0;private var last=Long.MIN_VALUE;private var published=0.0
-    @Synchronized fun reset() {size=0;cursor=0;last=Long.MIN_VALUE;published=0.0}
-    @Synchronized fun frame(presentationTimeUs:Long, minimumSamples:Int=24): Double? {
-        if(last==Long.MIN_VALUE){last=presentationTimeUs;return null}
-        val delta=presentationTimeUs-last;last=presentationTimeUs
-        if(delta==0L)return null
-        if(delta !in 3_000L..120_000L){size=0;cursor=0;return null}
-        deltas[cursor]=delta;cursor=(cursor+1)%deltas.size;size=(size+1).coerceAtMost(deltas.size)
-        if(size<minimumSamples.coerceIn(12,48) || cursor%12!=0 || (published>0 && cursor!=0))return null
-        val sorted=deltas.copyOf(size).sorted();val median=sorted[size/2].toDouble()
-        if(sorted.count {abs(it-median)<median*.015}<size*.9)return null
-        var fps=1_000_000.0/median
-        val standards=listOf(24000.0/1001,24.0,25.0,30000.0/1001,30.0,48000.0/1001,48.0,50.0,60000.0/1001,60.0,100.0,120000.0/1001,120.0)
-        standards.minByOrNull {abs(it-fps)}?.takeIf {abs(it-fps)<.012}?.let{fps=it}
-        if(fps !in 10.0..240.0 || abs(fps-published)<.01)return null
-        published=fps;return fps
+    private val timestamps = LongArray(256)
+    private var size = 0
+    private var cursor = 0
+    private var arrivals = 0
+    private var last = Long.MIN_VALUE
+    private var published = 0.0
+
+    fun reset() { size=0;cursor=0;arrivals=0;last=Long.MIN_VALUE;published=0.0 }
+
+    fun frame(presentationTimeUs: Long, minimumSamples: Int = 24): Double? {
+        if (presentationTimeUs == last) return null
+        // Reordering within a GOP is normal. A large jump/seek starts a new sample.
+        if (last != Long.MIN_VALUE && abs(presentationTimeUs-last) > 2_000_000L) reset()
+        last=presentationTimeUs
+        timestamps[cursor]=presentationTimeUs
+        cursor=(cursor+1)%timestamps.size
+        size=(size+1).coerceAtMost(timestamps.size)
+        arrivals++
+        val minimum=minimumSamples.coerceIn(12,128)
+        if (size < minimum+1 || arrivals % (if(published>0)48 else 12) != 0) return null
+        val sorted=timestamps.copyOf(size).apply { sort() }
+        // Repeated PTS must not turn two input callbacks into two video frames.
+        var count=1
+        for (i in 1 until sorted.size) if(sorted[i]!=sorted[count-1]) sorted[count++]=sorted[i]
+        if(count<minimum+1) return null
+        val span=sorted[count-1]-sorted[0]
+        if(span < if(minimum<=12)400_000L else 800_000L) return null
+        val deltas=LongArray(count-1) { sorted[it+1]-sorted[it] }.apply { sort() }
+        val period=deltas[deltas.size/2].toDouble()
+        if(period !in 4_000.0..100_000.0) return null
+        val tolerance=maxOf(1_100.0,period*.02)
+        val indices=IntArray(count)
+        var gaps=0
+        for(i in 1 until count) {
+            val delta=sorted[i]-sorted[i-1]
+            val steps=round(delta/period).toInt()
+            if(steps !in 1..4 || abs(delta-steps*period)>tolerance) return null
+            if(steps>1)gaps++
+            indices[i]=indices[i-1]+steps
+        }
+        // A few edge gaps from B-frame order are fine; regularly missing source frames are not.
+        if(gaps>maxOf(1,(count-1)/10)) return null
+        val meanX=indices.sum().toDouble()/count
+        val meanY=(0 until count).sumOf { (sorted[it]-sorted[0]).toDouble() }/count
+        var xx=0.0;var xy=0.0
+        for(i in 0 until count) {
+            val x=indices[i]-meanX
+            xx+=x*x;xy+=x*((sorted[i]-sorted[0])-meanY)
+        }
+        val slope=xy/xx
+        if(!slope.isFinite() || slope<=0) return null
+        // A straight timestamp lattice rejects true variable cadence, but accepts ms/90kHz rounding.
+        for(i in 0 until count) if(abs((sorted[i]-sorted[0])-meanY-slope*(indices[i]-meanX))>tolerance) return null
+        var fps=1_000_000.0/slope
+        val standard=STANDARD_RATES.minByOrNull { abs(it-fps) }!!
+        if(abs(standard-fps)<maxOf(.012,fps*.0005)) fps=standard
+        if(fps !in 10.0..240.0 || abs(fps-published)<.006) return null
+        published=fps
+        return fps
+    }
+
+    private companion object {
+        val STANDARD_RATES=doubleArrayOf(24000.0/1001,24.0,25.0,30000.0/1001,30.0,
+            48000.0/1001,48.0,50.0,60000.0/1001,60.0,100.0,120000.0/1001,120.0,240.0)
     }
 }
-
-/** Reject a dropped-frame half-rate, but correct 24/30/60 provider rounding from stable PTS. */
-fun verifiedVideoFrameRate(nominal:Double,measured:Double):Double =
-    if(nominal.isFinite() && nominal in 10.0..240.0 && kotlin.math.abs(measured-nominal)/nominal>.005)nominal else measured

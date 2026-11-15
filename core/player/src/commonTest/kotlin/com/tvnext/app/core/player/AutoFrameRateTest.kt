@@ -68,12 +68,38 @@ class AutoFrameRateTest {
         for(i in 0..100){stamp+=if(i%2==0)40000 else 33367;assertNull(estimator.frame(stamp))}
         estimator.reset();assertNull(estimator.frame(0));assertNull(estimator.frame(5_000_000));assertNull(estimator.frame(5_000_000))
     }
-    @Test fun roundedProviderRateCanBeCorrectedBeforeTheSwitchAndDroppedFramesDoNotHalveIt() {
+    @Test fun sourceCadenceCanBeRemeasuredAfterAChangeAndReset() {
         val sampler=VideoCadenceEstimator();var estimate:Double?=null
-        for(i in 0..12)sampler.frame((i*1_000_000.0/(24000.0/1001)).toLong(),12)?.let{estimate=it}
-        assertNotNull(estimate);assertEquals(24000.0/1001,verifiedVideoFrameRate(24.0,estimate!!),.003)
-        assertEquals(50.0,verifiedVideoFrameRate(50.0,25.0))
-        assertEquals(60000.0/1001,verifiedVideoFrameRate(60.0,60000.0/1001),.0001)
+        repeat(144) { i -> sampler.frame(i*20_000L)?.let { estimate=it } }
+        assertEquals(50.0,estimate)
+        // A new timeline cannot inherit a previous channel's cadence.
+        sampler.reset();estimate=null
+        repeat(144) { i -> sampler.frame(i*40_000L)?.let { estimate=it } }
+        assertEquals(25.0,estimate)
+    }
+    @Test fun roundedHevcTimestampsStillIdentifyTheSourceRate() {
+        for (fps in listOf(24000.0/1001,24.0,25.0,30000.0/1001,30.0,50.0,60000.0/1001,60.0)) {
+            val sampler=VideoCadenceEstimator();var measured:Double?=null
+            repeat(240) { i ->
+                // Some encoders round timestamps to milliseconds. Network delivery time is irrelevant.
+                val pts=kotlin.math.round(i*1000.0/fps).toLong()*1000
+                sampler.frame(pts)?.let { measured=it }
+            }
+            assertNotNull(measured,"No cadence for $fps")
+            assertEquals(fps,measured!!,.006,"Wrong cadence for $fps")
+        }
+    }
+    @Test fun decodeOrderBFramesAndRepeatedPtsDoNotEraseTheHevcCadence() {
+        for (fps in listOf(24000.0/1001,25.0,50.0,60000.0/1001)) {
+            val sampler=VideoCadenceEstimator();var measured:Double?=null
+            for (group in 0..90) for (offset in listOf(0,3,1,2)) {
+                val pts=((group*4+offset)*1_000_000.0/fps).toLong()
+                sampler.frame(pts)?.let { measured=it }
+                sampler.frame(pts)?.let { measured=it }
+            }
+            assertNotNull(measured,"No B-frame cadence for $fps")
+            assertEquals(fps,measured!!,.006)
+        }
     }
     @Test fun androidRestoresTextureAnimationForHdButKeepsTheUhdPlane() {
         for((w,h) in listOf(720 to 576,1280 to 720,1920 to 1080,1080 to 1920)) {

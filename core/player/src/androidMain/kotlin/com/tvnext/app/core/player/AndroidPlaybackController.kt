@@ -102,15 +102,26 @@ class AndroidPlaybackController(
     private var suspendedState: PlayerState? = null
     private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
     val videoSignal: StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
-    private val cadenceEstimator = VideoCadenceEstimator()
     private val signalHandler = android.os.Handler(Looper.getMainLooper())
     @Volatile private var signalGeneration = 0L
-    @Volatile private var fpsVerifiedGeneration = -1L
+    private var measuredCadence: Pair<Format,Double>? = null
 
     private fun resetVideoSignal() {
         signalGeneration++
-        cadenceEstimator.reset()
+        measuredCadence=null
+        measuredFps=null
         _videoSignal.value = null
+        val token=signalGeneration
+        videoOutputPolicy.onCadenceChanged = { format,fps ->
+            signalHandler.post {
+                if(token==signalGeneration && _state.value.item!=null &&
+                    (activeVideoFormat==null || sameVideoTiming(activeVideoFormat,format))) {
+                    measuredCadence=format to fps
+                    updateVideoSignal(format,fps)
+                    refreshState()
+                }
+            }
+        }
     }
 
     private fun updateVideoSignal(format: Format, estimatedFps: Double? = null) {
@@ -300,12 +311,11 @@ class AndroidPlaybackController(
                 val id = timeline.getWindow(eventTime.windowIndex, androidx.media3.common.Timeline.Window()).mediaItem.mediaId
                 if (id.isNotEmpty() && id != _state.value.item?.id) return
             }
-            signalGeneration++
             activeVideoFormat=format
+            if(measuredCadence?.first?.let { sameVideoTiming(it,format) } == false) measuredCadence=null
             if(decoderReuseEvaluation!=null && decoderReuseEvaluation.result!=androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_NO)
                 activeDecoderName=decoderReuseEvaluation.decoderName
-            cadenceEstimator.reset()
-            updateVideoSignal(format)
+            updateVideoSignal(format,measuredCadence?.second)
             refreshState()
         }
 
@@ -662,21 +672,6 @@ class AndroidPlaybackController(
             // One authority for AFR: the Activity's mode matcher, including TextureView.
             .setVideoChangeFrameRateStrategy(C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF)
             .build()
-        newPlayer.setVideoFrameMetadataListener { presentationTimeUs, _, format, _ ->
-            val token=signalGeneration
-            val known=format.frameRate.isFinite() && format.frameRate in 10f..240f
-            if(known && fpsVerifiedGeneration==token)return@setVideoFrameMetadataListener
-            cadenceEstimator.frame(presentationTimeUs,if(known)12 else 24)?.let { measured ->
-                val fps=verifiedVideoFrameRate(format.frameRate.toDouble(),measured)
-                if(known)fpsVerifiedGeneration=token
-                if(!known || kotlin.math.abs(fps-format.frameRate)>.002)signalHandler.post {
-                    if(token==signalGeneration && _player.value===newPlayer && _state.value.item!=null) {
-                        updateVideoSignal(format,fps)
-                        refreshState()
-                    }
-                }
-            }
-        }
         // IPTV streams are network-delivered: WAKE_MODE_NETWORK holds a WiFi
         // lock ONLY while actually playing (ExoPlayer manages the acquire/
         // release itself), which prevents the radio's power-saving mode from
