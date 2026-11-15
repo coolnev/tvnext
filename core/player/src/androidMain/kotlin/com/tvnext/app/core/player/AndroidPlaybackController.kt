@@ -84,6 +84,10 @@ class AndroidPlaybackController(
     private var lastHttpResult: String? = null
     private var lastContentType: String? = null
     private var sessionDroppedFrames = 0L
+    private var bufferedRestarts = 0
+    private var recoveryAttempts = 0
+    private var lastRecoveryReason: String? = null
+    private var rendererReleaseUntilMs = 0L
     private var playbackNetworkSession: AndroidPlaybackNetworkSession? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
@@ -323,6 +327,7 @@ class AndroidPlaybackController(
                     delay(30_000L)
                     if (id != null && generation == token && _player.value?.isPlaying == true) {
                         autoRestartCounts.remove(id) // recovered for 30 s; reset retry budget
+                        bufferedRestarts=0
                     }
                 }
             }
@@ -416,6 +421,10 @@ class AndroidPlaybackController(
     override fun play(item: PlaybackItem) {
         AndroidPlaybackSession.record(_state.value)
         checkMainThread()
+        val oldPlayer=_player.value
+        val departingStalledPlayer=_state.value.item!=item && bufferedRestarts>0 &&
+            oldPlayer?.playbackState==Player.STATE_BUFFERING && oldPlayer.totalBufferedDuration>=LIVE_REBUFFER_AFTER_MS
+        bufferedRestarts=0;recoveryAttempts=0;lastRecoveryReason=null
         if(_state.value.item?.let {it.id!=item.id || it.url!=item.url}!=false) {
             lastStreamError=null;lastRequestUrl=null;lastHttpResult=null;lastContentType=null
             lastAudioDecoder=null;lastVideoDecoder=null;sessionDroppedFrames=0
@@ -445,6 +454,10 @@ class AndroidPlaybackController(
             volume = desiredVolume,
             isMuted = muted,
         )
+        if(departingStalledPlayer || android.os.SystemClock.elapsedRealtime()<rendererReleaseUntilMs) {
+            autoRestart(item,PlaybackError.Decoder)
+            return
+        }
         try {
             val exoPlayer = ensurePlayer(item.kind)
             applyChannelTrackPreferences(exoPlayer,
@@ -724,7 +737,14 @@ class AndroidPlaybackController(
         fact("Буфер",exo?.totalBufferedDuration?.coerceAtLeast(0)?.let {"$it ms"})
         fact("Скорость загрузки",measuredBitrate)
         fact("Потери кадров",sessionDroppedFrames)
-        fact("Восстановления",_state.value.item?.id?.let {autoRestartCounts[it]} ?: 0)
+        fact("Восстановления",recoveryAttempts)
+        fact("Причина восстановления",lastRecoveryReason)
+        fun counters(c:androidx.media3.exoplayer.DecoderCounters?):String? = c?.let {
+            it.ensureUpdated()
+            "${it.queuedInputBufferCount} / ${it.renderedOutputBufferCount}"
+        }
+        fact("Видео: вход / выход",counters(exo?.videoDecoderCounters))
+        fact("Аудио: вход / выход",counters(exo?.audioDecoderCounters))
         fact("HTTP",listOfNotNull(lastHttpResult,lastContentType).joinToString(" · "))
         return base.copy(facts=facts.map {StreamInfoFact(it.key,it.value)},lastRequestUrl=lastRequestUrl,
             lastError=lastStreamError ?: base.lastError)
@@ -778,8 +798,11 @@ class AndroidPlaybackController(
             val current = _player.value
             if (generation != token || !foreground || _state.value.item != item ||
                 current?.playbackState != Player.STATE_BUFFERING || current.playWhenReady != true) return@launch
-            if (canAutoRestart(item.id)) {
-                autoRestart(item, PlaybackError.Network)
+            val hasDecodedFormat=activeDecoderName!=null || lastVideoDecoder!=null || lastAudioDecoder!=null
+            val loadedStall=current.totalBufferedDuration>=LIVE_REBUFFER_AFTER_MS && hasDecodedFormat
+            val category=if(loadedStall)PlaybackError.Decoder else PlaybackError.Network
+            if ((!loadedStall || bufferedRestarts==0) && canAutoRestart(item.id)) {
+                autoRestart(item, category)
             } else {
                 // Escalate to the slow recovery cadence, without showing a
                 // modal error over the video.
@@ -789,7 +812,7 @@ class AndroidPlaybackController(
                     delay(60_000L)
                     if (generation == token && foreground && _state.value.item == item) {
                         autoRestartCounts.remove(item.id)
-                        autoRestart(item, PlaybackError.Network)
+                        autoRestart(item, category)
                     }
                 }
             }
@@ -800,7 +823,38 @@ class AndroidPlaybackController(
      *  from their last known position; LIVE restarts at the live edge. */
     private fun autoRestart(item: PlaybackItem, category: PlaybackError) {
         val positionMs = _state.value.positionMs.coerceAtLeast(0L)
+        val restartingPlayer=_player.value
+        val ownsCurrentSource=restartingPlayer?.currentMediaItem?.mediaId==item.id
+        recoveryAttempts++
+        lastRecoveryReason=if(category==PlaybackError.Decoder) {
+            if(ownsCurrentSource && (restartingPlayer?.totalBufferedDuration ?: 0)>=LIVE_REBUFFER_AFTER_MS)"Заполненный буфер: перезапуск плеера" else "Перезапуск декодеров"
+        } else "Поток: повторное подключение"
         _state.update { it.copy(state = PlaybackState.LOADING, error = null) }
+        if(category==PlaybackError.Decoder) {
+            // A loaded stream whose renderers never become ready must not
+            // keep reusing the same codec/AudioSink via stop + prepare.
+            if(ownsCurrentSource)bufferedRestarts++
+            cancelRetry()
+            val token=generation
+            val oldPlayer=_player.value
+            val decoder=activeDecoderName ?: lastVideoDecoder
+            disposePlayer()
+            if(oldPlayer!=null) {
+                val grace=if(decoder?.startsWith("OMX.realtek.",true)==true)3_000L else 100L
+                rendererReleaseUntilMs=maxOf(rendererReleaseUntilMs,android.os.SystemClock.elapsedRealtime()+grace)
+            }
+            retryJob=scope.launch {
+                delay((rendererReleaseUntilMs-android.os.SystemClock.elapsedRealtime()).coerceAtLeast(0))
+                if(generation!=token || !foreground || _state.value.item!=item)return@launch
+                retryJob=null
+                prepareRestart(item,category,positionMs)
+            }
+            return
+        }
+        prepareRestart(item,category,positionMs)
+    }
+
+    private fun prepareRestart(item:PlaybackItem,category:PlaybackError,positionMs:Long) {
         try {
             val exoPlayer = ensurePlayer(item.kind)
             // After a fatal error Media3 stays in STATE_IDLE/ERROR; it must be

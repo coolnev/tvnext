@@ -52,6 +52,10 @@ class StreamInfoDiagnosticsTest {
             val error=HttpDataSource.InvalidResponseCodeException(403,"Forbidden",null,emptyMap(),spec,byteArrayOf())
             analytics.onLoadError(event,LoadEventInfo(1,spec,uri,emptyMap(),0,100,0),MediaLoadData(C.DATA_TYPE_MEDIA),error,false)
             (field(c,"listener") as Player.Listener).onPlayerError(PlaybackException("Upstream refused the stream",error,PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS))
+            val videoCounts=androidx.media3.exoplayer.DecoderCounters().apply {queuedInputBufferCount=120;renderedOutputBufferCount=0}
+            val audioCounts=androidx.media3.exoplayer.DecoderCounters().apply {queuedInputBufferCount=96;renderedOutputBufferCount=96}
+            exo.javaClass.getDeclaredField("videoDecoderCounters").apply{isAccessible=true}.set(exo,videoCounts)
+            exo.javaClass.getDeclaredField("audioDecoderCounters").apply{isAccessible=true}.set(exo,audioCounts)
             assertEquals(PlaybackState.LOADING,c.state.value.state)
             val before=c.state.value
             val info=c.streamInfo();val facts=info.facts.associate{it.label to it.value}
@@ -64,6 +68,7 @@ class StreamInfoDiagnosticsTest {
             assertEquals("audio/ac3",facts["Аудиокодек"])
             assertTrue(facts.getValue("Параметры звука").contains("48000"))
             assertEquals("403",facts["HTTP"]);assertEquals("12",facts["Потери кадров"])
+            assertEquals("120 / 0",facts["Видео: вход / выход"]);assertEquals("96 / 96",facts["Аудио: вход / выход"])
             assertEquals(before,c.state.value)
             assertSame(exo,(field(c,"_player") as StateFlow<*>).value)
         } finally {c.release()}

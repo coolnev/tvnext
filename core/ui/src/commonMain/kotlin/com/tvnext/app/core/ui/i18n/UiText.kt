@@ -29,6 +29,12 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Причина восстановления" to ("Recovery reason" to "恢复原因"),
+        "Перезапуск декодеров" to ("Restarting decoders" to "重新启动解码器"),
+        "Видео: вход / выход" to ("Video: input / output" to "视频：输入 / 输出"),
+        "Аудио: вход / выход" to ("Audio: input / output" to "音频：输入 / 输出"),
+        "Заполненный буфер: перезапуск плеера" to ("Buffered stall: rebuilding player" to "缓冲停滞：重建播放器"),
+        "Поток: повторное подключение" to ("Stream: reconnecting" to "流：重新连接"),
         "Готов" to ("Ready" to "就绪"),
         "Экран" to ("Display" to "屏幕"),
         "Завершено" to ("Ended" to "已结束"),
