@@ -26,6 +26,37 @@ class ProgrammeDescriptionStateUiTest {
     @Before fun start() { startKoin {} }
     @After fun stop() { stopKoin() }
 
+    @Test fun archivedSeriesWithTheProvidersEpisodeSuffixDisplaysItsFetchedDescription() {
+        val plot="Опытный сыщик и его молодой напарник раскрывают преступления и тайны прошлого."
+        val queries=mutableListOf<String?>()
+        val client=HttpClient(MockEngine {r->respond(when {
+            r.url.encodedPath.endsWith("search-by-keyword")->{queries+=r.url.parameters["keyword"]
+                """{"films":[{"filmId":5599922,"nameRu":"Оперативная память","type":"TV_SERIES"}]}"""}
+            r.url.encodedPath.endsWith("/5599922")->"""{"kinopoiskId":5599922,"nameRu":"Оперативная память","type":"TV_SERIES","description":"$plot"}"""
+            else->"{}"
+        },headers=headersOf("Content-Type","application/json"))}) {install(HttpTimeout)}
+        val keys=object:KinopoiskKeyStore{override suspend fun getKey()="fixture";override suspend fun setKey(value:String)=Unit}
+        val settings=object:TmdbSettingsStore {override suspend fun isEnabled()=false;override suspend fun setEnabled(enabled:Boolean)=Unit
+            override suspend fun getApiKey()="";override suspend fun setApiKey(apiKey:String)=Unit}
+        val tmdb=java.lang.reflect.Proxy.newProxyInstance(TmdbRepository::class.java.classLoader,arrayOf(TmdbRepository::class.java)){_,_,_->error("TMDB disabled")} as TmdbRepository
+        val repo=ProgrammeMetadataRepository(tmdb,KinopoiskProgrammeLookup(client,keys),settings)
+        loadKoinModules(module {single {repo}})
+        val start=System.currentTimeMillis()-2*86_400_000L
+        val archived=com.tvnext.app.core.iptv.xmltv.EpgProgramme("archive-channel",start,start+3_000_000,
+            "Т/с Оперативная память ¦ 1.",description="Описание передачи отсутствует",episodeNum="0.0.")
+        val live=archived.copy(start=start+2*86_400_000L,stop=start+2*86_400_000L+3_000_000,title="Время",category="Новости")
+        val selected=windowedDescriptionProgramme("archive-channel","archive-channel",
+            ChannelTimelineState("archive-channel",programmes=listOf(archived,live)),archived,
+            ChannelEpg(current=live,channelId="archive-channel"),ChannelEpg(current=archived,channelId="archive-channel"))
+        assertEquals(archived,selected)
+        try {
+            ui.setContent {androidx.compose.material3.MaterialTheme {ProgrammeRichDetails(selected)}}
+            ui.waitUntil(5_000){ui.onAllNodesWithText(plot).fetchSemanticsNodes().isNotEmpty()}
+            ui.onNodeWithText(plot).assertIsDisplayed()
+            assertEquals(listOf<String?>("Оперативная память"),queries)
+        } finally {client.close()}
+    }
+
     @Test fun switchingFilmsNeverRendersThePreviousSynopsisAndCachedReturnHasNoBlankFrame() {
         val plotA = "Первый герой возвращается домой и встречает старого друга."
         val plotB = "Второй герой спасает семью и раскрывает опасный заговор."

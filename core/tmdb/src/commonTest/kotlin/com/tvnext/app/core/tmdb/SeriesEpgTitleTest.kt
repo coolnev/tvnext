@@ -3,6 +3,18 @@ package com.tvnext.app.core.tmdb
 import kotlin.test.*
 
 class SeriesEpgTitleTest {
+    @Test fun episodeNumbersAfterProviderSeparatorsAreNotPartOfTheSeriesName() {
+        for(separator in listOf("|","¦","│","┆","┊")) {
+            for(episode in listOf("1.","2", "1-2", "1-я и 2-я серии")) {
+                val raw="Т/с Оперативная память $separator $episode"
+                assertEquals("Оперативная память",cleanProgrammeTitle(raw),raw)
+            }
+        }
+        for(suffix in listOf(". 1-я и 2-я серии", ". Сезон 2. Серии 1-4", ". 1-4 с.", ". Сезон 2"))
+            assertEquals("Оперативная память",cleanProgrammeTitle("Т/с Оперативная память$suffix"),suffix)
+        assertEquals("Побег 2",cleanProgrammeTitle("Т/с Побег 2 ¦ 1."))
+        assertEquals("Формула 1",cleanProgrammeTitle("Формула 1"))
+    }
     @Test fun cyrillicLatinAndMixedSeriesMarkersProduceTheSameQueryAndKind() {
         for (prefix in listOf("Т/с", "T/S", "T/С", "Т/C", "T.C.", "т / s", "Телесериал", "Сериал")) {
             for (tail in listOf(" — Оперативная память", " «Оперативная память»", ":Оперативная память", "–Оперативная память")) {

@@ -4,7 +4,8 @@ package com.tvnext.app.core.tmdb
 internal const val SERIES_EPG_MARKER = """[тt]\s*[/\.]\s*[сcs]\.?(?![.\p{L}\p{N}])"""
 
 /** Remove broadcast annotations, retaining sequel numbers and genuine subtitles. */
-internal fun cleanProgrammeTitle(raw: String): String {
+internal fun cleanProgrammeTitle(raw: String, series: Boolean = false): String {
+    val episodic = series || SERIES_TITLE.containsMatchIn(raw)
     var title = raw.replace('\u00a0', ' ').replace('\u202f', ' ').trim()
     repeat(3) {
         title = title.replace(Regex("""\s*[\[(]?\s*(?:0|6|12|16|18)\+\s*[\])]?\s*[.!]?\s*$"""), "")
@@ -13,9 +14,7 @@ internal fun cleanProgrammeTitle(raw: String): String {
             .replace(Regex("""^(?:премьера!\s*|(?:х\s*[/\.]\s*ф\.?|$SERIES_EPG_MARKER|м\s*[/\.]\s*ф\.?|д\s*[/\.]\s*ф\.?|художественный фильм|фильм|(?:теле)?сериал)(?=$|[\s: .—–\-«"“„'])[\s: .—–\-]*)""", RegexOption.IGNORE_CASE), "")
             .trim(' ', '«', '»', '"', '“', '”', '„', '\'', '.', ':')
     }
-    title = title.replace(Regex("""(?:[\s,;:.—-]+)(?:(?:сезон|сез\.)\s*\d+\s*[,;:.—-]*\s*)?(?:серия|сер\.|эпизод)\s*\d+\s*$""", RegexOption.IGNORE_CASE), "")
-        .replace(Regex("""[\s,;:.—-]+\d+(?:-?[аяй])?\s+серия\s*$""", RegexOption.IGNORE_CASE), "")
-        .replace(Regex("""\s+S\d{1,2}E\d{1,3}\s*$""", RegexOption.IGNORE_CASE), "")
+    title = stripProgrammeEpisode(title, episodic)
     // EPG providers sometimes join the sequel number directly to the title.
     return title.replace(Regex("""(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})"""), " ")
         .replace(Regex("""\s+"""), " ").trim(' ', '«', '»', '"', '“', '”', '.', ':')
@@ -26,7 +25,7 @@ internal fun programmeReleaseYear(raw: String): Int? =
     Regex("""[\[(]((?:19|20)\d{2})(?:\s*г\.?)?[\])]|\b((?:19|20)\d{2})\s*г(?:од(?:а)?)?\.?""", RegexOption.IGNORE_CASE)
         .find(raw)?.let { (it.groups[1]?.value ?: it.groups[2]?.value)?.toIntOrNull() }
 
-internal fun normalizedProgrammeTitle(raw: String): String = cleanProgrammeTitle(raw)
+internal fun normalizedProgrammeTitle(raw: String, series: Boolean = false): String = cleanProgrammeTitle(raw,series)
     .lowercase().replace('ё', 'е').replace(Regex("""[^\p{L}\p{N}]+"""), " ").trim()
 
 /** Match the complete normalized title; never replace part 2 with the first film. */
