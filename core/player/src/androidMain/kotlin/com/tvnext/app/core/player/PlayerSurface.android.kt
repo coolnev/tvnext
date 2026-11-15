@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -60,7 +61,7 @@ actual fun NativePlayerSurface(controller: PlaybackController, modifier: Modifie
     key(useTextureView, player) {
     AndroidView(
         factory = { AndroidVideoViewport(it, useTextureView) },
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().focusProperties {canFocus=false},
         update = { viewport ->
             androidController.setTextureVideoOutput(useTextureView)
             if (viewport.videoView.player !== player) viewport.videoView.player = player

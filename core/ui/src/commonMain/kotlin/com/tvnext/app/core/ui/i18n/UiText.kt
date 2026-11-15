@@ -29,6 +29,8 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Аудиодорожки: найдено / выбрано" to ("Audio tracks: found / selected" to "音轨：发现 / 已选"),
+        "Аудиокодеки дорожек" to ("Detected audio codecs" to "检测到的音频编解码器"),
         "Первый видеокадр" to ("First video frame" to "首个视频帧"),
         "Запуски видеодекодера" to ("Video decoder starts" to "视频解码器启动次数"),
         "Очередь декодера" to ("Decoder queue" to "解码器队列"),

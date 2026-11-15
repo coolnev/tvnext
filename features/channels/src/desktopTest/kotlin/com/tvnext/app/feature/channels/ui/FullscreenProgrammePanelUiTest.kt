@@ -201,4 +201,44 @@ class FullscreenProgrammePanelUiTest {
         key("fullscreen-description-close",Key.Back)
         ui.onNodeWithTag("fullscreen-description-view").assertDoesNotExist()
     }
+    @Test fun releasingRightAfterDescriptionTakesFocusDoesNotSwallowTheNextFirstPress() = at1080p {
+        val controller=player(false)
+        val shown=mutableStateOf(false);val details=mutableStateOf(false);val panelFocused=mutableStateOf(false)
+        val video=FocusRequester()
+        ui.setContent {MaterialTheme {
+            val input=remember {FullscreenRightInput()}
+            Box(Modifier.size(960.dp,540.dp).focusRequester(video).trackFullscreenRightRelease(input)
+                .onPreviewKeyEvent {event->
+                    if(panelFocused.value)false
+                    else if(event.key==Key.DirectionRight) {
+                        if(event.type==KeyEventType.KeyDown && input.press()) {
+                            if(shown.value)details.value=true else shown.value=true
+                        }
+                        true
+                    } else false
+                }.focusable().testTag("right-input-video"),contentAlignment=Alignment.BottomCenter) {
+                if(shown.value)AndroidProgrammeOverlay(channel,epg,controller,false,{panelFocused.value=it},
+                    {shown.value=false;details.value=false;panelFocused.value=false;video.requestFocus()},
+                    detailsVisible=details.value,modifier=Modifier.fillMaxWidth())
+            }
+            LaunchedEffect(Unit){video.requestFocus()}
+        }}
+        ui.waitForIdle()
+        key("right-input-video",Key.DirectionRight)
+        ui.onNodeWithTag("fullscreen-programme-panel").assertIsDisplayed()
+        ui.onRoot().performKeyInput {keyDown(Key.DirectionRight)}
+        ui.waitForIdle()
+        ui.onNodeWithTag("fullscreen-description-close").assertIsFocused()
+        assertTrue(panelFocused.value)
+        // Release is now delivered while the description owns focus.
+        ui.onRoot().performKeyInput {keyUp(Key.DirectionRight)}
+        ui.waitForIdle()
+        key("fullscreen-description-close",Key.Back)
+        ui.onNodeWithTag("right-input-video").assertIsFocused()
+        key("right-input-video",Key.DirectionRight)
+        ui.onNodeWithTag("fullscreen-programme-panel").assertIsDisplayed()
+        ui.onNodeWithTag("fullscreen-description-view").assertDoesNotExist()
+        key("right-input-video",Key.DirectionRight)
+        ui.onNodeWithTag("fullscreen-description-view").assertIsDisplayed()
+    }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild LGPL AC3/EAC3-only Media3 JNI libraries with an official Android NDK.
+"""Rebuild LGPL AC3/EAC3/DTS audio-only Media3 JNI libraries with an official Android NDK.
 Usage: python build_native.py --ndk /path/android-ndk-r28b --work /tmp/tvnext-dolby [--host]
 The pristine FFmpeg source is shipped in source-archives. No downloads are required.
 """
@@ -11,7 +11,7 @@ archive=repo/'source-archives/ffmpeg-n6.0.1.tar.gz';source=work/'FFmpeg-n6.0.1'
 if not source.exists():
  with tarfile.open(archive) as tar:tar.extractall(work,filter='data')
 ndk=a.ndk.resolve();bin=ndk/'toolchains/llvm/prebuilt/linux-x86_64/bin';api='24'
-common=['--enable-static','--disable-shared','--enable-pic','--disable-debug','--disable-doc','--disable-programs','--disable-everything','--disable-autodetect','--disable-network','--disable-avdevice','--disable-avformat','--disable-avfilter','--disable-swscale','--disable-postproc','--disable-symver','--disable-vulkan','--enable-swresample','--enable-decoder=ac3,eac3','--enable-parser=ac3','--extra-cflags=-O2 -fPIC -ffunction-sections -fdata-sections']
+common=['--enable-static','--disable-shared','--enable-pic','--disable-debug','--disable-doc','--disable-programs','--disable-everything','--disable-autodetect','--disable-network','--disable-avdevice','--disable-avformat','--disable-avfilter','--disable-swscale','--disable-postproc','--disable-symver','--disable-vulkan','--enable-swresample','--enable-decoder=ac3,eac3,dca','--enable-parser=ac3,dca','--extra-cflags=-O2 -fPIC -ffunction-sections -fdata-sections']
 abis=[('armeabi-v7a','armv7a-linux-androideabi','arm','armv7-a'),('arm64-v8a','aarch64-linux-android','aarch64','armv8-a'),('x86','i686-linux-android','x86','i686'),('x86_64','x86_64-linux-android','x86_64','x86-64')]
 if a.host:abis.append(('host',None,'x86_64','x86-64'))
 for abi,triple,arch,cpu in abis:
@@ -24,10 +24,13 @@ for abi,triple,arch,cpu in abis:
  else: cxx=Path('/usr/bin/g++')
  if arch.startswith('x86'):config+=['--disable-asm']
  print('Building',abi,flush=True)
- if not (prefix/'lib/libavcodec.a').exists():
+ stamp=build/'tvnext-config.txt';signature='\n'.join(config)
+ if not (prefix/'lib/libavcodec.a').exists() or not stamp.exists() or stamp.read_text()!=signature:
+  if (build/'Makefile').exists():subprocess.run(['make','distclean'],cwd=build,check=True)
   subprocess.run(config,cwd=build,check=True)
   subprocess.run(['make',f'-j{min(max(a.jobs,1),8)}'],cwd=build,check=True)
   subprocess.run(['make','install'],cwd=build,check=True)
+  stamp.write_text(signature)
  command=[str(cxx),'-std=c++11','-O2','-shared','-fPIC','-fno-exceptions','-fno-rtti','-I'+str(prefix/'include'),str(module/'src/main/native/ffmpeg_jni.cc')]
  if triple:command+=['-nostdlib++','-llog','-Wl,-z,max-page-size=16384','-Wl,-Bsymbolic']
  else:

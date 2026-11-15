@@ -29,7 +29,7 @@ android {
         applicationId = "com.tvnext.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1022
+        versionCode = 1023
         versionName = project.version.toString()
         buildConfigField("String", "DEFAULT_KINOPOISK_API_KEY",
             "\"" + kinopoiskDefaultKey.get().trim().replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
@@ -81,6 +81,7 @@ dependencies {
     testImplementation(libs.sqldelight.android.driver)
     testImplementation("androidx.sqlite:sqlite-framework:2.6.2")
     testImplementation(libs.media3.exoplayer)
+    testImplementation(libs.media3.exoplayer.hls)
     implementation(compose.foundation)
     implementation(compose.material3)
     implementation(libs.androidx.activity.compose)

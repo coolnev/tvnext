@@ -1,0 +1,1 @@
+Synthetic 64x64 HEVC Main10/PQ test pattern with 48kHz audio. Generated with FFmpeg/libx265; no provider content. hevc-aac.ts includes AAC stereo, hevc-only.ts has no audio, hevc-dts.ts includes DTS with PMT stream type0x82. Tests exercise actual Media3 TS parsing with complete and incomplete HLS CODECS hints.

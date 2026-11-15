@@ -391,7 +391,7 @@ private fun WatchingLayout(
     // timed, passive information strip; RIGHT twice opens persistent details.
     var transportControlsVisible by remember { mutableStateOf(false) }
     var rightDetailsVisible by remember { mutableStateOf(false) }
-    var rightKeyHeld by remember { mutableStateOf(false) }
+    val rightInput = remember(selectedChannel.id,immersive) { FullscreenRightInput() }
     val hoverScope = rememberCoroutineScope()
     var drawerCloseJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
@@ -701,12 +701,14 @@ private fun WatchingLayout(
             .focusRequester(focusRequester)
             .then(if (isAndroidPlatform()) Modifier.onFocusChanged {
                 rootVideoFocused = it.isFocused
+                if (!it.hasFocus) rightInput.release()
                 if (!it.isFocused) {
                     okTimer?.cancel()
                     okTimer = null
                     okDownHeld = false
                 }
-            }.focusable() else Modifier.onFocusChanged { rootVideoFocused = it.isFocused }.focusable())
+            } else Modifier.onFocusChanged { rootVideoFocused = it.isFocused })
+            .trackFullscreenRightRelease(rightInput)
             .onPreviewKeyEvent { event ->
                 // When the transport controls own focus, arrows/OK must reach
                 // the individual buttons; never intercept them at the video root.
@@ -779,7 +781,6 @@ private fun WatchingLayout(
                 } else {
                     if (isAndroidPlatform() && immersive && !drawerOpen &&
                         event.key == Key.DirectionRight && event.type == KeyEventType.KeyUp) {
-                        rightKeyHeld = false
                         true
                     } else if (event.type == KeyEventType.KeyDown) {
                     when {
@@ -860,8 +861,7 @@ private fun WatchingLayout(
                             event.key == Key.DirectionRight -> {
                             // Handle a physical press once, never the remote's
                             // auto-repeat KeyDown events while the key is held.
-                            if (!rightKeyHeld) {
-                                rightKeyHeld = true
+                            if (rightInput.press()) {
                                 if (rightInfoVisible || rightDetailsVisible) {
                                     // Second RIGHT: persistent details.
                                     rightDetailsVisible = true
@@ -1041,7 +1041,7 @@ private fun WatchingLayout(
                 } else false
                 }
             }
-        },
+        }.focusable(),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             if (!immersive) {

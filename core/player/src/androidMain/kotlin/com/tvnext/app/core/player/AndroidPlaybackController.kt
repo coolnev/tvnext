@@ -713,7 +713,7 @@ class AndroidPlaybackController(
         codecCompatibility.selectSource(item.id)
         val session=AndroidPlaybackNetworkSession(context)
         playbackNetworkSession=session
-        val source=DefaultMediaSourceFactory(session.factory).createMediaSource(
+        val source=AndroidPlaybackMediaSources.create(session.factory,
             MediaItem.Builder().setMediaId(item.id).setUri(item.url).build())
         player.setMediaSource(source)
     }
@@ -755,6 +755,10 @@ class AndroidPlaybackController(
             else->video?.colorInfo?.toString() ?: "—"
         })
         fact("Аудиокодек",listOfNotNull(audio?.sampleMimeType,audio?.codecs).joinToString(" · "))
+        val audioGroups=exo?.currentTracks?.groups.orEmpty().filter{it.type==C.TRACK_TYPE_AUDIO}
+        fact("Аудиодорожки: найдено / выбрано","${audioGroups.sumOf{it.length}} / ${audioGroups.sumOf{g->(0 until g.length).count{g.isTrackSelected(it)}}}")
+        fact("Аудиокодеки дорожек",audioGroups.flatMap{g->(0 until g.length).mapNotNull{g.getTrackFormat(it).sampleMimeType}}
+            .distinct().joinToString(", "))
         fact("Аудиодекодер",lastAudioDecoder)
         fact("Параметры звука",audio?.let {"${it.channelCount.takeIf {v->v>0} ?: "—"} ch · ${it.sampleRate.takeIf {v->v>0} ?: "—"} Hz · ${audioOutputMode.name}"})
         fact("Буфер",exo?.totalBufferedDuration?.coerceAtLeast(0)?.let {"$it ms"})

@@ -69,6 +69,7 @@ class StreamInfoDiagnosticsTest {
             assertEquals("c2.mtk.hevc.decoder",facts["Видеодекодер"])
             assertEquals("137 ms",facts["Первый видеокадр"])
             assertEquals("1",facts["Запуски видеодекодера"])
+            assertEquals("0 / 0",facts["Аудиодорожки: найдено / выбрано"])
             assertEquals("3840 × 2160",facts["Разрешение"])
             assertEquals("audio/ac3",facts["Аудиокодек"])
             assertTrue(facts.getValue("Параметры звука").contains("48000"))

@@ -19,16 +19,19 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=35,application=Application.class)
 public class DolbyNativeDecodeTest {
-  @Test public void libraryContainsOnlyTheRequiredDolbyDecoders() {
+  @Test public void libraryContainsOnlyTheRequiredAudioDecoders() {
     assertTrue("Set TVNEXT_FFMPEG_HOST_LIBRARY after running tools/build_native.py --host",FfmpegLibrary.isAvailable());
     assertNotNull(FfmpegLibrary.getVersion());
     assertTrue(FfmpegLibrary.supportsFormat("audio/ac3"));
     assertTrue(FfmpegLibrary.supportsFormat("audio/eac3"));
+    assertTrue(FfmpegLibrary.supportsFormat("audio/vnd.dts"));
+    assertTrue(FfmpegLibrary.supportsFormat("audio/vnd.dts.hd"));
     assertFalse(FfmpegLibrary.supportsFormat("audio/aac"));
     assertFalse(FfmpegLibrary.supportsFormat("video/hevc"));
   }
   @Test public void ac3FivePointOneReallyProducesNonSilentPcmWithTheDialogueInTheCentre() throws Exception { decode("audio/ac3","centre-5.1.ac3"); }
   @Test public void eac3FivePointOneReallyProducesNonSilentPcm() throws Exception { decode("audio/eac3","centre-5.1.eac3"); }
+  @Test public void dtsFivePointOneReallyProducesNonSilentCentreDialogue() throws Exception { decode("audio/vnd.dts","centre-5.1.dts"); }
   private void decode(String mime,String resource) throws Exception {
     assertTrue(FfmpegLibrary.isAvailable());
     byte[] packet;
@@ -49,7 +52,7 @@ public class DolbyNativeDecodeTest {
         assertTrue(pcm.remaining()>6*2*100);
         long[] energy=new long[6];int index=0;
         while(pcm.remaining()>=2){long sample=pcm.getShort();energy[index++%6]+=sample*sample;}
-        assertTrue("AC3 centre/dialogue was silent",energy[2]>1_000_000L);
+        assertTrue("Centre/dialogue was silent for "+mime,energy[2]>1_000_000L);
         for(int channel:new int[]{0,1,3,4,5})assertTrue("Unexpected channel layout",energy[channel]<energy[2]/100+1);
       } finally{output.release();}
     } finally{decoder.release();}

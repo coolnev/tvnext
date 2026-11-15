@@ -7,15 +7,20 @@
   "ffmpegArchiveSha256": "98cb563487d6a652067bfb12a4b4f7fb533fc93e278f6a1821008c0b864c387f",
   "decoders": [
     "ac3",
-    "eac3"
+    "eac3",
+    "dca"
   ],
   "ndk": "r28b",
   "minNativeApi": 24,
   "elfPageAlignment": 16384,
   "jniLibraries": {
-    "src/main/jniLibs/arm64-v8a/libffmpegJNI.so": "41d3f71ad96ecb8d0ea7624dffab2e57b3d424f48a67b51ae03b1c3cf56bc773",
-    "src/main/jniLibs/x86/libffmpegJNI.so": "f5b2f2d5776cbf0bc33d43cbf7d1f10fe4bc4cd8fc2ea6664d3b04a2954e175c",
-    "src/main/jniLibs/armeabi-v7a/libffmpegJNI.so": "6cc830ca4ea8a7f4998933ccd3e76f0808a820ceed73dc611702d22bcfc639f1",
-    "src/main/jniLibs/x86_64/libffmpegJNI.so": "507233b77a30aef8b2d36223b93073e038a3855e1510757708ac447df276ad1f"
-  }
+    "src/main/jniLibs/arm64-v8a/libffmpegJNI.so": "abab51a80481838a881aff8c2b755f1e7b5a8839e529adb04d0c24ba364c0ed3",
+    "src/main/jniLibs/x86/libffmpegJNI.so": "6af0af73c4ab608844cade7f7703024c114ae5027869a3fde45bbb7175ef6012",
+    "src/main/jniLibs/armeabi-v7a/libffmpegJNI.so": "2dacb35ea1b32aa8dff0a1948adf55129226b48b7260ff413bbf026b22ad4a3f",
+    "src/main/jniLibs/x86_64/libffmpegJNI.so": "855d547ff87a2edc6b3ca2e02803116db2a9b07ab3c5848854233125ac82bc3f"
+  },
+  "parsers": [
+    "ac3",
+    "dca"
+  ]
 }

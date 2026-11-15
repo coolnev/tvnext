@@ -22,6 +22,7 @@ internal class AndroidVideoViewport(context: Context, useTextureView: Boolean = 
         isFocusable = false
         isFocusableInTouchMode = false
         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        videoSurfaceView?.apply {isFocusable=false;isFocusableInTouchMode=false}
     }
     var aspect: VideoAspectMode = VideoAspectMode.AUTO
         set(value) {
@@ -34,6 +35,7 @@ internal class AndroidVideoViewport(context: Context, useTextureView: Boolean = 
         setBackgroundColor(Color.BLACK)
         isFocusable = false
         isFocusableInTouchMode = false
+        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         addView(videoView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
         addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
