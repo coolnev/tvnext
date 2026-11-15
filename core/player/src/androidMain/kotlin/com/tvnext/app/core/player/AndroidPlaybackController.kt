@@ -92,6 +92,7 @@ class AndroidPlaybackController(
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
     private val videoOutputPolicy = AndroidVideoOutputPolicy()
+    private val codecCompatibility = AndroidCodecCompatibility()
     internal fun setTextureVideoOutput(texture: Boolean) { videoOutputPolicy.textureOutput = texture }
     private var suspendedState: PlayerState? = null
     private val _videoSignal = MutableStateFlow<VideoFrameSignal?>(null)
@@ -640,7 +641,7 @@ class AndroidPlaybackController(
         val existing = _player.value
         if (existing != null && activeKind == kind && activeDecodePath == decoderPath && activeAudioOutputMode==audioOutputMode) return existing
         if (existing != null) disposePlayer()
-        val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode,videoOutputPolicy)
+        val renderers = AndroidAudioRenderersFactory(context,decoderPath,audioOutputMode,videoOutputPolicy,codecCompatibility)
         codecAdapters = renderers.videoCodecAdapters
         val newPlayer = ExoPlayer.Builder(context)
             .setRenderersFactory(renderers)
@@ -720,6 +721,7 @@ class AndroidPlaybackController(
             ?.getDisplay(android.view.Display.DEFAULT_DISPLAY)?.mode}.getOrNull()
         fact("Экран",screen?.let {"${it.physicalWidth} × ${it.physicalHeight} · ${it.refreshRate} Hz"})
         fact("Вывод видео",if(videoOutputPolicy.textureOutput)"TextureView" else "SurfaceView")
+        fact("Очередь декодера",codecAdapters?.videoOutputDescription)
         fact("Видеокодек",listOfNotNull(video?.sampleMimeType,video?.codecs).joinToString(" · "))
         fact("Видеодекодер",activeDecoderName ?: lastVideoDecoder)
         if(video!=null && video.width>0 && video.height>0)fact("Разрешение","${video.width} × ${video.height}")
@@ -744,6 +746,7 @@ class AndroidPlaybackController(
             "${it.queuedInputBufferCount} / ${it.renderedOutputBufferCount}"
         }
         fact("Видео: вход / выход",counters(exo?.videoDecoderCounters))
+        fact("Видео: пропущено / потеряно",exo?.videoDecoderCounters?.let {"${it.skippedOutputBufferCount} / ${it.droppedBufferCount}"})
         fact("Аудио: вход / выход",counters(exo?.audioDecoderCounters))
         fact("HTTP",listOfNotNull(lastHttpResult,lastContentType).joinToString(" · "))
         return base.copy(facts=facts.map {StreamInfoFact(it.key,it.value)},lastRequestUrl=lastRequestUrl,
@@ -825,8 +828,13 @@ class AndroidPlaybackController(
         val positionMs = _state.value.positionMs.coerceAtLeast(0L)
         val restartingPlayer=_player.value
         val ownsCurrentSource=restartingPlayer?.currentMediaItem?.mediaId==item.id
+        val retrySynchronous = category==PlaybackError.Decoder && ownsCurrentSource &&
+            activeDecodePath==AndroidVideoDecoderPath.HARDWARE &&
+            (restartingPlayer?.totalBufferedDuration ?: 0)>=LIVE_REBUFFER_AFTER_MS &&
+            codecCompatibility.recordNoOutputStall(activeDecoderName ?: lastVideoDecoder,
+                activeVideoFormat ?: restartingPlayer?.videoFormat,restartingPlayer?.videoDecoderCounters)
         recoveryAttempts++
-        lastRecoveryReason=if(category==PlaybackError.Decoder) {
+        lastRecoveryReason=if(retrySynchronous) "Realtek HEVC: синхронная очередь" else if(category==PlaybackError.Decoder) {
             if(ownsCurrentSource && (restartingPlayer?.totalBufferedDuration ?: 0)>=LIVE_REBUFFER_AFTER_MS)"Заполненный буфер: перезапуск плеера" else "Перезапуск декодеров"
         } else "Поток: повторное подключение"
         _state.update { it.copy(state = PlaybackState.LOADING, error = null) }

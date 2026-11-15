@@ -24,6 +24,7 @@ class BufferedPlaybackRecoveryTest {
         val item=PlaybackItem("box","BOX Premiere 4K","file:///fixture-box.ts")
         var releases=0;var prepares=0;var starts=0
         var playReady=true
+        var videoCounters:androidx.media3.exoplayer.DecoderCounters?=null
         var trackParameters=TrackSelectionParameters.DEFAULT_WITHOUT_CONTEXT
         val player=Proxy.newProxyInstance(ExoPlayer::class.java.classLoader,arrayOf(ExoPlayer::class.java)) {p,m,args->when(m.name) {
             "getPlaybackState"->Player.STATE_BUFFERING
@@ -38,7 +39,8 @@ class BufferedPlaybackRecoveryTest {
             "getCurrentTimeline"->Timeline.EMPTY
             "getCurrentMediaItem"->MediaItem.Builder().setMediaId(item.id).setUri(item.url).build()
             "getVideoFormat"->Format.Builder().setSampleMimeType("video/hevc").setWidth(3840).setHeight(2160).build()
-            "getAudioFormat","getVideoDecoderCounters","getAudioDecoderCounters","getPlayerError"->null
+            "getVideoDecoderCounters"->videoCounters
+            "getAudioFormat","getAudioDecoderCounters","getPlayerError"->null
             "getApplicationLooper","getPlaybackLooper"->Looper.getMainLooper()
             "getVolume"->1f
             "release"->{releases++;null}
@@ -95,6 +97,24 @@ class BufferedPlaybackRecoveryTest {
             watch(c)
             assertSame(f.player,player(c));assertEquals(0,f.releases)
             assertEquals(1,f.prepares);assertEquals(1,f.starts)
+        } finally {c.release()}
+    }
+    @Test fun photographedZeroOutputLearnsTheCompatibilityProfileBeforeTheOldPlayerIsReleased() {
+        val f=Fixture(10_417).apply {videoCounters=androidx.media3.exoplayer.DecoderCounters().apply{queuedInputBufferCount=249}}
+        val c=controller(f)
+        try {
+            watch(c)
+            val expected=android.os.Build.VERSION.SDK_INT>=31
+            val compatibility=field(c,"codecCompatibility").get(c)
+            val use=compatibility.javaClass.getDeclaredMethod("useSynchronous",String::class.java,Format::class.java)
+            assertEquals(expected,use.invoke(compatibility,"OMX.realtek.video.decoder",f.player.videoFormat))
+            assertEquals(1,f.releases)
+            if(expected)assertEquals("Realtek HEVC: синхронная очередь",field(c,"lastRecoveryReason").get(c))
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+            val adapters=field(c,"codecAdapters").get(c)!!
+            assertSame("The new factory must retain the learned profile",compatibility,
+                adapters.javaClass.getDeclaredField("compatibility").apply{isAccessible=true}.get(adapters))
+            assertEquals("HARDWARE",(field(c,"activeDecodePath").get(c) as Enum<*>).name)
         } finally {c.release()}
     }
     @Test fun switchingDuringDecoderReleaseCannotResurrectTheOldChannel() {

@@ -1,10 +1,10 @@
 package com.tvnext.app.core.player
 
 import android.os.Build
-import androidx.media3.common.Format
+import android.media.MediaCodec
+import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
-import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 
 /** Main-thread surface selection, read by the playback thread before codec operations. */
@@ -24,7 +24,7 @@ internal class AndroidVideoOutputPolicy(
 /**
  * Media3's c2.mtk flush workaround (b/362904942) only covers its VideoSink path.
  * PlayerView renders directly to SurfaceTexture. Release an affected decoder before
- * operations that would flush it, and before replacing its output surface. Neither
+ * operations that would flush it. Surface changes use Media3's vendor workarounds. Neither
  * navigation nor an animation frame triggers these operations.
  */
 internal class TextureSafeVideoRenderer(
@@ -32,6 +32,7 @@ internal class TextureSafeVideoRenderer(
     private val outputPolicy: AndroidVideoOutputPolicy,
 ) : MediaCodecVideoRenderer(builder) {
     private var previousTextureOutput = false
+    private var pendingCodecBuffers = 0
 
     private fun needsProtection(): Boolean = outputPolicy.needsTextureProtection(
         codecInfo, outputPolicy.textureOutput || previousTextureOutput,
@@ -39,12 +40,6 @@ internal class TextureSafeVideoRenderer(
 
     private fun releaseAffectedCodec() {
         if (needsProtection()) releaseCodec()
-    }
-
-    override fun onStreamChanged(formats: Array<Format>, startPositionUs: Long, offsetUs: Long,
-        mediaPeriodId: MediaSource.MediaPeriodId) {
-        releaseAffectedCodec()
-        super.onStreamChanged(formats, startPositionUs, offsetUs, mediaPeriodId)
     }
 
     override fun onPositionReset(positionUs: Long, joining: Boolean, sampleStreamIsResetToKeyFrame: Boolean) {
@@ -58,17 +53,43 @@ internal class TextureSafeVideoRenderer(
     }
 
     override fun handleMessage(messageType: Int, message: Any?) {
-        if (messageType == Renderer.MSG_SET_VIDEO_OUTPUT) {
-            releaseAffectedCodec()
-            previousTextureOutput = outputPolicy.textureOutput
-        }
         super.handleMessage(messageType, message)
+        if (messageType == Renderer.MSG_SET_VIDEO_OUTPUT) previousTextureOutput = outputPolicy.textureOutput
+    }
+
+    override fun onQueueInputBuffer(buffer: DecoderInputBuffer) {
+        super.onQueueInputBuffer(buffer)
+        if (!configuration.tunneling &&
+            (Build.VERSION.SDK_INT < 34 || getCodecBufferFlags(buffer) and MediaCodec.BUFFER_FLAG_DECODE_ONLY == 0)) {
+            pendingCodecBuffers++
+        }
+    }
+
+    override fun onProcessedOutputBuffer(presentationTimeUs: Long) {
+        super.onProcessedOutputBuffer(presentationTimeUs)
+        if (!configuration.tunneling) pendingCodecBuffers = (pendingCodecBuffers - 1).coerceAtLeast(0)
+    }
+
+    override fun resetCodecStateForFlush() {
+        super.resetCodecStateForFlush()
+        pendingCodecBuffers = 0
     }
 
     override fun maybeDropBuffersToKeyframe(positionUs: Long, treatDroppedBuffersAsSkipped: Boolean): Boolean {
-        // Keep ordinary late-frame dropping, but avoid the catch-up operation that
-        // flushes and can permanently corrupt this vendor's SurfaceTexture queue.
-        if (needsProtection()) return false
-        return super.maybeDropBuffersToKeyframe(positionUs, treatDroppedBuffersAsSkipped)
+        if (!needsProtection()) return super.maybeDropBuffersToKeyframe(positionUs, treatDroppedBuffersAsSkipped)
+        val skipped = skipSource(positionUs)
+        if (skipped == 0) return false
+        // Catch up when a keyframe is available, replacing the unsafe vendor flush
+        // with a codec release. Disabling catch-up leaves video behind the audio.
+        if (treatDroppedBuffersAsSkipped) {
+            decoderCounters.skippedInputBufferCount += skipped
+            decoderCounters.skippedOutputBufferCount += pendingCodecBuffers
+        } else {
+            decoderCounters.droppedToKeyframeCount++
+            updateDroppedBufferCounters(skipped, pendingCodecBuffers)
+        }
+        releaseCodec()
+        maybeInitCodecOrBypass()
+        return true
     }
 }

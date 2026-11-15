@@ -29,6 +29,9 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Очередь декодера" to ("Decoder queue" to "解码器队列"),
+        "Видео: пропущено / потеряно" to ("Video: skipped / dropped" to "视频：跳过 / 丢帧"),
+        "Realtek HEVC: синхронная очередь" to ("Realtek HEVC: synchronous queue" to "Realtek HEVC：同步队列"),
         "Причина восстановления" to ("Recovery reason" to "恢复原因"),
         "Перезапуск декодеров" to ("Restarting decoders" to "重新启动解码器"),
         "Видео: вход / выход" to ("Video: input / output" to "视频：输入 / 输出"),

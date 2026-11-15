@@ -55,9 +55,9 @@ actual fun NativePlayerSurface(controller: PlaybackController, modifier: Modifie
     }
     // A decoder session resumed after standby gets a new native surface too.
     // Keeping the old TextureView can retain its pre-sleep graphics buffers.
-    // A new source also gets a fresh SurfaceTexture: some vendor queues cannot
-    // recover after a codec flush. Navigation/animation retains the same view.
-    key(useTextureView, player, if (useTextureView) item else null) {
+    // Channel changes retain the output: replacing it after audio starts can
+    // discard the first video keyframe and delay the picture until the next GOP.
+    key(useTextureView, player) {
     AndroidView(
         factory = { AndroidVideoViewport(it, useTextureView) },
         modifier = modifier.fillMaxSize(),

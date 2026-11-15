@@ -8,17 +8,19 @@ import com.tvnext.app.core.common.log.AndroidPerformanceCounters
 import java.io.IOException
 
 /** Use callback/queueing threads for legacy Amlogic video, leaving audio and other vendors alone. */
-internal class AmlogicMediaCodecAdapterFactory(
+internal class AmlogicMediaCodecAdapterFactory @JvmOverloads constructor(
     private val sdk: Int,
     private val defaults: MediaCodecAdapter.Factory,
     private val asynchronous: MediaCodecAdapter.Factory,
     private val synchronous: MediaCodecAdapter.Factory,
+    private val compatibility: AndroidCodecCompatibility = AndroidCodecCompatibility(sdk),
 ) : MediaCodecAdapter.Factory {
-    constructor(context: Context) : this(
+    @JvmOverloads constructor(context: Context, compatibility: AndroidCodecCompatibility = AndroidCodecCompatibility()) : this(
         Build.VERSION.SDK_INT,
         DefaultMediaCodecAdapterFactory(context),
         DefaultMediaCodecAdapterFactory(context).forceEnableAsynchronous(),
         DefaultMediaCodecAdapterFactory(context).forceDisableAsynchronous(),
+        compatibility,
     )
 
     private val synchronousCodecs = mutableSetOf<String>()
@@ -29,6 +31,12 @@ internal class AmlogicMediaCodecAdapterFactory(
         val info = configuration.codecInfo
         val video = configuration.format.sampleMimeType?.startsWith("video/", ignoreCase = true) == true
         val name = info.name.lowercase()
+        if (video && info.hardwareAccelerated && !info.softwareOnly && compatibility.useSynchronous(info.name, configuration.format)) {
+            val adapter = synchronous.createAdapter(configuration)
+            videoOutputDescription = "Media3/ExoPlayer · Realtek HEVC sync"
+            AndroidPerformanceCounters.set("video.amlogicAsyncQueue", 0)
+            return adapter
+        }
         val legacyAmlogic = sdk in 23..30 && video && info.hardwareAccelerated && !info.softwareOnly &&
             (name.startsWith("omx.amlogic.") || name.startsWith("c2.amlogic."))
         if (!legacyAmlogic) {

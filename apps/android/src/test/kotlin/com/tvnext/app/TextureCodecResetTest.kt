@@ -1,6 +1,8 @@
 package com.tvnext.app
 
 import android.app.Application
+import android.graphics.SurfaceTexture
+import android.view.Surface
 import androidx.media3.common.Format
 import androidx.media3.exoplayer.BaseRenderer
 import androidx.media3.exoplayer.Renderer
@@ -23,7 +25,7 @@ import org.robolectric.annotation.Config
 class TextureCodecResetTest {
     private val rendererClass = Class.forName("com.tvnext.app.core.player.TextureSafeVideoRenderer")
     private val policyClass = Class.forName("com.tvnext.app.core.player.AndroidVideoOutputPolicy")
-    private class Operations { var flushes=0; var releases=0 }
+    private class Operations { var flushes=0; var releases=0;var surfaceChanges=0 }
 
     private fun renderer(texture:Boolean=true, tcl:Boolean=false): Pair<MediaCodecVideoRenderer,Any> {
         val policy=policyClass.getDeclaredConstructor(Boolean::class.javaPrimitiveType).apply{isAccessible=true}.newInstance(tcl)
@@ -39,6 +41,7 @@ class TextureCodecResetTest {
             when(m.name) {
                 "flush" -> {operations.flushes++;Unit}
                 "release" -> {operations.releases++;Unit}
+                "setOutputSurface"->{operations.surfaceChanges++;Unit}
                 else -> error("Unexpected codec operation ${m.name}")
             }
         } as MediaCodecAdapter
@@ -80,7 +83,7 @@ class TextureCodecResetTest {
         repeat(8){reset(renderer,false)}
         assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
     }
-    @Test fun disableAndNewChannelReleaseTheAffectedCodecBeforeMedia3CanFlushIt() {
+    @Test fun disableReleasesTheAffectedCodecButAStreamNotificationDoesNotDiscardItsKeyframe() {
         val (disabled,_)=renderer();val operations=installCodec(disabled)
         rendererClass.getDeclaredMethod("onDisabled").apply{isAccessible=true}.invoke(disabled)
         assertEquals(0,operations.flushes);assertEquals(1,operations.releases)
@@ -90,21 +93,52 @@ class TextureCodecResetTest {
             if(m.name=="getFlags")0 else error("Unexpected sample read ${m.name}")
         }
         BaseRenderer::class.java.getDeclaredField("stream").apply{isAccessible=true}.set(changed,stream)
-        rendererClass.getDeclaredMethod("onStreamChanged",Array<Format>::class.java,Long::class.javaPrimitiveType,
+        MediaCodecVideoRenderer::class.java.getDeclaredMethod("onStreamChanged",Array<Format>::class.java,Long::class.javaPrimitiveType,
             Long::class.javaPrimitiveType,MediaSource.MediaPeriodId::class.java).apply{isAccessible=true}
             .invoke(changed,arrayOf(Format.Builder().setSampleMimeType("video/avc").build()),0L,0L,MediaSource.MediaPeriodId("new-channel"))
-        assertEquals(0,changedOps.flushes);assertEquals(1,changedOps.releases)
+        assertEquals(0,changedOps.flushes);assertEquals(0,changedOps.releases)
     }
-    @Test fun textureToNativeHandoffStillProtectsThePreviousTextureQueue() {
+    @Test fun surfaceHandoffUsesMedia3WithoutReleasingAJustStartedDecoder() {
         val (renderer,policy)=renderer()
-        renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,null)
-        val operations=installCodec(renderer)
-        policyClass.getDeclaredMethod("setTextureOutput",Boolean::class.javaPrimitiveType).invoke(policy,false)
-        renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,null)
-        assertEquals(0,operations.flushes);assertEquals(1,operations.releases)
+        val texture=SurfaceTexture(0);val first=Surface(texture);val second=Surface(texture)
+        try {
+            renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,first)
+            val operations=installCodec(renderer)
+            renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,first)
+            assertEquals("Repeated output notification must preserve the consumed IDR",0,operations.releases)
+            assertEquals(0,operations.surfaceChanges)
+            policyClass.getDeclaredMethod("setTextureOutput",Boolean::class.javaPrimitiveType).invoke(policy,false)
+            renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,second)
+            assertEquals(0,operations.flushes);assertEquals(0,operations.releases);assertEquals(1,operations.surfaceChanges)
+        } finally {first.release();second.release();texture.release()}
     }
-    @Test fun lateFrameCatchupCannotFlushTheAffectedQueue() {
+    @Test fun lateVideoCanCatchUpToTheNextKeyframeWithoutFlushingTheAffectedQueue() {
+        for(treatAsSkipped in listOf(false,true)) {
         val (renderer,_)=renderer();val operations=installCodec(renderer)
+        rendererClass.getDeclaredField("pendingCodecBuffers").apply{isAccessible=true}.setInt(renderer,4)
+        var skips=0
+        val stream=Proxy.newProxyInstance(SampleStream::class.java.classLoader,arrayOf(SampleStream::class.java)) {_,m,_->
+            if(m.name=="skipData"){skips++;6} else if(m.name=="getFlags")0 else error(m.name)
+        }
+        BaseRenderer::class.java.getDeclaredField("stream").apply{isAccessible=true}.set(renderer,stream)
+        val dropped=rendererClass.getDeclaredMethod("maybeDropBuffersToKeyframe",Long::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType).apply{isAccessible=true}.invoke(renderer,1_000_000L,treatAsSkipped)
+        assertEquals(true,dropped);assertEquals(1,skips);assertEquals(0,operations.flushes);assertEquals(1,operations.releases)
+        val counts=MediaCodecRenderer::class.java.getDeclaredField("decoderCounters").apply{isAccessible=true}
+            .get(renderer) as androidx.media3.exoplayer.DecoderCounters
+        if(treatAsSkipped) {
+            assertEquals(6,counts.skippedInputBufferCount);assertEquals(4,counts.skippedOutputBufferCount)
+            assertEquals(0,counts.droppedBufferCount)
+        } else {assertEquals(1,counts.droppedToKeyframeCount);assertEquals(10,counts.droppedBufferCount)}
+        assertEquals(0,rendererClass.getDeclaredField("pendingCodecBuffers").apply{isAccessible=true}.getInt(renderer))
+        }
+    }
+    @Test fun catchupWithoutAnAvailableKeyframeDoesNotRestartTheDecoder() {
+        val (renderer,_)=renderer();val operations=installCodec(renderer)
+        val stream=Proxy.newProxyInstance(SampleStream::class.java.classLoader,arrayOf(SampleStream::class.java)) {_,m,_->
+            if(m.name=="skipData" || m.name=="getFlags")0 else error(m.name)
+        }
+        BaseRenderer::class.java.getDeclaredField("stream").apply{isAccessible=true}.set(renderer,stream)
         val dropped=rendererClass.getDeclaredMethod("maybeDropBuffersToKeyframe",Long::class.javaPrimitiveType,
             Boolean::class.javaPrimitiveType).apply{isAccessible=true}.invoke(renderer,1_000_000L,false)
         assertEquals(false,dropped);assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
