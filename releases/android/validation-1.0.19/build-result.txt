@@ -1,0 +1,7 @@
+BUILD SUCCESSFUL
+460 checks: 83 Player, 67 metadata, 109 Channels, 7 Home, 194 Android API28/35.
+Controlled backend with reported 20833ms loaded buffer is released and replaced, hardware/audio/volume/mute retained.
+Empty-buffer network retry, paused state, channel switching during grace, no inherited stall budget and slow repeated recovery verified.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Original BOX bytes and physical Realtek playback unavailable.
+Source: 3143c416a88a2a49bdd4c04cc0835144157c9236

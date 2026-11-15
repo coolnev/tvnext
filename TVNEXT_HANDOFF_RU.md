@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.18`, versionCode 1018, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.19`, versionCode 1019, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,17 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.18.apk`.
-Описание: `RELEASE_ANDROID_1.0.18_RU.md`.
-Сводка: `releases/android/validation-1.0.18.json`.
+APK: `releases/android/TVNext-1.0.19.apk`.
+Описание: `RELEASE_ANDROID_1.0.19_RU.md`.
+Сводка: `releases/android/validation-1.0.19.json`.
+
+В1.0.19 (15.11) ПОЛУЧЕНО фото реального BOX Premiere4K на1.0.18. TCL SmartTV Android12/API31, decoderOMX.realtek.video.decoder (ВАЖНО: это Realtek, не выдумывать MediaTek), HEVC hvc1.1.6.L150.90 3840x2160 SDR8bit BT709, SurfaceView, AC3 5.1 48kHz ffmpegLavc60.3.100-ac3 AUTO, display4K60Hz, Format.bitrate50000000 (объявленный, не измеренный!), download140.2Mbps, BUFFERING, buffer20833ms, dropped0, restarts1, FPSunknown. User: нет видео/звука. Async ответ: «Последняя ошибка» =Нет ошибок; другой плеер на этомTCL ТОЖЕ НЕ ПОКАЗЫВАЕТ. Нельзя утверждать, что виноват именноTVNext или именнопровайдер. Оригинальный privateURL cdn.bittv.ltd получен из фото, ТЕКСТ/ТОКЕН НЕ ПУБЛИКОВАТЬ; HTTP403 иHTTPSCONNECT403 среды, webopen такжеunavailable. Никаких HLS/TSбайтовнеполучено, ffprobeэтогоканаланезапущен. Фото не сохранено вGitHub.
+
+Найден подтверждённый кодовый дефект: watchLiveBuffering всегда retryNetwork даже при готовых20сданных; autoRestart ensurePlayer переиспользуеттотжеMediaCodec/AudioSink. Новый watchdog выбираетDecoder при>=3000ms иизвестномdecoder, Network иначе. autoRestart(Decoder) полностью disposePlayer, cancel oldHttp, releaseMediaSession/renderers/surface иcreatefresh Exo черезprepareRestart послеограниченногоgrace: Realtek3000ms, остальные100ms. Очередьasync/sync, HDR, аппаратный/программныйплан, буферы/битрейт/разрешение/звук/AFR/анимация не меняются. rendererReleaseUntilMs основаннаelapsedRealtime, переживаетпереключениецели; cancelRetry/generation гарантируют olditemневернётся. Новыйканалне наследуетbufferedRestarts (проверятьownsCurrentSource поcurrentMediaItem.id). Первыйloadedresetбыстрыйпосле20s, повторloadedstall идёт на60s cadence.30sустойчивогопоказаобнуляютfastbudget. Еслиуходятуже изconfirmedfailed loadedstate, новыйканалполучаетчистуюцепочку. Обычнаяпустаясетьсохраняетlightretry. Нельзя обещать, что это починило самBox: другойплеертоженеиграет, bytes/hardwareнепроверены.
+
+streamInfo: recoveryAttempts отдельныйсчётчик, lastRecoveryReason, input/outputDecoderCounters дляvideo+audio сensureUpdated. «Видео:вход/выход»,«Аудио:вход/выход»,«Причинавосстановления» RU/EN/ZH. СчётчикиизMedia3, не доказательствофизическоговыводанаэкран/динамики. Runtime source/recoveryreason невыдумываетHTTPошибку приnoErrors.
+
+460 проверки:83 Player+67 metadata+109 Channels+7 Home+194 nativeAPI28/35. BufferedPlaybackRecoveryTest5cases×2SDK:20.833sbufferedbackendrelease/newrealExo+hardware/volume/mute; emptybufferreusesexisting/lightretry; channelSwitchduringgrace noresurrect/noinheritedbudget; pausednoRecovery; repeatloadedwait60sec. В первоначальнойбазе реальныеассерты releasefailed4 (ещё2fixturepausedошибкинепубликоватькакпродуктовыйбаг). StreamInfoDiagnosticsTest дополнен счётчиками120/0,96/96. Походупроверок обнаружен переносbudgetнановыйканал, исправлен ownershipguard; finalNativeall194passed. Release/lint/encoding/Desktopcompile/sign/ZIP/zipalign/key/PNG/native unchanged vs1.0.18 passed. Source 3143c416a88a2a49bdd4c04cc0835144157c9236;version1.0.19/code1019;APK SHA256 6c2c9cdb3f4325b232b29838c5836ce20673b77b04c6a234ee7052fee90649b0. ФизическогоTV/Realtek/потокабайтовнет. Ссылкаoriginaluserstreamсtokenостаётсяконфиденциальной, еёнеповторятьвответеилиGit.
 
 В 1.0.18 (15.11) в ходе публикации1.0.17 пользователь ДОБАВИЛ проблемы Box Ultra Stars4K (раньше иногда запускался, теперьнет) иBox Premier4K (вообщенеоткрывается), после них другие каналы запускаются плохо некоторое время. Попросил посмотреть поток, спросил как его вижу. DefaultLIVE_PLAYLIST_URL из Android TVNextApplication.kt сетево CONNECT403. Реальных URL Box нет; async попросил их, пользователь ответил «Я не могу этого». БОЛЬШЕ НЕ ПРОСИТЬ URL. Затем явно попросил кнопку английская i крайней справа нижней OK-панели, центрированный диалог с адресом/кодеками/всей инфой, чтобы сфотографировать и прислать. Реальные потоки Box так и не просмотрены, не утверждать обратное.
 

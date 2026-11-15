@@ -1,0 +1,118 @@
+{
+  "date": "2026-11-15",
+  "versionName": "1.0.19",
+  "versionCode": 1019,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "3143c416a88a2a49bdd4c04cc0835144157c9236",
+  "sha256": "6c2c9cdb3f4325b232b29838c5836ce20673b77b04c6a234ee7052fee90649b0",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "userObservation": {
+    "channel": "BOX Premiere 4K",
+    "appVersion": "1.0.18",
+    "device": "TCL Smart TV Android12/API31",
+    "decoder": "OMX.realtek.video.decoder",
+    "surface": "SurfaceView",
+    "video": "video/hevc hvc1.1.6.L150.90 3840x2160 SDR8bit",
+    "audio": "AC3 5.1 48000 Hz via ffmpegLavc60.3.100-ac3",
+    "bufferMs": 20833,
+    "state": "BUFFERING",
+    "http": "2xx",
+    "advertisedVideoBitrate": 50000000,
+    "measuredDownloadMbps": 140.2,
+    "fpsUnknown": true,
+    "userReportsNoErrors": true,
+    "userReportsOtherAppAlsoFailsOnThisTv": true,
+    "privateUrlExcluded": true
+  },
+  "changes": {
+    "loadedStallThresholdMs": 3000,
+    "watchdogTimeoutMs": 20000,
+    "loadedStall": "Release complete ExoPlayer/decoder/AudioSink/surface session, then create a fresh one in the same decode/audio modes",
+    "realtekReleaseGraceMs": 3000,
+    "otherReleaseGraceMs": 100,
+    "graceUsesCoroutineDelay": true,
+    "nextChannelRespectsRemainingGrace": true,
+    "oldItemCannotResurrect": true,
+    "nextItemDoesNotInheritStallBudget": true,
+    "repeatedLoadedStallUsesSlowRecovery": true,
+    "networkStallKeepsLightweightRetry": true,
+    "hardwareIsNotForcedToSoftware": true,
+    "queueModeUnchanged": true,
+    "animationUnchanged": true,
+    "newInfo": [
+      "Recovery reason",
+      "Video input/output buffer counters",
+      "Audio input/output buffer counters"
+    ],
+    "locales": [
+      "ru",
+      "en",
+      "zh"
+    ]
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1018": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 194,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 460,
+  "limitations": [
+    "Actual CDN is blocked by the environment (HTTP/CONNECT403); web open also unavailable. No original HLS/TS bytes analysed.",
+    "A loaded-buffer recovery defect in TVNext is confirmed; the original BOX stream/Realtek rendering failure is not reproduced on a physical TV.",
+    "Recovery tests control an ExoPlayer proxy to reproduce the reported state, then verify release/replacement by a real new ExoPlayer.",
+    "The same channel also fails in another app on the TCL according to the user; source validity or hardware compatibility remains unverified.",
+    "No forced async/sync codec tuning, no invented stream fps, no bitrate/resolution reduction, no Windows installer."
+  ]
+}
