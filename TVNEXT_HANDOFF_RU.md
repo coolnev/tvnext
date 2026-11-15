@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.21`, versionCode 1021, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.22`, versionCode 1022, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,21 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.21.apk`.
-Описание: `RELEASE_ANDROID_1.0.21_RU.md`.
-Сводка: `releases/android/validation-1.0.21.json`.
+APK: `releases/android/TVNext-1.0.22.apk`.
+Описание: `RELEASE_ANDROID_1.0.22_RU.md`.
+Сводка: `releases/android/validation-1.0.22.json`.
+
+В 1.0.22 (15.11) пользователь снова сообщил о случайном замирании при переключении: один канал иногда нормален, иногда нет. Опциональный вопрос «кадр старого/нового канала и идёт ли звук?» отправлен; ответа пока нет, не выдумывать. Предыдущий подтверждённый путь — TCL/Realtek hardware AVC TextureView. Empty Companion Page не содержала данных.
+
+Найдены две конкретные ошибки. canReuseCodec в21 заставлял drain/reinit даже metadata-only id/bitrate header при неизменном AVC. Теперь сначала native Media3 evaluation; WITHOUT_RECONFIGURATION и clear content сохраняют кодек. Реальная reconfiguration/flush и DRM дают NO/WORKAROUND на защищённом Texture; исходный NO с причинами сохраняется. Native SurfaceView/остальные вендоры оставлены базовым Media3. Общая граница setPlaybackSource теперь stop→cancelOldHTTP/nullSession→clearItems→incomingTrackPrefs→selectCodecSource→newMediaSource→prepare/play. Убраны prefs перед cut из play и дубль stop/clear/prefs из prepareRestart. Сохраняется instance/session/surface, нет новой grace/retry для нормальной смены. PlaybackTuneIsolationTest управляет Exo proxy, но stop реально вызывает BaseRenderer.disable старого TextureSafe с аппаратным mockAdapter; проверяет release до incoming source, prefs после cut, повторные каналы и один stop на retry. На untouched21 source+metadata тесты дали 4 expected fails API28/35.
+
+Дополнительно закрыта гонка Native↔Texture при первом кадре: TextureSafe.maybeInitializeProcessingPipeline получает формат ДО codec factory, ожидает фактически attachedSurface и previousTextureOutput соответствующего типа. coordinateOutput=true у production controller; default false у standalone factory/tests. Тип выбирается той же useTextureForVideoTransition и существующим prefs tvnext_animation_v1/video_transitions; requiresNativeVideoOutput общий для политики и diagnostics (HDR/DRM/crypto/DV). Во время ожидания isReady=false (вместо опасной Media3 codec-null readiness), skipSource=0 (не терять IDR); форматное событие всё равно идёт в UI после super.onInputFormatChanged, так что View может переключиться. Сам флаг textureOutput не снимает gate: нужен настоящий MSG_SET_VIDEO_OUTPUT. onDisabled очищает expectedTexture. Формат unknown width/height не gated — стандартный Media3, это явно сохранённое ограничение. Нет таймеров, matched Surface сразу разрешает init. Защита реальных handoff/seek/CSD/drm/catchup не снята, новая поверхность на новомplayer и стабильная на обычном tune сохранены.
+
+VideoOutputStartupGateTest выполняет реальный Renderer.init/enable/render + SampleStream (Format и keyframe), до controlled adapter factory Error-boundary. 6 сценариев: Native→HD Texture, Texture→UHD Native, Texture→HDR Native, старт без Surface, HD Texture→HD Texture, Native UHD→Native UHD. В mismatch до attach factory0, isReadyfalse, skip0/consume0, Main format-event получен; смена одного policyflag ещё не разрешает. После actualSurface factoryConfig.surface точно target, matched cases сразу. GPU и реальные native codecs не запускаются. Старый21 renderer class в новом policy harness достигает factory раньше gate и даёт2expectedfails API28/35. Это не полный старыйAPK на ТВ. Первая ungated122 проверка488passed была промежуточной, не опубликована; финальная gated версия имеет490 (83+67+109+7+224 native) и единственный релизный APK.
+
+streamInfo добавляет firstVideoFrameDelayMs (Analytics rendered-first-frame renderTimeMs минус tuneStartedElapsedMs) иvideoDecoderStarts, сброс на каждый play, события другого source фильтруются для init/release/firstFrame; первый callback не перезаписывается последующими. Это Media3 timing, не физические pixels. RU/EN/ZH labels. Native tests проверяют137ms/1start и reset—/0.
+
+Full encoding/release/lint/Desktopcompile,signature/ZIP/zipalign16KiB,key embedded-not-text,PNG/banner/native equal21. Source 03e817fd308f11adae9e80329d3d64ae3067c93d, APKshaddcb04f6df08d1b824719e089406c39b8ef515e23c7c42014b9c8be793d7a156,version1.0.22/code1022. Анимация/AFR/качество/UHD и Box per-source profile сохранены. Физический TCL/Ugoos и оригинальный Box stream не проверены; НЕ ОБЕЩАТЬ, что device freeze точно устранён. Windows installer не собирался.
 
 В 1.0.21 (15.11) пользователь сообщил: после 1.0.20 вернулись зацикленные кадры. На вопрос OK→i прямо ответил: **OMX RealTek Video Decoder, AVC, аппаратный, Texture View**. Строка с размерами/AVC1 была передана голосом неоднозначно («640x1280»); точное разрешение не выдумывать. Это подтверждённый Realtek+TextureView, не переносить диагноз на SurfaceView/4K. Дополнительно пользователь отметил возможную неровность 4K, но на другом канале нормальнее, устойчивого воспроизведения не дал.
 
