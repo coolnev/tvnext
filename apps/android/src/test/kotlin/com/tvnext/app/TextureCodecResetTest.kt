@@ -124,9 +124,11 @@ class TextureCodecResetTest {
             } finally {first.release();second.release();st.release()}
         }
     }
-    private fun changeFormat(renderer:MediaCodecVideoRenderer,width:Int,height:Int):androidx.media3.exoplayer.DecoderReuseEvaluation {
+    private fun changeFormat(renderer:MediaCodecVideoRenderer,width:Int,height:Int,codecDataChanged:Boolean=false):androidx.media3.exoplayer.DecoderReuseEvaluation {
         val oldFormat=Format.Builder().setId("old-track").setSampleMimeType("video/avc").setWidth(width).setHeight(height).build()
-        val newFormat=oldFormat.buildUpon().setId("new-track").build()
+        val newFormat=oldFormat.buildUpon().setId("new-track").setAverageBitrate(2_000_000).apply {
+            if(codecDataChanged)setInitializationData(listOf(byteArrayOf(0,0,0,1,0x67)))
+        }.build()
         for((name,value) in listOf("inputFormat" to oldFormat,"codecInputFormat" to oldFormat))
             MediaCodecRenderer::class.java.getDeclaredField(name).apply{isAccessible=true}.set(renderer,value)
         val maxClass=Class.forName("androidx.media3.exoplayer.video.MediaCodecVideoRenderer\$CodecMaxValues")
@@ -139,10 +141,17 @@ class TextureCodecResetTest {
     }
     @Test fun formatChangesDrainAndReplaceTheReportedRealtekTextureCodecInsteadOfReusingItsQueue() {
         val (renderer,_)=renderer(tcl=true);val operations=installCodec(renderer,"OMX.realtek.video.decoder")
-        val result=changeFormat(renderer,1280,720)
+        val result=changeFormat(renderer,1280,720,codecDataChanged=true)
         assertEquals(androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_NO,result.result)
         assertEquals("Drain to EOS, then reinitialize; do not flush or reconfigure the old queue",3,
             MediaCodecRenderer::class.java.getDeclaredField("codecDrainAction").apply{isAccessible=true}.getInt(renderer))
+        assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
+    }
+    @Test fun aMetadataOnlyHeaderUpdateDoesNotDrainOrReinitializeAnAlreadyRunningRealtekDecoder() {
+        val (renderer,_)=renderer(tcl=true);val operations=installCodec(renderer,"OMX.realtek.video.decoder")
+        val result=changeFormat(renderer,1280,720)
+        assertEquals("Track id/bitrate changes do not change the coded AVC data",androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_YES_WITHOUT_RECONFIGURATION,result.result)
+        assertEquals(0,MediaCodecRenderer::class.java.getDeclaredField("codecDrainAction").apply{isAccessible=true}.getInt(renderer))
         assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
     }
     @Test fun nativeUhdFormatNotificationDoesNotDiscardARunningRealtekDecoder() {

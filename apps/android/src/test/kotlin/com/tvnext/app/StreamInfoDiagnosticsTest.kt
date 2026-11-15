@@ -44,6 +44,9 @@ class StreamInfoDiagnosticsTest {
             analytics.onVideoInputFormatChanged(event,Format.Builder().setSampleMimeType("video/hevc")
                 .setCodecs("hvc1.2.4.L153").setWidth(3840).setHeight(2160).setFrameRate(23.976f).build(),null)
             analytics.onVideoDecoderInitialized(event,"c2.mtk.hevc.decoder",0,20)
+            val started=field(c,"tuneStartedElapsedMs") as Long
+            analytics.onRenderedFirstFrame(event,Any(),started+137)
+            analytics.onRenderedFirstFrame(event,Any(),started+500)
             analytics.onAudioInputFormatChanged(event,Format.Builder().setSampleMimeType("audio/ac3").setChannelCount(6).setSampleRate(48000).build(),null)
             analytics.onAudioDecoderInitialized(event,"c2.vendor.ac3.decoder",0,10)
             analytics.onDroppedVideoFrames(event,12,1000)
@@ -64,6 +67,8 @@ class StreamInfoDiagnosticsTest {
             assertTrue(info.lastError!!.contains("403"));assertTrue(info.lastError!!.contains("ERROR_CODE_IO_BAD_HTTP_STATUS"))
             assertTrue(facts.getValue("Видеокодек").contains("video/hevc"))
             assertEquals("c2.mtk.hevc.decoder",facts["Видеодекодер"])
+            assertEquals("137 ms",facts["Первый видеокадр"])
+            assertEquals("1",facts["Запуски видеодекодера"])
             assertEquals("3840 × 2160",facts["Разрешение"])
             assertEquals("audio/ac3",facts["Аудиокодек"])
             assertTrue(facts.getValue("Параметры звука").contains("48000"))
@@ -82,6 +87,8 @@ class StreamInfoDiagnosticsTest {
             (field(c,"listener") as Player.Listener).onPlayerError(PlaybackException("old failure",null,PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED))
             assertTrue(c.streamInfo().lastError!!.contains("old failure"))
             c.play(PlaybackItem("new","New source","file:///new.ts"))
+            val facts=c.streamInfo().facts.associate{it.label to it.value}
+            assertEquals("—",facts["Первый видеокадр"]);assertEquals("0",facts["Запуски видеодекодера"])
             val info=c.streamInfo()
             assertEquals("New source",info.title);assertEquals("file:///new.ts",info.sourceUrl)
             assertNull(info.lastError);assertNull(info.lastRequestUrl)

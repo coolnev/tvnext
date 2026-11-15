@@ -29,6 +29,8 @@ object UiTranslations {
     }
 
     private val translations = mapOf(
+        "Первый видеокадр" to ("First video frame" to "首个视频帧"),
+        "Запуски видеодекодера" to ("Video decoder starts" to "视频解码器启动次数"),
         "Очередь декодера" to ("Decoder queue" to "解码器队列"),
         "Видео: пропущено / потеряно" to ("Video: skipped / dropped" to "视频：跳过 / 丢帧"),
         "Realtek HEVC: синхронная очередь" to ("Realtek HEVC: synchronous queue" to "Realtek HEVC：同步队列"),

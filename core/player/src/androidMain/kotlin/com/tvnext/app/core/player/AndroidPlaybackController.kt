@@ -84,6 +84,9 @@ class AndroidPlaybackController(
     private var lastHttpResult: String? = null
     private var lastContentType: String? = null
     private var sessionDroppedFrames = 0L
+    private var tuneStartedElapsedMs: Long? = null
+    private var firstVideoFrameDelayMs: Long? = null
+    private var videoDecoderStarts = 0
     private var bufferedRestarts = 0
     private var recoveryAttempts = 0
     private var lastRecoveryReason: String? = null
@@ -91,7 +94,9 @@ class AndroidPlaybackController(
     private var playbackNetworkSession: AndroidPlaybackNetworkSession? = null
     private var activeDecodePath: AndroidVideoDecoderPath? = null
     private var codecAdapters: AmlogicMediaCodecAdapterFactory? = null
-    private val videoOutputPolicy = AndroidVideoOutputPolicy()
+    private val videoOutputPolicy = AndroidVideoOutputPolicy(animationEnabled = {
+        context.getSharedPreferences("tvnext_animation_v1",Context.MODE_PRIVATE).getBoolean("video_transitions",false)
+    }).apply { coordinateOutput = true }
     private val codecCompatibility = AndroidCodecCompatibility()
     internal fun setTextureVideoOutput(texture: Boolean) { videoOutputPolicy.textureOutput = texture }
     private var suspendedState: PlayerState? = null
@@ -255,16 +260,24 @@ class AndroidPlaybackController(
             initializedTimestampMs: Long,
             initializationDurationMs: Long,
         ) {
+            if(!isCurrentStreamEvent(eventTime))return
+            videoDecoderStarts++
             activeDecoderName = decoderName
-            if(isCurrentStreamEvent(eventTime))lastVideoDecoder=decoderName
+            lastVideoDecoder=decoderName
             AndroidPerformanceCounters.increment("video.decoderStarts")
             AndroidPerformanceCounters.set("video.decoderInitMs", initializationDurationMs)
             refreshState()
         }
 
         override fun onVideoDecoderReleased(eventTime: AnalyticsListener.EventTime, decoderName: String) {
+            if(!isCurrentStreamEvent(eventTime))return
             if(activeDecoderName==decoderName)activeDecoderName=null
             refreshState()
+        }
+        override fun onRenderedFirstFrame(eventTime: AnalyticsListener.EventTime, output: Any, renderTimeMs: Long) {
+            val started=tuneStartedElapsedMs ?: return
+            if(isCurrentStreamEvent(eventTime) && firstVideoFrameDelayMs==null)
+                firstVideoFrameDelayMs=(renderTimeMs-started).coerceAtLeast(0L)
         }
         override fun onAudioInputFormatChanged(eventTime: AnalyticsListener.EventTime, format: Format,
             decoderReuseEvaluation: androidx.media3.exoplayer.DecoderReuseEvaluation?) {
@@ -422,6 +435,8 @@ class AndroidPlaybackController(
     override fun play(item: PlaybackItem) {
         AndroidPlaybackSession.record(_state.value)
         checkMainThread()
+        tuneStartedElapsedMs=android.os.SystemClock.elapsedRealtime()
+        firstVideoFrameDelayMs=null;videoDecoderStarts=0
         val oldPlayer=_player.value
         val departingStalledPlayer=_state.value.item!=item && bufferedRestarts>0 &&
             oldPlayer?.playbackState==Player.STATE_BUFFERING && oldPlayer.totalBufferedDuration>=LIVE_REBUFFER_AFTER_MS
@@ -461,9 +476,6 @@ class AndroidPlaybackController(
         }
         try {
             val exoPlayer = ensurePlayer(item.kind)
-            applyChannelTrackPreferences(exoPlayer,
-                if (item.kind == PlaybackContentKind.VOD) AndroidChannelPreferences()
-                else readChannelPreferences(context, item.id))
             setPlaybackSource(exoPlayer,item)
             exoPlayer.prepare()
             if (item.kind == PlaybackContentKind.ARCHIVE && !timeShift.opening) {
@@ -689,8 +701,16 @@ class AndroidPlaybackController(
     }
 
     private fun setPlaybackSource(player:ExoPlayer,item:PlaybackItem) {
-        codecCompatibility.selectSource(item.id)
+        // Finish the departing source before its codec/clock can be reused by
+        // a new channel. Track preferences also belong to the incoming source.
+        player.stop()
         playbackNetworkSession?.cancel()
+        playbackNetworkSession=null
+        player.clearMediaItems()
+        applyChannelTrackPreferences(player,
+            if (item.kind == PlaybackContentKind.VOD) AndroidChannelPreferences()
+            else readChannelPreferences(context, item.id))
+        codecCompatibility.selectSource(item.id)
         val session=AndroidPlaybackNetworkSession(context)
         playbackNetworkSession=session
         val source=DefaultMediaSourceFactory(session.factory).createMediaSource(
@@ -741,6 +761,8 @@ class AndroidPlaybackController(
         fact("Скорость загрузки",measuredBitrate)
         fact("Потери кадров",sessionDroppedFrames)
         fact("Восстановления",recoveryAttempts)
+        fact("Первый видеокадр",firstVideoFrameDelayMs?.let {"$it ms"})
+        fact("Запуски видеодекодера",videoDecoderStarts)
         fact("Причина восстановления",lastRecoveryReason)
         fun counters(c:androidx.media3.exoplayer.DecoderCounters?):String? = c?.let {
             it.ensureUpdated()
@@ -866,14 +888,7 @@ class AndroidPlaybackController(
     private fun prepareRestart(item:PlaybackItem,category:PlaybackError,positionMs:Long) {
         try {
             val exoPlayer = ensurePlayer(item.kind)
-            // After a fatal error Media3 stays in STATE_IDLE/ERROR; it must be
-            // stopped+cleared before a fresh prepare, or the retry can fail
-            // with "prepare() in wrong state" and never recover.
-            runCatching { exoPlayer.stop() }
-            runCatching { exoPlayer.clearMediaItems() }
-            applyChannelTrackPreferences(exoPlayer,
-                if (item.kind == PlaybackContentKind.VOD) AndroidChannelPreferences()
-                else readChannelPreferences(context, item.id))
+            // The same source boundary is used for normal tuning and recovery.
             setPlaybackSource(exoPlayer,item)
             exoPlayer.prepare()
             if (item.kind != PlaybackContentKind.LIVE && positionMs > 0L) {
@@ -999,10 +1014,7 @@ class AndroidPlaybackController(
             transportState = transportState,
             videoWidth = width ?: 0,
             videoHeight = height ?: 0,
-            nativeVideoSurfaceRequired = format?.drmInitData != null ||
-                format?.sampleMimeType == "video/dolby-vision" ||
-                format?.colorInfo?.colorTransfer == C.COLOR_TRANSFER_ST2084 ||
-                format?.colorInfo?.colorTransfer == C.COLOR_TRANSFER_HLG ||
+            nativeVideoSurfaceRequired = format?.let(::requiresNativeVideoOutput) == true ||
                 activeDecoderName?.endsWith(".secure", ignoreCase = true) == true,
         )
     }
