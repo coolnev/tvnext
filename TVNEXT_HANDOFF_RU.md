@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.19`, versionCode 1019, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.20`, versionCode 1020, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,15 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.19.apk`.
-Описание: `RELEASE_ANDROID_1.0.19_RU.md`.
-Сводка: `releases/android/validation-1.0.19.json`.
+APK: `releases/android/TVNext-1.0.20.apk`.
+Описание: `RELEASE_ANDROID_1.0.20_RU.md`.
+Сводка: `releases/android/validation-1.0.20.json`.
+
+В 1.0.20 (15.11) пользователь сообщил о непостоянном стоп-кадре3–5с при уже играющем звуке на любом канале, даже один канал иногда стартует нормально. Ответы на допвопросы старый/новыйкадр и TCL/Ugoos ещё не получены; не выдавать предположение за ответ. Удалены введённые1.0.16 избыточные сбросы: NativePlayerSurface key теперь(type,player), без item; onStreamChanged не release; MSG_SET_VIDEO_OUTPUT полностью делегирует Media3, безreleaseдаженатойжеповерхности. Новая поверхность поnewplayer послеstandby/deepretryсохранена. AndroidAudioRenderersFactory allowedVideoJoiningTimeMs=0: неготовоеvideoневыдаётreadiness5sec; startsfirstframe+A/V. TextureSafe оставляет releaseпередgenuinekeyframeseek/disable; восстановленcatchup:skipSourceкдоступномуkeyframe,accountpending,release+maybeInitбезunsafeflush. Приskip0нетрестарта. pendingсчётчикпоqueue/process/reset, учётAPI34decodeonly/tunneling. SurfaceView UHD/HDRselection ианимациянеотключены.
+
+НовоефотоBOX1.0.19:RealtekOMX.realtek.video.decoder, UHDHEVC, BUFFERING,10417ms,video249/0,audio47/15,93.4Mbps,recoveryreasonЗаполненныйбуфер/перезапускплеера,already1. Rendered0неисключаетskipped/droppedoutput—добавлениотдельныефакты. SDK31+Media3defaultasync; добавленscopedboundedretryнеуниверсальныйforce: AndroidCodecCompatibilityучитсятольконаfullDecoderrecoveryприowncurrentSource,activeHW,buffer>=3s,realtekOMX,UHDHEVC,input>=32,rendered/skipped/droppedALL0. СледующаяfactoryиспользуетforceDisableAsyncтогожекодекасточнойConfiguration; profileобщийконтроллеруипередаётсяnewExo,впамятинедиск,нечередуетsync/async. НоваяпричинаRealtekHEVCсинхроннаяочередь. Другиевендоры/AVC/FHD/softwaredefault, Amlogicpolicyсохранена. Это попыткасовместимости, НЕ подтверждённыйфиксBOX:originalprivateCDNпофотоизпрошлыхturnsнедоступен,данныхпотоканет,другойappтакженеработаетнаTCL. Неутверждатьпричинувдрайвере/провайдере/самомTVNextбезhardware/bytes. i добавленыОчередьдекодераиVideoSkipped/DroppedRU/EN/ZH. PrivateURL/фотонепубликовать.
+
+474проверки (83Player,67metadata,109Channels,7Home,208native28/35); fullrelease/lint/encoding/Desktopcompile,signature/ZIP/zipalign,privatekeyembeddednottext,PNG/banner/nativeequal119. TextureCodecResetbaseline3failunique,Readinessbaseline1failunique (8failon2SDK); fixtureположительнойreadinessисправленreadingPositionUs=0. НовыеRealtek4cases×2,controllerwatchdogprofile1×2,Texture+1×2,startup+1×2. РеальныеMedia3renderer+fakecodec/samplequeue; неphysicalTV. Animationevidenceнеизмеряетплавность. Source ee2d8595313358b690e2e0c7ea7f49d0fd233ba3,version1.0.20/code1020,APKsha652e012553f7f67728f2f14811ea96924607e59cf9856b283dc2fa1de4f2aa6f. Windowsinstallerнестроился.
 
 В1.0.19 (15.11) ПОЛУЧЕНО фото реального BOX Premiere4K на1.0.18. TCL SmartTV Android12/API31, decoderOMX.realtek.video.decoder (ВАЖНО: это Realtek, не выдумывать MediaTek), HEVC hvc1.1.6.L150.90 3840x2160 SDR8bit BT709, SurfaceView, AC3 5.1 48kHz ffmpegLavc60.3.100-ac3 AUTO, display4K60Hz, Format.bitrate50000000 (объявленный, не измеренный!), download140.2Mbps, BUFFERING, buffer20833ms, dropped0, restarts1, FPSunknown. User: нет видео/звука. Async ответ: «Последняя ошибка» =Нет ошибок; другой плеер на этомTCL ТОЖЕ НЕ ПОКАЗЫВАЕТ. Нельзя утверждать, что виноват именноTVNext или именнопровайдер. Оригинальный privateURL cdn.bittv.ltd получен из фото, ТЕКСТ/ТОКЕН НЕ ПУБЛИКОВАТЬ; HTTP403 иHTTPSCONNECT403 среды, webopen такжеunavailable. Никаких HLS/TSбайтовнеполучено, ffprobeэтогоканаланезапущен. Фото не сохранено вGitHub.
 

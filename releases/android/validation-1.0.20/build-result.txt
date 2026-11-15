@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+474 checks.
+Source: ee2d8595313358b690e2e0c7ea7f49d0fd233ba3
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Physical TCL/Ugoos playback and original BOX bytes unavailable.

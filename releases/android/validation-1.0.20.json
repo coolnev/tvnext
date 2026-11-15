@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-15",
+  "versionName": "1.0.20",
+  "versionCode": 1020,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "ee2d8595313358b690e2e0c7ea7f49d0fd233ba3",
+  "sha256": "652e012553f7f67728f2f14811ea96924607e59cf9856b283dc2fa1de4f2aa6f",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "reportedIssues": [
+    "Intermittent 3-5 second still picture with already playing audio during channel switches, including repeated tuning to the same channel",
+    "BOX Premiere 4K still fails on Realtek after full player recovery: input/rendered 249/0, audio 47/15, buffered 10417ms"
+  ],
+  "changes": {
+    "retainTextureAcrossOrdinaryChannelChanges": true,
+    "newSurfaceAfterPlayerReplacement": true,
+    "removeCodecReleaseOnStreamNotification": true,
+    "delegateOutputIdentityAndSurfaceHandoffToMedia3": true,
+    "keepAffectedVendorNoFlushSeekAndDisableProtection": true,
+    "protectedKeyframeCatchup": "skip to available keyframe and release/reinitialize instead of unsafe codec flush",
+    "allowedVideoJoiningTimeMs": 0,
+    "animationRetained": true,
+    "realtekCompatibility": "Learn a synchronous queue retry in memory only for hardware OMX.realtek UHD HEVC on API31+, buffered decoder recovery with at least32 queued input and zero rendered/skipped/dropped output. Same codec and exact configuration. No repeated async/sync alternation.",
+    "diagnostics": [
+      "Decoder queue",
+      "Video: skipped / dropped"
+    ],
+    "locales": [
+      "ru",
+      "en",
+      "zh"
+    ]
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesIdenticalToVersion1019": true
+  },
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 208,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 474,
+  "limitations": [
+    "No physical TCL or Ugoos testing. Robolectric checks real Media3 renderer behavior using controlled codec adapters and source streams.",
+    "Original BOX HLS/TS bytes unavailable; provider CDN blocked in this environment. Same channel reportedly fails in another player on the same TCL.",
+    "The bounded Realtek queue retry is a compatibility attempt, not proof the BOX stream now decodes. No invented fps or forced CPU UHD decoding.",
+    "Animation screenshots verify intermediate geometry and handoff ordering; they do not measure animation smoothness on a TV. No Windows installer."
+  ]
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeDiscoveryTest[desktop]" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-15T09:23:03.243Z" hostname="586b87a70f06" time="0.044">
+  <properties/>
+  <testcase name="epgEpisodeAndStructuredYearWorkWithoutFilmPrefixAndBroadcastContextStillWins[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.001"/>
+  <testcase name="catalogueRuntimeAndGenresAreRequiredBeforeTmdbPublishesBareTitle[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.005"/>
+  <testcase name="filmCardCannotBeReusedForSameTitleShortNewsSlot[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.011"/>
+  <testcase name="identicallyNamedTelevisionShowMakesUnclassifiedFilmMatchAmbiguous[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.019"/>
+  <testcase name="bareFilmTitleLoadsFullSynopsisAndNeverPublishesUnverifiedSearchArtwork[desktop]" classname="com.tvnext.app.core.tmdb.ProgrammeDiscoveryTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

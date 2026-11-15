@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="HomeRepositoryTest[desktop]" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-15T09:24:09.139Z" hostname="586b87a70f06" time="0.253">
+  <properties/>
+  <testcase name="continueWatchingAndUpcomingComeFromEpg[desktop]" classname="com.tvnext.app.feature.home.data.HomeRepositoryTest" time="0.15"/>
+  <testcase name="favoriteVodComesFromRealData[desktop]" classname="com.tvnext.app.feature.home.data.HomeRepositoryTest" time="0.01"/>
+  <testcase name="historyFeedsContinueWatchingAndRecentSections[desktop]" classname="com.tvnext.app.feature.home.data.HomeRepositoryTest" time="0.0"/>
+  <testcase name="newUserWithoutDataHasNoSections[desktop]" classname="com.tvnext.app.feature.home.data.HomeRepositoryTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
