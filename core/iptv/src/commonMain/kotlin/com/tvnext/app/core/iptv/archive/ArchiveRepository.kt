@@ -44,7 +44,7 @@ class KtorArchiveProbe(
 
     override suspend fun probe(url: String): ArchiveProbeResult =
         try {
-            if (isAndroidPlatform()) {
+            if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
                 probeAndroidStream(url)
             } else {
             val response = requestFollowingRedirects(url)

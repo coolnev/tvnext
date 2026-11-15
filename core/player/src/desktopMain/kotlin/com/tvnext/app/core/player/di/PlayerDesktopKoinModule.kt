@@ -6,8 +6,6 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val playerDesktopKoinModule: Module = module {
-    // libmpv backend (LGPL — commercial-friendly). Video renders into Compose
-    // frames via the libmpv render API (no HWND/swapchain), so window resizes
-    // and tab switches never freeze the UI; hwdec=auto keeps GPU decoding.
-    single<PlaybackController> { MpvPlaybackController() }
+    // One libmpv instance publishes Compose frames across shared video scenes.
+    single<PlaybackController> { MpvPlaybackController(channelsRepository=get(),archiveRepository=get()) }
 }

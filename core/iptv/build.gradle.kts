@@ -40,6 +40,9 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
             implementation("androidx.sqlite:sqlite-framework:2.6.2")
         }
+        getByName("desktopMain").dependencies {
+            implementation(libs.sqldelight.sqlite.driver)
+        }
         getByName("desktopTest").dependencies {
             // In-memory SQLite for repository/store tests (history, EPG cache).
             implementation(libs.sqldelight.sqlite.driver)

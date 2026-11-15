@@ -1,0 +1,20 @@
+Bundled third-party components
+
+mpv: original, unmodified shinchiro x64 shared build. Exact source and binary URLs
+and checksums are recorded in MPV-SOURCE.txt and RUNTIME-SOURCES.json at the app root.
+Build configuration and linked FFmpeg/library licensing apply to this binary;
+no blanket LGPL-only claim is made. mpv copyright and GPL/LGPL texts are included.
+Source/build recipe: https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261021
+
+Vulkan loader: unmodified win-x64 binary from Silk.NET.Vulkan.Loader.Native 2025.9.12,
+.NET Foundation and Contributors, Apache-2.0 (package license declaration).
+https://github.com/dotnet/Silk.NET
+https://github.com/KhronosGroup/Vulkan-Loader
+Exact package URL/checksum: RUNTIME-SOURCES.json.
+
+Java: Eclipse Temurin OpenJDK 21.0.9+10 JRE. Original notices and licenses are
+preserved under runtime/legal. Binary/source: https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.9%2B10
+
+JVM libraries are preserved as original Maven JARs in lib/ with their embedded
+META-INF license/notice files. These include Kotlin, Compose/Skiko, Ktor, JNA,
+SQLDelight, SQLite JDBC, Decompose, Essenty, Koin, JSON and kotlinx libraries.

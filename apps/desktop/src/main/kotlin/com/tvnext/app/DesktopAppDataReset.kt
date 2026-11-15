@@ -17,7 +17,7 @@ import kotlin.system.exitProcess
  */
 class DesktopAppDataReset : AppDataReset {
 
-    private val dataDir: File = File(System.getProperty("user.home"), ".tvnext")
+    private val dataDir: File = com.tvnext.app.core.common.platform.DesktopAppPaths.dataDirectory
     private val resetMarker: File = File(dataDir, ".reset-requested")
 
     override fun handlePendingReset() {

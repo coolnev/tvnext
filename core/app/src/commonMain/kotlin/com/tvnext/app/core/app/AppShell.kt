@@ -58,7 +58,7 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.tvnext.app.core.app.tab.AppTab
 import com.tvnext.app.core.app.tab.AppTabComponent
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.util.formatTimeOfDay
 import com.tvnext.app.core.iptv.data.ScheduledProgramme
 import com.tvnext.app.core.player.ClockPosition
@@ -121,7 +121,7 @@ fun AppShell(
     }
     val reminder by component.reminder.collectAsState()
     LaunchedEffect(settings.clockWithoutBackground) {
-        if (isAndroidPlatform()) PlayerClockStyle.withoutBackground.value = settings.clockWithoutBackground
+        if (useCurrentPlayerUi()) PlayerClockStyle.withoutBackground.value = settings.clockWithoutBackground
     }
 
     // In fullscreen the app chrome (top bar / sidebar / footer) is always
@@ -158,7 +158,7 @@ fun AppShell(
                 // chrome is shown. On Android TV it is restricted to the HOME
                 // tab only — every other screen uses the full height for the
                 // content (settings are still reachable from HOME).
-                val showTopBar = if (isAndroidPlatform()) {
+                val showTopBar = if (useCurrentPlayerUi()) {
                     activeTab == AppTab.HOME
                 } else {
                     !hideChrome || activeTab == AppTab.HOME
@@ -167,7 +167,7 @@ fun AppShell(
                     AppTopBar(
                         onSettingsClick = { component.selectTab(AppTab.SETTINGS) },
                         onOpenMainMenu = null,
-                        profileChoices = if (isAndroidPlatform()) profileChoices else emptyList(),
+                        profileChoices = if (useCurrentPlayerUi()) profileChoices else emptyList(),
                         activeProfileId = activeProfileId,
                         onProfileSelected = onProfileSelected,
                     )
@@ -185,7 +185,7 @@ fun AppShell(
                     if (activeTab == AppTab.HOME) {
                         AppSidebar(
                             selectedTab = activeTab,
-                            onOpenRecoverySection = if (isAndroidPlatform()) onOpenRecoverySection else null,
+                            onOpenRecoverySection = if (useCurrentPlayerUi()) onOpenRecoverySection else null,
                             onSelect = { tab ->
                                 // Switching tabs must NOT reset the immersive
                                 // mode: the user chooses full-screen (video on
@@ -264,7 +264,7 @@ fun AppShell(
                                     onBackHome = { component.selectTab(AppTab.HOME) },
                                 )
                                 is AppTabComponent.Settings -> {
-                                    if (isAndroidPlatform() && androidSettingsContent != null) {
+                                    if (useCurrentPlayerUi() && androidSettingsContent != null) {
                                         androidSettingsContent(tab.component) { component.selectTab(AppTab.HOME) }
                                     } else {
                                         SettingsScreen(
@@ -280,7 +280,7 @@ fun AppShell(
 
                 // Desktop keeps the version footer while the chrome is
                 // shown; Android TV shows it only on the HOME tab.
-                val showFooter = if (isAndroidPlatform()) {
+                val showFooter = if (useCurrentPlayerUi()) {
                     activeTab == AppTab.HOME
                 } else {
                     !hideChrome
@@ -292,7 +292,7 @@ fun AppShell(
 
             }
             // Browsing and dialogs must never have import status over their content.
-            if (isAndroidPlatform() && epgLoading && immersive &&
+            if (useCurrentPlayerUi() && epgLoading && immersive &&
                 (activeTab == AppTab.CHANNELS || activeTab == AppTab.MEDIA_LIBRARY) &&
                 scene?.viewport != null && !overlayFullScreen && !overlayVisible &&
                 !showDiagnostics && textNotice == null && reminder == null) {
@@ -555,7 +555,7 @@ private fun AppSidebar(
         }
         // Same typography, spacing, icon marker and focus behaviour as all
         // other entries; settings remains accessible only via the top-right gear.
-        if (isAndroidPlatform() && onOpenRecoverySection != null) {
+        if (useCurrentPlayerUi() && onOpenRecoverySection != null) {
             listOf(
                 "editor" to uiText("Редактор каналов"),
                 "recordings" to uiText("Мои записи"),

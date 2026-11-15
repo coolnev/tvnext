@@ -67,7 +67,7 @@ fun TvCardButton(
     val focused = if (isAndroidPlatform()) androidFocused else interactionFocused
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
-    val android = isAndroidPlatform()
+    val android = com.tvnext.app.core.common.platform.useCurrentPlayerUi()
     val effectiveShape = if (android) RoundedCornerShape(4.dp) else shape
 
     // Subtle glass treatment shared by cards/buttons: translucent surfaces,
@@ -76,6 +76,7 @@ fun TvCardButton(
         transparentContainer -> Color.Transparent
         selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
         android && focused -> MaterialTheme.colorScheme.primary.copy(alpha = .18f)
+        android && hovered -> MaterialTheme.colorScheme.primary.copy(alpha = .10f)
         android && pressed -> MaterialTheme.colorScheme.primary.copy(alpha = .24f)
         android -> MaterialTheme.colorScheme.onSurface.copy(alpha = .035f)
         pressed -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f)

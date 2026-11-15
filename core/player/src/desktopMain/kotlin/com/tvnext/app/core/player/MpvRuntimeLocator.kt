@@ -49,7 +49,8 @@ internal object MpvRuntimeLocator {
         val candidates = buildList {
             System.getenv("TVNEXT_MPV_DIR")?.takeIf { it.isNotBlank() }?.let { add(it) }
             System.getProperty("tvnext.mpv.dir")?.takeIf { it.isNotBlank() }?.let { add(it) }
-            jarDirectory()?.let { add(it) }
+            System.getProperty("tvnext.app.dir")?.takeIf {it.isNotBlank()}?.let {add(it)}
+            jarDirectory()?.let {add(it);File(it).parentFile?.absolutePath?.let(::add)}
             // The process working directory itself, then its parent.
             File(".").absoluteFile.absolutePath?.let { add(it) }
             File(".").absoluteFile.parentFile?.absolutePath?.let { add(it) }

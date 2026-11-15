@@ -1,0 +1,39 @@
+{
+  "version": "1.0.24",
+  "platform": "windows-x64-portable",
+  "archive": "TVNext-1.0.24-windows-x64-portable.zip",
+  "bytes": 162845456,
+  "sha256": "5368d7df3f8aa661430778b3bd3d9d348c07529c2586c112a888b30032a9c184",
+  "keyPresentInPrivateBuild": true,
+  "keyAbsentFromNewSources": true,
+  "androidApkUnchanged": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
+  "jars": {
+    "desktop-1.0.24.jar": "0604cb7978a642674ba48b407866c874b7ac2cf0dc41c1a27a2426aeec8cdf2b",
+    "app-desktop-1.0.24.jar": "d2a38d5922e26a6cc825df448a0412ebf0bbb4954c54344cfaecfc075093f7a1",
+    "home-desktop-1.0.24.jar": "0ccc731919169572804511bbd1a92a8b3796419715dde2caee57cf02998b55ea",
+    "channels-desktop-1.0.24.jar": "b8c9630ee95cd676961afad0104239b4ca376204aea1ddc07660bb367bdd2cb8",
+    "media-desktop-1.0.24.jar": "6f8fc4886c620fc80281475aad64e3dc46422612f98b47eaa9af37ca58ad115a",
+    "settings-desktop-1.0.24.jar": "1ac32a9b8df318b3fdd4dffe357f2868b285547e7d803724af2db1aff75cb028",
+    "tvg-desktop-1.0.24.jar": "5c8404d8e87740b46181f539d74d39b4bce0ccd3e307cfb1174cbacbfe8771a8",
+    "search-desktop-1.0.24.jar": "ddb75c965879d33c7b4dedb3a9c3073615607d91fa72e3c074fd832d613533d2",
+    "ui-desktop-1.0.24.jar": "e1f36116c2db7f5cbf68bb3eec594a6a7a1690a97891879c2a5bb3404277ff4f",
+    "tmdb-desktop-1.0.24.jar": "c1a3198022ddbf4dbe671aaeadd7d334625c77561a0aad8d35256daeac2d2115",
+    "player-desktop-1.0.24.jar": "2c2f82ee21f80570aa5acc9b0eb90da8ae433963ba850559eb158816815df079",
+    "iptv-desktop-1.0.24.jar": "9d05ccd65ffe0bb319dc08db434ab42281918a9c74a6b47de7756d31dfd832e6",
+    "database-desktop-1.0.24.jar": "c3806a4d90569871e83db94389d1727aef777b655237d6b64c63bc0cc64a421d",
+    "network-desktop-1.0.24.jar": "af75600f3fd74e233029a788495855da0965f36496bfb8e2eb2a7a303f004623",
+    "licensing-desktop-1.0.24.jar": "04cdc14271987810ab653a2fd4d54ba86c1f23291db24ac1fb3cb7e841d3ee2d",
+    "common-desktop-1.0.24.jar": "b194ed21ce5c77ea87d77324c14d2944d2ea625e639222528d215e03f4cb0f83"
+  },
+  "validation": {
+    "jvm": 543,
+    "android": 242,
+    "database": 3,
+    "desktopEpgPersistence": 1,
+    "windowsPlayback": "AVC/AAC 25fps + HEVC Main10/AC3 23.976fps, four loads, pause/resume/seek/stop/release, Windows JRE+DLLs under Wine 10",
+    "audioDevice": "null (audible/HDMI not tested)",
+    "physicalWindowsGpu": false,
+    "windowsFullGui": "Wine system font limitation; shared UI validated on Linux/Xvfb"
+  },
+  "gitTag": "windows-v1.0.24"
+}

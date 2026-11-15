@@ -72,11 +72,15 @@ import com.tvnext.app.core.ui.theme.TVNextDimens
 import com.tvnext.app.feature.settings.domain.ThemePreference
 import com.tvnext.app.feature.settings.domain.WindowResolution
 
+data class PlatformSettingsSection(val title:String,val content:@Composable ()->Unit)
+
 @Composable
 fun SettingsScreen(
     component: SettingsComponent,
     modifier: Modifier = Modifier,
     onBackHome: (() -> Unit)? = null,
+    platformSections: List<PlatformSettingsSection> = emptyList(),
+    sectionContent: @Composable (Int,SettingsState)->Boolean = {_,_->false},
 ) {
     val state by component.state.collectAsState()
 
@@ -84,8 +88,8 @@ fun SettingsScreen(
         component.dispatch(SettingsIntent.Load)
     }
 
-    if (isAndroidPlatform()) {
-        AndroidSettingsLayout(state, component, modifier, onBackHome)
+    if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
+        AndroidSettingsLayout(state, component, modifier, onBackHome,platformSections,sectionContent)
         return
     }
 
@@ -1169,7 +1173,7 @@ private fun SettingsInfoRow(
     }
 }
 
-private val ThemePreference.displayName: String
+val ThemePreference.displayName: String
     get() = when (this) {
         ThemePreference.DARK -> uiText("Тёмная тема")
         ThemePreference.LIGHT -> uiText("Светлая тема")
@@ -1184,13 +1188,13 @@ private val AccentColor.displayName: String
         AccentColor.PURPLE -> uiText("Фиолетовый")
     }
 
-private val ClockPosition.displayName: String    get() = when (this) {
+val ClockPosition.displayName: String    get() = when (this) {
         ClockPosition.OFF -> uiText("Выключены")
         ClockPosition.TOP_LEFT -> uiText("Верхний левый угол")
         ClockPosition.TOP_RIGHT -> uiText("Верхний правый угол")
     }
 
-private val WindowResolution.displayName: String    get() = when (this) {
+val WindowResolution.displayName: String    get() = when (this) {
         WindowResolution.AUTO -> uiText("Авто (по разрешению монитора)")
         WindowResolution.HD -> "HD (1280×720)"
         WindowResolution.FULL_HD -> "FullHD (1920×1080)"
@@ -1204,8 +1208,9 @@ private val TvRowPadding = PaddingValues(
 
 /** TV settings: stable section rail and one independently scrollable settings pane. */
 @Composable
-private fun AndroidSettingsLayout(state: SettingsState, component: SettingsComponent, modifier: Modifier, onBack: (() -> Unit)?) {
-    val titles = listOf(uiText("Воспроизведение"), uiText("Архив"), uiText("Интерфейс"), uiText("Плейлисты"), uiText("Информация о фильмах"), uiText("Телепрограмма"), uiText("Данные"), uiText("О приложении"))
+private fun AndroidSettingsLayout(state: SettingsState, component: SettingsComponent, modifier: Modifier, onBack: (() -> Unit)?,
+    platformSections:List<PlatformSettingsSection>,sectionContent:@Composable (Int,SettingsState)->Boolean) {
+    val titles = listOf(uiText("Воспроизведение"), uiText("Архив"), uiText("Интерфейс"), uiText("Плейлисты"), uiText("Информация о фильмах"), uiText("Медиатека"), uiText("Телепрограмма"), uiText("Данные"), uiText("О приложении")) + platformSections.map {it.title}
     var selected by remember { mutableStateOf(0) }
     var inDetails by remember { mutableStateOf(false) }
     val railRequests = remember { List(titles.size) { FocusRequester() } }
@@ -1254,14 +1259,16 @@ private fun AndroidSettingsLayout(state: SettingsState, component: SettingsCompo
                             // A real focusable entry also serves sections containing only informational text.
                             TvCardButton(onClick = { railRequests[selected].requestFocus() }, modifier = Modifier.height(32.dp),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)) { Text(uiText("← Разделы"), color = MaterialTheme.colorScheme.onSurface) }
-                            when (selected) {
+                            if(selected>=9)platformSections.getOrNull(selected-9)?.content?.invoke()
+                            else if(!sectionContent(selected,state)) when (selected) {
                                 0 -> PlaybackSection(state, component)
                                 1 -> ArchiveSection(state, component)
                                 2 -> InterfaceSection(state, component)
                                 3 -> PlaylistsSection(state, component)
                                 4 -> TmdbSection(state, component)
-                                5 -> EpgSection(state, component)
-                                6 -> DataSection(state, component)
+                                5 -> MediaLibrarySettings(state.settings.media,{component.dispatch(SettingsIntent.MediaPreferencesChanged(it))})
+                                6 -> EpgSection(state, component)
+                                7 -> DataSection(state, component)
                                 else -> AboutSection(state)
                             }
                         }

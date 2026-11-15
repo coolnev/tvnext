@@ -86,7 +86,7 @@ fun TvSearchField(
                         keyboardController?.show()
                         true
                     }
-                    isTv && isEditing && event.key == Key.Back -> {
+                    isTv && isEditing && (event.key == Key.Back || event.key == Key.Escape) -> {
                         // Back while editing only closes the keyboard / exits
                         // edit mode; it does not leave the screen. A second
                         // Back (now not editing) is free to bubble up normally.

@@ -10,7 +10,7 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.backhandler.BackCallback
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.Job
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.app.tab.AppTab
 import com.tvnext.app.core.app.tab.AppTabComponent
 import com.tvnext.app.core.iptv.domain.Channel
@@ -90,7 +90,7 @@ class DefaultAppComponent(
     private val reminderService: ScheduledReminderService,
     private val playlistRepository: PlaylistRepository,
     private val epgRepository: EpgRepository,
-    private val initialTab: AppTab = if (isAndroidPlatform()) AppTab.CHANNELS else AppTab.HOME,
+    private val initialTab: AppTab = if (useCurrentPlayerUi()) AppTab.CHANNELS else AppTab.HOME,
     initialSettings: AppSettings = AppSettings(),
     private val onExitRequested: () -> Unit = {},
     mainContext: CoroutineContext,
@@ -171,7 +171,7 @@ class DefaultAppComponent(
         navigation.navigate { stack ->
             if (stack.lastOrNull() == tab) {
                 stack
-            } else if (isAndroidPlatform()) {
+            } else if (useCurrentPlayerUi()) {
                 // Retain each Android tab once. Back/guide return restores its
                 // component state and focus without starting another load.
                 stack.filterNot { it == tab } + tab
@@ -209,7 +209,7 @@ class DefaultAppComponent(
                 return
             }
         }
-        if (isAndroidPlatform() && activeTab == AppTab.MEDIA_LIBRARY) {
+        if (useCurrentPlayerUi() && activeTab == AppTab.MEDIA_LIBRARY) {
             val media = (childStack.value.active.instance as? AppTabComponent.Media)?.component
             if (media?.consumeBack() == true) return
         }
@@ -257,7 +257,7 @@ class DefaultAppComponent(
 
     private fun openMediaPlayer() {
         selectTab(AppTab.MEDIA_LIBRARY)
-        if (isAndroidPlatform()) scope.launch {
+        if (useCurrentPlayerUi()) scope.launch {
             (childStack.value.active.instance as? AppTabComponent.Media)?.component
                 ?.dispatch(com.tvnext.app.feature.media.ui.MediaIntent.ShowPlayer)
         }

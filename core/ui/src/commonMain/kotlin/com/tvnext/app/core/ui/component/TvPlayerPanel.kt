@@ -57,7 +57,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.util.currentTimeMillis
 import com.tvnext.app.core.common.util.formatClockTime
 import com.tvnext.app.core.player.ClockPosition
@@ -129,12 +129,12 @@ fun TvPlayerPanel(
     modifier: Modifier = Modifier,
 ) {
     val playerState by controller.state.collectAsState()
-    val displayDuration = if (isAndroidPlatform()) programmeDurationMs ?: playerState.durationMs else playerState.durationMs
-    val displayPosition = if (isAndroidPlatform() && programmeStartMs != null)
+    val displayDuration = if (useCurrentPlayerUi()) programmeDurationMs ?: playerState.durationMs else playerState.durationMs
+    val displayPosition = if (useCurrentPlayerUi() && programmeStartMs != null)
         ((playerState.item?.archiveEpgAnchorMs ?: programmeStartMs) + playerState.positionMs - programmeStartMs)
             .coerceIn(0L, displayDuration.coerceAtLeast(0L)) else playerState.positionMs
     val seekDisplay: (Long) -> Unit = { position ->
-        if (isAndroidPlatform() && onProgrammeSeek != null) onProgrammeSeek(position) else controller.seekTo(position)
+        if (useCurrentPlayerUi() && onProgrammeSeek != null) onProgrammeSeek(position) else controller.seekTo(position)
     }
     val videoInteractionSource = remember { MutableInteractionSource() }
     val videoFocused by videoInteractionSource.collectIsFocusedAsState()
@@ -161,7 +161,7 @@ fun TvPlayerPanel(
             channelName
         }
     val isArchive = playerState.item?.kind == PlaybackContentKind.ARCHIVE
-    val effectiveTitleVisible = if (isArchive) !isAndroidPlatform() && LocalArchiveLabelEnabled.current
+    val effectiveTitleVisible = if (isArchive) !useCurrentPlayerUi() && LocalArchiveLabelEnabled.current
         else currentChannelNameVisible
 
     // Archive playback supports seek/pause/progress like VOD — a seek bar is
@@ -190,7 +190,7 @@ fun TvPlayerPanel(
                     // layer above PlayerView below; Desktop keeps its original
                     // parent double-tap detector. Two nested detectors can
                     // compete for a single touch sequence on Android.
-                    if (!isAndroidPlatform() && onToggleFullscreen != null) {
+                    if (!useCurrentPlayerUi() && onToggleFullscreen != null) {
                         Modifier.pointerInput(onToggleFullscreen) {
                             detectTapGestures(onDoubleTap = { onToggleFullscreen() })
                         }
@@ -216,7 +216,7 @@ fun TvPlayerPanel(
                 controller = controller,
                 modifier = Modifier.fillMaxSize(),
             )
-            if (isAndroidPlatform() && (onVideoTap != null || onToggleFullscreen != null)) {
+            if (useCurrentPlayerUi() && (onVideoTap != null || onToggleFullscreen != null)) {
                 // PlayerView uses useController=false, but its AndroidView
                 // can consume pointer events. The transparent sibling owns
                 // Android video taps only when the host provided an action;
@@ -236,7 +236,7 @@ fun TvPlayerPanel(
                     PlaybackState.LOADING,
                     PlaybackState.BUFFERING,
                     -> {
-                        if (!isAndroidPlatform()) CircularProgressIndicator(
+                        if (!useCurrentPlayerUi()) CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center).size(40.dp),
                             color = Color.White,
                         )
@@ -254,9 +254,9 @@ fun TvPlayerPanel(
                             Text(
                                 text = playerState.error ?: uiText("Ошибка воспроизведения"),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                                color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.then(if (isAndroidPlatform()) Modifier.background(MaterialTheme.colorScheme.surface).padding(8.dp) else Modifier).padding(bottom = TVNextDimens.ItemSpacing),
+                                modifier = Modifier.then(if (useCurrentPlayerUi()) Modifier.background(MaterialTheme.colorScheme.surface).padding(8.dp) else Modifier).padding(bottom = TVNextDimens.ItemSpacing),
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall)) {
                                 TvCardButton(
@@ -293,7 +293,7 @@ fun TvPlayerPanel(
 
                     else -> Unit
                 }
-                if (isAndroidPlatform()) VideoPlaybackStatus(
+                if (useCurrentPlayerUi()) VideoPlaybackStatus(
                     state = playerState.state,
                     archiveTitle = effectiveTitle.takeIf { isArchive },
                     bottomInset = statusBottomInset,
@@ -303,8 +303,8 @@ fun TvPlayerPanel(
                         DiagnosticsPanel(
                             diagnostics = diag,
                             modifier = Modifier
-                                .align(if (isAndroidPlatform() && isArchive) Alignment.BottomEnd else Alignment.BottomStart)
-                                .padding(bottom = statusBottomInset + if (isAndroidPlatform() && isArchive) 48.dp else 0.dp)
+                                .align(if (useCurrentPlayerUi() && isArchive) Alignment.BottomEnd else Alignment.BottomStart)
+                                .padding(bottom = statusBottomInset + if (useCurrentPlayerUi() && isArchive) 48.dp else 0.dp)
                                 .padding(TVNextDimens.ItemSpacing),
                         )
                     }
@@ -313,7 +313,7 @@ fun TvPlayerPanel(
                     Text(
                         text = effectiveTitle,
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                        color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
@@ -323,7 +323,7 @@ fun TvPlayerPanel(
                                 end = TVNextDimens.ItemSpacing,
                                 top = if (clockPosition == ClockPosition.TOP_LEFT) 60.dp else TVNextDimens.ItemSpacing,
                             )
-                            .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (isAndroidPlatform() && PlayerClockStyle.withoutBackground.collectAsState().value) 0f else if (isAndroidPlatform()) 0.96f else 0.5f))
+                            .background((if (useCurrentPlayerUi()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (useCurrentPlayerUi() && PlayerClockStyle.withoutBackground.collectAsState().value) 0f else if (useCurrentPlayerUi()) 0.96f else 0.5f))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
@@ -353,7 +353,7 @@ fun TvPlayerPanel(
                 // close) is intentionally REMOVED to free screen space — the
                 // play/pause control now lives next to the progress bar (below).
                 // Windows keeps the full button bar.
-                if (!isAndroidPlatform()) {
+                if (!useCurrentPlayerUi()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall)) {
                         TvCardButton(
                             onClick = onTogglePlayback,
@@ -429,7 +429,7 @@ fun TvPlayerPanel(
                     }
                 }
 
-                if (!isAndroidPlatform() && playerState.item?.kind != PlaybackContentKind.LIVE && playerState.state != PlaybackState.IDLE) {
+                if (!useCurrentPlayerUi() && playerState.item?.kind != PlaybackContentKind.LIVE && playerState.state != PlaybackState.IDLE) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -459,7 +459,7 @@ fun TvPlayerPanel(
                 // (the icon switches play <-> pause); the desktop keeps the
                 // compact volume bar to the right.
                 if (effectiveShowSeekBar && displayDuration > 0L && playerState.state != PlaybackState.IDLE) {
-                    if (isAndroidPlatform()) {
+                    if (useCurrentPlayerUi()) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(TVNextDimens.ItemSpacingSmall),
                             verticalAlignment = Alignment.CenterVertically,
@@ -519,7 +519,7 @@ fun TvPlayerPanel(
                     Text(
                         text = effectiveTitle,
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                        color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(
@@ -572,7 +572,7 @@ private fun PlayerStatusOverlay(
                 CircularProgressIndicator(
                     modifier = Modifier.size(32.dp),
                     strokeWidth = 2.dp,
-                    color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                    color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                 )
                 Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))
                 Text(
@@ -582,7 +582,7 @@ private fun PlayerStatusOverlay(
                         uiText("Загрузка")
                     },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                    color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                 )
             }
         }
@@ -597,7 +597,7 @@ private fun PlayerStatusOverlay(
                 Text(
                     text = state.error ?: uiText("Ошибка воспроизведения"),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+                    color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = TVNextDimens.ItemSpacing),
                 )
@@ -659,20 +659,20 @@ fun PlayerClock(modifier: Modifier = Modifier) {
             now = currentTimeMillis()
         }
     }
-    val transparent = isAndroidPlatform() && withoutBackground
+    val transparent = useCurrentPlayerUi() && withoutBackground
     val time = formatClockTime(now)
     val baseStyle = MaterialTheme.typography.titleMedium
     val clockStyle = baseStyle.copy(fontSize = baseStyle.fontSize * 1.3f,
         lineHeight = baseStyle.lineHeight * 1.3f, shadow = null)
     Box(modifier.widthIn(min = 83.2.dp)
-        .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black)
-            .copy(alpha = if (transparent) 0f else if (isAndroidPlatform()) 0.96f else 0.5f))
+        .background((if (useCurrentPlayerUi()) MaterialTheme.colorScheme.surface else Color.Black)
+            .copy(alpha = if (transparent) 0f else if (useCurrentPlayerUi()) 0.96f else 0.5f))
         .padding(horizontal = 10.dp, vertical = 5.dp), contentAlignment = Alignment.Center) {
         if (transparent) Text(time, style = clockStyle, color = Color.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier.offset(2.dp, 2.dp).clearAndSetSemantics {})
         Text(time, style = clockStyle,
-            color = if (isAndroidPlatform() && !transparent) MaterialTheme.colorScheme.onSurface else Color.White,
+            color = if (useCurrentPlayerUi() && !transparent) MaterialTheme.colorScheme.onSurface else Color.White,
             textAlign = TextAlign.Center)
     }
 }
@@ -691,7 +691,7 @@ fun DiagnosticsPanel(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(TVNextDimens.ItemSpacingSmall))
-            .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (isAndroidPlatform()) 0.96f else 0.6f))
+            .background((if (useCurrentPlayerUi()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = if (useCurrentPlayerUi()) 0.96f else 0.6f))
             .padding(horizontal = TVNextDimens.ItemSpacingSmall, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
@@ -714,7 +714,7 @@ private fun DiagnosticsRow(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+        color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )

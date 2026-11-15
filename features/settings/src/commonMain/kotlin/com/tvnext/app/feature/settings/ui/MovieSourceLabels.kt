@@ -12,3 +12,10 @@ fun KinopoiskConnectionResult.uiMessage():String=when(kind) {
     KinopoiskConnectionResult.Kind.SERVER_ERROR->uiText("Кинопоиск: ошибка сервера (HTTP {0})",httpStatus ?: "?")
     KinopoiskConnectionResult.Kind.INVALID_RESPONSE->uiText("Кинопоиск: некорректный ответ сервера")
 }
+
+fun com.tvnext.app.core.tmdb.TmdbConnectionResult.uiMessage():String=uiText(when(kind) {
+    com.tvnext.app.core.tmdb.TmdbConnectionResult.Kind.SUCCESS->"Соединение установлено"
+    com.tvnext.app.core.tmdb.TmdbConnectionResult.Kind.INVALID_KEY->"Неверный API-ключ"
+    com.tvnext.app.core.tmdb.TmdbConnectionResult.Kind.NO_CONNECTION->"Нет соединения с TMDB"
+    com.tvnext.app.core.tmdb.TmdbConnectionResult.Kind.ERROR->"Ошибка соединения"
+})

@@ -30,7 +30,7 @@ actual fun deleteEpgTempFile(path: String) {
 }
 
 actual fun platformEpgCacheDir(): String? = runCatching {
-    val dir = File(System.getProperty("user.home"), ".tvnext/cache/epg")
+    val dir = File(com.tvnext.app.core.common.platform.DesktopAppPaths.dataDirectory,"cache/epg")
     dir.mkdirs()
     dir.absolutePath
 }.getOrNull()

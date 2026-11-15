@@ -1,6 +1,6 @@
 package com.tvnext.app.feature.home.ui
 
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.util.rethrowAndroidCancellation
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
 import com.arkivanov.decompose.ComponentContext
@@ -77,20 +77,20 @@ class DefaultHomeComponent(
         // re-dispatch Load on every mount (a fullscreen F11 window switch
         // recreates the screen and would re-run the heavy EPG scans).
         load()
-        if (isAndroidPlatform()) launch {
+        if (useCurrentPlayerUi()) launch {
             com.tvnext.app.core.player.AndroidPlaybackSession.ids.collect { load() }
         }
         // Re-load Home content after an EPG refresh so cards pick up the new
         // current/next programmes without an app restart.
         launch {
             val versions = epgRepository.observeVersion().distinctUntilChanged()
-            (if (isAndroidPlatform()) versions.sample(750L) else versions).collect { version ->
+            (if (useCurrentPlayerUi()) versions.sample(750L) else versions).collect { version ->
                 // Version 0 is the process-local initial value; it is not a new
                 // EPG import. Reload only after an actual refresh notification.
                 if (version > 0L) dispatch(HomeIntent.Load)
             }
         }
-        if (isAndroidPlatform()) launch { channelsRepository.observeChanges().collect { load() } }
+        if (useCurrentPlayerUi()) launch { channelsRepository.observeChanges().collect { load() } }
     }
 
     override fun reduce(state: HomeState, intent: HomeIntent): HomeState = when (intent) {
@@ -115,19 +115,19 @@ class DefaultHomeComponent(
     }
 
     private fun load() {
-        if (isAndroidPlatform()) loadJob?.cancel()
+        if (useCurrentPlayerUi()) loadJob?.cancel()
         loadJob = launch {
             setState { it.copy(isLoading = true, error = null) }
             // 0) Show the cached content INSTANTLY (the Home tab is recreated
             //    on every tab switch — a cold recompute costs ~1-2 s of EPG
             //    DISTINCT scans, which reads as a frozen screen).
-            HomeContentHolder.content?.takeIf { !isAndroidPlatform() }?.let { cached ->
+            HomeContentHolder.content?.takeIf { !useCurrentPlayerUi() }?.let { cached ->
                 setState { it.copy(isLoading = false, content = cached, error = null) }
             }
             // 1) Recompute from the local DB (fast; the now-next EPG pass is
             //    cached for a minute).
             try {
-                val content = if (isAndroidPlatform()) withContext(Dispatchers.IO) { repository.getContent() }
+                val content = if (useCurrentPlayerUi()) withContext(Dispatchers.IO) { repository.getContent() }
                     else repository.getContent()
                 HomeContentHolder.content = content
                 setState { it.copy(isLoading = false, content = content, error = null) }
@@ -153,15 +153,15 @@ class DefaultHomeComponent(
     private var playbackRequestJob: kotlinx.coroutines.Job? = null
 
     private fun launchPlayback(block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit) {
-        if (isAndroidPlatform()) playbackRequestJob?.cancel()
+        if (useCurrentPlayerUi()) playbackRequestJob?.cancel()
         val job = launch(block)
-        if (isAndroidPlatform()) playbackRequestJob = job
+        if (useCurrentPlayerUi()) playbackRequestJob = job
     }
 
     private fun openChannel(channelId: String) {
         launchPlayback {
             val current = playbackController.state.value.item
-            if (isAndroidPlatform() && current?.id == channelId && current.kind != com.tvnext.app.core.player.PlaybackContentKind.VOD) {
+            if (useCurrentPlayerUi() && current?.id == channelId && current.kind != com.tvnext.app.core.player.PlaybackContentKind.VOD) {
                 onQuickAccess(HomeQuickAccess.ALL_CHANNELS)
                 return@launchPlayback
             }
@@ -188,17 +188,17 @@ class DefaultHomeComponent(
     private fun openVod(itemId: String) {
         launchPlayback {
             val current = playbackController.state.value.item
-            if (isAndroidPlatform() && current?.id == itemId && current.kind == com.tvnext.app.core.player.PlaybackContentKind.VOD) {
+            if (useCurrentPlayerUi() && current?.id == itemId && current.kind == com.tvnext.app.core.player.PlaybackContentKind.VOD) {
                 onQuickAccess(HomeQuickAccess.MEDIA_LIBRARY)
                 return@launchPlayback
             }
-            val resume = if (isAndroidPlatform()) com.tvnext.app.core.player.AndroidPlaybackSession.vodPosition(itemId) else null
+            val resume = if (useCurrentPlayerUi()) com.tvnext.app.core.player.AndroidPlaybackSession.vodPosition(itemId) else null
             val item = mediaLibrary.getItemById(itemId) ?: return@launchPlayback
             runCatching { historyRepository.add(itemId, WatchContentType.VOD) }
                 .onFailure { error -> Logger.e(TAG, "Failed to record VOD history", error) }
             playbackController.play(
                 PlaybackItem(id = item.id, title = item.name, url = item.streamUrl,
-                    kind = if (isAndroidPlatform()) com.tvnext.app.core.player.PlaybackContentKind.VOD
+                    kind = if (useCurrentPlayerUi()) com.tvnext.app.core.player.PlaybackContentKind.VOD
                         else com.tvnext.app.core.player.PlaybackContentKind.LIVE),
             )
             if (resume != null && resume > 0) playbackController.seekTo(resume)

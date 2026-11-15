@@ -84,7 +84,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.input.OkInputGate
 import com.tvnext.app.core.ui.component.AutoScrollText
 import com.tvnext.app.core.common.result.toUserMessage
@@ -140,10 +140,10 @@ fun ChannelsScreen(
     programmeDescriptionRight: Boolean = false,
 ) {
     androidx.compose.runtime.DisposableEffect(component) {
-        if (isAndroidPlatform()) component.setScreenVisible(true)
-        onDispose { if (isAndroidPlatform()) component.setScreenVisible(false) }
+        if (useCurrentPlayerUi()) component.setScreenVisible(true)
+        onDispose { if (useCurrentPlayerUi()) component.setScreenVisible(false) }
     }
-    if (isAndroidPlatform()) androidx.compose.runtime.SideEffect {
+    if (useCurrentPlayerUi()) androidx.compose.runtime.SideEffect {
         com.tvnext.app.core.common.log.AndroidPerformanceCounters.increment("compose.channels")
     }
     val state by component.state.collectAsState()
@@ -184,7 +184,7 @@ fun ChannelsScreen(
     // full-screen after every selection.
     var wasWatchingChannel by remember { mutableStateOf(false) }
     LaunchedEffect(state.selectedChannelId, activePlaybackItem) {
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             val watching = activePlaybackItem != null && activePlaybackItem?.kind != PlaybackContentKind.VOD
             if (watching && !wasWatchingChannel && !immersive) {
                 onImmersiveChange(true)
@@ -201,7 +201,7 @@ fun ChannelsScreen(
     ) {
         // Android TV: no screen header — the remote's Back button leaves the
         // screen and the space is used for the list/video (dense 4K layout).
-        if (!immersive && !isAndroidPlatform()) {
+        if (!immersive && !useCurrentPlayerUi()) {
             ScreenHeader(
                 title = uiText("Каналы"),
                 onBack = onBackHome,
@@ -217,11 +217,11 @@ fun ChannelsScreen(
         }
 
 
-        val displayChannelId = if (isAndroidPlatform()) activePlaybackItem
+        val displayChannelId = if (useCurrentPlayerUi()) activePlaybackItem
             ?.takeIf { it.kind != PlaybackContentKind.VOD }?.id else state.selectedChannelId
         val selectedChannel = state.channels.firstOrNull { it.id == displayChannelId }
         LaunchedEffect(selectedChannel?.id) {
-            if (isAndroidPlatform()) selectedChannel?.id?.let(PreviousChannelHistory::entered)
+            if (useCurrentPlayerUi()) selectedChannel?.id?.let(PreviousChannelHistory::entered)
         }
         val now = rememberEpgTicker()
         if (selectedChannel != null) {
@@ -411,7 +411,7 @@ private fun WatchingLayout(
     // ChannelListPanel would silently fall back to the first row instead of
     // the one actually playing.
     LaunchedEffect(immersive) {
-        if (!immersive && !isAndroidPlatform()) {
+        if (!immersive && !useCurrentPlayerUi()) {
             TvListState.channelsExpandedCategory.value = "__all"
         }
     }
@@ -438,7 +438,7 @@ private fun WatchingLayout(
         archiveOverlayJob?.cancel()
         archiveOverlayJob = hoverScope.launch {
             delay(3000)
-            while (isAndroidPlatform() && (infoPanelFocused || controller.state.value.state == PlaybackState.PAUSED)) delay(500)
+            while (useCurrentPlayerUi() && (infoPanelFocused || controller.state.value.state == PlaybackState.PAUSED)) delay(500)
             archiveOverlayVisible = false
             seekMode = false
         }
@@ -458,7 +458,7 @@ private fun WatchingLayout(
         drawerCloseJob?.cancel()
         if (drawerOpen) return
         drawerOpen = true
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             val playback = controller.state.value
             guidePlaybackTimeMs = playback.item?.takeIf { it.kind == PlaybackContentKind.ARCHIVE }
                 ?.archiveEpgAnchorMs?.plus(playback.positionMs)
@@ -500,7 +500,7 @@ private fun WatchingLayout(
         archivePreview = null
         onCategorySelected(category)
         categoriesOpen = false
-        if (isAndroidPlatform() || category == null || selectedChannel.category == category) {
+        if (useCurrentPlayerUi() || category == null || selectedChannel.category == category) {
             focusReturnNonce++
         } else {
             focusTopNonce++
@@ -544,7 +544,7 @@ private fun WatchingLayout(
         searchFocused,
     ) {
         component.setBackHandler {
-            if (!isAndroidPlatform()) return@setBackHandler false
+            if (!useCurrentPlayerUi()) return@setBackHandler false
             when {
                 rightDetailsVisible || transportControlsVisible || rightInfoVisible || archiveOverlayVisible -> {
                     rightDetailsVisible = false; transportControlsVisible = false
@@ -595,8 +595,8 @@ private fun WatchingLayout(
     }
 
     val searchFocusRequester = remember { FocusRequester() }
-    val channelListState = if (isAndroidPlatform()) rememberLazyListState() else TvListState.channelsListState
-    val drawerListState = if (isAndroidPlatform()) rememberLazyListState() else channelListState
+    val channelListState = if (useCurrentPlayerUi()) rememberLazyListState() else TvListState.channelsListState
+    val drawerListState = if (useCurrentPlayerUi()) rememberLazyListState() else channelListState
     val playerState by controller.state.collectAsState()
     val archiveSeekStepMs by component.archiveSeekStepMs.collectAsState()
     // WatchingLayout only cares about item.kind and diagnostics here — NOT
@@ -610,7 +610,7 @@ private fun WatchingLayout(
     // layout) dirty every second, purely because of a field it never uses.
     val playerItemKind by remember { derivedStateOf { playerState.item?.kind } }
     val playerDiagnostics by remember { derivedStateOf { playerState.diagnostics } }
-    val fullscreenProgrammePanelVisible = immersive && !categoriesOpen && (!isAndroidPlatform() || !drawerOpen) &&
+    val fullscreenProgrammePanelVisible = immersive && !categoriesOpen && (!useCurrentPlayerUi() || !drawerOpen) &&
         (epgInfoVisible || rightInfoVisible || rightDetailsVisible || archiveOverlayVisible || transportControlsVisible)
 
     com.tvnext.app.core.ui.component.ReportPlaybackOverlays(
@@ -647,7 +647,7 @@ private fun WatchingLayout(
         // TextField opens the on-screen keyboard immediately. On Android TV the
         // focus goes to the first channel row (so the remote's Up/Down + OK work
         // right away); on desktop the video container keeps the focus.
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             runCatching { focusRequester.requestFocus() }
         }
     }
@@ -658,7 +658,7 @@ private fun WatchingLayout(
     // over the video, RIGHT shows the programme info. The delay lets the new
     // (immersive) composition mount before the focus request lands.
     LaunchedEffect(immersive) {
-        if (immersive && isAndroidPlatform()) {
+        if (immersive && useCurrentPlayerUi()) {
             if (!drawerOpen && component.timeline.value.channelId != null) onHideTimeline()
             // The bottom-right EPG card belongs only to the channel-list focus.
             // When the user presses OK on the already-playing channel in the
@@ -677,7 +677,7 @@ private fun WatchingLayout(
     // unmounts) must hand keyboard focus back to the video, or Up/Down stops
     // zapping channels until the user clicks the video area by hand.
     LaunchedEffect(immersive) {
-        if (immersive && !isAndroidPlatform()) {
+        if (immersive && !useCurrentPlayerUi()) {
             delay(60)
             runCatching { focusRequester.requestFocus() }
         }
@@ -687,7 +687,7 @@ private fun WatchingLayout(
     // a channel switch, overlay redraw, …) re-claim it, so the remote works
     // without a preliminary OK press. The open drawer keeps its own focus.
     LaunchedEffect(videoFocused, immersive, drawerOpen, categoriesOpen, timelineState.channelId, searchFocused, infoPanelFocused) {
-        if (isAndroidPlatform() && immersive && !videoFocused && !infoPanelFocused &&
+        if (useCurrentPlayerUi() && immersive && !videoFocused && !infoPanelFocused &&
             !transportControlsVisible && !drawerOpen &&
             !categoriesOpen && timelineState.channelId == null && !searchFocused) {
             delay(60)
@@ -699,7 +699,7 @@ private fun WatchingLayout(
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
-            .then(if (isAndroidPlatform()) Modifier.onFocusChanged {
+            .then(if (useCurrentPlayerUi()) Modifier.onFocusChanged {
                 rootVideoFocused = it.isFocused
                 if (!it.hasFocus) rightInput.release()
                 if (!it.isFocused) {
@@ -712,8 +712,8 @@ private fun WatchingLayout(
             .onPreviewKeyEvent { event ->
                 // When the transport controls own focus, arrows/OK must reach
                 // the individual buttons; never intercept them at the video root.
-                if (isAndroidPlatform() && infoPanelFocused) return@onPreviewKeyEvent false
-                if (isAndroidPlatform() && !immersive && windowedRemote.handle(
+                if (useCurrentPlayerUi() && infoPanelFocused) return@onPreviewKeyEvent false
+                if (useCurrentPlayerUi() && !immersive && windowedRemote.handle(
                     event = event,
                     pane = when {
                         categoriesOpen -> WindowedPane.CATEGORIES
@@ -779,12 +779,12 @@ private fun WatchingLayout(
                         else -> true
                     }
                 } else {
-                    if (isAndroidPlatform() && immersive && !drawerOpen &&
+                    if (useCurrentPlayerUi() && immersive && !drawerOpen &&
                         event.key == Key.DirectionRight && event.type == KeyEventType.KeyUp) {
                         true
                     } else if (event.type == KeyEventType.KeyDown) {
                     when {
-                        isAndroidPlatform() && !drawerOpen && !categoriesOpen &&
+                        useCurrentPlayerUi() && !drawerOpen && !categoriesOpen &&
                             component.timeline.value.channelId == null &&
                             playerItemKind != PlaybackContentKind.VOD && androidHasArchive(selectedChannel) &&
                             (event.key == Key.MediaRewind || event.key == Key.MediaFastForward) -> {
@@ -799,8 +799,8 @@ private fun WatchingLayout(
                         // channel list/drawer -> (nothing left) -> only then
                         // is the key NOT consumed, so it falls through to the
                         // normal navigation (Decompose) which exits the tab.
-                        isAndroidPlatform() && immersive && categoriesOpen &&
-                            event.key == Key.Back -> {
+                        useCurrentPlayerUi() && immersive && categoriesOpen &&
+                            (event.key == Key.Back || event.key == Key.Escape) -> {
                             categoriesOpen = false
                             focusReturnNonce++
                             true
@@ -809,9 +809,9 @@ private fun WatchingLayout(
                         // каналов, и панель передач вместе (они открываются
                         // одной кнопкой LEFT). Категории закрываются отдельным
                         // первым Back выше.
-                        isAndroidPlatform() && immersive &&
+                        useCurrentPlayerUi() && immersive &&
                             (component.timeline.value.channelId != null || drawerOpen) &&
-                            event.key == Key.Back -> {
+                            (event.key == Key.Back || event.key == Key.Escape) -> {
                             if (component.timeline.value.channelId != null) onHideTimeline()
                             drawerCloseJob?.cancel()
                             drawerOpen = false
@@ -820,8 +820,8 @@ private fun WatchingLayout(
                             runCatching { focusRequester.requestFocus() }
                             true
                         }
-                        isAndroidPlatform() && !immersive && categoriesOpen &&
-                            event.key == Key.Back -> {
+                        useCurrentPlayerUi() && !immersive && categoriesOpen &&
+                            (event.key == Key.Back || event.key == Key.Escape) -> {
                             categoriesOpen = false
                             focusReturnNonce++
                             true
@@ -829,7 +829,7 @@ private fun WatchingLayout(
                         // Windowed/browse mode: Back returns to the main menu,
                         // whether or not EPG data is currently visible. The
                         // fullscreen toggle belongs to OK on the video only.
-                        isAndroidPlatform() && !immersive && event.key == Key.Back -> {
+                        useCurrentPlayerUi() && !immersive && (event.key == Key.Back || event.key == Key.Escape) -> {
                             onBackHome?.invoke()
                             onBackHome != null
                         }
@@ -842,7 +842,7 @@ private fun WatchingLayout(
                         // These fire ONLY while the video area holds focus: when
                         // a list row (drawer or browse list) is focused the key
                         // is left to the row's own OK handler.
-                        isAndroidPlatform() && immersive && !drawerOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen &&
                             component.timeline.value.channelId == null &&
                             (event.key == Key.DirectionCenter || event.key == Key.Enter) -> {
                             transportControlsVisible = true
@@ -851,13 +851,13 @@ private fun WatchingLayout(
                             epgInfoVisible = false
                             true
                         }
-                        isAndroidPlatform() && immersive && !drawerOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen &&
                             event.key == Key.DirectionLeft -> {
                             rightInfoVisible = false
                             openDrawer()
                             true
                         }
-                        isAndroidPlatform() && immersive && !drawerOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen &&
                             event.key == Key.DirectionRight -> {
                             // Handle a physical press once, never the remote's
                             // auto-repeat KeyDown events while the key is held.
@@ -879,7 +879,7 @@ private fun WatchingLayout(
                         // the categories with RIGHT moves the list focus to the
                         // TOP channel of the chosen category (the playing
                         // channel is not switched; that happens on OK).
-                        isAndroidPlatform() && immersive && drawerOpen && categoriesOpen &&
+                        useCurrentPlayerUi() && immersive && drawerOpen && categoriesOpen &&
                             event.key == Key.DirectionRight -> {
                             categoriesOpen = false
                             // Фокус возвращается на играющий канал, а не на верхний
@@ -901,7 +901,7 @@ private fun WatchingLayout(
                         // Android TV: LEFT when the drawer is hidden but the
                         // programme panel is open (after RIGHT) brings the
                         // channel list back next to it.
-                        isAndroidPlatform() && immersive && !drawerOpen && !categoriesOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen && !categoriesOpen &&
                             component.timeline.value.channelId != null && !videoFocused && !searchFocused &&
                             event.key == Key.DirectionLeft -> {
                             openDrawer()
@@ -913,7 +913,7 @@ private fun WatchingLayout(
                         // Once archive playback automatically reaches LIVE, this
                         // branch stops matching and UP/DOWN immediately return to
                         // channel zapping.
-                        isAndroidPlatform() && immersive && !drawerOpen && !categoriesOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen && !categoriesOpen &&
                             playerItemKind == PlaybackContentKind.ARCHIVE &&
                             (event.key == Key.DirectionUp || event.key == Key.DirectionDown) -> {
                             val delta = if (event.key == Key.DirectionUp) archiveSeekStepMs else -archiveSeekStepMs
@@ -926,7 +926,7 @@ private fun WatchingLayout(
                         // Android TV fullscreen ARCHIVE: DOWN while the seek bar
                         // overlay is visible activates the seek handle — LEFT/RIGHT
                         // then scrub instead of closing panels / toggling overlays.
-                        isAndroidPlatform() && immersive && !drawerOpen && !categoriesOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen && !categoriesOpen &&
                             playerItemKind == PlaybackContentKind.ARCHIVE &&
                             archiveOverlayVisible && !seekMode &&
                             event.key == Key.DirectionDown -> {
@@ -936,7 +936,7 @@ private fun WatchingLayout(
                         }
                         // Android TV fullscreen ARCHIVE: with the seek handle
                         // active, LEFT/RIGHT scrub the programme.
-                        isAndroidPlatform() && immersive && !drawerOpen && !categoriesOpen &&
+                        useCurrentPlayerUi() && immersive && !drawerOpen && !categoriesOpen &&
                             playerItemKind == PlaybackContentKind.ARCHIVE && seekMode &&
                             (event.key == Key.DirectionLeft || event.key == Key.DirectionRight) -> {
                             val delta = if (event.key == Key.DirectionRight) archiveSeekStepMs else -archiveSeekStepMs
@@ -953,8 +953,8 @@ private fun WatchingLayout(
                         // поэтому videoFocused остаётся false и zapping не работает.
                         // LEFT/RIGHT и OK работали, потому что не проверяли videoFocused.
                         // Desktop: оставляем оригинальную логику с videoFocused.
-                        if (isAndroidPlatform()) {
-                            isAndroidPlatform() && immersive && !drawerOpen && !categoriesOpen &&
+                        if (useCurrentPlayerUi()) {
+                            useCurrentPlayerUi() && immersive && !drawerOpen && !categoriesOpen &&
                                 component.timeline.value.channelId == null && !timelineFocused &&
                                 (event.key == Key.DirectionUp || event.key == Key.DirectionDown)
                         } else {
@@ -1017,7 +1017,7 @@ private fun WatchingLayout(
                         // push it aside like fullscreen does). If the timeline
                         // panel was open instead, LEFT switches to categories
                         // (the two side panels are mutually exclusive).
-                        isAndroidPlatform() && !immersive && !categoriesOpen &&
+                        useCurrentPlayerUi() && !immersive && !categoriesOpen &&
                             !videoFocused && !searchFocused &&
                             event.key == Key.DirectionLeft -> {
                             if (component.timeline.value.channelId != null) {
@@ -1027,7 +1027,7 @@ private fun WatchingLayout(
                             } else categoriesOpen = true
                             true
                         }
-                        isAndroidPlatform() && !immersive && videoFocused && event.key == Key.DirectionLeft -> {
+                        useCurrentPlayerUi() && !immersive && videoFocused && event.key == Key.DirectionLeft -> {
                             if (component.timeline.value.channelId != null) timelineFocusRequester.requestFocus()
                             else focusReturnNonce++
                             true
@@ -1050,7 +1050,7 @@ private fun WatchingLayout(
                 // OK on another channel plays it.
                 val onBrowseSelectChannel: (String) -> Unit = { id ->
                     if (component.timeline.value.channelId != null) onHideTimeline()
-                    if (isAndroidPlatform() && !immersive && id == selectedChannel.id) {
+                    if (useCurrentPlayerUi() && !immersive && id == selectedChannel.id) {
                         highlightedChannelId = null
                         onToggleImmersive()
                     } else {
@@ -1058,7 +1058,7 @@ private fun WatchingLayout(
                     }
                 }
                 ChannelCategoriesOrListPanel(
-                    categoriesOpen = isAndroidPlatform() && categoriesOpen,
+                    categoriesOpen = useCurrentPlayerUi() && categoriesOpen,
                     onSwipeOpenCategories = { categoriesOpen = true },
                     state = state,
                     component = component,
@@ -1080,7 +1080,7 @@ private fun WatchingLayout(
                         channelListState = channelListState,
                         searchFocusRequester = searchFocusRequester,
                         expandedCategory = channelsExpandedCategory,
-                        androidCategory = if (isAndroidPlatform()) {
+                        androidCategory = if (useCurrentPlayerUi()) {
                             // The list shows the channels of the selected
                             // category (or the playing channel's category when
                             // «Все» is active), never the accordion.
@@ -1110,7 +1110,7 @@ private fun WatchingLayout(
                         // channel that's actually on air instead of wherever
                         // it was scrolled to last time.
                         autoFocusChannelId = selectedChannel.id,
-                        onShowTimeline = if (isAndroidPlatform()) onShowTimeline else null,
+                        onShowTimeline = if (useCurrentPlayerUi()) onShowTimeline else null,
                     )
                 }
                 Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacing))
@@ -1128,21 +1128,21 @@ private fun WatchingLayout(
                     TvPlayerPanel(
                         controller = controller,
                         channelName = selectedChannel.name,
-                        programmeStartMs = if (isAndroidPlatform() && playerItemKind == PlaybackContentKind.ARCHIVE) playingEpg.current?.start else null,
-                        programmeDurationMs = if (isAndroidPlatform() && playerItemKind == PlaybackContentKind.ARCHIVE)
+                        programmeStartMs = if (useCurrentPlayerUi() && playerItemKind == PlaybackContentKind.ARCHIVE) playingEpg.current?.start else null,
+                        programmeDurationMs = if (useCurrentPlayerUi() && playerItemKind == PlaybackContentKind.ARCHIVE)
                             playingEpg.current?.let { (it.stop - it.start).coerceAtLeast(0) } ?: 0 else null,
-                        onProgrammeSeek = if (isAndroidPlatform() && playerItemKind == PlaybackContentKind.ARCHIVE)
+                        onProgrammeSeek = if (useCurrentPlayerUi() && playerItemKind == PlaybackContentKind.ARCHIVE)
                             { position -> playingEpg.current?.let { (controller as? TimeShiftController)?.seekToTime(it.start + position) }; Unit } else null,
-                        statusBottomInset = if (isAndroidPlatform() && fullscreenProgrammePanelVisible)
+                        statusBottomInset = if (useCurrentPlayerUi() && fullscreenProgrammePanelVisible)
                             with(overlayDensity) { fullscreenInfoHeightPx.toDp() }.takeIf { it > 0.dp } ?: 200.dp else 0.dp,
                         channelNameVisible = channelNameVisible,
                         clockPosition = clockPosition,
-                        showControls = !immersive && !isAndroidPlatform(),
+                        showControls = !immersive && !useCurrentPlayerUi(),
                         rounded = !immersive,
                         showDiagnostics = showDiagnostics,
                         onVideoFocusedChange = { surfaceVideoFocused = it },
                         videoFocusRequester = videoFocusRequester,
-                        onVideoTap = if (isAndroidPlatform()) onToggleImmersive else null,
+                        onVideoTap = if (useCurrentPlayerUi()) onToggleImmersive else null,
                         onRetry = { onSelectChannel(selectedChannel.id) },
                         onClose = onClosePlayer,
                         onTogglePlayback = onTogglePlayback,
@@ -1151,12 +1151,12 @@ private fun WatchingLayout(
                         onToggleFavorite = { onToggleFavorite(selectedChannel.id) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(if (!immersive && isAndroidPlatform()) Modifier.height(windowedVideoHeight) else Modifier.weight(1f)),
+                            .then(if (!immersive && useCurrentPlayerUi()) Modifier.height(windowedVideoHeight) else Modifier.weight(1f)),
                     )
                     Column(
-                        if (!immersive && isAndroidPlatform()) Modifier.weight(1f).fillMaxWidth() else Modifier,
+                        if (!immersive && useCurrentPlayerUi()) Modifier.weight(1f).fillMaxWidth() else Modifier,
                     ) {
-                        if (!immersive && isAndroidPlatform()) {
+                        if (!immersive && useCurrentPlayerUi()) {
                             com.tvnext.app.core.ui.component.ReportPlaybackOverlays(bottomPanel = true)
                             val programme = playingEpg.current
                             val at = if (playerItemKind == PlaybackContentKind.ARCHIVE)
@@ -1184,7 +1184,7 @@ private fun WatchingLayout(
                                     .onFocusChanged { infoPanelFocused = it.hasFocus },
                             )
                         }
-                        if (!immersive && !isAndroidPlatform()) {
+                        if (!immersive && !useCurrentPlayerUi()) {
                             EpgPanel(
                                 epg = channelEpg,
                                 isArchive = playerItemKind == PlaybackContentKind.ARCHIVE,
@@ -1220,14 +1220,14 @@ private fun WatchingLayout(
                     // A timeline query can be expensive on TV hardware. Wait
                     // until D-pad movement settles; cancellation prevents a
                     // backlog of EPG jobs and avoids stale-day flicker.
-                    if (isAndroidPlatform() && drawerOpen && !categoriesOpen) {
+                    if (useCurrentPlayerUi() && drawerOpen && !categoriesOpen) {
                         LaunchedEffect(highlightedChannelId, selectedChannel.id) {
                             val id = highlightedChannelId ?: selectedChannel.id
                             delay(160)
                             if (component.timeline.value.channelId != id) onShowTimeline(id)
                         }
                     }
-                    if (isAndroidPlatform() && drawerOpen) {
+                    if (useCurrentPlayerUi() && drawerOpen) {
                         AndroidWideGuide(
                             channels = state.filteredChannels,
                             playingChannelId = selectedChannel.id,
@@ -1276,12 +1276,12 @@ private fun WatchingLayout(
                             modifier = Modifier.fillMaxSize().zIndex(10f),
                         )
                     }
-                    if (!isAndroidPlatform()) Row(
+                    if (!useCurrentPlayerUi()) Row(
                         modifier = Modifier
                             .align(Alignment.CenterStart)
                             .fillMaxHeight()
                             .zIndex(10f)
-                            .then(if (isAndroidPlatform()) Modifier.pointerInput(drawerOpen, categoriesOpen) {
+                            .then(if (useCurrentPlayerUi()) Modifier.pointerInput(drawerOpen, categoriesOpen) {
                                 var fromEdge = false
                                 var distance = 0f
                                 detectHorizontalDragGestures(
@@ -1322,7 +1322,7 @@ private fun WatchingLayout(
                         // channel list. All three panels therefore read
                         // categories -> channels -> programmes.
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = isAndroidPlatform() && drawerOpen && categoriesOpen,
+                            visible = useCurrentPlayerUi() && drawerOpen && categoriesOpen,
                             enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
                             exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut(),
                         ) {
@@ -1349,7 +1349,7 @@ private fun WatchingLayout(
                                 searchFocusRequester = searchFocusRequester,
                                 listState = drawerListState,
                                 expandedCategory = channelsExpandedCategory,
-                                androidCategory = if (isAndroidPlatform()) {
+                                androidCategory = if (useCurrentPlayerUi()) {
                                     state.selectedCategory
                                 } else {
                                     null
@@ -1361,7 +1361,7 @@ private fun WatchingLayout(
                                     // Панель передач СЛЕДУЕТ за фокусом в списке
                                     // каналов: при листании (без OK) показываем
                                     // программу канала, на котором стоит фокус.
-                                    if (isAndroidPlatform() && id != null && drawerOpen) {
+                                    if (useCurrentPlayerUi() && id != null && drawerOpen) {
                                         onShowTimeline(id)
                                     }
                                 },
@@ -1394,7 +1394,7 @@ private fun WatchingLayout(
                         // push-layout slot. Stays visible after RIGHT hides the
                         // channel list (plain programme list over the video).
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = isAndroidPlatform() && component.timeline.value.channelId != null,
+                            visible = useCurrentPlayerUi() && component.timeline.value.channelId != null,
                             enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
                             exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut(),
                         ) {
@@ -1463,7 +1463,7 @@ private fun WatchingLayout(
                     // перемотки архива (появляется при UP/DOWN/OK, гаснет через 3 с).
                     // НЕ показываем инфо-панель когда открыты категории.
                     if (fullscreenProgrammePanelVisible) {
-                        if (isAndroidPlatform()) AndroidProgrammeOverlay(
+                        if (useCurrentPlayerUi()) AndroidProgrammeOverlay(
                             channel = selectedChannel,
                             epg = playingEpg.takeIf { it.channelId == selectedChannel.id } ?: ChannelEpg(channelId = selectedChannel.id),
                             controller = controller, seekStepMs = archiveSeekStepMs,
@@ -1499,9 +1499,9 @@ private fun WatchingLayout(
 
                     // Значок паузы/воспроизведения по центру (полноэкранный
                     // архив), гаснет через 3 секунды.
-                    if (immersive && playPauseIconVisible && !isAndroidPlatform()) {
+                    if (immersive && playPauseIconVisible && !useCurrentPlayerUi()) {
                         TvPlayPauseIcon(
-                            paused = if (isAndroidPlatform()) playerState.state == PlaybackState.PAUSED else !playPauseIconPlaying,
+                            paused = if (useCurrentPlayerUi()) playerState.state == PlaybackState.PAUSED else !playPauseIconPlaying,
                             modifier = Modifier.align(Alignment.Center).zIndex(9f),
                             circleSize = 116.dp,
                         )
@@ -1587,7 +1587,7 @@ private fun ChannelListPanel(
     // requested. snapshotFlow observes scrolling without putting the viewport
     // into ChannelsState, so scrolling does not recompose the whole screen.
     LaunchedEffect(channelListState, queryBlankEntries, androidCategory, state.query, state.filteredChannels) {
-        if (!isAndroidPlatform()) return@LaunchedEffect
+        if (!useCurrentPlayerUi()) return@LaunchedEffect
         snapshotFlow {
             channelListState.layoutInfo.visibleItemsInfo
                 .mapNotNull { info ->
@@ -1614,7 +1614,7 @@ private fun ChannelListPanel(
     val channelRowIndices = remember(queryBlankEntries) {
         queryBlankEntries.mapIndexedNotNull { index, entry -> if (entry is ChannelEntry) index else null }
     }
-    var focusedRow by remember(if (isAndroidPlatform()) state.query else queryBlankEntries, autoFocusChannelId) { mutableIntStateOf(focusRowIndex) }
+    var focusedRow by remember(if (useCurrentPlayerUi()) state.query else queryBlankEntries, autoFocusChannelId) { mutableIntStateOf(focusRowIndex) }
     val listScope = rememberCoroutineScope()
     var listScrollJob by remember { mutableStateOf<Job?>(null) }
 
@@ -1623,7 +1623,7 @@ private fun ChannelListPanel(
         val state = channelListState
         listScrollJob = listScope.launch {
             if (index < 0) return@launch
-            if (isAndroidPlatform()) withFrameNanos { }
+            if (useCurrentPlayerUi()) withFrameNanos { }
             val info = state.layoutInfo
             val viewport = (info.viewportEndOffset - info.viewportStartOffset).coerceAtLeast(0)
             val rowHeight = info.visibleItemsInfo.firstOrNull()?.size ?: 0
@@ -1641,9 +1641,9 @@ private fun ChannelListPanel(
     // centred on screen, falling back to the first row. Android: also
     // restore saved position if available, or use currently playing channel.
     LaunchedEffect(state.filteredChannels, state.categories, autoFocusChannelId, state.selectedCategory) {
-        if (state.channels.isEmpty() || isAndroidPlatform()) return@LaunchedEffect
+        if (state.channels.isEmpty() || useCurrentPlayerUi()) return@LaunchedEffect
         // На Android TV пробуем восстановить сохраненную позицию для текущей категории
-        val targetIndex = if (isAndroidPlatform()) {
+        val targetIndex = if (useCurrentPlayerUi()) {
             val saved = TvListState.channelsFocusPosition[androidCategory]
             if (saved != null && saved in channelRowIndices.indices) {
                 channelRowIndices.getOrNull(saved)
@@ -1674,7 +1674,7 @@ private fun ChannelListPanel(
         else queryBlankEntries.mapNotNull { (it as? ChannelEntry)?.channel?.id }
     var handledTopNonce by remember { mutableIntStateOf(0) }
     LaunchedEffect(androidRowIds, androidCategory, state.query, focusReturnNonce, focusTopNonce) {
-        if (!isAndroidPlatform() || androidRowIds.isEmpty()) return@LaunchedEffect
+        if (!useCurrentPlayerUi() || androidRowIds.isEmpty()) return@LaunchedEffect
         val forceTop = focusTopNonce != handledTopNonce
         handledTopNonce = focusTopNonce
         // Opening the drawer must restore the REAL playing channel, not the
@@ -1702,7 +1702,7 @@ private fun ChannelListPanel(
     // user manually expands/collapses a DIFFERENT category by hand, which is
     // not what was asked for and would fight normal accordion browsing.
     LaunchedEffect(Unit) {
-        if (!isAndroidPlatform() && state.channels.isNotEmpty()) {
+        if (!useCurrentPlayerUi() && state.channels.isNotEmpty()) {
             focusedRow = focusRowIndex
             scrollListToCentered(focusRowIndex, animate = false) {
                 runCatching { channelFocusRequester.requestFocus() }
@@ -1713,12 +1713,12 @@ private fun ChannelListPanel(
         modifier = Modifier
             // Android TV: wider list — channel names must fit; the category
             // count lives next to the category name in the category picker.
-            .width(if (isAndroidPlatform()) 400.dp else 380.dp)
+            .width(if (useCurrentPlayerUi()) 400.dp else 380.dp)
             .fillMaxHeight(),
     ) {
         // Android TV: no header — the list uses the full height (the category
         // count is shown in the category picker instead).
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             Text(
                 text = if (androidCategory != null) {
                     "${state.channels.count { it.category == androidCategory }} · $androidCategory"
@@ -1732,7 +1732,7 @@ private fun ChannelListPanel(
         }
         // Android TV: no in-list search — the dedicated Search screen (main
         // menu) covers it; the space is used for more channel rows.
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             TvSearchField(
                 value = state.query,
                 onValueChange = onSearch,
@@ -1750,7 +1750,7 @@ private fun ChannelListPanel(
             modifier = Modifier
                 .weight(1f)
                 .onPreviewKeyEvent { event ->
-                    if (!isAndroidPlatform() || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    if (!useCurrentPlayerUi() || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     val direction = when (event.key) {
                         Key.DirectionUp -> -1
                         Key.DirectionDown -> 1
@@ -1790,7 +1790,7 @@ private fun ChannelListPanel(
                     ChannelRow(
                         channel = channel,
                         selected = channel.id == selectedChannel.id,
-                        playing = isAndroidPlatform() && channel.id == actuallyPlayingId,
+                        playing = useCurrentPlayerUi() && channel.id == actuallyPlayingId,
                         showNumber = showChannelNumbers,
                         nowPlaying = nowPlaying[channel.id],
                         now = now,
@@ -1804,14 +1804,14 @@ private fun ChannelListPanel(
                             }
                         },
                         // Archive support does not depend on a current EPG entry.
-                        onShowTimeline = if (if (isAndroidPlatform()) androidHasArchive(channel) else channel.hasCatchupMechanism && nowPlaying[channel.id] != null) {
+                        onShowTimeline = if (if (useCurrentPlayerUi()) androidHasArchive(channel) else channel.hasCatchupMechanism && nowPlaying[channel.id] != null) {
                             onShowTimeline?.let { show -> { show(channel.id) } }
                         } else {
                             null
                         },
                         modifier = when {
-                            isAndroidPlatform() -> Modifier.focusRequester(androidRequesters.getOrPut(channel.id) { FocusRequester() })
-                            index == 0 && focusTopNonce > 0 && !isAndroidPlatform() -> {
+                            useCurrentPlayerUi() -> Modifier.focusRequester(androidRequesters.getOrPut(channel.id) { FocusRequester() })
+                            index == 0 && focusTopNonce > 0 && !useCurrentPlayerUi() -> {
                                 Modifier.focusRequester(topChannelFocusRequester)
                             }
                             index == focusedRow -> Modifier.focusRequester(channelFocusRequester)
@@ -1858,7 +1858,7 @@ private fun ChannelListPanel(
                         is ChannelEntry -> ChannelRow(
                             channel = entry.channel,
                             selected = entry.channel.id == selectedChannel.id,
-                            playing = isAndroidPlatform() && entry.channel.id == actuallyPlayingId,
+                            playing = useCurrentPlayerUi() && entry.channel.id == actuallyPlayingId,
                             showNumber = showChannelNumbers,
                             nowPlaying = nowPlaying[entry.channel.id],
                             now = now,
@@ -1868,18 +1868,18 @@ private fun ChannelListPanel(
                             if (highlighted) {
                                 focusedRow = index
                                 onChannelHighlighted(entry.channel.id)
-                                if (isAndroidPlatform()) component.dispatch(ChannelsIntent.FocusChannel(entry.channel.id))
+                                if (useCurrentPlayerUi()) component.dispatch(ChannelsIntent.FocusChannel(entry.channel.id))
                             }
                         },
                             // Archive support does not depend on a current EPG entry.
-                            onShowTimeline = if (if (isAndroidPlatform()) androidHasArchive(entry.channel) else entry.channel.hasCatchupMechanism && nowPlaying[entry.channel.id] != null) {
+                            onShowTimeline = if (if (useCurrentPlayerUi()) androidHasArchive(entry.channel) else entry.channel.hasCatchupMechanism && nowPlaying[entry.channel.id] != null) {
                                 onShowTimeline?.let { show -> { show(entry.channel.id) } }
                             } else {
                                 null
                             },
                             modifier = when {
-                            isAndroidPlatform() -> Modifier.focusRequester(androidRequesters.getOrPut(entry.channel.id) { FocusRequester() })
-                                index == 0 && focusTopNonce > 0 && !isAndroidPlatform() -> {
+                            useCurrentPlayerUi() -> Modifier.focusRequester(androidRequesters.getOrPut(entry.channel.id) { FocusRequester() })
+                                index == 0 && focusTopNonce > 0 && !useCurrentPlayerUi() -> {
                                 Modifier.focusRequester(topChannelFocusRequester)
                             }
                                 index == focusedRow -> Modifier.focusRequester(channelFocusRequester)
@@ -1960,7 +1960,7 @@ private fun ChannelImmersiveDrawer(
         entries.mapIndexedNotNull { index, entry -> if (entry is ChannelEntry) index else null }
     }
     val currentChannelIndex = remember(entries, selectedChannel.id) {
-        if (state.query.isNotBlank() || isAndroidPlatform()) {
+        if (state.query.isNotBlank() || useCurrentPlayerUi()) {
             entries.indexOfFirst { it is ChannelEntry && it.channel.id == selectedChannel.id }
                 .takeIf { it >= 0 }
                 ?: 0
@@ -1969,7 +1969,7 @@ private fun ChannelImmersiveDrawer(
         }
     }
     // Keeps the row the user is currently browsing; drives the wrap-around.
-    var focusedRow by remember(if (isAndroidPlatform()) state.query else entries, selectedChannel.id) { mutableIntStateOf(currentChannelIndex) }
+    var focusedRow by remember(if (useCurrentPlayerUi()) state.query else entries, selectedChannel.id) { mutableIntStateOf(currentChannelIndex) }
     val drawerScope = rememberCoroutineScope()
     var drawerScrollJob by remember { mutableStateOf<Job?>(null) }
 
@@ -1983,7 +1983,7 @@ private fun ChannelImmersiveDrawer(
         val state = listState
         drawerScrollJob = drawerScope.launch {
             if (index < 0) return@launch
-            if (isAndroidPlatform()) withFrameNanos { }
+            if (useCurrentPlayerUi()) withFrameNanos { }
             val info = state.layoutInfo
             val viewport = (info.viewportEndOffset - info.viewportStartOffset).coerceAtLeast(0)
             // Rows have a uniform height; use any visible row's size, or fall
@@ -2003,7 +2003,7 @@ private fun ChannelImmersiveDrawer(
         else entries.mapNotNull { (it as? ChannelEntry)?.channel?.id }
     var handledTopNonce by remember { mutableIntStateOf(0) }
     LaunchedEffect(androidDrawerIds, androidCategory, state.query, focusReturnNonce, focusTopNonce) {
-        if (!isAndroidPlatform() || androidDrawerIds.isEmpty()) return@LaunchedEffect
+        if (!useCurrentPlayerUi() || androidDrawerIds.isEmpty()) return@LaunchedEffect
         val forceTop = focusTopNonce != handledTopNonce
         handledTopNonce = focusTopNonce
         val savedId = state.focusedChannelIds[state.selectedCategory] ?: state.focusedChannelId
@@ -2015,7 +2015,7 @@ private fun ChannelImmersiveDrawer(
         }
     }
     LaunchedEffect(listState, androidDrawerIds, state.query) {
-        if (!isAndroidPlatform()) return@LaunchedEffect
+        if (!useCurrentPlayerUi()) return@LaunchedEffect
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.mapNotNull { info ->
                 if (state.query.isNotBlank()) state.filteredChannels.getOrNull(info.index)?.id
@@ -2027,12 +2027,12 @@ private fun ChannelImmersiveDrawer(
     Column(
         modifier = Modifier
             // Android TV: the channel list is wider — channel names must fit.
-            .width(if (isAndroidPlatform()) 400.dp else 410.dp)
+            .width(if (useCurrentPlayerUi()) 400.dp else 410.dp)
             .fillMaxHeight()
             .clip(RoundedCornerShape(0.dp))
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.80f))
             .then(
-                if (isAndroidPlatform()) Modifier else Modifier.border(
+                if (useCurrentPlayerUi()) Modifier else Modifier.border(
                     1.dp,
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
                     RoundedCornerShape(0.dp),
@@ -2044,7 +2044,7 @@ private fun ChannelImmersiveDrawer(
         // (categories and their channel counts live in the category picker).
         Spacer(modifier = Modifier.height(0.dp))
         // Android TV: no in-list search (dedicated Search screen instead).
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             TvSearchField(
                 value = state.query,
                 onValueChange = onSearch,
@@ -2062,7 +2062,7 @@ private fun ChannelImmersiveDrawer(
             modifier = Modifier
                 .weight(1f)
                 .onPreviewKeyEvent { event ->
-                    if (!isAndroidPlatform() || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    if (!useCurrentPlayerUi() || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     val direction = when (event.key) {
                         Key.DirectionUp -> -1
                         Key.DirectionDown -> 1
@@ -2102,7 +2102,7 @@ private fun ChannelImmersiveDrawer(
                     ChannelRow(
                         channel = channel,
                         selected = channel.id == selectedChannel.id,
-                        playing = isAndroidPlatform() && channel.id == actuallyPlayingId,
+                        playing = useCurrentPlayerUi() && channel.id == actuallyPlayingId,
                         showNumber = showChannelNumbers,
                         nowPlaying = nowPlaying[channel.id],
                         now = now,
@@ -2115,10 +2115,10 @@ private fun ChannelImmersiveDrawer(
                                 component.dispatch(ChannelsIntent.FocusChannel(channel.id))
                             }
                         },
-                        onShowTimeline = if (!isAndroidPlatform() || androidHasArchive(channel)) onShowTimeline?.let { show -> { show(channel.id) } } else null,
+                        onShowTimeline = if (!useCurrentPlayerUi() || androidHasArchive(channel)) onShowTimeline?.let { show -> { show(channel.id) } } else null,
                         modifier = when {
-                            isAndroidPlatform() -> Modifier.focusRequester(androidRequesters.getOrPut(channel.id) { FocusRequester() })
-                            index == 0 && focusTopNonce > 0 && !isAndroidPlatform() -> {
+                            useCurrentPlayerUi() -> Modifier.focusRequester(androidRequesters.getOrPut(channel.id) { FocusRequester() })
+                            index == 0 && focusTopNonce > 0 && !useCurrentPlayerUi() -> {
                                 Modifier.focusRequester(topChannelFocusRequester)
                             }
                             index == focusedRow -> {
@@ -2153,7 +2153,7 @@ private fun ChannelImmersiveDrawer(
                         is ChannelEntry -> ChannelRow(
                             channel = entry.channel,
                             selected = entry.channel.id == selectedChannel.id,
-                            playing = isAndroidPlatform() && entry.channel.id == actuallyPlayingId,
+                            playing = useCurrentPlayerUi() && entry.channel.id == actuallyPlayingId,
                             showNumber = showChannelNumbers,
                             nowPlaying = nowPlaying[entry.channel.id],
                             now = now,
@@ -2163,18 +2163,18 @@ private fun ChannelImmersiveDrawer(
                             if (highlighted) {
                                 focusedRow = index
                                 onChannelHighlighted(entry.channel.id)
-                                if (isAndroidPlatform()) component.dispatch(ChannelsIntent.FocusChannel(entry.channel.id))
+                                if (useCurrentPlayerUi()) component.dispatch(ChannelsIntent.FocusChannel(entry.channel.id))
                             }
                         },
                             // Archive support does not depend on a current EPG entry.
-                            onShowTimeline = if (if (isAndroidPlatform()) androidHasArchive(entry.channel) else entry.channel.hasCatchupMechanism && nowPlaying[entry.channel.id] != null) {
+                            onShowTimeline = if (if (useCurrentPlayerUi()) androidHasArchive(entry.channel) else entry.channel.hasCatchupMechanism && nowPlaying[entry.channel.id] != null) {
                                 onShowTimeline?.let { show -> { show(entry.channel.id) } }
                             } else {
                                 null
                             },
                             modifier = when {
-                            isAndroidPlatform() -> Modifier.focusRequester(androidRequesters.getOrPut(entry.channel.id) { FocusRequester() })
-                                index == 0 && focusTopNonce > 0 && !isAndroidPlatform() -> {
+                            useCurrentPlayerUi() -> Modifier.focusRequester(androidRequesters.getOrPut(entry.channel.id) { FocusRequester() })
+                                index == 0 && focusTopNonce > 0 && !useCurrentPlayerUi() -> {
                                 Modifier.focusRequester(topChannelFocusRequester)
                             }
                                 index == focusedRow -> {
@@ -2219,7 +2219,7 @@ private fun buildChannelEntries(
     expandedCategory: String?,
     androidCategory: String? = null,
 ): List<Any> = buildList {
-    if (isAndroidPlatform() && androidCategory == null) {
+    if (useCurrentPlayerUi() && androidCategory == null) {
         state.channels.forEach { add(ChannelEntry(it)) }
         return@buildList
     }
@@ -2367,7 +2367,7 @@ private fun RegularLayout(
     val firstChannelFocusRequester = remember { FocusRequester() }
     val regularListState = rememberLazyListState()
     LaunchedEffect(regularListState, state.filteredChannels) {
-        if (!isAndroidPlatform()) return@LaunchedEffect
+        if (!useCurrentPlayerUi()) return@LaunchedEffect
         snapshotFlow {
             regularListState.layoutInfo.visibleItemsInfo
                 .mapNotNull { info -> state.filteredChannels.getOrNull(info.index)?.id }
@@ -2379,7 +2379,7 @@ private fun RegularLayout(
     // the same place instead of the top. Fires on restore and on selection
     // changes (jumping to a channel that was clicked elsewhere).
     LaunchedEffect(state.filteredChannels, state.selectedChannelId, state.selectedCategory) {
-        if (isAndroidPlatform()) return@LaunchedEffect
+        if (useCurrentPlayerUi()) return@LaunchedEffect
         val selectedId = state.selectedChannelId ?: return@LaunchedEffect
         val index = state.filteredChannels.indexOfFirst { it.id == selectedId }
         if (index >= 0) {
@@ -2389,7 +2389,7 @@ private fun RegularLayout(
     val regularIds = remember(state.filteredChannels) { state.filteredChannels.map { it.id } }
     var regularFocusId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(regularIds, state.selectedCategory, state.query) {
-        if (isAndroidPlatform() && regularIds.isNotEmpty()) {
+        if (useCurrentPlayerUi() && regularIds.isNotEmpty()) {
             regularFocusId = resolveAndroidChannelFocus(regularIds,
                 state.focusedChannelIds[state.selectedCategory] ?: state.focusedChannelId, state.selectedChannelId)
             val index = regularIds.indexOf(regularFocusId)
@@ -2435,7 +2435,7 @@ private fun RegularLayout(
 
             else -> {
                 // Android TV: no in-list search (dedicated Search screen).
-                if (!isAndroidPlatform()) {
+                if (!useCurrentPlayerUi()) {
                     TvSearchField(
                         value = state.query,
                         onValueChange = onSearch,
@@ -2472,7 +2472,7 @@ private fun RegularLayout(
                     itemsIndexed(state.filteredChannels, key = { _, channel -> channel.id }) { index, channel ->
                         ChannelRow(
                             channel = channel,
-                            selected = if (isAndroidPlatform()) channel.id == state.selectedChannelId
+                            selected = if (useCurrentPlayerUi()) channel.id == state.selectedChannelId
                                 else channel.id == state.focusedChannelId || channel.id == state.selectedChannelId,
                             showNumber = showChannelNumbers,
                             nowPlaying = nowPlaying[channel.id],
@@ -2480,7 +2480,7 @@ private fun RegularLayout(
                             onClick = { onSelectChannel(channel.id) },
                             onHighlighted = { focused -> if (focused) component.dispatch(ChannelsIntent.FocusChannel(channel.id)) },
                             onToggleFavorite = { onToggleFavorite(channel.id) },
-                            modifier = if (if (isAndroidPlatform()) channel.id == regularFocusId else index == 0) {
+                            modifier = if (if (useCurrentPlayerUi()) channel.id == regularFocusId else index == 0) {
                                 Modifier.focusRequester(firstChannelFocusRequester)
                             } else {
                                 Modifier
@@ -2574,7 +2574,7 @@ internal fun ChannelCategoriesPanel(
 
     Column(
         modifier = modifier
-            .then(if (expandToVideo) Modifier.fillMaxWidth() else Modifier.width(if(isAndroidPlatform())200.dp else 260.dp))
+            .then(if (expandToVideo) Modifier.fillMaxWidth() else Modifier.width(if(useCurrentPlayerUi())200.dp else 260.dp))
             .testTag("windowed-categories-panel")
             .fillMaxHeight()
             .clip(RoundedCornerShape(0.dp))
@@ -2642,7 +2642,7 @@ private fun CategoryListEntry(
         // Same translucency as the categories panel itself: the resting entry
         // background is transparent (no double-tint over the panel); selection
         // and focus still render on top.
-        containerAlpha = if (isAndroidPlatform()) 0f else 0.92f,
+        containerAlpha = if (useCurrentPlayerUi()) 0f else 0.92f,
         contentPadding = PaddingValues(
             horizontal = TVNextDimens.ItemSpacing,
             vertical = TVNextDimens.ItemSpacingSmall,
@@ -2699,8 +2699,8 @@ private fun ChannelCategoriesOrListPanel(
             ?.archiveEpgAnchorMs?.plus(playback.positionMs)
     }
     Box(
-        modifier = (if (isAndroidPlatform()) Modifier.width(400.dp).fillMaxHeight() else Modifier)
-            .then(if (isAndroidPlatform()) Modifier.pointerInput(categoriesOpen) {
+        modifier = (if (useCurrentPlayerUi()) Modifier.width(400.dp).fillMaxHeight() else Modifier)
+            .then(if (useCurrentPlayerUi()) Modifier.pointerInput(categoriesOpen) {
                 var startedNearEdge = false
                 var horizontalDistance = 0f
                 detectHorizontalDragGestures(
@@ -2725,8 +2725,8 @@ private fun ChannelCategoriesOrListPanel(
         categoriesOpen -> ChannelCategoriesPanel(state = state, onCategorySelected = onCategorySelected, expandToVideo = true)
         timelineChannel != null -> ChannelTimelinePanel(
             channel = timelineChannel,
-            requestInitialFocus = isAndroidPlatform(),
-            showDetail = !isAndroidPlatform(),
+            requestInitialFocus = useCurrentPlayerUi(),
+            showDetail = !useCurrentPlayerUi(),
             onProgrammeHighlighted = onProgrammeHighlighted,
             onBack = onTimelineClosed,
             focusRequester = timelineFocusRequester,
@@ -2734,9 +2734,9 @@ private fun ChannelCategoriesOrListPanel(
             programmes = timelineState.programmes,
             loading = timelineState.loading,
             now = now,
-            archiveAvailable = if (isAndroidPlatform()) androidHasArchive(timelineChannel) else timelineChannel.hasCatchupMechanism,
+            archiveAvailable = if (useCurrentPlayerUi()) androidHasArchive(timelineChannel) else timelineChannel.hasCatchupMechanism,
             onArchiveProgramme = { programme ->
-                if (isAndroidPlatform()) component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, timelineChannel.id))
+                if (useCurrentPlayerUi()) component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, timelineChannel.id))
                 else onArchiveProgramme(programme)
             },
         )
@@ -2807,7 +2807,7 @@ private fun ChannelTimelinePanel(
     onProgrammeHighlighted: (EpgProgramme) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    if (isAndroidPlatform() && !showDetail) {
+    if (useCurrentPlayerUi() && !showDetail) {
         AndroidWindowedProgrammeList(
             channel = channel, programmes = programmes, loading = loading, now = now,
             initialProgrammeTimeMs = initialProgrammeTimeMs,
@@ -2819,7 +2819,7 @@ private fun ChannelTimelinePanel(
         )
         return
     }
-    val visibleProgrammes = if (isAndroidPlatform()) remember(programmes) {
+    val visibleProgrammes = if (useCurrentPlayerUi()) remember(programmes) {
         programmes.distinctBy { Triple(it.channelId, it.start, it.stop) }
     } else programmes
     val currentIndex = remember(visibleProgrammes, now) {
@@ -2863,18 +2863,18 @@ private fun ChannelTimelinePanel(
                 // consumed here instead of being lost to the focused child or
                 // bubbling to app navigation. One press = close visibleProgrammes =
                 // leave only the video visible.
-                if (isAndroidPlatform() && event.type == KeyEventType.KeyDown && event.key == Key.Back) {
+                if (useCurrentPlayerUi() && event.type == KeyEventType.KeyDown && (event.key == Key.Back || event.key == Key.Escape)) {
                     onBack()
                     true
                 } else {
                     false
                 }
             }
-            .width(if (isAndroidPlatform() && !showDetail) 400.dp else if (showDetail) 560.dp else 300.dp)
+            .width(if (useCurrentPlayerUi() && !showDetail) 400.dp else if (showDetail) 560.dp else 300.dp)
             .fillMaxHeight()
             .clip(RoundedCornerShape(topEnd = 22.dp, bottomEnd = 22.dp))
             .background(
-                if (transparentBackground && isAndroidPlatform()) {
+                if (transparentBackground && useCurrentPlayerUi()) {
                     androidx.compose.ui.graphics.Brush.horizontalGradient(
                         0f to MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
                         0.42f to MaterialTheme.colorScheme.surface.copy(alpha = 0.38f),
@@ -2893,7 +2893,7 @@ private fun ChannelTimelinePanel(
                 },
             )
             .then(
-                if (transparentBackground && !isAndroidPlatform()) {
+                if (transparentBackground && !useCurrentPlayerUi()) {
                     Modifier.border(
                         1.dp,
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
@@ -2953,7 +2953,7 @@ private fun ChannelTimelinePanel(
                                 }
                                 previousDate = date
                             }
-                            item(key = if (isAndroidPlatform()) "${programme.channelId}:${programme.start}:${programme.stop}" else "programme:$index") {
+                            item(key = if (useCurrentPlayerUi()) "${programme.channelId}:${programme.start}:${programme.stop}" else "programme:$index") {
                             val isCurrent = index == currentIndex
                             val isPast = programme.stop <= now
                             val isFuture = programme.start > now
@@ -2970,7 +2970,7 @@ private fun ChannelTimelinePanel(
                                 // shared gradient, so individual programme cards
                                 // stay transparent. Desktop keeps its existing card
                                 // surface.
-                                containerAlpha = if (isAndroidPlatform()) 0f else 0.72f,
+                                containerAlpha = if (useCurrentPlayerUi()) 0f else 0.72f,
                                 contentPadding = PaddingValues(
                                     horizontal = TVNextDimens.ItemSpacingSmall,
                                     vertical = 6.dp,
@@ -2984,7 +2984,7 @@ private fun ChannelTimelinePanel(
                                     )
                                     .onFocusChanged { if (it.isFocused) { focusedProgramme = programme; onProgrammeHighlighted(programme) } }
                                     .onPreviewKeyEvent { event ->
-                                        if (isAndroidPlatform() && event.type == KeyEventType.KeyDown && event.key == Key.Back) {
+                                        if (useCurrentPlayerUi() && event.type == KeyEventType.KeyDown && (event.key == Key.Back || event.key == Key.Escape)) {
                                             onBack()
                                             true
                                         } else false
@@ -3061,7 +3061,7 @@ private fun ChannelTimelinePanel(
                 }
                 detail.description?.takeIf { it.isNotBlank() }?.let { description ->
                     Spacer(modifier = Modifier.height(10.dp))
-                    if (isAndroidPlatform()) AutoScrollText(description, MaterialTheme.typography.bodyMedium, MaterialTheme.colorScheme.onSurface, 6)
+                    if (useCurrentPlayerUi()) AutoScrollText(description, MaterialTheme.typography.bodyMedium, MaterialTheme.colorScheme.onSurface, 6)
                     else TimelineOutlinedText(
                         text = description,
                         style = MaterialTheme.typography.bodyMedium,
@@ -3167,17 +3167,17 @@ private fun ChannelRow(
      */
     onHighlighted: (Boolean) -> Unit = {},
 ) {
-    if (isAndroidPlatform()) androidx.compose.runtime.SideEffect {
+    if (useCurrentPlayerUi()) androidx.compose.runtime.SideEffect {
         com.tvnext.app.core.common.log.AndroidPerformanceCounters.increment("compose.channelRows")
     }
 
     val parentalAccess by com.tvnext.app.core.iptv.domain.ParentalChannelGate.session.collectAsState()
-    val locked = isAndroidPlatform() && parentalAccess.restrictionsActive &&
+    val locked = useCurrentPlayerUi() && parentalAccess.restrictionsActive &&
         com.tvnext.app.core.iptv.domain.ParentalChannelGate.isRestricted(channel)
 
     // Rectangular list rows on Android TV (the panels are rectangular too);
     // desktop keeps the rounded card look.
-    val rowShape = if (isAndroidPlatform()) {
+    val rowShape = if (useCurrentPlayerUi()) {
         RoundedCornerShape(0.dp)
     } else {
         RoundedCornerShape(TVNextDimens.CardCornerRadius)
@@ -3203,7 +3203,7 @@ private fun ChannelRow(
     val rowScope = rememberCoroutineScope()
     val latestFavoriteToggle by rememberUpdatedState(onToggleFavorite)
     var channelButtonFocused by remember { mutableStateOf(false) }
-    val androidChannelRowModifier = if (isAndroidPlatform()) {
+    val androidChannelRowModifier = if (useCurrentPlayerUi()) {
         Modifier.onPreviewKeyEvent { event ->
             val isOk = event.key == Key.DirectionCenter || event.key == Key.Enter
             if (!isOk || !channelButtonFocused) return@onPreviewKeyEvent false
@@ -3248,7 +3248,7 @@ private fun ChannelRow(
     // panel around them. So the resting row background is fully transparent and
     // only the PANEL provides the translucency; selection/focus still show
     // (primary tint + focus border).
-    val rowAlpha = if (isAndroidPlatform()) 0f else 0.72f
+    val rowAlpha = if (useCurrentPlayerUi()) 0f else 0.72f
 
     Row(
         modifier = Modifier
@@ -3256,7 +3256,7 @@ private fun ChannelRow(
             .then(androidChannelRowModifier)
             // The category line was removed, so the programme title + progress
             // fit in a dense 70 dp row with only 3 dp vertical padding.
-            .height(if (isAndroidPlatform()) 70.dp else TVNextDimens.ChannelRowHeight),
+            .height(if (useCurrentPlayerUi()) 70.dp else TVNextDimens.ChannelRowHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TvCardButton(
@@ -3264,7 +3264,7 @@ private fun ChannelRow(
             selected = selected,
             shape = rowShape,
             containerAlpha = rowAlpha,
-            contentPadding = if (isAndroidPlatform()) PaddingValues(horizontal = 8.dp, vertical = 3.dp)
+            contentPadding = if (useCurrentPlayerUi()) PaddingValues(horizontal = 8.dp, vertical = 3.dp)
                 else PaddingValues(TVNextDimens.ScreenPaddingCompact),
             // Focus must be attached to the actual focusable button, not its
             // non-focusable Row wrapper. This is essential for Android TV D-pad
@@ -3274,7 +3274,7 @@ private fun ChannelRow(
                 .fillMaxHeight()
                 .onFocusChanged {
                     channelButtonFocused = it.isFocused
-                    if (isAndroidPlatform() && !it.isFocused) {
+                    if (useCurrentPlayerUi() && !it.isFocused) {
                         okTimer?.cancel()
                         okTimer = null
                         okDownHeld = false
@@ -3309,7 +3309,7 @@ private fun ChannelRow(
                             // star button on the right. Desktop retains the separate
                             // favorite control below.
                             text = (if (locked) "🔒 " else "") +
-                                if (isAndroidPlatform() && channel.isFavorite) "★ ${channel.name}" else channel.name,
+                                if (useCurrentPlayerUi() && channel.isFavorite) "★ ${channel.name}" else channel.name,
                             style = MaterialTheme.typography.titleMedium,
                             color = if (locked) {
                                 androidx.compose.ui.graphics.Color(0xFFFF6767)
@@ -3322,7 +3322,7 @@ private fun ChannelRow(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
                         )
-                        if (isAndroidPlatform() && androidHasArchive(channel)) {
+                        if (useCurrentPlayerUi() && androidHasArchive(channel)) {
                             ClockIcon(tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 4.dp).size(12.dp))
                         }
@@ -3367,13 +3367,13 @@ private fun ChannelRow(
             }
         }
 
-        if (onShowTimeline != null && !isAndroidPlatform()) {
+        if (onShowTimeline != null && !useCurrentPlayerUi()) {
             Spacer(modifier = Modifier.width(TVNextDimens.ItemSpacingSmall))
             TvCardButton(
                 onClick = onShowTimeline,
                 modifier = Modifier
                     // Narrower clock column on Android TV (no wide label inside).
-                    .width(if (isAndroidPlatform()) 36.dp else 48.dp)
+                    .width(if (useCurrentPlayerUi()) 36.dp else 48.dp)
                     .fillMaxHeight(),
                 shape = rowShape,
                 containerAlpha = rowAlpha,
@@ -3390,7 +3390,7 @@ private fun ChannelRow(
 
         // Android TV: favorite is toggled by long-pressing OK on the focused
         // channel. The separate star button is intentionally hidden there.
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             TvCardButton(
                 onClick = onToggleFavorite,
                 selected = channel.isFavorite,
@@ -3708,7 +3708,7 @@ private fun EpgInfoOverlay(
 ) {
     val shape = RoundedCornerShape(16.dp)
     val playerState by controller.state.collectAsState()
-    val shiftController = if (isAndroidPlatform()) controller as? TimeShiftController else null
+    val shiftController = if (useCurrentPlayerUi()) controller as? TimeShiftController else null
     val shift = shiftController?.timeShiftState?.collectAsState()?.value
     val clock = if (shiftController != null) rememberEpgTicker(1_000) else 0L
     Column(
@@ -3802,9 +3802,9 @@ private fun EpgInfoOverlay(
             Spacer(Modifier.height(8.dp))
             val archived = playerState.item?.kind == PlaybackContentKind.ARCHIVE
             val timestamp = if (archived) shift?.positionMs ?: clock else clock
-            Text(if (archived) uiText("АРХИВ • {0}", formatDateTime(timestamp)) else uiText("LIVE • ← отмотать назад"), color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
-            shift?.message?.let { Text(it, color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White) }
-            if (shift?.seeking == true) Text(uiText("Переход к выбранному времени…"), color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
+            Text(if (archived) uiText("АРХИВ • {0}", formatDateTime(timestamp)) else uiText("LIVE • ← отмотать назад"), color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White)
+            shift?.message?.let { Text(it, color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White) }
+            if (shift?.seeking == true) Text(uiText("Переход к выбранному времени…"), color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 TvSeekButton(direction = com.tvnext.app.core.ui.component.TvSeekDirection.BACKWARD, onSeek = { controller.seekBy(-seekStepMs) })
                 if (archived) {
@@ -3822,7 +3822,7 @@ private fun EpgInfoOverlay(
                     durationMs = clock - oldest,
                     onSeekTo = { shiftController.seekToTime(oldest + it) },
                 )
-                Text("${formatDateTime(oldest)} — LIVE", color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White)
+                Text("${formatDateTime(oldest)} — LIVE", color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White)
             }
         } else if (showSeekBar && playerState.durationMs > 0L && playerState.state != PlaybackState.IDLE) {
             Spacer(modifier = Modifier.height(TVNextDimens.ItemSpacingSmall))

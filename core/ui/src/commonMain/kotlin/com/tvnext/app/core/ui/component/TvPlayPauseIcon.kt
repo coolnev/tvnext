@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,13 +23,13 @@ fun TvPlayPauseIcon(
     paused: Boolean,
     modifier: Modifier = Modifier,
     circleSize: androidx.compose.ui.unit.Dp = 96.dp,
-    iconColor: Color = if (isAndroidPlatform()) MaterialTheme.colorScheme.onSurface else Color.White,
+    iconColor: Color = if (useCurrentPlayerUi()) MaterialTheme.colorScheme.onSurface else Color.White,
     backgroundAlpha: Float = 0.72f,
 ) {
     Box(
         modifier = modifier
             .size(circleSize)
-            .background((if (isAndroidPlatform()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = backgroundAlpha), CircleShape),
+            .background((if (useCurrentPlayerUi()) MaterialTheme.colorScheme.surface else Color.Black).copy(alpha = backgroundAlpha), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(circleSize * 0.48f)) {

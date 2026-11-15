@@ -2,7 +2,7 @@ package com.tvnext.app.core.ui.image
 
 import androidx.compose.ui.graphics.ImageBitmap
 import com.tvnext.app.core.common.util.currentTimeMillis
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.log.AndroidPerformanceCounters
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.CoroutineStart
@@ -61,7 +61,7 @@ class DefaultLogoImageLoader(
     private val diskDir = cacheDir.trimEnd('/')
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
-    private val memory = LruCache(maxMemoryEntries, if (isAndroidPlatform()) 24L * 1024 * 1024 else Long.MAX_VALUE)
+    private val memory = LruCache(maxMemoryEntries, if (useCurrentPlayerUi()) 24L * 1024 * 1024 else Long.MAX_VALUE)
     private val inFlight = HashMap<String, Deferred<ImageBitmap?>>()
     private val loadGate = Semaphore(maxConcurrentLoads)
     private val admissionGate = Semaphore(maxConcurrentLoads)
@@ -118,7 +118,7 @@ class DefaultLogoImageLoader(
 
     override suspend fun load(url: String): ImageBitmap? {
         if (url.isBlank()) return null
-        if (isAndroidPlatform()) return loadAndroid(url)
+        if (useCurrentPlayerUi()) return loadAndroid(url)
         mutex.withLock { memory.get(url) }?.let { return it }
 
         var task: Deferred<ImageBitmap?>?
@@ -213,7 +213,7 @@ class DefaultLogoImageLoader(
             while (map.size > maxEntries || bytes > maxBytes) {
                 map.remove(map.keys.first())?.let { bytes -= size(it) }
             }
-            if (isAndroidPlatform()) {
+            if (useCurrentPlayerUi()) {
                 AndroidPerformanceCounters.set("logo.entries", map.size.toLong())
                 AndroidPerformanceCounters.set("logo.bytes", bytes)
             }

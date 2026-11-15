@@ -138,7 +138,7 @@ fun HomeScreen(
             ContinueWatchingCard(
                 channel = channel,
                 now = now,
-                onClick = { component.dispatch(if (com.tvnext.app.core.common.platform.isAndroidPlatform()) HomeIntent.ContinueChannel else HomeIntent.ChannelClicked(channel.id)) },
+                onClick = { component.dispatch(if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) HomeIntent.ContinueChannel else HomeIntent.ChannelClicked(channel.id)) },
             )
         }
 
@@ -194,7 +194,7 @@ fun HomeScreen(
         state.content.continueWatchingVod?.let { vod ->
             ContinueWatchingVodCard(
                 vod = vod,
-                onClick = { component.dispatch(if (com.tvnext.app.core.common.platform.isAndroidPlatform()) HomeIntent.ContinueVod else HomeIntent.VodClicked(vod.id)) },
+                onClick = { component.dispatch(if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) HomeIntent.ContinueVod else HomeIntent.VodClicked(vod.id)) },
             )
         }
 

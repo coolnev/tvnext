@@ -2,7 +2,7 @@ package com.tvnext.app.feature.tvg.ui
 
 import com.tvnext.app.core.ui.i18n.uiText
 
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.util.rethrowAndroidCancellation
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
 import com.arkivanov.decompose.ComponentContext
@@ -175,7 +175,7 @@ class DefaultTvgComponent(
         initialState = TvgState(
             isLoading = true,
             selectedDayOffset = TvgDayOffsetHolder.offset.coerceIn(
-                if (isAndroidPlatform()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET),
+                if (useCurrentPlayerUi()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET),
         ),
         scope = componentContext.coroutineScope(mainContext),
     ) {
@@ -256,7 +256,7 @@ class DefaultTvgComponent(
                         programmesEpgVersion = version,
                     )
                 }
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     // A newly loaded feed may extend the oldest available day.
                     loadGrid(forceRefresh = false)
                 } else {
@@ -269,14 +269,14 @@ class DefaultTvgComponent(
 
     override fun reduce(state: TvgState, intent: TvgIntent): TvgState = when (intent) {
         TvgIntent.Activated -> state.copy(
-            selectedCategory = if (isAndroidPlatform()) null else state.selectedCategory,
-            filteredChannels = if (isAndroidPlatform()) state.channels else state.filteredChannels,
+            selectedCategory = if (useCurrentPlayerUi()) null else state.selectedCategory,
+            filteredChannels = if (useCurrentPlayerUi()) state.channels else state.filteredChannels,
             selectedDayOffset = guideDayOffsetAt(
             currentTimeMillis(), guidePlaybackTime(playbackController.state.value, currentTimeMillis()),
-            (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
+            (if (useCurrentPlayerUi()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
         is TvgIntent.TimelineCursorMoved -> state.copy(selectedDayOffset = guideDayOffsetAt(
             currentTimeMillis(), intent.timeMs,
-            (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
+            (if (useCurrentPlayerUi()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET))
         TvgIntent.Load -> state.copy(isLoading = true, error = null)
         TvgIntent.Refresh -> state.copy(isRefreshing = true, error = null)
         is TvgIntent.CategorySelected -> state.copy(
@@ -289,11 +289,11 @@ class DefaultTvgComponent(
         )
         is TvgIntent.DayDelta -> state.copy(
             selectedDayOffset = (state.selectedDayOffset + intent.delta).coerceIn(
-                (if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET),
+                (if (useCurrentPlayerUi()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET),
             message = null,
         )
         is TvgIntent.DaySet -> state.copy(
-            selectedDayOffset = intent.offset.coerceIn((if (isAndroidPlatform()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET),
+            selectedDayOffset = intent.offset.coerceIn((if (useCurrentPlayerUi()) state.minArchiveDayOffset else DESKTOP_MIN_DAY_OFFSET).coerceIn(MIN_DAY_OFFSET, 0), MAX_DAY_OFFSET),
             message = null,
         )
         is TvgIntent.ChannelClicked -> state
@@ -419,7 +419,7 @@ class DefaultTvgComponent(
     /** Keeps the selected day across tab switches (in-memory, process-lifetime). */
     private fun persistDayOffset(offset: Int) {
         TvgDayOffsetHolder.offset = offset.coerceIn(
-            if (isAndroidPlatform()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET)
+            if (useCurrentPlayerUi()) MIN_DAY_OFFSET else DESKTOP_MIN_DAY_OFFSET, MAX_DAY_OFFSET)
     }
 
 
@@ -544,7 +544,7 @@ class DefaultTvgComponent(
                 // Use only REAL cached EPG history; the user setting narrows the
                 // archive, and provider-declared catchup-days narrows it when
                 // automatic depth is selected. No past programmes are invented.
-                val oldestOffset = if (isAndroidPlatform()) {
+                val oldestOffset = if (useCurrentPlayerUi()) {
                     val availableRange = epgRepository.getAvailableProgrammeRange(channels)
                     val userDays = runCatching { archiveRepository.userArchiveLimitDays() }
                         .getOrDefault(0).coerceAtLeast(0)
@@ -565,7 +565,7 @@ class DefaultTvgComponent(
                 val offset = state.value.selectedDayOffset.coerceIn(oldestOffset, MAX_DAY_OFFSET)
                 if (offset != state.value.selectedDayOffset) persistDayOffset(offset)
                 val from = startOfLocalDayOffset(now, offset)
-                val to = if (isAndroidPlatform()) startOfLocalDayOffset(now, offset + 1) else from + DAY_MS
+                val to = if (useCurrentPlayerUi()) startOfLocalDayOffset(now, offset + 1) else from + DAY_MS
                 // Android TV: paint the guide shell immediately and let the
                 // LazyColumn viewport request only the rows actually visible.
                 // The old 24-channel warm-up still queried a full day of EPG
@@ -574,7 +574,7 @@ class DefaultTvgComponent(
                 // through an empty list.
                 val currentEpgVersion = readEpgVersion()
                 val warmRows = initialGuideRows(allChannels)
-                val programmes = if (com.tvnext.app.core.common.platform.isAndroidPlatform()) {
+                val programmes = if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
                     // Android TV: paint the guide shell fast, but STILL warm the
                     // first rows immediately — the viewport loader alone left the
                     // guide blank on some devices (its snapshotFlow/delay never
@@ -593,14 +593,14 @@ class DefaultTvgComponent(
                 // large seven-day programme projection. The repository keeps EPG
                 // in memory, so this is cheap once the cache is warm.
                 val currentProgrammes = if (state.value.selectedDayOffset == 0) {
-                    runCatching { epgRepository.getNowPlaying(if (isAndroidPlatform()) warmRows else allChannels, currentTimeMillis()) }
+                    runCatching { epgRepository.getNowPlaying(if (useCurrentPlayerUi()) warmRows else allChannels, currentTimeMillis()) }
                         .getOrDefault(emptyMap())
                 } else {
                     emptyMap()
                 }
 
                 if (revision != gridRevision) return@launch
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     androidRowVersions.clear()
                     programmes.keys.forEach { androidRowVersions[it] = currentEpgVersion }
                 }
@@ -687,7 +687,7 @@ class DefaultTvgComponent(
             .filter { channel ->
                 channel.id in channelIds && (
                     forceReload ||
-                        (isAndroidPlatform() && androidRowVersions[channel.id] != epgVersion) ||
+                        (useCurrentPlayerUi() && androidRowVersions[channel.id] != epgVersion) ||
                         snapshot.programmesEpgVersion != epgVersion ||
                         !snapshot.programmes.containsKey(channel.id) ||
                         snapshot.programmes[channel.id].isNullOrEmpty()
@@ -710,8 +710,8 @@ class DefaultTvgComponent(
                     val loaded = epgRepository.getProgrammesInRange(visible, snapshot.from, snapshot.to)
                     val current = state.value
                     if (revision != gridRevision || current.from != snapshot.from || current.to != snapshot.to ||
-                        (isAndroidPlatform() && current.programmesEpgVersion != epgVersion)) return@runCatching
-                    if (isAndroidPlatform()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
+                        (useCurrentPlayerUi() && current.programmesEpgVersion != epgVersion)) return@runCatching
+                    if (useCurrentPlayerUi()) loaded.keys.forEach { androidRowVersions[it] = epgVersion }
                     setState { latest ->
                         val merged = latest.programmes.toMutableMap()
                         val currentMerged = latest.currentProgrammes.toMutableMap()
@@ -803,7 +803,7 @@ class DefaultTvgComponent(
     }
 
     private fun openChannel(channelId: String) {
-        if (isAndroidPlatform()) playbackRequestJob?.cancel()
+        if (useCurrentPlayerUi()) playbackRequestJob?.cancel()
         val channel = state.value.channels.firstOrNull { it.id == channelId } ?: return
         if (!com.tvnext.app.core.iptv.domain.ParentalChannelGate.request(channel) {
                 openChannel(channelId)
@@ -822,9 +822,9 @@ class DefaultTvgComponent(
     private var playbackRequestJob: kotlinx.coroutines.Job? = null
 
     private fun launchPlayback(block: suspend kotlinx.coroutines.CoroutineScope.() -> Unit) {
-        if (isAndroidPlatform()) playbackRequestJob?.cancel()
+        if (useCurrentPlayerUi()) playbackRequestJob?.cancel()
         val job = launch(block)
-        if (isAndroidPlatform()) playbackRequestJob = job
+        if (useCurrentPlayerUi()) playbackRequestJob = job
     }
 
     private fun playArchive(channelId: String, programmeStart: Long) {
@@ -844,7 +844,7 @@ class DefaultTvgComponent(
                 setState { it.copy(message = uiText("Архив передачи недоступен.")) }
                 return@launchPlayback
             }
-            val archiveEnd = if (isAndroidPlatform()) minOf(programme.stop, currentTimeMillis()) else programme.stop
+            val archiveEnd = if (useCurrentPlayerUi()) minOf(programme.stop, currentTimeMillis()) else programme.stop
             val url = archiveRepository.buildArchiveUrl(channel, programme.start, archiveEnd)
             if (url == null) {
                 Logger.d(TAG, "No archive URL for ${channel.name}")

@@ -13,6 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
@@ -104,7 +106,7 @@ private val logoKoinModule = module {
         val client: HttpClient = get()
         DefaultLogoImageLoader(
             fetcher = LogoFetcher { url -> fetchLogo(client, url) },
-            cacheDir = File(System.getProperty("user.home"), ".tvnext/cache/logos").absolutePath,
+            cacheDir = File(com.tvnext.app.core.common.platform.DesktopAppPaths.dataDirectory,"cache/logos").absolutePath,
         )
     }
 }
@@ -124,34 +126,7 @@ private suspend fun fetchLogo(client: HttpClient, url: String): ByteArray? = run
 private val DEBUG_ENABLED: Boolean =
     System.getProperty("tvnext.player.debug") == "true"
 
-fun main() {
-    // Wipe the data directory if a previous «Сбросить все данные» left a
-    // pending marker. Must run BEFORE the database and caches are opened.
-    DesktopAppDataReset().handlePendingReset()
-
-    // Keep the system awake while TVNext runs: the screensaver is disabled
-    // and the system cannot fall asleep / turn the display off. A shutdown
-    // hook restores the user's previous OS settings when the app exits.
-    KeepAwake.start()
-    Runtime.getRuntime().addShutdownHook(Thread { KeepAwake.stop() })
-
-    application {
-    // Enable interop blending so Compose overlays (channel name, error,    // controls) keep rendering above the native HWND video surface used by the
-    // hardware decode path. Must be set before the first Compose scene is
-    // created. (Note: Compose content cannot be drawn ABOVE a D3D11 video
-    // surface, so in hardware mode overlays live in the bar above the video;
-    // blending still matters for GDI-based interop surfaces.)
-    System.setProperty("compose.interop.blending", "true")
-    // Render Compose through OpenGL instead of DirectX. This is REQUIRED for
-    // the hardware video path to render at all: with a DirectX Compose window
-    // the D3D11 video surface (libVLC direct3d11 vout) ends up in a
-    // DirectX-on-DirectX composition conflict and the video area goes blank.
-    // With OpenGL the OS compositor mixes Compose (OpenGL) above/below the
-    // D3D11 video correctly.
-    System.setProperty("skiko.renderApi", "OPENGL")
-
-    val koin = remember {
-        startKoin {
+internal fun startDesktopDependencies() = startKoin {
             modules(
                 commonKoinModule,
                 appKoinModule,
@@ -171,15 +146,41 @@ fun main() {
                 tvgKoinModule,
                 searchKoinModule,
                 logoKoinModule,
+                desktopProfileModule,
             )
         }.koin
-    }
+
+fun main() {
+    com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value=System.getProperty("tvnext.bootstrap")!="false"
+    // Wipe the data directory if a previous «Сбросить все данные» left a
+    // pending marker. Must run BEFORE the database and caches are opened.
+    DesktopAppDataReset().handlePendingReset()
+
+    // Keep the system awake while TVNext runs: the screensaver is disabled
+    // and the system cannot fall asleep / turn the display off. A shutdown
+    // hook restores the user's previous OS settings when the app exits.
+    KeepAwake.start()
+    Runtime.getRuntime().addShutdownHook(Thread { KeepAwake.stop() })
+
+    application {
+    // Enable interop blending so Compose overlays (channel name, error,    // controls) keep rendering above the native HWND video surface used by the
+    // hardware decode path. Must be set before the first Compose scene is
+    // created. (Note: Compose content cannot be drawn ABOVE a D3D11 video
+    // surface, so in hardware mode overlays live in the bar above the video;
+    // blending still matters for GDI-based interop surfaces.)
+    System.setProperty("compose.interop.blending", "true")
+    // mpv publishes ordinary Compose images; let Skiko select the supported GPU backend.
+    // An explicit skiko.renderApi remains available for diagnostics.
+
+    val koin = remember {startDesktopDependencies()}
 
     // First-run convenience: seed the user's playlists and TMDB key when the
     // library is empty (existing data is never touched).
     val demoScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
     DisposableEffect(Unit) {
         demoScope.launch {
+            try {
+            if(System.getProperty("tvnext.bootstrap")=="false")return@launch
             runCatching {
                 val playlistRepository = koin.get<PlaylistRepository>()
                 // Seed the user's sources by URL: each missing playlist is added
@@ -209,8 +210,9 @@ fun main() {
                     tmdbSettings.setApiKey("698bff9ae128f80d8e6bff80ae075549")
                 }
             }
+            }finally {com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value=false}
         }
-        onDispose { demoScope.cancel() }
+        onDispose {demoScope.cancel();com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value=false}
     }
 
     val lifecycle = remember { LifecycleRegistry() }
@@ -236,9 +238,16 @@ fun main() {
     val settingsScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
     DisposableEffect(Unit) {
         val job = settingsScope.launch {
+            var epgKey:Pair<Boolean,String>?=null
             settingsRepository.observe().collect { settings ->
+                val nextEpg=settings.epgEnabled to settings.epgUrl
+                if(epgKey!=nextEpg) {
+                    epgKey=nextEpg
+                    (koin.get<com.tvnext.app.core.iptv.data.EpgRepository>() as? com.tvnext.app.core.iptv.data.DesktopEpgRepository)?.configurationChanged()
+                }
                 desktopController?.updateDecodeMode(settings.videoDecodeMode)
                 desktopController?.updateNetworkCachingMs(settings.networkCachingMs.toLong())
+                (desktopController as? MpvPlaybackController)?.updateAudioOutputMode(settings.audioOutputMode)
             }
         }
         onDispose {
@@ -258,6 +267,8 @@ fun main() {
         lifecycle.create()
         lifecycle.resume()
         onDispose {
+            koin.getOrNull<DesktopServices>()?.close()
+            koin.getOrNull<PlaybackController>()?.release()
             lifecycle.destroy()
         }
     }
@@ -343,6 +354,7 @@ fun main() {
                 }
             }
             AppContent(
+                hostWindow = window,
                 rootComponent = rootComponent,
                 onToggleFullscreen = { toggleFullscreen() },
                 isFullscreen = false,
@@ -377,18 +389,20 @@ private const val VOD_PLAYLIST_URL = "https://m.cdntv.online/f/9y6xwink2s/playli
 private fun initialWindowSize(
     resolution: WindowResolution,
 ): Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> {
-    val toolkit = java.awt.Toolkit.getDefaultToolkit()
-    val screen = toolkit.screenSize
-    // Windows DPI scale: 96 = 100 %, 120 = 125 %, 144 = 150 %, 192 = 200 %.
-    val density = (toolkit.screenResolution / 96f).coerceAtLeast(1f)
-    val (widthPx, heightPx) = when (resolution) {
-        WindowResolution.AUTO -> (screen.width * 0.92).toInt() to (screen.height * 0.92).toInt()
-        WindowResolution.HD -> 1280 to 720
-        WindowResolution.FULL_HD -> 1920 to 1080
-        // Real 4K UHD; never larger than the monitor itself.
-        WindowResolution.UHD_4K -> minOf(3840, screen.width) to minOf(2160, screen.height)
+    val configuration=GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
+    val insets=java.awt.Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+    val maximumWidth=(configuration.bounds.width-insets.left-insets.right).coerceAtLeast(320)
+    val maximumHeight=(configuration.bounds.height-insets.top-insets.bottom).coerceAtLeast(240)
+    val scaleX=configuration.defaultTransform.scaleX.coerceAtLeast(1.0)
+    val scaleY=configuration.defaultTransform.scaleY.coerceAtLeast(1.0)
+    val size=when(resolution) {
+        WindowResolution.AUTO->maximumWidth*.92 to maximumHeight*.92
+        WindowResolution.HD->1280.0/scaleX to 720.0/scaleY
+        WindowResolution.FULL_HD->1920.0/scaleX to 1080.0/scaleY
+        WindowResolution.UHD_4K->3840.0/scaleX to 2160.0/scaleY
     }
-    return (widthPx / density).dp to (heightPx / density).dp
+    return size.first.coerceAtMost(maximumWidth.toDouble()).toFloat().dp to
+        size.second.coerceAtMost(maximumHeight.toDouble()).toFloat().dp
 }
 
 @Composable
@@ -426,6 +440,7 @@ private fun FullscreenWindow(
             window.requestFocus()
         }
         AppContent(
+            hostWindow = window,
             rootComponent = rootComponent,
             onToggleFullscreen = onExitFullscreen,
             isFullscreen = true,
@@ -442,6 +457,7 @@ private fun FullscreenWindow(
 
 @Composable
 private fun AppContent(
+    hostWindow: java.awt.Window,
     rootComponent: DefaultAppComponent,
     onToggleFullscreen: () -> Unit,
     isFullscreen: Boolean,
@@ -454,6 +470,8 @@ private fun AppContent(
     logoLoader: LogoImageLoader?,
 ) {
     val focusManager = LocalFocusManager.current
+    val keyboardRoot = remember { FocusRequester() }
+    LaunchedEffect(Unit) { keyboardRoot.requestFocus() }
 
     // The key-event dispatcher below is registered once (DisposableEffect key =
     // Unit) and its closures capture values at creation time. `rememberUpdatedState`
@@ -463,9 +481,8 @@ private fun AppContent(
 
     LaunchedEffect(Unit) {
         if (!startFullscreenApplied) {
-            val loaded = rootComponent.settings
-                .filter { it != AppSettings() }
-                .firstOrNull()
+            val loaded = kotlinx.coroutines.withContext(Dispatchers.IO) { org.koin.core.context.GlobalContext.get().get<SettingsRepository>().load() }
+            onStartFullscreenApplied()
             if (loaded?.startFullscreen == true) {
                 onStartFullscreenApplied()
                 onToggleFullscreen()
@@ -477,42 +494,6 @@ private fun AppContent(
         val dispatcher = KeyEventDispatcher { event ->
             when {
                 event.id == KeyEvent.KEY_PRESSED && event.keyCode == KeyEvent.VK_F11 -> {
-                    onToggleFullscreen()
-                    true
-                }
-
-                event.id == KeyEvent.KEY_PRESSED &&
-                    (
-                        event.keyCode == KeyEvent.VK_I ||
-                            event.keyChar == 'i' ||
-                            event.keyChar == 'I' ||
-                            event.keyChar == 'ш' ||
-                            event.keyChar == 'Ш'
-                        )
-                -> {
-                    if (DEBUG_ENABLED) println("[TVNext] diagnostics toggle via I")
-                    onToggleDiagnostics()
-                    true
-                }
-
-                // L toggles immersive mode. In the normal window the Channels/
-                // Media screens handle L themselves (they know when the search
-                // field has focus); in the FULLSCREEN window the key is handled
-                // globally because the screen-local key handling may not get
-                // focus (undecorated window).
-                event.id == KeyEvent.KEY_PRESSED &&
-                    event.keyCode == KeyEvent.VK_L &&
-                    isFullscreen
-                -> {
-                    if (DEBUG_ENABLED) println("[TVNext] immersive toggle via L")
-                    onImmersiveChange(!currentImmersive)
-                    true
-                }
-
-                event.id == KeyEvent.KEY_PRESSED &&
-                    event.keyCode == KeyEvent.VK_ESCAPE &&
-                    isFullscreen
-                -> {
                     onToggleFullscreen()
                     true
                 }
@@ -532,35 +513,22 @@ private fun AppContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .focusable()
+                .focusRequester(keyboardRoot)
                 // onKeyEvent (bottom-up) instead of onPreviewKeyEvent: a focused
                 // text field (search) must be able to consume Escape first to
                 // clear its text and release focus.
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                        if (isFullscreen) {
-                            onToggleFullscreen()
-                        } else {
-                            focusManager.clearFocus()
-                        }
+                        rootComponent.handleBack()
                         true
                     } else {
                         false
                     }
-                },
+                }
+                .focusable(),
         ) {
-            AppShell(
-                component = rootComponent,
-                onToggleFullscreen = onToggleFullscreen,
-                // `immersive` is the user's L-toggle (video chrome); the app
-                // chrome (top bar/sidebar/footer) is hidden whenever the
-                // fullscreen window is active (AppShell computes it).
-                immersive = immersive,
-                isFullscreen = isFullscreen,
-                onImmersiveChange = onImmersiveChange,
-                showDiagnostics = showDiagnostics,
-                onToggleDiagnostics = onToggleDiagnostics,
-            )
+            DesktopExperience(hostWindow,rootComponent,onToggleFullscreen,isFullscreen,immersive,onImmersiveChange,
+                showDiagnostics,onToggleDiagnostics)
         }
     }
 }

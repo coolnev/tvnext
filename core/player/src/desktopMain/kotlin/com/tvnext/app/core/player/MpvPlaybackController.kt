@@ -1,5 +1,7 @@
 package com.tvnext.app.core.player
 
+import kotlinx.coroutines.sync.withLock
+
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import com.sun.jna.Memory
@@ -46,10 +48,31 @@ import org.jetbrains.skia.ImageInfo
  */
 class MpvPlaybackController(
     private val clock: () -> Long = { currentTimeMillis() },
-) : PlaybackController, DesktopVideoSurface, PlaybackSettingsSink {
+    private val channelsRepository: com.tvnext.app.core.iptv.data.ChannelsRepository? = null,
+    private val archiveRepository: com.tvnext.app.core.iptv.archive.ArchiveRepository? = null,
+) : PlaybackController, DesktopVideoSurface, PlaybackSettingsSink, TimeShiftController {
 
     private val _state = MutableStateFlow(PlayerState())
     override val state: StateFlow<PlayerState> = _state.asStateFlow()
+    private val _videoSignal=MutableStateFlow<VideoFrameSignal?>(null)
+    val videoSignal:StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
+    @Volatile private var audioOutputMode=AudioOutputMode.AUTO
+    @Volatile private var aspectMode=VideoAspectMode.AUTO
+    fun updateAudioOutputMode(mode:AudioOutputMode) {
+        audioOutputMode=mode
+        mpv?.let {applyOutputPreferences(Mpv.load(),it)}
+    }
+    fun updateAspect(mode:VideoAspectMode) {
+        aspectMode=mode
+        mpv?.let {applyOutputPreferences(Mpv.load(),it)}
+    }
+    private fun applyOutputPreferences(api:Mpv,ctx:Pointer) {
+        api.mpv_set_property_string(ctx,"audio-channels",if(audioOutputMode==AudioOutputMode.PCM_STEREO)"stereo" else "auto-safe")
+        api.mpv_set_property_string(ctx,"audio-spdif",if(audioOutputMode==AudioOutputMode.PASSTHROUGH)"ac3,eac3,dts,dts-hd,truehd" else "")
+        api.mpv_set_property_string(ctx,"video-aspect-override",aspectMode.fixedRatio?.toString() ?: "-1")
+        api.mpv_set_property_string(ctx,"keepaspect",if(aspectMode==VideoAspectMode.STRETCH)"no" else "yes")
+        api.mpv_set_property_string(ctx,"panscan",if(aspectMode==VideoAspectMode.ZOOM)"1" else "0")
+    }
 
     private val _decodeMode = MutableStateFlow(VideoDecodeMode.AUTO)
     val decodeMode: StateFlow<VideoDecodeMode> = _decodeMode.asStateFlow()
@@ -110,15 +133,27 @@ class MpvPlaybackController(
     @Volatile
     private var surfaceHeight = 720
 
+    @Volatile private var eventAlive=false
+    @Volatile private var sourceReady=false
+    @Volatile private var nativeLoadGeneration=-1
+    @Volatile private var eventSourceGeneration=-1
+    @Volatile private var eventPlaylistEntry=Long.MIN_VALUE
     private var eventThread: Thread? = null
     private var renderThread: Thread? = null
 
     private val renderMonitor = Object()
     private var renderPending = false
-    private var renderAlive = false
+    @Volatile private var renderAlive = false
 
+    private val loadMutex=kotlinx.coroutines.sync.Mutex()
     private val watcherScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var watcherJob: Job? = null
+    private val timeShift=if(channelsRepository!=null && archiveRepository!=null)
+        BroadcastTimeShiftSession(channelsRepository,archiveRepository,watcherScope,{_state.value},::play,::seekLocal,::pause) else null
+    override val timeShiftState:StateFlow<TimeShiftState> = timeShift?.state ?: MutableStateFlow(TimeShiftState())
+    override fun seekToTime(epochMs:Long){timeShift?.seekTo(epochMs)}
+    override fun returnToLive(){seekToTime(currentTimeMillis())}
+    @Volatile private var networkCachingMs=8_000L
 
     private val debugEnabled: Boolean =
         System.getProperty("tvnext.player.debug")?.toBoolean() == true
@@ -137,42 +172,53 @@ class MpvPlaybackController(
     // ---- PlaybackController API -------------------------------------------------
 
     override fun play(item: PlaybackItem) {
+        AndroidPlaybackSession.record(_state.value)
+        sourceReady=false;eventSourceGeneration=-1
+        if(timeShift?.opening!=true)timeShift?.cancel()
+        _videoSignal.value=null
+        _frames.value=null
         val gen = generation + 1
         generation = gen
         currentItem = item
+        resumeAfterMs=0L
         isSeeking = false
         lastPositionMs = -1L
         _state.update {
             it.copy(
                 state = PlaybackState.LOADING,
                 item = item,
+                positionMs=0L,durationMs=0L,
                 error = null,
                 hardwareDecode = false,
                 diagnostics = null,
             )
         }
         watcherScope.launch {
-            if (gen != generation) return@launch
-            loadFile(item, gen)
+            loadMutex.withLock {
+                if (gen == generation) loadFile(item, gen)
+            }
         }
         startWatcher(gen)
+        timeShift?.itemOpened(item)
     }
 
     override fun pause() {
         mpv?.let { ctx ->
-            runCatching { Mpv.load().mpv_set_property_flag(ctx, "pause", true) }
+            runCatching { Mpv.load().mpv_set_property_string(ctx, "pause", "yes") }
         }
         _state.update { it.copy(state = PlaybackState.PAUSED) }
     }
 
     override fun resume() {
         mpv?.let { ctx ->
-            runCatching { Mpv.load().mpv_set_property_flag(ctx, "pause", false) }
+            runCatching { Mpv.load().mpv_set_property_string(ctx, "pause", "no") }
         }
         _state.update { it.copy(state = PlaybackState.PLAYING) }
     }
 
     override fun stop() {
+        timeShift?.cancel()
+        sourceReady=false;eventSourceGeneration=-1
         generation++
         currentItem = null
         watcherJob?.cancel()
@@ -183,26 +229,25 @@ class MpvPlaybackController(
             runCatching { Mpv.load().mpv_command(ctx, arrayOf("stop")) }
         }
         _frames.value = null
-        _state.update { PlayerState(state = PlaybackState.IDLE, positionMs = 0L, hardwareDecode = false) }
+        _state.update {PlayerState(state=PlaybackState.IDLE,volume=it.volume,isMuted=it.isMuted)}
     }
 
-    override fun seekTo(positionMs: Long) {
-        val ctx = mpv ?: return
-        val api = Mpv.load()
-        isSeeking = true
-        lastPositionMs = -1L
-        lastPositionMoveNanos = 0L
-        if (debugEnabled) {
-            println("[TVNext] mpv seekTo($positionMs) before=${_state.value.positionMs}")
-        }
-        runCatching {
-            api.mpv_set_property_string(ctx, "time-pos", (positionMs / 1000.0).toString())
-        }
+    override fun seekTo(positionMs:Long) {
+        val item=_state.value.item
+        val anchor=item?.archiveEpgAnchorMs
+        if(timeShift!=null && item?.kind==PlaybackContentKind.ARCHIVE && anchor!=null)seekToTime(anchor+positionMs)
+        else seekLocal(positionMs)
     }
-
-    override fun seekBy(deltaMs: Long) {
-        val actual = positionFromMpv() ?: _state.value.positionMs
-        seekTo((actual + deltaMs).coerceAtLeast(0L))
+    private fun seekLocal(positionMs:Long):Boolean {
+        val ctx=mpv ?: return false
+        isSeeking=true;lastPositionMs=-1L;lastPositionMoveNanos=0L
+        return runCatching {Mpv.load().mpv_set_property_string(ctx,"time-pos",(positionMs.coerceAtLeast(0)/1000.0).toString())>=0}.getOrDefault(false)
+    }
+    override fun seekBy(deltaMs:Long) {
+        val actual=positionFromMpv() ?: _state.value.positionMs
+        if(timeShift!=null && _state.value.item?.kind!=PlaybackContentKind.VOD) {
+            _state.update {it.copy(positionMs=actual)};timeShift.seekBy(deltaMs)
+        }else seekLocal((actual+deltaMs).coerceAtLeast(0))
     }
 
     override fun setVolume(volume: Float) {
@@ -223,6 +268,7 @@ class MpvPlaybackController(
     }
 
     override fun release() {
+        timeShift?.cancel()
         generation++
         currentItem = null
         watcherJob?.cancel()
@@ -234,6 +280,7 @@ class MpvPlaybackController(
         stopEventThread()
         renderContext?.let { rc -> runCatching { Mpv.load().mpv_render_context_free(rc) } }
         renderContext = null
+        frameStorage?.close();frameStorage=null
         mpv?.let { ctx -> runCatching { Mpv.load().mpv_terminate_destroy(ctx) } }
         mpv = null
     }
@@ -260,19 +307,30 @@ class MpvPlaybackController(
                 return
             }
             mpv = created
-            // Render context FIRST (per the mpv render-API docs: create before
-            // setting options/initializing), then options + initialize.
-            createRenderContext(api, created)
-            configure(api, created, item)
+            // libmpv requires an initialized client before a render context exists.
+            try {
+                configure(api, created, item)
+                createRenderContext(api, created)
+            } catch(error:Exception) {
+                api.mpv_terminate_destroy(created);mpv=null
+                _state.update {it.copy(state=PlaybackState.ERROR,error=error.message ?: "libmpv init failed")}
+                return
+            }
             created
         }
         applyHwdec(api, ctx, item)
+        applyOutputPreferences(api,ctx)
+        api.mpv_set_property_string(ctx,"keep-open",if(item.kind==PlaybackContentKind.LIVE)"yes" else "no")
+        api.mpv_set_property_string(ctx,"demuxer-readahead-secs",if(item.kind==PlaybackContentKind.VOD)"45" else (networkCachingMs/1000.0).toString())
         // VOD HLS: route the stream through a local prefetch proxy so segments
         // are downloaded with several parallel connections (the m.cdntv.online
         // CDN throttles a single connection to ~1 Mbit/s — far below the movie
         // bitrate — which made every VOD stutter every few seconds).
+        if(gen!=generation)return
         val playUrl = resolvePlaybackUrl(item)
+        if(gen!=generation)return
         if (debugEnabled) println("[TVNext] mpv loadfile ${item.kind} ${playUrl.take(80)}")
+        nativeLoadGeneration=gen
         val rc = api.mpv_command(ctx, arrayOf("loadfile", playUrl))
         if (rc < 0) {
             _state.update {
@@ -296,9 +354,10 @@ class MpvPlaybackController(
         prefetchServer = null
         prefetchLocalUrl = null
         val isVodHls = item.kind == PlaybackContentKind.VOD &&
+            (item.url.startsWith("http://",true) || item.url.startsWith("https://",true)) &&
             item.url.substringBefore('?').endsWith(".m3u8", ignoreCase = true)
-        println("[TVNext] resolvePlaybackUrl kind=${item.kind} url=${item.url.take(100)} isVodHls=$isVodHls")
-        if (!isVodHls) return item.url
+        if (!isVodHls) return if(item.url.startsWith("file:",true))
+            runCatching {java.io.File(java.net.URI(item.url)).absolutePath}.getOrDefault(item.url) else item.url
         return try {
             val server = HlsPrefetchServer(remotePlaylistUrl = item.url)
             // start() is a suspend call that downloads + parses the playlist;
@@ -330,7 +389,7 @@ class MpvPlaybackController(
             // `demuxer-readahead-secs` the demuxer stops early and re-fetches
             // on every stutter — for slow HLS VOD providers this causes the
             // «plays 3-5s → freezes» pattern.
-            "demuxer-readahead-secs" to if (isVod) "45" else "30",
+            "demuxer-readahead-secs" to if (isVod) "45" else (networkCachingMs/1000.0).toString(),
             "demuxer-max-bytes" to (128L * 1024 * 1024).toString(),
             "demuxer-max-back-bytes" to (16L * 1024 * 1024).toString(),
             // Network socket timeout: the default 10s aborts slow-but-alive
@@ -341,14 +400,14 @@ class MpvPlaybackController(
             // out a throttled source; LIVE keeps a smaller window (lower
             // channel-switch latency, less end-of-buffer risk on live edges).
             "cache-secs" to if (isVod) "60" else "30",
-            "cache-default" to (if (isVod) 128L else 64L * 1024 * 1024).toString(),
             "keep-open" to if (item.kind == PlaybackContentKind.LIVE) "yes" else "no",
             "terminal" to "no",
+            "ao" to (System.getProperty("tvnext.mpv.audioOutput") ?: "auto"),
             "audio-client-name" to "TVNext",
             // Render API is used instead of a video window (see class doc):
             // frames are delivered to Compose via the SW renderer.
             "vo" to "libmpv",
-            "hwdec" to if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto",
+            "hwdec" to if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto-copy",
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
         )
         opts.forEach { (name, value) ->
@@ -358,9 +417,7 @@ class MpvPlaybackController(
         val initRc = api.mpv_initialize(ctx)
         if (debugEnabled) println("[TVNext] mpv_initialize rc=$initRc api=${api.mpv_client_api_version()}")
         if (initRc < 0) {
-            _state.update {
-                it.copy(state = PlaybackState.ERROR, error = "libmpv init failed (${mpvErrorMessage(api, initRc)})")
-            }
+            throw IllegalStateException("libmpv init failed (${mpvErrorMessage(api, initRc)})")
         }
     }
 
@@ -380,8 +437,7 @@ class MpvPlaybackController(
         val res = PointerByReference()
         val rc = runCatching { api.mpv_render_context_create(res, ctx, params) }.getOrDefault(-1)
         if (rc < 0 || res.value == Pointer.NULL) {
-            if (debugEnabled) println("[TVNext] mpv render context create failed rc=$rc (${mpvErrorMessage(api, rc)})")
-            return
+            throw IllegalStateException("libmpv render context failed (${mpvErrorMessage(api,rc)})")
         }
         renderContext = res.value
         runCatching { api.mpv_render_context_set_update_callback(res.value, updateCallback, null) }
@@ -389,7 +445,7 @@ class MpvPlaybackController(
     }
 
     private fun applyHwdec(api: Mpv, ctx: Pointer, item: PlaybackItem) {
-        val hwdec = if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto"
+        val hwdec = if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto-copy"
         runCatching { api.mpv_set_property_string(ctx, "hwdec", hwdec) }
     }
 
@@ -468,50 +524,54 @@ class MpvPlaybackController(
         }.apply { isDaemon = true; name = "mpv-render"; start() }
     }
 
+    private class FrameStorage(val width:Int,val height:Int):AutoCloseable {
+        val stride=width*4
+        val pixels=ByteArray(stride*height)
+        val buffer=Memory(pixels.size.toLong())
+        private val dimensions=Memory(8).apply {setInt(0,width);setInt(4,height)}
+        private val format=Memory(5).apply {setString(0,"bgr0")}
+        private val rowBytes=Memory(com.sun.jna.Native.SIZE_T_SIZE.toLong()).apply {
+            if(com.sun.jna.Native.SIZE_T_SIZE==8)setLong(0,stride.toLong()) else setInt(0,stride)
+        }
+        val params=Memory(80).apply {
+            clear()
+            setInt(0,Mpv.MPV_RENDER_PARAM_SW_SIZE);setPointer(8,dimensions)
+            setInt(16,Mpv.MPV_RENDER_PARAM_SW_FORMAT);setPointer(24,format)
+            setInt(32,Mpv.MPV_RENDER_PARAM_SW_STRIDE);setPointer(40,rowBytes)
+            setInt(48,Mpv.MPV_RENDER_PARAM_SW_POINTER);setPointer(56,buffer)
+            setInt(64,Mpv.MPV_RENDER_PARAM_INVALID)
+        }
+        override fun close(){params.close();buffer.close();rowBytes.close();format.close();dimensions.close()}
+    }
+    private var frameStorage:FrameStorage?=null
+
     private fun renderFrame(api: Mpv) {
+        if(!sourceReady)return
         val rctx = renderContext ?: return
-        val w = surfaceWidth.coerceIn(1, 8192)
-        val h = surfaceHeight.coerceIn(1, 8192)
+        val source=_videoSignal.value
+        val scale=if(source!=null && source.width>0 && source.height>0)
+            maxOf(source.width.toDouble()/surfaceWidth,source.height.toDouble()/surfaceHeight).coerceAtMost(1.0) else 1.0
+        val w = (surfaceWidth*scale).toInt().coerceIn(1,8192)
+        val h = (surfaceHeight*scale).toInt().coerceIn(1,8192)
         val flags = runCatching { api.mpv_render_context_update(rctx) }.getOrDefault(0L)
         if (flags and Mpv.MPV_RENDER_UPDATE_FRAME == 0L) return
 
-        val stride = w * 4
-        val size = stride * h
-        val swSize = Memory(8L)
-        swSize.setInt(0, w)
-        swSize.setInt(4, h)
-        val format = Memory(5L)
-        format.setString(0, "bgra")
-        val strideMem = Memory(4L)
-        strideMem.setInt(0, stride)
-        val buffer = Memory(size.toLong())
-        // Manual mpv_render_param array: 5 elements × 16 bytes.
-        val params = Memory(80L)
-        params.clear()
-        params.setInt(0, Mpv.MPV_RENDER_PARAM_SW_SIZE)
-        params.setPointer(8, swSize)
-        params.setInt(16, Mpv.MPV_RENDER_PARAM_SW_FORMAT)
-        params.setPointer(24, format)
-        params.setInt(32, Mpv.MPV_RENDER_PARAM_SW_STRIDE)
-        params.setPointer(40, strideMem)
-        params.setInt(48, Mpv.MPV_RENDER_PARAM_SW_POINTER)
-        params.setPointer(56, buffer)
-        params.setInt(64, Mpv.MPV_RENDER_PARAM_INVALID)
-        params.setPointer(72, null)
+        val storage=frameStorage?.takeIf {it.width==w && it.height==h} ?: run {
+            frameStorage?.close();FrameStorage(w,h).also {frameStorage=it}
+        }
+        val stride=storage.stride
+        val size=storage.pixels.size
+        val buffer=storage.buffer
+        val params=storage.params
 
         val rc = runCatching { api.mpv_render_context_render(rctx, params) }.getOrDefault(-1)
         if (rc < 0) return
 
-        val pixels = buffer.getByteArray(0, size)
-        // bgra → BGRA_8888: force the alpha byte to 0xFF (opaque).
-        var i = 3
-        while (i < size) {
-            pixels[i] = 0xFF.toByte()
-            i += 4
-        }
+        val pixels=storage.pixels
+        buffer.read(0,pixels,0,size)
         val bitmap = Bitmap()
         val installed = bitmap.installPixels(
-            ImageInfo(w, h, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL),
+            ImageInfo(w, h, ColorType.BGRA_8888, ColorAlphaType.OPAQUE),
             pixels,
             stride,
         )
@@ -524,19 +584,28 @@ class MpvPlaybackController(
 
     private fun startEventThread(api: Mpv, ctx: Pointer) {
         if (eventThread?.isAlive == true) return
+        eventAlive=true
         eventThread = Thread {
             try {
-                while (true) {
+                while (eventAlive) {
                     val eventPtr = api.mpv_wait_event(ctx, -1.0)
                     if (eventPtr == Pointer.NULL) continue
                     val event = Mpv.MpvEvent().bind(eventPtr)
                     when (event.event_id) {
                         Mpv.MPV_EVENT_SHUTDOWN -> break
                         Mpv.MPV_EVENT_START_FILE -> {
-                            _state.update { it.copy(state = PlaybackState.LOADING, error = null) }
+                            val entry=event.data?.getLong(0)
+                            val current=getString(api,ctx,"playlist/0/id")?.toLongOrNull()
+                            if(entry!=null && entry==current && nativeLoadGeneration==generation) {
+                                eventPlaylistEntry=entry;eventSourceGeneration=nativeLoadGeneration
+                                sourceReady=false
+                                _state.update {it.copy(state=PlaybackState.LOADING,error=null)}
+                            }
                         }
 
                         Mpv.MPV_EVENT_FILE_LOADED -> {
+                            if(eventSourceGeneration!=generation)continue
+                            sourceReady=true
                             if (resumeAfterMs > 0L) {
                                 val pos = resumeAfterMs
                                 resumeAfterMs = 0L
@@ -551,7 +620,8 @@ class MpvPlaybackController(
                         Mpv.MPV_EVENT_END_FILE -> {
                             val reason = runCatching { event.data?.getInt(0) }.getOrNull() ?: -1
                             val err = runCatching { event.data?.getInt(4) }.getOrNull() ?: 0
-                            handleEndFile(reason, err)
+                            val entry=runCatching {event.data?.getLong(8)}.getOrNull()
+                            if(eventSourceGeneration==generation && entry==eventPlaylistEntry)handleEndFile(reason,err)
                         }
 
                         else -> Unit
@@ -564,6 +634,7 @@ class MpvPlaybackController(
     }
 
     private fun stopEventThread() {
+        eventAlive=false
         mpv?.let { ctx -> runCatching { Mpv.load().mpv_wakeup(ctx) } }
         eventThread?.join(1_000L)
         eventThread = null
@@ -572,6 +643,9 @@ class MpvPlaybackController(
     private fun handleEndFile(reason: Int, error: Int) {
         if (reason == Mpv.MPV_END_FILE_REASON_EOF || reason == Mpv.MPV_END_FILE_REASON_ERROR) {
             val item = currentItem ?: return
+            if(reason==Mpv.MPV_END_FILE_REASON_EOF && item.kind==PlaybackContentKind.ARCHIVE && timeShift!=null) {
+                _state.update {it.copy(state=PlaybackState.ENDED)};timeShift.ended();return
+            }
             val duration = _state.value.durationMs
             val position = _state.value.positionMs
             val nearEnd = duration > 0L && position >= duration - END_RESTART_MARGIN_MS
@@ -628,6 +702,7 @@ class MpvPlaybackController(
     }
 
     private fun pollState(gen: Int) {
+        if(!sourceReady)return
         val ctx = mpv ?: return
         val api = Mpv.load()
 
@@ -649,12 +724,13 @@ class MpvPlaybackController(
         val audioSampleRate = getInt(api, ctx, "audio-params/samplerate")
         val width = getInt(api, ctx, "width")
         val height = getInt(api, ctx, "height")
-        val fps = getDouble(api, ctx, "estimated-vf-fps")
+        val fps = getDouble(api, ctx, "estimated-vf-fps")?.takeIf {it in 10.0..240.0}
+            ?: getDouble(api, ctx, "container-fps")?.takeIf {it in 10.0..240.0}
         val eof = getFlag(api, ctx, "eof-reached") == true
 
         val posMs = (timePosSec ?: 0.0).coerceAtLeast(0.0).let { (it * 1000.0).toLong() }
         val durationMs = (durationSec ?: 0.0).coerceAtLeast(0.0).let { (it * 1000.0).toLong() }
-        val buffering = cachePercent in 0..99
+        val buffering = getFlag(api,ctx,"paused-for-cache")==true
 
         if (posMs != lastPositionMs) {
             lastPositionMs = posMs
@@ -679,7 +755,8 @@ class MpvPlaybackController(
             videoOutput = "libmpv render (SW)",
             codec = videoCodec?.takeIf { it.isNotBlank() },
             resolution = if (width > 0 && height > 0) "${width}x${height}" else "n/a",
-            fps = fps?.takeIf { it > 0 }?.let { java.lang.String.format(java.util.Locale.US, "%.2f", it) },
+            fps = fps?.let(::frameRateNumber),
+            videoWidth = width, videoHeight = height,
             bitrate = videoBitrate?.takeIf { it > 0 }?.let {
                 java.lang.String.format(java.util.Locale.US, "%.1f Mbps", it / 1_000_000.0)
             },
@@ -693,6 +770,7 @@ class MpvPlaybackController(
             },
         )
 
+        _videoSignal.value=VideoFrameSignal(width.coerceAtLeast(0),height.coerceAtLeast(0),fps ?: 0.0)
         _state.update {
             it.copy(
                 state = state,
@@ -702,6 +780,8 @@ class MpvPlaybackController(
                 hardwareDecode = false,
             )
         }
+        AndroidPlaybackSession.record(_state.value)
+        timeShift?.tick()
     }
 
     // ---- property helpers ----------------------------------------------------------
@@ -769,7 +849,7 @@ class MpvPlaybackController(
         _decodeMode.value = mode
     }
 
-    override fun updateNetworkCachingMs(ms: Long) = Unit // cache is fixed (demuxer-max-bytes)
+    override fun updateNetworkCachingMs(ms:Long) {networkCachingMs=ms.coerceIn(1000,30_000)}
 
     private companion object {
         const val WATCH_INTERVAL_MS = 1_000L

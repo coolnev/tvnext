@@ -44,7 +44,7 @@ fun AutoScrollText(
     maxLines: Int,
     modifier: Modifier = Modifier,
 ) {
-    if (com.tvnext.app.core.common.platform.isAndroidPlatform()) {
+    if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
         AndroidDescription(text, style, color, maxLines, modifier)
         return
     }

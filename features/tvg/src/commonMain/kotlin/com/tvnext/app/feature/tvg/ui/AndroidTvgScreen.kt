@@ -211,7 +211,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                 else selectedChannel?.let { showDetails(it, selectedProgramme) }
             }
             true
-        } else if (event.key == Key.Back || event.key == Key.Escape) {
+        } else if ((event.key == Key.Back || event.key == Key.Escape) || event.key == Key.Escape) {
             if (event.type == KeyEventType.KeyUp) {
                 if (!consumeGuideBack()) onBack?.invoke()
             }
@@ -397,7 +397,7 @@ private fun AndroidTvgContent(component: TvgComponent, modifier: Modifier, onBac
                     TvActionButton(onClick = { details = null; component.dispatch(TvgIntent.ChannelClicked(info.channel.id)) }) { Text(uiText("Прямой эфир")) }
                     if (p.start > now && p.stop > p.start && p.stop - p.start <= 6 * 60 * 60 * 1000L &&
                         info.channel.streamUrl.isNotBlank() &&
-                        com.tvnext.app.core.common.platform.isAndroidPlatform()) {
+                        com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
                         TvActionButton(onClick = {
                             com.tvnext.app.core.common.util.RecordingScheduleRequests.request(
                                 com.tvnext.app.core.common.util.RecordingScheduleRequest(

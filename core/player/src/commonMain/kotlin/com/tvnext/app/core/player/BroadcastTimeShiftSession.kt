@@ -8,8 +8,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
-/** Resolves timestamp seeks, independently of EPG boundaries. Owned by the Android player. */
-internal class AndroidTimeShiftSession(
+/** Resolves timestamp seeks, independently of EPG boundaries. Shared by Android and Desktop players. */
+internal class BroadcastTimeShiftSession(
     private val channels: ChannelsRepository,
     private val archive: ArchiveRepository,
     private val scope: CoroutineScope,

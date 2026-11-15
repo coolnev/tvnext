@@ -34,7 +34,7 @@ fun RecordingPlaybackScreen(controller: PlaybackController, onBack: () -> Unit, 
     Box(modifier.fillMaxSize().background(videoSurfaceBackground(Color.Black)).testTag("recording-playback")
         .onPreviewKeyEvent { event ->
             when {
-                event.key == Key.Back -> { if (event.type == KeyEventType.KeyUp) onBack(); true }
+                (event.key == Key.Back || event.key == Key.Escape) -> { if (event.type == KeyEventType.KeyUp) onBack(); true }
                 event.key == Key.DirectionUp && controls -> {
                     if (event.type == KeyEventType.KeyUp) controls = false
                     true

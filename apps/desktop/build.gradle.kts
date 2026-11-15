@@ -20,11 +20,13 @@ java {
 }
 
 dependencies {
-    implementation(compose.desktop.currentOs)
+    implementation(if (providers.gradleProperty("desktopTarget").orNull == "windows") compose.desktop.windows_x64 else compose.desktop.currentOs)
     implementation(compose.material3)
+    testImplementation(kotlin("test"))
     implementation(libs.decompose)
     implementation(libs.essenty.lifecycle.coroutines)
     implementation(libs.koin.core)
+    implementation("org.json:json:20250517")
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.jna)
@@ -247,7 +249,7 @@ tasks.register<Jar>("fatJar") {
     manifest {
         attributes["Main-Class"] = "com.tvnext.app.MainKt"
         attributes["Implementation-Title"] = "TVNext"
-        attributes["Implementation-Version"] = "portable"
+        attributes["Implementation-Version"] = project.version.toString()
     }
     from(sourceSets.main.get().output)
     dependsOn(configurations.runtimeClasspath)
@@ -264,5 +266,66 @@ tasks.register<Jar>("fatJar") {
             "module-info.class",
             "META-INF/INDEX.LIST",
         )
+    }
+}
+
+val sharedRecordingSources=tasks.register("prepareSharedRecordingSources") {
+    val source=rootProject.layout.projectDirectory.dir("apps/android/src/main/kotlin/com/tvnext/app")
+    val output=layout.buildDirectory.dir("generated/recording")
+    val names=listOf("StreamRecordingEngine.kt","RecordingFormats.kt","RecordingFailure.kt","RecordingRuntime.kt","RecordingStatus.kt",
+        "LocalRecoveryStore.kt","ProfilePersonalData.kt","ProfileChannelProjection.kt","ProfileChannelEditor.kt",
+        "AndroidProfiledRepositories.kt","AndroidProfileVodPositionStore.kt","ParentalProtection.kt","RecordingSchedulePolicy.kt")
+    inputs.files(names.map {source.file(it)});outputs.dir(output)
+    doLast {
+        val target=output.get().asFile.apply {mkdirs()}
+        names.forEach {name ->File(target,name).writeText(source.file(name).asFile.readText()
+            .replace("import android.os.SystemClock\n", "")
+            .replace("import android.content.Context\n", "")
+            .replace("import androidx.compose.ui.platform.LocalContext\n", "")
+            .replace("context: Context", "context: DesktopStorageContext")
+            .replace("cause is android.system.ErrnoException &&\n                cause.errno in setOf(android.system.OsConstants.ENOSPC, android.system.OsConstants.EDQUOT) ||", "")
+            .replace("Context.MODE_PRIVATE", "DesktopStorageContext.MODE_PRIVATE")
+            .replace("SystemClock.elapsedRealtime()","(System.nanoTime()/1_000_000L)"))}
+    }
+}
+sourceSets.main {kotlin.srcDir(layout.buildDirectory.dir("generated/recording"))}
+tasks.named("compileKotlin"){dependsOn(sharedRecordingSources)}
+val generatedDesktopDefaults=tasks.register("generateDesktopDefaults") {
+    val configured=providers.gradleProperty("tvnext.kinopoisk.defaultKey").orElse("")
+    inputs.property("configuredKey",configured);outputs.dir(layout.buildDirectory.dir("generated/defaults"))
+    doLast {
+        val file=layout.buildDirectory.file("generated/defaults/DesktopDefaults.kt").get().asFile
+        file.parentFile.mkdirs()
+        val escaped=configured.get().replace("\\","\\\\").replace("\"","\\\"").replace("$","\\$")
+        file.writeText("package com.tvnext.app\ninternal object DesktopDefaults {const val KINOPOISK_KEY = \"$escaped\"}\n")
+    }
+}
+sourceSets.main {kotlin.srcDir(layout.buildDirectory.dir("generated/defaults"))}
+tasks.named("compileKotlin"){dependsOn(generatedDesktopDefaults)}
+
+val portableRuntimeDir=providers.gradleProperty("mpvRuntimeDir").map {rootProject.file(it)}.orElse(rootProject.file(".local/windows-runtime"))
+val portableJavaDir=providers.gradleProperty("windowsJavaDir").map {rootProject.file(it)}.orElse(rootProject.file(".local/windows-jre"))
+tasks.register<Zip>("windowsPortableZip") {
+    group="distribution"
+    dependsOn("jar",rootProject.tasks.named("checkEncoding"))
+    archiveFileName.set("TVNext-${project.version}-windows-x64-portable.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    duplicatesStrategy=DuplicatesStrategy.FAIL
+    doFirst {
+        require(providers.gradleProperty("desktopTarget").orNull=="windows") {"Use -PdesktopTarget=windows"}
+        require(File(portableJavaDir.get(),"bin/javaw.exe").isFile) {"Run tools/prepare_windows_runtime.py"}
+        require(rootProject.file(".local/windows-launcher/TVNext.exe").isFile) {"Run tools/build_windows_launcher.py"}
+        require(File(portableRuntimeDir.get(),"vulkan-1.dll").isFile) {"Missing verified Vulkan loader"}
+        require(configurations.runtimeClasspath.get().none {it.name.contains("skiko-awt-runtime-linux")}) {"Linux Skiko cannot be packaged for Windows"}
+    }
+    into("TVNext-${project.version}") {
+        from(tasks.named("jar")){into("lib")}
+        from(configurations.runtimeClasspath){into("lib")}
+        from(portableJavaDir){into("runtime")}
+        from(portableRuntimeDir){include("*.dll","*.txt","*.json")}
+        from(rootProject.file(".local/windows-launcher/TVNext.exe"))
+        from(layout.projectDirectory.dir("portable"))
+        from(layout.projectDirectory.file("LICENSE.txt"))
+        from(layout.projectDirectory.file("icon.ico"))
     }
 }

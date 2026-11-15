@@ -45,7 +45,7 @@ class DefaultHomeRepository(
         val vodHistory = history.filter { it.contentType == WatchContentType.VOD }
         val favoriteVodIds = mediaLibrary.getFavoriteIds()
         // Home needs only a few IDs, not a full 20k-film profile projection.
-        val allVod = if (com.tvnext.app.core.common.platform.isAndroidPlatform()) {
+        val allVod = if (com.tvnext.app.core.common.platform.useCurrentPlayerUi()) {
             val ids = (vodHistory.map { it.itemId } + favoriteVodIds.take(SECTION_LIMIT) +
                 listOfNotNull(com.tvnext.app.core.player.AndroidPlaybackSession.ids.value.vodId)).distinct()
             ids.mapNotNull { mediaLibrary.getItemById(it) }
@@ -53,7 +53,7 @@ class DefaultHomeRepository(
         val vodById = allVod.associateBy { it.id }
 
         val favoriteIds = channelsRepository.getFavoriteIds()
-        val session = if (com.tvnext.app.core.common.platform.isAndroidPlatform())
+        val session = if (com.tvnext.app.core.common.platform.useCurrentPlayerUi())
             com.tvnext.app.core.player.AndroidPlaybackSession.ids.value else null
         val lastChannelId = session?.channelId?.takeIf { it in byId } ?: liveHistory.firstOrNull()?.itemId
         val continueWatching = lastChannelId?.let { byId[it] }

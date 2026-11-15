@@ -15,7 +15,7 @@ import com.tvnext.app.core.common.mvi.MviComponent
 import com.tvnext.app.core.common.mvi.MviEffect
 import com.tvnext.app.core.common.mvi.MviIntent
 import com.tvnext.app.core.common.mvi.MviState
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.result.AppError
 import com.tvnext.app.core.common.result.fold
 import com.tvnext.app.core.common.util.currentTimeMillis
@@ -185,7 +185,7 @@ class DefaultMediaComponent(
                 if(!settings.media.rememberPosition) browserSaveJob?.cancel()
             }
         }
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             launch {
                 var previous: com.tvnext.app.core.player.PlayerState? = null
                 playbackController.state.collect { player ->
@@ -362,7 +362,7 @@ class DefaultMediaComponent(
     private fun selectItem(itemId: String) {
         selectionJob?.cancel()
         selectionJob=launch {
-            val resume=(if(isAndroidPlatform())com.tvnext.app.core.player.AndroidPlaybackSession.vodPosition(itemId) else null) ?: progressStore.get(itemId)
+            val resume=(if(useCurrentPlayerUi())com.tvnext.app.core.player.AndroidPlaybackSession.vodPosition(itemId) else null) ?: progressStore.get(itemId)
             if(state.value.selectedItemId!=itemId)return@launch
             val item=state.value.content.allItems.firstOrNull{it.id==itemId} ?: return@launch
             val valid=resume?.takeIf{it in 1L..RESUME_MAX_MS} ?: 0L
@@ -390,7 +390,7 @@ class DefaultMediaComponent(
     }
 
     private fun enrichTmdbForInfo(itemId: String) {
-        if (isAndroidPlatform()) infoEnrichmentJob?.cancel()
+        if (useCurrentPlayerUi()) infoEnrichmentJob?.cancel()
         val job = launch {
             val item = allItemsById[itemId] ?: state.value.content.allItems.firstOrNull { it.id == itemId } ?: return@launch
             setState { it.copy(infoTmdbLoading = true, infoTmdbMetadata = null) }
@@ -401,11 +401,11 @@ class DefaultMediaComponent(
                 if (state.value.infoItemId == itemId) it.copy(infoTmdbLoading = false, infoTmdbMetadata = result) else it
             }
         }
-        if (isAndroidPlatform()) infoEnrichmentJob = job
+        if (useCurrentPlayerUi()) infoEnrichmentJob = job
     }
 
     private fun enrichTmdb(itemId: String) {
-        if (isAndroidPlatform()) enrichmentJob?.cancel()
+        if (useCurrentPlayerUi()) enrichmentJob?.cancel()
         val job = launch {
             setState { it.copy(tmdbLoading = true, tmdbMetadata = null) }
             val result = (allItemsById[itemId] ?: state.value.content.allItems.firstOrNull{it.id==itemId})?.let {item->libraryMetadata(item) {card->
@@ -415,7 +415,7 @@ class DefaultMediaComponent(
                 if (state.value.selectedItemId == itemId) it.copy(tmdbLoading = false, tmdbMetadata = result) else it
             }
         }
-        if (isAndroidPlatform()) enrichmentJob = job
+        if (useCurrentPlayerUi()) enrichmentJob = job
     }
 
     private suspend fun libraryMetadata(item:MediaItem,publish:(com.tvnext.app.core.tmdb.TmdbMetadata?)->Unit={}):com.tvnext.app.core.tmdb.TmdbMetadata?=coroutineScope {
@@ -450,11 +450,11 @@ class DefaultMediaComponent(
     }
 
     private fun closePlayer() {
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             selectionJob?.cancel()
             enrichmentJob?.cancel()
         }
-        val playingId = if (isAndroidPlatform()) playbackController.state.value.item
+        val playingId = if (useCurrentPlayerUi()) playbackController.state.value.item
             ?.takeIf { it.kind == PlaybackContentKind.VOD }?.id else state.value.selectedItemId
         if (playingId != null) {
             val player = playbackController.state.value

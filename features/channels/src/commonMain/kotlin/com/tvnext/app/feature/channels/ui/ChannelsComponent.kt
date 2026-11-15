@@ -11,7 +11,7 @@ import com.tvnext.app.core.common.mvi.MviComponent
 import com.tvnext.app.core.common.mvi.MviEffect
 import com.tvnext.app.core.common.mvi.MviIntent
 import com.tvnext.app.core.common.mvi.MviState
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.result.AppError
 import com.tvnext.app.core.common.result.fold
 import com.tvnext.app.core.common.util.currentTimeMillis
@@ -304,7 +304,7 @@ class DefaultChannelsComponent(
     private var handledArchiveEndAnchorMs: Long? = null
 
     init {
-        if (isAndroidPlatform()) launch {
+        if (useCurrentPlayerUi()) launch {
             var previous: Pair<PlaybackItem?, Long>? = null
             while (true) {
                 val player = playbackController.state.value
@@ -358,7 +358,7 @@ class DefaultChannelsComponent(
                 if (item.kind != PlaybackContentKind.ARCHIVE ||
                     playbackState.state != PlaybackState.ENDED
                 ) return@collect
-                if (isAndroidPlatform()) return@collect // Android player continues by broadcast timestamp.
+                if (useCurrentPlayerUi()) return@collect // Android player continues by broadcast timestamp.
                 val anchor = item.archiveEpgAnchorMs ?: return@collect
                 if (handledArchiveEndAnchorMs == anchor) return@collect
                 handledArchiveEndAnchorMs = anchor
@@ -372,7 +372,7 @@ class DefaultChannelsComponent(
         // re-dispatch Load on every mount: a fullscreen F11 window switch
         // recreates the screen composition, and re-running the heavy EPG
         // scans there made the switch stall for seconds.
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             launch {
                 playbackController.state.map { it.item }.distinctUntilChanged().collect { item ->
                     if (item != null && item.kind != PlaybackContentKind.VOD && state.value.channels.any { it.id == item.id }) {
@@ -395,7 +395,7 @@ class DefaultChannelsComponent(
             }
         }
         load()
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             launch { repository.observeChanges().collect { load() } }
             launch {
                 com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.drop(1).collect { pending ->
@@ -412,14 +412,14 @@ class DefaultChannelsComponent(
         is ChannelsIntent.CategorySelected -> state.copy(
             // Cyclic toggle: clicking the already-selected category deselects it
             // (back to «Все»), matching the collapsible category list behaviour.
-            selectedCategory = if (isAndroidPlatform()) intent.category
+            selectedCategory = if (useCurrentPlayerUi()) intent.category
                 else if (intent.category == state.selectedCategory) null else intent.category,
         )
-        is ChannelsIntent.SelectChannel -> if (isAndroidPlatform() && state.channels.none { it.id == intent.channelId }) state
+        is ChannelsIntent.SelectChannel -> if (useCurrentPlayerUi() && state.channels.none { it.id == intent.channelId }) state
             else state.copy(selectedChannelId = intent.channelId, focusedChannelId = intent.channelId)
         is ChannelsIntent.FocusChannel -> state.copy(
             focusedChannelId = intent.channelId,
-            focusedChannelIds = if (isAndroidPlatform()) state.focusedChannelIds + (state.selectedCategory to intent.channelId)
+            focusedChannelIds = if (useCurrentPlayerUi()) state.focusedChannelIds + (state.selectedCategory to intent.channelId)
                 else state.focusedChannelIds,
         )
         is ChannelsIntent.VisibleChannelsChanged -> state
@@ -445,7 +445,7 @@ class DefaultChannelsComponent(
             }
             is ChannelsIntent.FavoriteToggled -> persistFavorite(intent.channelId)
             ChannelsIntent.ClosePlayer -> {
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     archiveRequestJob?.cancel()
                     epgForSelectedJob?.cancel()
                     timelineJob?.cancel()
@@ -461,7 +461,7 @@ class DefaultChannelsComponent(
             }
             ChannelsIntent.TogglePlayback -> togglePlayback()
             is ChannelsIntent.FocusChannel -> {
-                if (isAndroidPlatform()) loadEpgForSelected()
+                if (useCurrentPlayerUi()) loadEpgForSelected()
             }
             is ChannelsIntent.ArchiveProgrammeClicked -> playArchive(intent.programme, intent.channelId)
             is ChannelsIntent.ShowChannelTimeline -> loadChannelTimeline(intent.channelId)
@@ -472,7 +472,7 @@ class DefaultChannelsComponent(
             }
             ChannelsIntent.LoadEpg -> {
                 timelineCache.clear()
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     epgGeneration++
                     timelineCachedAt.clear()
                     selectedEpgCache.clear()
@@ -492,7 +492,7 @@ class DefaultChannelsComponent(
                 // Поиск меняет отображаемый набор каналов — сбрасываем
                 // stale visibleChannelIds и перезапрашиваем nowPlaying,
                 // иначе EPG для найденных каналов останется пустым.
-                if (isAndroidPlatform()) visibleChannelIds = emptySet()
+                if (useCurrentPlayerUi()) visibleChannelIds = emptySet()
                 loadNowPlaying()
             }
             is ChannelsIntent.CategorySelected -> {
@@ -504,19 +504,19 @@ class DefaultChannelsComponent(
                 // старой категории (LazyColumn ещё не перекомпонован). Без сброса
                 // loadNowPlaying() отфильтрует по старым visible ID, и EPG для
                 // новой категории не покажется.
-                if (isAndroidPlatform()) visibleChannelIds = emptySet()
+                if (useCurrentPlayerUi()) visibleChannelIds = emptySet()
                 // Даём LazyColumn время на перестройку перед загрузкой EPG
-                if (isAndroidPlatform()) categoryEpgJob?.cancel()
+                if (useCurrentPlayerUi()) categoryEpgJob?.cancel()
                 val job = launch {
                     delay(50)
                     loadNowPlaying()
                 }
-                if (isAndroidPlatform()) categoryEpgJob = job
+                if (useCurrentPlayerUi()) categoryEpgJob = job
                 loadEpgForSelected()
                 // Desktop: remember the last selected category so re-opening
                 // the Channels tab restores the list to the same place
                 // (Android TV behaviour is left untouched).
-                if (!isAndroidPlatform()) {
+                if (!useCurrentPlayerUi()) {
                     launch {
                         runCatching { settingsRepository.setLastCategoryId(intent.category) }
                             .onFailure { Logger.e(TAG, "Failed to save last category", it) }
@@ -606,7 +606,7 @@ class DefaultChannelsComponent(
     }
 
     private fun load() {
-        if (isAndroidPlatform()) catalogLoadJob?.cancel()
+        if (useCurrentPlayerUi()) catalogLoadJob?.cancel()
         // load() is invoked directly from init (NOT via dispatch(Load)), so the
         // reduce() branch that sets isLoading=true never runs here. Set it
         // explicitly: otherwise the very first startup would show the
@@ -617,7 +617,7 @@ class DefaultChannelsComponent(
             runCatching {
                 val configured = repository.isConfigured()
                 setState { it.copy(hasPlaylist = configured) }
-                if (!configured && isAndroidPlatform() && com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value) {
+                if (!configured && useCurrentPlayerUi() && com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value) {
                     // The first M3U import is still running; do not claim that
                     // the user has no playlist and do not start a second fetch.
                     return@launch
@@ -625,7 +625,7 @@ class DefaultChannelsComponent(
                     applyChannelsSnapshot(emptyList()) { it.copy(isLoading = false) }
                 } else {
                     val cached = repository.getChannels()
-                    if (isAndroidPlatform() && cached.isEmpty() &&
+                    if (useCurrentPlayerUi() && cached.isEmpty() &&
                         com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value) return@launch
                     // Desktop: restore focus on the playing/last-selected channel
                     // (its category is opened too so it stays visible).
@@ -765,7 +765,7 @@ class DefaultChannelsComponent(
         if (!com.tvnext.app.core.iptv.domain.ParentalChannelGate.request(channel) {
                 dispatch(ChannelsIntent.SelectChannel(channelId))
             }) return
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             archiveRequestJob?.cancel()
             archiveTransitionJob?.cancel()
             handledArchiveEndAnchorMs = null
@@ -781,7 +781,7 @@ class DefaultChannelsComponent(
                     Logger.e(TAG, "Failed to record history", error)
                 }
         }
-        if (isAndroidPlatform()) selectionSaveJob = saveJob
+        if (useCurrentPlayerUi()) selectionSaveJob = saveJob
         playbackController.play(
             PlaybackItem(id = channel.id, title = channel.name, url = channel.streamUrl),
         )
@@ -817,11 +817,11 @@ class DefaultChannelsComponent(
         val lastId = runCatching { settingsRepository.getLastChannelId() }.getOrNull()
         val targetId = when {
             lastId != null && channels.any { it.id == lastId } -> lastId
-            isAndroidPlatform() && channels.isNotEmpty() -> channels.first().id
+            useCurrentPlayerUi() && channels.isNotEmpty() -> channels.first().id
             else -> null
         }
         if (targetId != null) {
-            if (isAndroidPlatform() && playbackController.state.value.item != null) return
+            if (useCurrentPlayerUi() && playbackController.state.value.item != null) return
             dispatch(ChannelsIntent.SelectChannel(targetId))
         }
     }
@@ -887,7 +887,7 @@ class DefaultChannelsComponent(
         // Android TV only: a focused row can change rapidly while the user
         // scrolls. Re-use an already fetched timeline immediately instead of
         // flashing a spinner and hitting SQLite again.
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             timelineCache[channelId]?.takeIf {
                 currentTimeMillis() - (timelineCachedAt[channelId] ?: 0L) in 0L until 60_000L
             }?.let { cached ->
@@ -898,7 +898,7 @@ class DefaultChannelsComponent(
 
         val previousTimeline = _timeline.value.takeIf { it.channelId == channelId && it.programmes.isNotEmpty() }
         // Keep the complete visible list, its cursor and metadata lookup while re-reading.
-        if (previousTimeline == null && isAndroidPlatform()) {
+        if (previousTimeline == null && useCurrentPlayerUi()) {
             // Do not put the Android TV UI into a spinner state while the full
             // day range is being fetched. The channel list already has the
             // current programme in nowPlaying, so show that immediately and
@@ -932,7 +932,7 @@ class DefaultChannelsComponent(
                 // EPG may contain more history than the playable archive.
                 // Honour the user's archive limit (0 = provider-declared depth)
                 // while keeping whatever historical programmes are available.
-                val userDays = if (isAndroidPlatform())
+                val userDays = if (useCurrentPlayerUi())
                     archiveRepository.userArchiveLimitDays().coerceAtLeast(0) else 0
                 // User-selected days limit the history DISPLAY, not storage.
                 // Automatic mode shows all real history available from EPG,
@@ -951,7 +951,7 @@ class DefaultChannelsComponent(
                     to = to,
                 )
                 val programmes = (result[channel.id] ?: emptyList()).sortedBy { it.start }
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     if (requestVersion != epgGeneration) return@launch
                     if (timelineCache.size >= 12 && channelId !in timelineCache) {
                         val oldest = timelineCache.keys.first()
@@ -977,7 +977,7 @@ class DefaultChannelsComponent(
     }
 
     private fun loadEpgForSelected() {
-        if (!isAndroidPlatform()) {
+        if (!useCurrentPlayerUi()) {
             loadDesktopEpgForSelected()
             return
         }
@@ -1078,9 +1078,9 @@ class DefaultChannelsComponent(
         val job = launch {
             // A D-pad scroll can change the viewport several times in a single
             // frame. Wait briefly and use only the latest viewport snapshot.
-            if (isAndroidPlatform()) delay(100)
+            if (useCurrentPlayerUi()) delay(100)
             val snapshot = state.value
-            val requested = if (!isAndroidPlatform()) {
+            val requested = if (!useCurrentPlayerUi()) {
                 // Full list hydration is intentionally used only after an EPG
                 // version change. The repository chunks the EPG channel ids,
                 // so Android SQLite never receives >~500 bind variables.
@@ -1105,12 +1105,12 @@ class DefaultChannelsComponent(
             val queryStarted = currentTimeMillis()
 
             runCatching {
-                epgRepository.getNowPlaying(if (isAndroidPlatform()) requested.take(128) else requested, currentTimeMillis())
+                epgRepository.getNowPlaying(if (useCurrentPlayerUi()) requested.take(128) else requested, currentTimeMillis())
             }.onSuccess { nowPlaying ->
                 // One StateFlow emission per refresh. Avoid even that emission
                 // when the visible EPG did not actually change: nowPlaying is
                 // observed by every visible row on Android TV.
-                if (isAndroidPlatform()) {
+                if (useCurrentPlayerUi()) {
                     if (requestVersion != epgGeneration) return@onSuccess
                     val requestedIds = requested.map { it.id }.toSet()
                     val now = currentTimeMillis()
@@ -1156,7 +1156,7 @@ class DefaultChannelsComponent(
             .filter { it.start >= endedArchiveStartMs }
             .firstOrNull()
 
-        if (isAndroidPlatform() && playbackController.state.value.item != endedItem) return
+        if (useCurrentPlayerUi() && playbackController.state.value.item != endedItem) return
         if (nextProgramme == null) {
             // No known next programme: safest behaviour is to return to LIVE.
             playbackController.play(
@@ -1201,7 +1201,7 @@ class DefaultChannelsComponent(
                         nextProgramme.stop,
                     )
                 ) return
-                if (isAndroidPlatform() && playbackController.state.value.item != endedItem) return
+                if (useCurrentPlayerUi() && playbackController.state.value.item != endedItem) return
 
                 playbackController.play(
                     PlaybackItem(
@@ -1240,7 +1240,7 @@ class DefaultChannelsComponent(
         if (!com.tvnext.app.core.iptv.domain.ParentalChannelGate.request(channel) {
                 dispatch(ChannelsIntent.ArchiveProgrammeClicked(programme, channelId))
             }) return
-        if (isAndroidPlatform()) {
+        if (useCurrentPlayerUi()) {
             archiveRequestJob?.cancel()
             archiveTransitionJob?.cancel()
         }
@@ -1250,7 +1250,7 @@ class DefaultChannelsComponent(
                 Logger.d(TAG, "Archive unavailable for ${channel.name} (${capability?.status})")
                 return@launch
             }
-            val archiveEnd = if (isAndroidPlatform()) minOf(programme.stop, currentTimeMillis()) else programme.stop
+            val archiveEnd = if (useCurrentPlayerUi()) minOf(programme.stop, currentTimeMillis()) else programme.stop
             val url = archiveRepository.buildArchiveUrl(channel, programme.start, archiveEnd)
                 ?: return@launch
             // Pre-flight: some providers DECLARE catch-up but serve an empty
@@ -1261,7 +1261,7 @@ class DefaultChannelsComponent(
             }
             val title = uiText("{0} • Архив • {1}", channel.name, formatDateTime(programme.start))
             handledArchiveEndAnchorMs = null
-            if (isAndroidPlatform()) setState { it.copy(selectedChannelId = channel.id) }
+            if (useCurrentPlayerUi()) setState { it.copy(selectedChannelId = channel.id) }
             playbackController.play(
                 PlaybackItem(
                     id = channel.id,
@@ -1278,7 +1278,7 @@ class DefaultChannelsComponent(
             // Re-anchor the EPG panel to the archived programme.
             loadEpgForSelected()
         }
-        if (isAndroidPlatform()) archiveRequestJob = requestJob
+        if (useCurrentPlayerUi()) archiveRequestJob = requestJob
     }
 
     private companion object {

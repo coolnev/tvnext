@@ -1,6 +1,6 @@
 package com.tvnext.app.core.tmdb
 
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.util.runPlatformCatching as runCatching
 import kotlinx.coroutines.sync.withPermit
 import com.tvnext.app.core.database.TvNextDatabase
@@ -185,7 +185,7 @@ class SqlDelightTmdbRepository(
         if (!forceRefresh && cached != null && currentTimeMillis() - cached.updated_at in 0 until cacheTtl) {
             return TmdbLookupResult(cached.takeIf { it.tmdb_id != null }?.toMetadata(), TmdbCacheStatus.valueOf(cached.status))
         }
-        if (isAndroidPlatform()) return enrichAndroid(item)
+        if (useCurrentPlayerUi()) return enrichAndroid(item)
         val key = item.id
         val deferred: Deferred<TmdbLookupResult> = mutex.withLock {
             inFlight[key]?.let { return@withLock it }
@@ -317,7 +317,7 @@ class SqlDelightTmdbRepository(
             updated_at = currentTimeMillis(),
             status = status,
         )
-        if (isAndroidPlatform()) runCatching {
+        if (useCurrentPlayerUi()) runCatching {
             com.tvnext.app.core.database.executeRawSql("DELETE FROM tmdb_cache WHERE updated_at<${currentTimeMillis()-5*60_000L} OR media_item_id NOT IN (SELECT media_item_id FROM tmdb_cache ORDER BY updated_at DESC LIMIT 128)")
         }
     }
@@ -335,7 +335,7 @@ class SqlDelightTmdbRepository(
         // A connectivity check must never monopolize the settings screen with
         // three 30-second retries. Only Android uses the short single-request probe;
         // desktop keeps its existing request/retry configuration.
-        val response = if (isAndroidPlatform()) {
+        val response = if (useCurrentPlayerUi()) {
             withTimeoutOrNull(7_000L) {
                 client.get("https://api.themoviedb.org/3/configuration") {
                     parameter("api_key", key)

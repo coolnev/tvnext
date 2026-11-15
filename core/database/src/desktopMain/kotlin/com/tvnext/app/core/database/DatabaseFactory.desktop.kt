@@ -8,7 +8,7 @@ import java.sql.DriverManager
 
 actual class DatabaseFactory {
     actual fun createDriver(): SqlDriver {
-        val dir = File(System.getProperty("user.home"), ".tvnext")
+        val dir = com.tvnext.app.core.common.platform.DesktopAppPaths.dataDirectory
         dir.mkdirs()
         val file = File(dir, "tvnext.db")
         // WAL lets readers run concurrently with a long writer transaction —

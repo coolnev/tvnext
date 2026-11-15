@@ -53,7 +53,7 @@ internal fun AndroidProgrammeOverlay(
     DisposableEffect(Unit) { onDispose { onFocus(false) } }
     BoxWithConstraints(modifier.fillMaxWidth().onFocusChanged { panelFocused=it.hasFocus;onFocus(it.hasFocus || streamInfoOpen) }.focusGroup()
         .onPreviewKeyEvent { event ->
-            if (event.key == Key.Back || (interactive && !detailsVisible && event.key == Key.DirectionUp)) {
+            if ((event.key == Key.Back || event.key == Key.Escape) || (interactive && !detailsVisible && event.key == Key.DirectionUp)) {
                 if (event.type == KeyEventType.KeyUp) onClose()
                 true
             } else false

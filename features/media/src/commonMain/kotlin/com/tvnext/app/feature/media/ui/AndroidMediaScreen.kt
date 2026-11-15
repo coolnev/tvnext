@@ -222,7 +222,7 @@ internal fun AndroidMediaScreen(
                     }
                     return@onPreviewKeyEvent true
                 }
-                val backKey = event.key == Key.Back || event.key == Key.Escape
+                val backKey = (event.key == Key.Back || event.key == Key.Escape) || event.key == Key.Escape
                 val videoKey = !browsing && event.key in listOf(Key.DirectionUp, Key.DirectionDown,
                     Key.DirectionLeft, Key.DirectionRight, Key.DirectionCenter, Key.Enter, Key.NumPadEnter, Key.Spacebar)
                 if (backKey || videoKey) {

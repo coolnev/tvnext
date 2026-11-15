@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.dp
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 
 object TVNextDimensLocal {
     val default = TVNextDimens
@@ -44,12 +44,12 @@ fun TVNextTheme(
             colorScheme = colorScheme,
             // Android TV (especially 4K): denser typography so lists fit more
             // rows; desktop keeps the larger default sizes.
-            typography = if (isAndroidPlatform()) {
+            typography = if (useCurrentPlayerUi()) {
                 TVNextTypography.AndroidCompact
             } else {
                 TVNextTypography.Default
             },
-            shapes = if (isAndroidPlatform()) Shapes(
+            shapes = if (useCurrentPlayerUi()) Shapes(
                 extraSmall = RoundedCornerShape(3.dp), small = RoundedCornerShape(4.dp),
                 medium = RoundedCornerShape(6.dp), large = RoundedCornerShape(8.dp),
                 extraLarge = RoundedCornerShape(8.dp),

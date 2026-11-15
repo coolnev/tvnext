@@ -31,6 +31,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.ui)
             implementation(project(":core:common"))
+            implementation(project(":core:iptv"))
         }
         androidMain.dependencies {
             implementation(project(":core:dolby"))

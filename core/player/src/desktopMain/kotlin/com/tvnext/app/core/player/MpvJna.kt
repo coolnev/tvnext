@@ -10,9 +10,8 @@ import com.sun.jna.ptr.PointerByReference
 /**
  * Minimal JNA binding to the libmpv client API (libmpv-2.dll).
  *
- * libmpv is licensed LGPLv2+ (when built with -Dgpl=false, which the shared
- * builds ship as) — unlike vlcj (GPLv3), it is usable in a closed commercial
- * product. The client API header itself is ISC.
+ * Licensing depends on the selected libmpv build and its linked libraries.
+ * The portable runtime manifest records the pinned binary and source locations.
  *
  * Only the functions actually needed by [MpvPlaybackController] are mapped.
  * Values of observed properties are NOT parsed from events: the controller
@@ -32,7 +31,6 @@ internal interface Mpv : Library {
 
     fun mpv_set_option_string(ctx: Pointer, name: String, data: String): Int
     fun mpv_set_property_string(ctx: Pointer, name: String, data: String): Int
-    fun mpv_set_property_flag(ctx: Pointer, name: String, flag: Boolean): Int
 
     /** const char** terminated by NULL — JNA marshals [args] with a NULL tail. */
     fun mpv_command(ctx: Pointer, args: Array<String>): Int
@@ -68,7 +66,6 @@ internal interface Mpv : Library {
         @JvmField var event_id: Int = 0
         @JvmField var error: Int = 0
         @JvmField var reply_userdata: Long = 0
-        @JvmField var name: Pointer? = null
         @JvmField var data: Pointer? = null
 
         /** Binds this structure to [pointer] and reads the event fields. */
@@ -79,7 +76,7 @@ internal interface Mpv : Library {
         }
 
         override fun getFieldOrder(): List<String> =
-            listOf("event_id", "error", "reply_userdata", "name", "data")
+            listOf("event_id", "error", "reply_userdata", "data")
     }
 
     companion object {
@@ -124,7 +121,8 @@ internal interface Mpv : Library {
             // JNA maps the bare name to <name>.dll on Windows, so the shared
             // build's actual file name MUST be used ("libmpv-2" → libmpv-2.dll).
             // "mpv" would look for mpv.dll and fail even with the DLL present.
-            val lib = Native.load("libmpv-2", Mpv::class.java)
+            val library=System.getProperty("tvnext.mpv.library") ?: if(com.sun.jna.Platform.isWindows()) "libmpv-2" else "mpv"
+            val lib = Native.load(library, Mpv::class.java)
             if (lib.mpv_client_api_version() == 0L) {
                 throw IllegalStateException("libmpv client API did not initialize")
             }

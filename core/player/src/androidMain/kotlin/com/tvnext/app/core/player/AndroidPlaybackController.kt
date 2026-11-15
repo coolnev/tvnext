@@ -211,7 +211,7 @@ class AndroidPlaybackController(
      * with the ExoPlayer (on the first [play]) and released in [release].
      */
     private var mediaSession: MediaSession? = null
-    private val timeShift = AndroidTimeShiftSession(channelsRepository, archiveRepository, scope,
+    private val timeShift = BroadcastTimeShiftSession(channelsRepository, archiveRepository, scope,
         current = { _state.value }, open = ::play, localSeek = { position ->
             if (_player.value?.isCurrentMediaItemSeekable == true) { seekLocal(position); true } else false
         }, pause = ::pause)

@@ -67,7 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.tvnext.app.core.common.platform.isAndroidPlatform
+import com.tvnext.app.core.common.platform.useCurrentPlayerUi
 import com.tvnext.app.core.common.result.toUserMessage
 import com.tvnext.app.core.common.util.currentTimeMillis
 import com.tvnext.app.core.common.util.formatDate
@@ -137,7 +137,7 @@ fun TvgScreen(
     modifier: Modifier = Modifier,
     onBackHome: (() -> Unit)? = null,
 ) {
-    if (isAndroidPlatform()) {
+    if (useCurrentPlayerUi()) {
         LaunchedEffect(component) { component.dispatch(TvgIntent.Activated) }
         AndroidTvgScreen(component, modifier, onBackHome)
         return
@@ -365,7 +365,7 @@ fun TvgScreen(
                                 }
                                 true
                             }
-                            Key.Back -> {
+                            Key.Back, Key.Escape -> {
                                 onBackHome?.invoke()
                                 true
                             }
@@ -392,7 +392,7 @@ fun TvgScreen(
                                 moveProgramme(1)
                                 true 
                             }
-                            Key.Back -> { 
+                            Key.Back, Key.Escape -> {
                                 onBackHome?.invoke()
                                 true 
                             }
@@ -401,7 +401,7 @@ fun TvgScreen(
                     }
                 },
         ) {
-            if (!isAndroidPlatform()) {
+            if (!useCurrentPlayerUi()) {
                 ScreenHeader(
                     title = uiText("ТВ-гид"),
                     onBack = onBackHome,
@@ -782,13 +782,13 @@ private fun ChannelRow(
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown || !isAndroidPlatform()) return@onPreviewKeyEvent false
+                if (event.type != KeyEventType.KeyDown || !useCurrentPlayerUi()) return@onPreviewKeyEvent false
                 when (event.key) {
                     Key.DirectionUp -> { onMoveChannel(-1); true }
                     Key.DirectionDown -> { onMoveChannel(1); true }
                     Key.DirectionLeft -> { onMoveProgramme(-1); true }
                     Key.DirectionRight -> { onMoveProgramme(1); true }
-                    Key.Back -> { onBack(); true }
+                    Key.Back, Key.Escape -> { onBack(); true }
                     Key.DirectionCenter, Key.Enter -> {
                         val p = selectedProgramme
                         if (p == null) onClick()
