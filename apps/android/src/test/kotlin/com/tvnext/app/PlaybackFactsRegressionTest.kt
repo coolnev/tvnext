@@ -87,6 +87,10 @@ class PlaybackFactsRegressionTest {
             assertTrue(facts(c).nativeVideoSurfaceRequired)
             analytics.onVideoInputFormatChanged(event,hd,null)
             field(c,"activeDecoderName").set(c,"OMX.vendor.avc.decoder.secure")
+            c.play(PlaybackItem("b","Clear HD after a protected source","file:///missing-b.ts"))
+            analytics.onVideoInputFormatChanged(event,hd,null)
+            assertFalse("A stale secure decoder name must not disagree with the new clear format's output gate",facts(c).nativeVideoSurfaceRequired)
+            analytics.onVideoInputFormatChanged(event,hd.buildUpon().setCryptoType(C.CRYPTO_TYPE_FRAMEWORK).build(),null)
             assertTrue(facts(c).nativeVideoSurfaceRequired)
         }finally{c.release()}
     }

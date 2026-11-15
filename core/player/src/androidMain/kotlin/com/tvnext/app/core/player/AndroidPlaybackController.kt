@@ -1014,8 +1014,8 @@ class AndroidPlaybackController(
             transportState = transportState,
             videoWidth = width ?: 0,
             videoHeight = height ?: 0,
-            nativeVideoSurfaceRequired = format?.let(::requiresNativeVideoOutput) == true ||
-                activeDecoderName?.endsWith(".secure", ignoreCase = true) == true,
+            nativeVideoSurfaceRequired = format?.let(::requiresNativeVideoOutput) ?:
+                (activeDecoderName?.endsWith(".secure", ignoreCase = true) == true),
         )
     }
 
