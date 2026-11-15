@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.RealtekCodecQueueTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-15T09:51:27.005Z" hostname="586b87a70f06" time="0.177">
+  <properties/>
+  <testcase name="profileIsNotPersistedAcrossApplicationSessions[28]" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.014"/>
+  <testcase name="renderedSkippedDroppedAndInsufficientInputCannotBeMistakenForAStuckOutputQueue[28]" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.012"/>
+  <testcase name="otherVendorsAvcFullHdAndOlderAndroidKeepTheirDefaultQueue[28]" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.014"/>
+  <testcase name="onlyAConfirmedNoOutputStallChangesTheNextNewFactoryAndKeepsTheExactHardwareConfiguration[28]" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.013"/>
+  <testcase name="oneBrokenBoxChannelCannotChangeTheQueueOfAnyOtherUhdChannelInAReusedPlayer[28]" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.03"/>
+  <testcase name="profileIsNotPersistedAcrossApplicationSessions" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.014"/>
+  <testcase name="renderedSkippedDroppedAndInsufficientInputCannotBeMistakenForAStuckOutputQueue" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.014"/>
+  <testcase name="otherVendorsAvcFullHdAndOlderAndroidKeepTheirDefaultQueue" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.015"/>
+  <testcase name="onlyAConfirmedNoOutputStallChangesTheNextNewFactoryAndKeepsTheExactHardwareConfiguration" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.016"/>
+  <testcase name="oneBrokenBoxChannelCannotChangeTheQueueOfAnyOtherUhdChannelInAReusedPlayer" classname="com.tvnext.app.RealtekCodecQueueTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

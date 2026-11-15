@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.20`, versionCode 1020, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.21`, versionCode 1021, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,17 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.20.apk`.
-Описание: `RELEASE_ANDROID_1.0.20_RU.md`.
-Сводка: `releases/android/validation-1.0.20.json`.
+APK: `releases/android/TVNext-1.0.21.apk`.
+Описание: `RELEASE_ANDROID_1.0.21_RU.md`.
+Сводка: `releases/android/validation-1.0.21.json`.
+
+В 1.0.21 (15.11) пользователь сообщил: после 1.0.20 вернулись зацикленные кадры. На вопрос OK→i прямо ответил: **OMX RealTek Video Decoder, AVC, аппаратный, Texture View**. Строка с размерами/AVC1 была передана голосом неоднозначно («640x1280»); точное разрешение не выдумывать. Это подтверждённый Realtek+TextureView, не переносить диагноз на SurfaceView/4K. Дополнительно пользователь отметил возможную неровность 4K, но на другом канале нормальнее, устойчивого воспроизведения не дал.
+
+В 1.0.20 ошибочно полностью убрана защита смены поверхности. 1.0.21 различает Surface по identity: та же Surface — никаких release; новая/null на защищённом Texture — release до super.handleMessage, чтобы не выполнять опасный setOutputSurface. previousTextureOutput обновляется лишь при действительной смене. Явный OMX.realtek prefix в AndroidVideoOutputPolicy работает независимо от бренда; software/native gates сохранены. Формат/DRM: canReuseCodec на защищённом Texture возвращает NO/WORKAROUND, Media3 drain+reinitialize вместо flush/reconfigure старой очереди. Seek/disable/manual protected keyframe catchup сохранены. Общий shouldReleaseCodecInsteadOfFlushing у MediaCodecVideoRenderer 1.11 FINAL: попытка override не компилируется и отвергнута; НЕ ПИСАТЬ, что установлен этот общий hook. Никаких патчей Media3 jar, reflection в product или wrapper-подмены кодека.
+
+4K: прошлый learned sync profile по одному имени OMX.realtek действовал на все UHD HEVC источники процесса. Теперь Profile(sourceId,decoder), volatile selectSource вызывается setPlaybackSource до setMediaSource/prepare. Тот же Exo/factory на другом источнике выбирает defaults; возврат к Box выбирает только его профиль. Условия learning >=3s buffered, hardware, API31+, UHD HEVC, >=32 input и нулевые rendered/skipped/dropped не менялись. Это устранение широкой области действия, не доказательство причины всей неровности 4K. Ugoos/Amlogic async, SurfaceView UHD/HDR, AFR, stable native view и first-frame readiness сохранены. Новых задержек/снижения качества нет.
+
+Финальные surface+format тесты против исходного рендерера 1.0.20 дали четыре ожидаемых падения на API28/35; восстановленный новый файл прошёл. Первоначальные два теста прямого внутреннего flush были заменены проверкой реального onInputFormatChanged→reuse NO→drainAction3, поскольку общий hook final. Не выдавать тот отвергнутый эксперимент за реализацию. Realtek профиль проверен actual factory на Box→три других UHD→Box и реальным play следующего канала после controlled recovery. Всего 482:83 Player+67 metadata+109 Channels+7 Home+216 native. Full release/lint/encoding/Desktop compile, подпись/ZIP/zipalign16KiB, key embedded-not-text, PNG/banner/native equal1.0.20. Source a9155ce2728ae06cf7992f59467ce008dd5c0eed, APK SHA256 7dae9898ab0c643d6833f402f6b68e1a8c1134773413c04a347aa2a5ff58afb9. Физической проверки TCL/Ugoos нет, плавность/исчезновение driver-loop на ТВ НЕ ПОДТВЕРЖДЕНЫ; original Box bytes недоступны. Windows installer не строился.
 
 В 1.0.20 (15.11) пользователь сообщил о непостоянном стоп-кадре3–5с при уже играющем звуке на любом канале, даже один канал иногда стартует нормально. Ответы на допвопросы старый/новыйкадр и TCL/Ugoos ещё не получены; не выдавать предположение за ответ. Удалены введённые1.0.16 избыточные сбросы: NativePlayerSurface key теперь(type,player), без item; onStreamChanged не release; MSG_SET_VIDEO_OUTPUT полностью делегирует Media3, безreleaseдаженатойжеповерхности. Новая поверхность поnewplayer послеstandby/deepretryсохранена. AndroidAudioRenderersFactory allowedVideoJoiningTimeMs=0: неготовоеvideoневыдаётreadiness5sec; startsfirstframe+A/V. TextureSafe оставляет releaseпередgenuinekeyframeseek/disable; восстановленcatchup:skipSourceкдоступномуkeyframe,accountpending,release+maybeInitбезunsafeflush. Приskip0нетрестарта. pendingсчётчикпоqueue/process/reset, учётAPI34decodeonly/tunneling. SurfaceView UHD/HDRselection ианимациянеотключены.
 

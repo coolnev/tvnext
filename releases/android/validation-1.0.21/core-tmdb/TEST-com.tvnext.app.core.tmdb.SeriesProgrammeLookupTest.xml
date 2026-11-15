@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SeriesProgrammeLookupTest[desktop]" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-15T09:49:49.884Z" hostname="586b87a70f06" time="2.564">
+  <properties/>
+  <testcase name="ambiguousLegacySearchFallsBackToTheTypedSeriesEndpointAndVerifiesDetails[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="0.016"/>
+  <testcase name="aKnownSeriesWithoutPrefixUsesItsCategoryAndSharesTheVerifiedCardBetweenEpisodes[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="0.013"/>
+  <testcase name="tmdbAlsoReceivesTheSeriesTitleWithoutTheArchiveEpisodeSuffix[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="0.005"/>
+  <testcase name="aTemporaryDetailFailureRetriesWhileTheSameSeriesCardRemainsVisible[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="2.517"/>
+  <testcase name="typedFallbackStillRejectsMoviesAndAConfirmedEmptyResultDoesNotPoll[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="0.006"/>
+  <testcase name="actualArchiveTitleWithBrokenBarAndEpisodeFetchesTheFullSeriesDescription[desktop]" classname="com.tvnext.app.core.tmdb.SeriesProgrammeLookupTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
