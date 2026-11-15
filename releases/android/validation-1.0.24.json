@@ -1,0 +1,137 @@
+{
+  "date": "2026-11-15",
+  "versionName": "1.0.24",
+  "versionCode": 1024,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "989c3116470ca94c2b2bbacfa20ce48eae80d522",
+  "sha256": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "changes": {
+    "cadence": "Estimate source video frame rate from encoded access-unit PTS at the production renderer input; independent of display Hz, wall clock, decoder speed, dropped/rendered frames and video output type.",
+    "hevc": "Bounded 256 timestamp window; sort for B-frame decode order and deduplicate; lattice/regression accepts millisecond/90kHz rounding, rejects variable cadence/discontinuities and separates fractional/integer standards.",
+    "lifecycle": "Stream-scoped observer and generation guard discard old channel results; seek/actual format change reset the sampler; metadata-only HLS id/bitrate updates preserve cadence and measured UI value.",
+    "nominal": "Stable source PTS may override an incorrect nominal rate (test: declared60, actual25). The previous rendered-frame half-rate guard is removed from that path.",
+    "sharedValue": "Same source rate feeds the bottom panel, diagnostics and Android AFR. Existing labels/translations for frames/s and screen Hz retained."
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesByteEqualTo123": true,
+    "nativeLibrariesMatchSourceManifest": true
+  },
+  "native": [
+    {
+      "abi": "armeabi-v7a",
+      "alignment": 16384,
+      "sha256": "2dacb35ea1b32aa8dff0a1948adf55129226b48b7260ff413bbf026b22ad4a3f",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "arm64-v8a",
+      "alignment": 16384,
+      "sha256": "abab51a80481838a881aff8c2b755f1e7b5a8839e529adb04d0c24ba364c0ed3",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "x86",
+      "alignment": 16384,
+      "sha256": "6af0af73c4ab608844cade7f7703024c114ae5027869a3fde45bbb7175ef6012",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "x86_64",
+      "alignment": 16384,
+      "sha256": "855d547ff87a2edc6b3ca2e02803116db2a9b07ab3c5848854233125ac82bc3f",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 85,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 110,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/dolby",
+      "task": "testDebugUnitTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 242,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 515,
+  "regression": {
+    "before": "Two focused common tests fail on the previous estimator: rounded HEVC PTS and B-frame/decode-order PTS with duplicates. Captured log retained.",
+    "common": "AVC/HEVC-independent source timestamps at 23.976/24/25/29.97/30/50/59.94/60, discontinuities, duplicate PTS, variable cadence and reset.",
+    "android": "Real Media3 renderer init/enable/render/read/format/queue flow on API28/35. Controlled codec adapter accepts240 inputs and emits zero output, proving no dependence on display/render callbacks. HLS header updates every12 inputs, rounded PTS and B-order tested. Actual controller publishes23.976; wrong nominal60 corrected to25 in both StateFlow and diagnostics. Codec-data change and departing-channel pending results checked.",
+    "retained": "Existing native startup surface gate, protected codec reset/tuning, HLS audio discovery, native AC3/EAC3/DTS and Compose navigation/animation suites pass."
+  },
+  "limitations": [
+    "No physical TCL/Ugoos or direct provider stream measurement; tests use controlled source timestamps and codec adapter, without native video decode.",
+    "Cadence describes timestamped source frames, not a count of distinct images or actual frames seen on a TV. Nominal stream rate is used until a stable estimate is available.",
+    "Unknown or genuinely variable/broken timestamps are not replaced with the screen refresh rate.",
+    "No Windows installer."
+  ]
+}

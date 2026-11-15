@@ -1,0 +1,28 @@
+
+> Task :core:player:compileDesktopTestJava NO-SOURCE
+> Task :core:player:desktopTestClasses
+
+> Task :core:player:desktopTest FAILED
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Duser.home=/workspace/.tools/user-home
+
+AutoFrameRateTest[desktop] > roundedHevcTimestampsStillIdentifyTheSourceRate[desktop] FAILED
+    java.lang.AssertionError at AutoFrameRateTest.kt:86
+
+AutoFrameRateTest[desktop] > decodeOrderBFramesAndRepeatedPtsDoNotEraseTheHevcCadence[desktop] FAILED
+    java.lang.AssertionError at AutoFrameRateTest.kt:98
+
+2 tests completed, 2 failed
+
+[Incubating] Problems report is available at: file:///workspace/work/tvnext-current/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core:player:desktopTest'.
+> There were failing tests. See the report at: file:///workspace/work/tvnext-current/core/player/build/reports/tests/desktopTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 27s
+14 actionable tasks: 6 executed, 8 up-to-date

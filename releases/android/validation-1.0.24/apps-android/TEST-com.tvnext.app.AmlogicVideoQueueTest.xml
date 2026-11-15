@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.AmlogicVideoQueueTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-15T14:15:46.933Z" hostname="586b87a70f06" time="11.032">
+  <properties/>
+  <testcase name="audioSoftwareOtherVendorsAndModernAndroidKeepMedia3Defaults[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="4.911"/>
+  <testcase name="legacyAmlogicHardwareUsesAsyncWithTheOriginalUhdConfiguration[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.12"/>
+  <testcase name="asyncFailureForOneCodecDoesNotDisableItForAnotherAmlogicDecoder[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.14"/>
+  <testcase name="failedAsyncInitializationRetriesTheSameHardwareOnceAndRemembersItsCompatibilityPath[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.059"/>
+  <testcase name="aBrokenCodecDoesNotLoopAndPreservesBothInitializationErrors[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.106"/>
+  <testcase name="rendererFactoryInstallsThisVideoPolicyInEveryAudioOutputMode[28]" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.173"/>
+  <testcase name="audioSoftwareOtherVendorsAndModernAndroidKeepMedia3Defaults" classname="com.tvnext.app.AmlogicVideoQueueTest" time="4.311"/>
+  <testcase name="legacyAmlogicHardwareUsesAsyncWithTheOriginalUhdConfiguration" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.024"/>
+  <testcase name="asyncFailureForOneCodecDoesNotDisableItForAnotherAmlogicDecoder" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.025"/>
+  <testcase name="failedAsyncInitializationRetriesTheSameHardwareOnceAndRemembersItsCompatibilityPath" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.023"/>
+  <testcase name="aBrokenCodecDoesNotLoopAndPreservesBothInitializationErrors" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.021"/>
+  <testcase name="rendererFactoryInstallsThisVideoPolicyInEveryAudioOutputMode" classname="com.tvnext.app.AmlogicVideoQueueTest" time="0.04"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

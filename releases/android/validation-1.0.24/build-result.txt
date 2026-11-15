@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+515 checks.
+Source: 989c3116470ca94c2b2bbacfa20ce48eae80d522
+Source PTS cadence, real Media3 renderer input/format handling, shared controller/AFR value, release/lint/encoding/Desktop/signature/ZIP/zipalign/ELF16KiB passed.
+No physical TV/provider-video validation.

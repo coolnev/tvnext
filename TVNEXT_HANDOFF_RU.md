@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.23`, versionCode 1023, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.24`, versionCode 1024, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,17 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.23.apk`.
-Описание: `RELEASE_ANDROID_1.0.23_RU.md`.
-Сводка: `releases/android/validation-1.0.23.json`.
+APK: `releases/android/TVNext-1.0.24.apk`.
+Описание: `RELEASE_ANDROID_1.0.24_RU.md`.
+Сводка: `releases/android/validation-1.0.24.json`.
+
+В1.0.24 (15.11) по вопросу пользователя60fps vs60Hz и отсутствию HEVCfps переделан расчет. РанееFormat.frameRate fallback→renderedPTS; strict1.5%/90%median отбрасывалmsroundedHEVC; каждыйformatEventreset; verifiedVideoFrameRate не позволял исправлять grossnominalerror. Теперь VideoSourceCadence на TextureSafe.onQueueInputBuffer до output/drop; sourcePTS (неwalltime/Hz). Window256Long, sortкаждые12/48, dedup,B-order,medianperiod+indices+OLS lattice, tolerancemax1100us/2%, min24points/800ms, standard snap .012/fps*.0005. Неясный/VFRнеугадывается. Все video types одинcallback, no pixel processing. Native libs побайтно23.
+
+onStreamChanged захватывает immutable source observer; sourceCadence reset stream/seek/actualformat(CSD/mime/size/nominalfps), HLSid/bitrate игнорируются. ControllerresetVideoSignal сбрасываетmeasuredCadence/measuredFps и создаётgenerationbound callback→Main post, проверяетgeneration/item/sameVideoTiming. Analytics больше НЕинкрементируетsignalGeneration наmetadataevent и сохраняетmatchingmeasuredpair. УдаленыrenderedMetadataListener и anti-half-rate guard; actualinput25 исправляетdeclared60. ОднаvideoSignal дляAFR,measuredFps дляUI/streamInfo. Playback/render/surfacepolicyнеизменны. ВеличинаFPS—cadence исходныхPTS, НЕоценкаdistinctvisualframes илифактическихкадровнапанели; доизмерениявозможенnominalproviderFPS.
+
+Дваcommonbaselinefails записаны вfps-before.txt. Новыйnative VideoCadenceRegressionTest реально init/enable/renderMedia3 иread/queue240samples, controlledcodec принимаетinput,output=-1всегда. HEVCrounded23.976+B-order+headerкаждые12→correct,nominal60/source25→25вsignal/diagnostics,codecdatachange→fallback60,oldpendingafterchannelplay→discard. API28/35. Testcontrolleridleбезfile/networkerror; ранниеharnessошибкиunknownproxydefaultmethods/register/useInputBuffer иfileERRORrace НЕсчитатьproductregressions. Физическогодекодирования/GPU вновыхтестахнет.
+
+515 checks85Player+67metadata+110Channels+7Home+242Android+4realhostaudio. Fullrelease/lint/encoding/Desktop/sign/zipalign/nativeManifest/ELF/PNG/key. Source 989c3116470ca94c2b2bbacfa20ce48eae80d522,APKsha85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438,ver1.0.24/code1024. PhysicalTCL/Ugoos/providerFPS НЕ проверены; Windowsinstallerнет.
 
 В1.0.23 (15.11) новое фото BCU Ultra4K: TCL Android12/API31, Realtek HW HEVC Main10/PQ3840x2160 SurfaceView, всеaudiofields—, firstframe667ms,videoStarts1,recovery0,buf7625ms,download36.7Mbps,video679/659. Нет доказательства конкретного аудиокодека. User также: только4K/HDR первоеRIGHTтеряется, второйпоказываетполосу, третийописание. Async вопрос «этотBCUсозвукомвдругомприложениинаэтомTCL?» пока без ответа. Прямые BCUbytesнеполучены;defaultproviderprobe curlHTTP000/status22/urllibURLError,приватныеадресанепубликовались.
 
