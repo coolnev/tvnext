@@ -1,0 +1,6 @@
+BUILD SUCCESSFUL
+441 checks: 83 Player, 67 metadata, 108 Channels, 7 Home, 176 native API28/35.
+User archive title reproduced before fix; archive description displayed after fix using HTTP fixtures.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Live API blocked; physical TV unavailable.
+Source: 1b90a39bbdf37969a334c8449b8cae19457149b5

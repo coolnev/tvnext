@@ -1,6 +1,6 @@
-# TVNext — актуальный контекст, 2026-11-14
+# TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.16`, versionCode 1016, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.17`, versionCode 1017, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,15 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.16.apk`.
-Описание: `RELEASE_ANDROID_1.0.16_RU.md`.
-Сводка: `releases/android/validation-1.0.16.json`.
+APK: `releases/android/TVNext-1.0.17.apk`.
+Описание: `RELEASE_ANDROID_1.0.17_RU.md`.
+Сводка: `releases/android/validation-1.0.17.json`.
+
+В 1.0.17 (15.11) пользователь: Оперативная память всё ещё без описания, смотрит архив. Через async уточнил ТОЧНУЮ EPG-строку: «Т/с Оперативная память ¦ 1.» (прерывистая вертикальная черта, не обычная). В1.0.16 исправлялась только приставка; номер эпизода оставался в query и strict match. НОВЫЕ 5 тестов падали до исправления (series-117-before.log, сводка в evidence/regression-before.txt). Реализована общая ProgrammeSeriesTitle: типовые вертикальные разделители/номер/диапазон/явная подпись серии/сезона; bare numbered suffix снимается лишь при known series (prefix/category/episode-num), реальные sequel digits сохраняются. cleanProgrammeTitle принимает series hint; query канонический также используется для точного сопоставления Kino/TMDB. metadataCacheKey для SERIES использует имя+год+kind, без номера эпизода/его описания/длительности; прежние 5мин/256 и128 cache bounds сохранены. Новости проходят прежний canEnrich guard и не используют кэш сериала.
+
+Kino: type:null в keyword search трактуется как неизвестный до full verification, не как несовместимый. Пустой/неоднозначный legacy search получает один typed fallback /api/v2.2/films?keyword=...&type=TV_SERIES&page=1; full type всё равно обязателен для SERIES. Квоты/ключ/backoff у fallback учитываются; deprecated legacy404/410 допускает fallback. Observe теперь делает до2повторов и при null после временной ошибки Кино, а не только poster-only; confirmed no-match не опрашивается. В потоке UI cancellation сохранена, сеть вне UI thread, прежниеSemaphore2. Видео/анимация/аудио/AFR/EPG не менялись.
+
+441 проверки:83 Player+67 metadata+108 Channels+7 Home+176 Android API28/35. UI archivedSeriesWithTheProvidersEpisodeSuffixDisplaysItsFetchedDescription создаёт EpgProgramme двухдневной давности с точным названием, проверяет windowedDescriptionProgramme выбирает архив вместо live новости, затем реальный rememberProgrammeMetadata/request/repository/MockEngine и видимый текст ProgrammeRichDetails. Честно: ответы API тестовые; живые Kino+primaryEPG остаются CONNECT/HTTP403 этой среды; физического ТВ нет. Не обещать, что реально получен ответ сервера на ТВ. Дополнительно типизированный fallback, reject movie, null detail503 retry while visible, no polling no-match, TMDB clean query, reuse episode card, sequel safety проверены. Release/lint/encoding/Desktopcompile/sign/ZIP/zipalign16KiB/key/PNG/native unchanged vs1.0.16 passed. Версия1.0.17/code1017, source 1b90a39bbdf37969a334c8449b8cae19457149b5, APK SHA256 fccbd99cf74491b1359b46752978bdcf35f8af96a5cfa0146d2b21a121742fc8.
 
 В 1.0.16 (14.11) пользователь подтвердил повтор кадров SDR при нормальном звуке на TCL / Google TV; HDR нормально; выключение анимации устраняет сбой. Явно требует анимацию сохранить. Нельзя советовать выключить её как готовое решение. В Media3 1.11.0 найден штатный workaround b/362904942: c2.mtk flush портит BufferQueue SurfaceTexture, но shouldReleaseCodecInsteadOfFlushing final и ограничен videoSink!=null. Наш PlayerView direct path туда не попадает. Это гипотеза по исходникам и симптому, фактический codec TCL не получен, физической репродукции нет.
 

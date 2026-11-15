@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ProgrammeDescriptionStateUiTest[desktop]" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-15T05:34:51.099Z" hostname="586b87a70f06" time="0.176">
+  <properties/>
+  <testcase name="sameTitleNewsKeepsItsEpgAndNeverDisplaysThePreviouslyViewedMoviesArtwork[desktop]" classname="com.tvnext.app.feature.channels.ui.ProgrammeDescriptionStateUiTest" time="0.061"/>
+  <testcase name="switchingFilmsNeverRendersThePreviousSynopsisAndCachedReturnHasNoBlankFrame[desktop]" classname="com.tvnext.app.feature.channels.ui.ProgrammeDescriptionStateUiTest" time="0.066"/>
+  <testcase name="archivedSeriesWithTheProvidersEpisodeSuffixDisplaysItsFetchedDescription[desktop]" classname="com.tvnext.app.feature.channels.ui.ProgrammeDescriptionStateUiTest" time="0.049"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

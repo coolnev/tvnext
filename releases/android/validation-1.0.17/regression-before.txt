@@ -1,0 +1,8 @@
+> Task :core:tmdb:desktopTest FAILED
+SeriesEpgTitleTest[desktop] > episodeNumbersAfterProviderSeparatorsAreNotPartOfTheSeriesName[desktop] FAILED
+SeriesProgrammeLookupTest[desktop] > ambiguousLegacySearchFallsBackToTheTypedSeriesEndpointAndVerifiesDetails[desktop] FAILED
+SeriesProgrammeLookupTest[desktop] > aKnownSeriesWithoutPrefixUsesItsCategoryAndSharesTheVerifiedCardBetweenEpisodes[desktop] FAILED
+SeriesProgrammeLookupTest[desktop] > aTemporaryDetailFailureRetriesWhileTheSameSeriesCardRemainsVisible[desktop] FAILED
+SeriesProgrammeLookupTest[desktop] > actualArchiveTitleWithBrokenBarAndEpisodeFetchesTheFullSeriesDescription[desktop] FAILED
+7 tests completed, 5 failed
+BUILD FAILED in 26s
