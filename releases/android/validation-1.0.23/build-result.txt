@@ -1,0 +1,5 @@
+BUILD SUCCESSFUL
+507 checks.
+Source: 3a9e710caed6379d90d13850e208c77242f86e4a
+AAC/DTS actual TS extraction, DTS/AC3/EAC3 real host PCM decode, remote focus/release, release/lint/encoding/Desktop/signature/ZIP/zipalign/ELF16KiB passed.
+Original BCU stream and physical TCL/HDMI unavailable.

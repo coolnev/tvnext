@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.HlsAudioDiscoveryTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-15T13:26:31.244Z" hostname="586b87a70f06" time="0.305">
+  <properties/>
+  <testcase name="completeCodecDeclarationsStillExposeTheirOriginalAacTrack[28]" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.052"/>
+  <testcase name="actualPlaybackFactoryPreparesHlsFromChunksAndRetainsLocalAndProgressiveDispatch[28]" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.023"/>
+  <testcase name="aHevcOnlyManifestMustNotDiscardTheAacActuallyPresentInTransportPackets[28]" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.019"/>
+  <testcase name="blurayStyleDtsTransportAudioIsDiscovered[28]" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.018"/>
+  <testcase name="aGenuineVideoOnlyTransportDoesNotGainAFakeAudioTrack[28]" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.015"/>
+  <testcase name="completeCodecDeclarationsStillExposeTheirOriginalAacTrack" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.039"/>
+  <testcase name="actualPlaybackFactoryPreparesHlsFromChunksAndRetainsLocalAndProgressiveDispatch" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.053"/>
+  <testcase name="aHevcOnlyManifestMustNotDiscardTheAacActuallyPresentInTransportPackets" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.022"/>
+  <testcase name="blurayStyleDtsTransportAudioIsDiscovered" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.023"/>
+  <testcase name="aGenuineVideoOnlyTransportDoesNotGainAFakeAudioTrack" classname="com.tvnext.app.HlsAudioDiscoveryTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

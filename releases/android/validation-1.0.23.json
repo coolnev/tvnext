@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-15",
+  "versionName": "1.0.23",
+  "versionCode": 1023,
+  "applicationId": "com.tvnext.app",
+  "variant": "release",
+  "debuggable": false,
+  "sourceCommit": "3a9e710caed6379d90d13850e208c77242f86e4a",
+  "sha256": "f64cbbd5268e787691883bae16d6a29d35292eb1a2d9ca96d02ef234483cbea0",
+  "signerSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "userObservation": {
+    "channel": "BCU Ultra 4K",
+    "device": "TCL Smart TV Android12/API31",
+    "video": "HEVC 3840x2160 HDR/PQ",
+    "decoder": "OMX.realtek.video.decoder",
+    "output": "SurfaceView",
+    "audioFieldsAbsent": true,
+    "firstVideoFrameMs": 667,
+    "videoDecoderStarts": 1,
+    "recoveries": 0,
+    "remote": "First Right ignored on UHD/HDR; second opens strip, third opens description"
+  },
+  "changes": {
+    "hls": "Parse actual transport audio when a TS HLS CODECS hint names video only; retain normal non-TS and complete declarations. HLS prepares from actual chunks. Enable HDMV DTS stream type0x82 for HLS and progressive TS.",
+    "audio": "FFmpeg dca decoder added for DTS/DTS-HD to PCM; AC3/EAC3 retained. Android4ABIs and host rebuilt from same LGPL FFmpeg/JNI sources, no video decoders.",
+    "remote": "Right key release observed before focused-panel delegation; latch reset on channel/mode/focus exit. Key handlers precede focus target. Native Android video host/descendants cannot own remote focus.",
+    "diagnostics": [
+      "Audio tracks found / selected",
+      "Detected audio codecs"
+    ],
+    "locales": [
+      "ru",
+      "en",
+      "zh"
+    ]
+  },
+  "checks": {
+    "encoding": true,
+    "assembleRelease": true,
+    "lintVitalRelease": true,
+    "desktopCompile": true,
+    "apksigner": true,
+    "zipalign16KiB": true,
+    "zipIntegrity": true,
+    "builtInKinopoiskKeyPresent": true,
+    "privateKeyNotInTrackedText": true,
+    "pngAndAndroidTvBannerUnchanged": true,
+    "nativeLibrariesMatchSourceManifest": true,
+    "videoDecoderDisabledInFfmpeg": true
+  },
+  "native": [
+    {
+      "abi": "armeabi-v7a",
+      "alignment": 16384,
+      "sha256": "2dacb35ea1b32aa8dff0a1948adf55129226b48b7260ff413bbf026b22ad4a3f",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "arm64-v8a",
+      "alignment": 16384,
+      "sha256": "abab51a80481838a881aff8c2b755f1e7b5a8839e529adb04d0c24ba364c0ed3",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "x86",
+      "alignment": 16384,
+      "sha256": "6af0af73c4ab608844cade7f7703024c114ae5027869a3fde45bbb7175ef6012",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    },
+    {
+      "abi": "x86_64",
+      "alignment": 16384,
+      "sha256": "855d547ff87a2edc6b3ca2e02803116db2a9b07ab3c5848854233125ac82bc3f",
+      "decoders": [
+        "ac3",
+        "eac3",
+        "dca"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "module": "core/player",
+      "task": "desktopTest",
+      "tests": 83,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/tmdb",
+      "task": "desktopTest",
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/channels",
+      "task": "desktopTest",
+      "tests": 110,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "features/home",
+      "task": "desktopTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core/dolby",
+      "task": "testDebugUnitTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "apps/android",
+      "task": "testDebugUnitTest",
+      "tests": 236,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totalTests": 507,
+  "regression": {
+    "stockExtraction": "Real Media3 default extraction drops actual AAC with a HEVC-only CODECS hint and ignores HDMV DTS0x82: four failing assertions on API28/35; complete AAC and genuinely video-only controls pass.",
+    "extractionAfter": "Synthetic Main10/PQ HEVC TS with AAC, DTS and no audio parsed using production extractor; playback media-source factory chunk preparation/local dispatch verified.",
+    "nativeAudio": "Real Media3 Java/JNI + host FFmpeg decode AC3/EAC3/DTS 5.1 to non-silent PCM; centre channel and sample rate/layout checked. DTS vector excludes the encoder priming packet.",
+    "remote": "Real Compose description takes focus between Right DOWN and UP, closes, and next Right shows strip immediately; following Right shows description. Actual Android view/key dispatch checked on API28/35."
+  },
+  "limitations": [
+    "The original BCU stream could not be retrieved from this environment; photo alone does not establish its actual audio codec or source validity.",
+    "No physical TCL remote/HDR display or AudioTrack/HDMI validation. Native decoder tests use Linux host JNI from the same sources.",
+    "The optional question whether BCU has sound in another player has not yet been answered.",
+    "TS discovery prefers actual PMT/PES over incomplete video-only manifest hints. Malformed streams with ghost PMT tracks remain a provider compatibility limitation.",
+    "No Windows installer."
+  ]
+}

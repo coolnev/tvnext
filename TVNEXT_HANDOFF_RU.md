@@ -1,6 +1,6 @@
 # TVNext — актуальный контекст, 2026-11-15
 
-Текущая версия TVNext: `1.0.22`, versionCode 1022, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
+Текущая версия TVNext: `1.0.23`, versionCode 1023, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 СОГЛАСОВАНИЕ 08.11.2026: пользователь выбрал вариант 3 из design/fullscreen-panel-2026-11-08/. Он реализован в 0.5.40: текущая и следующая передачи в двух карточках, одна шкала и ряд управления, без сюжета/кнопки описания. Описание остаётся в списке каналов и по двойному вправо. Дополнительно исправлен круглый значок Google TV; по прямому указанию пользователя прямоугольный Android TV banner НЕ менять.
 
@@ -12,9 +12,19 @@ GitHub: https://github.com/coolnev/tvnext/tree/main
 
 Исходная база: загруженный пользователем TVnextR-source.zip. Нетронутый ZIP лежит в `source-archives/TVnextR-source-2026-11-05.zip`, SHA-256 b3284f0ddbc6a5f3608327a3c2c74e551ca81f03adcd24a466564d70e13c5bde. Первый коммит 0445ce8 сохраняет исходную базу. Не восстанавливать исходники из APK и не заменять старые ветки.
 
-APK: `releases/android/TVNext-1.0.22.apk`.
-Описание: `RELEASE_ANDROID_1.0.22_RU.md`.
-Сводка: `releases/android/validation-1.0.22.json`.
+APK: `releases/android/TVNext-1.0.23.apk`.
+Описание: `RELEASE_ANDROID_1.0.23_RU.md`.
+Сводка: `releases/android/validation-1.0.23.json`.
+
+В1.0.23 (15.11) новое фото BCU Ultra4K: TCL Android12/API31, Realtek HW HEVC Main10/PQ3840x2160 SurfaceView, всеaudiofields—, firstframe667ms,videoStarts1,recovery0,buf7625ms,download36.7Mbps,video679/659. Нет доказательства конкретного аудиокодека. User также: только4K/HDR первоеRIGHTтеряется, второйпоказываетполосу, третийописание. Async вопрос «этотBCUсозвукомвдругомприложениинаэтомTCL?» пока без ответа. Прямые BCUbytesнеполучены;defaultproviderprobe curlHTTP000/status22/urllibURLError,приватныеадресанепубликовались.
+
+Actual Media3 default HLS extractor на synthetic HEVC Main10/PQ+Aac: manifestCODECSHEVConly включаетIGNORE_AAC; TS DTS0x82 игнорируетсябезHDMVflag.4baselinefails(API28/35),completeAACиvideo-onlycontrols passed. IptvHlsExtractorFactory делегируетDefault сENABLE_HDMV_DTS; толькоеслиcodecsvideo-onlyиаудиокодекотсутствует+actual940byteTSsyncprefix, убираетcodec hint тольконаэтапеextractor. Не inventAACcodec. Peekbufferresetдо/после,byteснепотребляются,большогопрефетчанет. AndroidPlaybackMediaSources HLSfactory сallowChunklessPreparationfalse (реальныедорожки), иначеDefault+TSHDMVflag;локальныеHLS/TSсохранены. ВозможныproviderghostPMTtracks—необещатьвсеполоманныепотокиисправлены. streamInfoдобавленыfound/selectedaudio countsиdetectedmime, RU/EN/ZH.
+
+Добавлен FFmpeg dca decoder/parser в прежний audio-onlyLGPLмодуль. NDKr28bAPI24все4ABI+Linuxhost,ELF16KiB;CONFIG_GPL/NONFREE0,H264/HEVC/AACdecoder0,ac3/eac3/dca1. SOURCEShashesобновлены,JNIиupstreamJavaнеизменены,толькоsubsetconfig. build_native.py теперьconfigstamp+distcleanприиномconfigureчтобынепереиспользоватьстарыеAC3-only.libs. Freshwork /workspace/.tools/native-audio-dts-123, host-jniтамже. Native4tests passrealAC3/EAC3/DTS5.1PCM48k/6chcentre-energy. DTSfirstencodedframeбылsilentpriming,исправленTESTVECTORнавторойcomplete2048byteframe;этонеисправлениепродуктовогоdecoder. README/Noticeupdated. NativeAPKотличаютсяот22тольконовойсборкойffmpeg, videohardwarepolicyнепоменялась. Нужныmanifest/ELF/sourcechecksвместоoldnativebyteequalassert.
+
+RIGHT: старыйrootрановыходилinfoPanelFocusedдосбросаrightHeldнаUP. Новый FullscreenRightInput+outertrackFullscreenRightReleaseObserver (неconsume) делаетreleaseдоbranch,resetприfocusout/remember(channel,immersive). Rootkeyhandlersпередfocusable. NativeViewportblockdescendantsиrawsurfacefocusfalse,AndroidViewfocusPropertiescanFocusfalse. НоваяComposeUIпроверка:первыйRIGHTполоса;второйDOWNописаниефокусируетсяДОUP;UPчерезпанель;Back;следующийпервыйRIGHTопятьполоса,второйописание. Androidviewfocus/keytestпрошёлдоипослепослеисправленияfixturelayout;ПЕРВЫЕ2паденияNativeVideoModeбылинаcontrols.requestFocusиззанеразмереннойtestview,НЕназывайтеихподтверждениемпродуктовогоNativefocusбага. Запретперехватафокуса—defense,physicalHDRнепроверен. Primarylatchbugcodeconfirmed/testedpostfix.
+
+507 checks:83Player+67metadata+110Channels+7Home+236Android28/35+4realhostaudio35. Все release/lint/encoding/Desktopcompile/sign/zipalign/ELF/nativeManifest/PNG/keychecks. Source 3a9e710caed6379d90d13850e208c77242f86e4a,APKshaf64cbbd5268e787691883bae16d6a29d35292eb1a2d9ca96d02ef234483cbea0,ver1.0.23/code1023. ИсточникBCUипульт/AudioTrackфизическогоTCLещёНЕПРОВЕРЕНЫ. Нельзяобещать,чтоBCUтеперьточносозвуком. Windowsinstallerнет.
 
 Финальный опубликованный тег 1.0.22: **v1.0.22-final**. Тег v1.0.22 сохранён как промежуточная сборка (исходники 03e817fd308f11adae9e80329d3d64ae3067c93d, APK ddcb04f6df08d1b824719e089406c39b8ef515e23c7c42014b9c8be793d7a156); не двигать и не переписывать. Пользователю выдаётся только итоговый APK по тегу v1.0.22-final. После первого publish пойман логический край gate: diagnostics делал OR с остаточным activeDecoderName.secure, тогда как gate опирался на новый clear format; это могло рассогласовать View/gate после DRM. Исправлено: format?.let(requiresNativeVideoOutput) ?: secureNameFallback, т.е. известный формат общий и авторитетный для UI/gate. PlaybackFactsRegressionTest проверяет stale secure→new clearHD(false), затем реальный crypto framework(true). Все490 проверок и сборка/подпись заново прошли на окончательном коде. Финальные source 3219e124a4759f48f232036b7a7832002c1cd069, APKsha32f9d4375ace174bfcc3c8a91986cefdcc5de954f88f6d19324c91320432c665.
 

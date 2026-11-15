@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tvnext.app.PlaybackTuneIsolationTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-15T13:26:32.602Z" hostname="586b87a70f06" time="0.146">
+  <properties/>
+  <testcase name="aNetworkRetryCutsTheSourceOnlyOnceAndKeepsTheSamePlayer[28]" classname="com.tvnext.app.PlaybackTuneIsolationTest" time="0.023"/>
+  <testcase name="normalAndRepeatedTunesCannotPassAnOldQueuedRealtekDecoderToTheIncomingSource[28]" classname="com.tvnext.app.PlaybackTuneIsolationTest" time="0.062"/>
+  <testcase name="aNetworkRetryCutsTheSourceOnlyOnceAndKeepsTheSamePlayer" classname="com.tvnext.app.PlaybackTuneIsolationTest" time="0.031"/>
+  <testcase name="normalAndRepeatedTunesCannotPassAnOldQueuedRealtekDecoderToTheIncomingSource" classname="com.tvnext.app.PlaybackTuneIsolationTest" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
