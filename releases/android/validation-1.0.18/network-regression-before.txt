@@ -1,0 +1,7 @@
+PlaybackNetworkIsolationTest > stalledHeadersDoNotHoldTheNextChannelOrItsProviderConnection[28] FAILED
+PlaybackNetworkIsolationTest > stalledBodyDoesNotHoldTheNextChannelOrItsProviderConnection[28] FAILED
+PlaybackNetworkIsolationTest > stalledHeadersDoNotHoldTheNextChannelOrItsProviderConnection FAILED
+PlaybackNetworkIsolationTest > stalledBodyDoesNotHoldTheNextChannelOrItsProviderConnection FAILED
+4 tests completed, 4 failed
+> Task :apps:android:testDebugUnitTest FAILED
+BUILD FAILED in 1m 24s

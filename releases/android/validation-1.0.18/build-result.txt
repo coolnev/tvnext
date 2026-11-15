@@ -1,0 +1,7 @@
+BUILD SUCCESSFUL
+450 checks: 83 Player, 67 metadata, 109 Channels, 7 Home, 184 native API28/35.
+4 real Media3/HTTP local cancellation regressions failed before fix and pass afterward.
+Snapshot, HTTP/codecs, no playback control calls, remote navigation/focus/close and RU/EN/ZH labels verified.
+Release/lint/encoding/Desktop compile/signature/ZIP/zipalign passed.
+Actual Box streams and physical TVs unavailable.
+Source: 19c4cb5e18c249b31b13cafcc2b1634168b1c642
