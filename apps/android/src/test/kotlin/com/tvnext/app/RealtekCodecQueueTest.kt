@@ -17,7 +17,8 @@ class RealtekCodecQueueTest {
     private val policyClass=Class.forName("com.tvnext.app.core.player.AndroidCodecCompatibility")
     private val format=Format.Builder().setSampleMimeType("video/hevc").setWidth(3840).setHeight(2160).build()
     private val decoder="OMX.realtek.video.decoder"
-    private fun policy(sdk:Int=31)=policyClass.getDeclaredConstructor(Int::class.javaPrimitiveType).apply{isAccessible=true}.newInstance(sdk)
+    private fun policy(sdk:Int=31)=policyClass.getDeclaredConstructor(Int::class.javaPrimitiveType).apply{isAccessible=true}.newInstance(sdk).also{select(it,"box")}
+    private fun select(policy:Any,id:String) {policyClass.getDeclaredMethod("selectSource",String::class.java).invoke(policy,id)}
     private fun record(policy:Any,name:String=decoder,video:Format=format,counters:DecoderCounters?=counts()) =
         policyClass.getDeclaredMethod("recordNoOutputStall",String::class.java,Format::class.java,DecoderCounters::class.java)
             .invoke(policy,name,video,counters) as Boolean
@@ -44,8 +45,8 @@ class RealtekCodecQueueTest {
         assertTrue(sync.calls.all{it===configuration});assertEquals(1,defaults.calls.size);assertTrue(async.calls.isEmpty())
         assertEquals(3840,configuration.mediaFormat.getInteger(MediaFormat.KEY_WIDTH))
         assertEquals(2160,configuration.mediaFormat.getInteger(MediaFormat.KEY_HEIGHT))
-        assertTrue(configuration.codecInfo!!.hardwareAccelerated)
-        assertTrue(replacement.javaClass.getDeclaredMethod("getVideoOutputDescription").invoke(replacement).toString().contains("Realtek HEVC sync"))
+        assertTrue(configuration.codecInfo.hardwareAccelerated)
+        assertTrue(replacement.javaClass.getDeclaredMethod("getVideoOutputDescription").invoke(replacement)!!.toString().contains("Realtek HEVC sync"))
     }
     @Test fun renderedSkippedDroppedAndInsufficientInputCannotBeMistakenForAStuckOutputQueue() {
         for(counters in listOf(counts().apply{renderedOutputBufferCount=1},counts().apply{skippedOutputBufferCount=1},
@@ -68,5 +69,19 @@ class RealtekCodecQueueTest {
         val defaults=Factory();val async=Factory();val sync=Factory()
         assertSame(defaults.adapter,factory(policy(),defaults,async,sync).createAdapter(config()))
         assertTrue(sync.calls.isEmpty())
+    }
+    @Test fun oneBrokenBoxChannelCannotChangeTheQueueOfAnyOtherUhdChannelInAReusedPlayer() {
+        val policy=policy();assertTrue(record(policy))
+        val defaults=Factory();val async=Factory();val sync=Factory()
+        val selection=factory(policy,defaults,async,sync)
+        val configuration=config()
+        assertSame(sync.adapter,selection.createAdapter(configuration))
+        for(id in listOf("other4k","anotherMovie","ordinaryChannel")) {
+            select(policy,id)
+            assertSame("The exact same UHD Realtek configuration on $id keeps Media3 defaults",defaults.adapter,selection.createAdapter(configuration))
+        }
+        select(policy,"box")
+        assertSame(sync.adapter,selection.createAdapter(configuration))
+        assertEquals(2,sync.calls.size);assertEquals(3,defaults.calls.size);assertTrue(async.calls.isEmpty())
     }
 }

@@ -58,7 +58,7 @@ class TextureCodecResetTest {
     }
 
     @Test fun actualMedia3SeekReleasesAffectedTextureCodecWithoutFlushingItsQueue() {
-        for(name in listOf("c2.mtk.avc.decoder","c2.mtk.hevc.decoder","OMX.MTK.VIDEO.DECODER.AVC")) {
+        for(name in listOf("c2.mtk.avc.decoder","c2.mtk.hevc.decoder","OMX.MTK.VIDEO.DECODER.AVC","OMX.realtek.video.decoder")) {
             val (renderer,_)=renderer();val operations=installCodec(renderer,name)
             reset(renderer)
             assertEquals(0,operations.flushes);assertEquals(1,operations.releases)
@@ -98,7 +98,7 @@ class TextureCodecResetTest {
             .invoke(changed,arrayOf(Format.Builder().setSampleMimeType("video/avc").build()),0L,0L,MediaSource.MediaPeriodId("new-channel"))
         assertEquals(0,changedOps.flushes);assertEquals(0,changedOps.releases)
     }
-    @Test fun surfaceHandoffUsesMedia3WithoutReleasingAJustStartedDecoder() {
+    @Test fun sameSurfacePreservesTheFirstKeyframeButARealTextureHandoffReplacesTheCodec() {
         val (renderer,policy)=renderer()
         val texture=SurfaceTexture(0);val first=Surface(texture);val second=Surface(texture)
         try {
@@ -109,8 +109,48 @@ class TextureCodecResetTest {
             assertEquals(0,operations.surfaceChanges)
             policyClass.getDeclaredMethod("setTextureOutput",Boolean::class.javaPrimitiveType).invoke(policy,false)
             renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,second)
-            assertEquals(0,operations.flushes);assertEquals(0,operations.releases);assertEquals(1,operations.surfaceChanges)
+            assertEquals(0,operations.flushes);assertEquals(1,operations.releases);assertEquals(0,operations.surfaceChanges)
         } finally {first.release();second.release();texture.release()}
+    }
+    @Test fun nativeVideoAndOtherVendorsStillChangeTheirSurfaceWithoutRestartingTheDecoder() {
+        for((texture,name) in listOf(false to "OMX.realtek.video.decoder",true to "OMX.amlogic.avc.decoder.awesome")) {
+            val (renderer,_)=renderer(texture=texture)
+            val st=SurfaceTexture(0);val first=Surface(st);val second=Surface(st)
+            try {
+                renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,first)
+                val operations=installCodec(renderer,name)
+                renderer.handleMessage(Renderer.MSG_SET_VIDEO_OUTPUT,second)
+                assertEquals(0,operations.releases);assertEquals(1,operations.surfaceChanges);assertEquals(0,operations.flushes)
+            } finally {first.release();second.release();st.release()}
+        }
+    }
+    private fun changeFormat(renderer:MediaCodecVideoRenderer,width:Int,height:Int):androidx.media3.exoplayer.DecoderReuseEvaluation {
+        val oldFormat=Format.Builder().setId("old-track").setSampleMimeType("video/avc").setWidth(width).setHeight(height).build()
+        val newFormat=oldFormat.buildUpon().setId("new-track").build()
+        for((name,value) in listOf("inputFormat" to oldFormat,"codecInputFormat" to oldFormat))
+            MediaCodecRenderer::class.java.getDeclaredField(name).apply{isAccessible=true}.set(renderer,value)
+        val maxClass=Class.forName("androidx.media3.exoplayer.video.MediaCodecVideoRenderer\$CodecMaxValues")
+        val max=maxClass.getDeclaredConstructor(Int::class.javaPrimitiveType,Int::class.javaPrimitiveType,Int::class.javaPrimitiveType)
+            .apply{isAccessible=true}.newInstance(3840,2160,64_000_000)
+        MediaCodecVideoRenderer::class.java.getDeclaredField("codecMaxValues").apply{isAccessible=true}.set(renderer,max)
+        val holder=androidx.media3.exoplayer.FormatHolder().apply{format=newFormat}
+        return MediaCodecVideoRenderer::class.java.getDeclaredMethod("onInputFormatChanged",androidx.media3.exoplayer.FormatHolder::class.java)
+            .apply{isAccessible=true}.invoke(renderer,holder) as androidx.media3.exoplayer.DecoderReuseEvaluation
+    }
+    @Test fun formatChangesDrainAndReplaceTheReportedRealtekTextureCodecInsteadOfReusingItsQueue() {
+        val (renderer,_)=renderer(tcl=true);val operations=installCodec(renderer,"OMX.realtek.video.decoder")
+        val result=changeFormat(renderer,1280,720)
+        assertEquals(androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_NO,result.result)
+        assertEquals("Drain to EOS, then reinitialize; do not flush or reconfigure the old queue",3,
+            MediaCodecRenderer::class.java.getDeclaredField("codecDrainAction").apply{isAccessible=true}.getInt(renderer))
+        assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
+    }
+    @Test fun nativeUhdFormatNotificationDoesNotDiscardARunningRealtekDecoder() {
+        val (renderer,_)=renderer(texture=false,tcl=true);val operations=installCodec(renderer,"OMX.realtek.video.decoder")
+        val result=changeFormat(renderer,3840,2160)
+        assertEquals(androidx.media3.exoplayer.DecoderReuseEvaluation.REUSE_RESULT_YES_WITHOUT_RECONFIGURATION,result.result)
+        assertEquals(0,MediaCodecRenderer::class.java.getDeclaredField("codecDrainAction").apply{isAccessible=true}.getInt(renderer))
+        assertEquals(0,operations.flushes);assertEquals(0,operations.releases)
     }
     @Test fun lateVideoCanCatchUpToTheNextKeyframeWithoutFlushingTheAffectedQueue() {
         for(treatAsSkipped in listOf(false,true)) {

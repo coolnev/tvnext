@@ -72,6 +72,8 @@ class BufferedPlaybackRecoveryTest {
             val path=field(c,"activeDecodePath").type.enumConstants.first{(it as Enum<*>).name=="HARDWARE"}
             field(c,"activeDecodePath").set(c,path)
             field(c,"activeDecoderName").set(c,"OMX.realtek.video.decoder")
+            val compatibility=field(c,"codecCompatibility").get(c)
+            compatibility.javaClass.getDeclaredMethod("selectSource",String::class.java).invoke(compatibility,f.item.id)
         }
     }
     private fun watch(c:AndroidPlaybackController) {
@@ -115,6 +117,11 @@ class BufferedPlaybackRecoveryTest {
             assertSame("The new factory must retain the learned profile",compatibility,
                 adapters.javaClass.getDeclaredField("compatibility").apply{isAccessible=true}.get(adapters))
             assertEquals("HARDWARE",(field(c,"activeDecodePath").get(c) as Enum<*>).name)
+            val recovered=player(c)
+            c.play(PlaybackItem("another4k","Another 4K","file:///another4k.ts"))
+            assertSame(recovered,player(c))
+            assertEquals("The Box workaround must not change the next channel's queue",false,
+                use.invoke(compatibility,"OMX.realtek.video.decoder",f.player.videoFormat))
         } finally {c.release()}
     }
     @Test fun switchingDuringDecoderReleaseCannotResurrectTheOldChannel() {

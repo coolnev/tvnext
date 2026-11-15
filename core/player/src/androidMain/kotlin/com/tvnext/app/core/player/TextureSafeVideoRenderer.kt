@@ -1,6 +1,9 @@
 package com.tvnext.app.core.player
 
 import android.os.Build
+import android.view.Surface
+import androidx.media3.common.Format
+import androidx.media3.exoplayer.DecoderReuseEvaluation
 import android.media.MediaCodec
 import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.Renderer
@@ -17,21 +20,21 @@ internal class AndroidVideoOutputPolicy(
         if (!texture || codec == null || !codec.hardwareAccelerated || codec.softwareOnly) return false
         val name = codec.name.lowercase()
         return name.startsWith("c2.mtk.") || name.startsWith("omx.mtk.") ||
-            name.startsWith("omx.mediatek.") || tclDevice
+            name.startsWith("omx.mediatek.") || name.startsWith("omx.realtek.") || tclDevice
     }
 }
 
 /**
- * Media3's c2.mtk flush workaround (b/362904942) only covers its VideoSink path.
- * PlayerView renders directly to SurfaceTexture. Release an affected decoder before
- * operations that would flush it. Surface changes use Media3's vendor workarounds. Neither
- * navigation nor an animation frame triggers these operations.
+ * Protect direct SurfaceTexture output from vendor flush/setOutputSurface bugs.
+ * Seeks, disable and keyframe catch-up release instead of flushing. Format/DRM
+ * changes drain and replace the codec through Media3's normal reuse decision.
  */
 internal class TextureSafeVideoRenderer(
     builder: Builder,
     private val outputPolicy: AndroidVideoOutputPolicy,
 ) : MediaCodecVideoRenderer(builder) {
     private var previousTextureOutput = false
+    private var attachedSurface: Surface? = null
     private var pendingCodecBuffers = 0
 
     private fun needsProtection(): Boolean = outputPolicy.needsTextureProtection(
@@ -52,9 +55,31 @@ internal class TextureSafeVideoRenderer(
         super.onDisabled()
     }
 
+    override fun canReuseCodec(info: MediaCodecInfo, oldFormat: Format, newFormat: Format,
+        isAdaptiveFormatChange: Boolean): DecoderReuseEvaluation {
+        if (outputPolicy.needsTextureProtection(info, outputPolicy.textureOutput || previousTextureOutput)) {
+            // Media3's format/DRM drain can request a flush without a position
+            // reset. Never leave the affected queue on that unprotected path.
+            return DecoderReuseEvaluation(info.name, oldFormat, newFormat,
+                DecoderReuseEvaluation.REUSE_RESULT_NO, DecoderReuseEvaluation.DISCARD_REASON_WORKAROUND)
+        }
+        return super.canReuseCodec(info, oldFormat, newFormat, isAdaptiveFormatChange)
+    }
+
     override fun handleMessage(messageType: Int, message: Any?) {
+        if (messageType != Renderer.MSG_SET_VIDEO_OUTPUT) {
+            super.handleMessage(messageType, message)
+            return
+        }
+        val nextSurface = message as? Surface
+        val changed = attachedSurface !== nextSurface
+        // Keep duplicate notifications cheap; protect only an actual handoff.
+        if (changed) releaseAffectedCodec()
         super.handleMessage(messageType, message)
-        if (messageType == Renderer.MSG_SET_VIDEO_OUTPUT) previousTextureOutput = outputPolicy.textureOutput
+        if (changed) {
+            attachedSurface = nextSurface
+            previousTextureOutput = outputPolicy.textureOutput
+        }
     }
 
     override fun onQueueInputBuffer(buffer: DecoderInputBuffer) {

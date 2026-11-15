@@ -7,7 +7,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecAdapter
 import com.tvnext.app.core.common.log.AndroidPerformanceCounters
 import java.io.IOException
 
-/** Use callback/queueing threads for legacy Amlogic video, leaving audio and other vendors alone. */
+/** Legacy Amlogic uses async queues; a learned Realtek retry is scoped to its failing source. */
 internal class AmlogicMediaCodecAdapterFactory @JvmOverloads constructor(
     private val sdk: Int,
     private val defaults: MediaCodecAdapter.Factory,

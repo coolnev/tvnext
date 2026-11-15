@@ -689,6 +689,7 @@ class AndroidPlaybackController(
     }
 
     private fun setPlaybackSource(player:ExoPlayer,item:PlaybackItem) {
+        codecCompatibility.selectSource(item.id)
         playbackNetworkSession?.cancel()
         val session=AndroidPlaybackNetworkSession(context)
         playbackNetworkSession=session
