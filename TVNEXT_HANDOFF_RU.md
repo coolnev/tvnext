@@ -3,6 +3,24 @@
 Текущая версия TVNext: `1.0.25`, versionCode 1025, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 
+
+## Windows 1.0.25 r2 — GPU, 16.11.2026
+
+Задача только Windows: полноценный GPU-вывод плюс отдельный прежний смешанный режим; прогресс передач под каждым каналом, подпись «Эфир» у красного маркера, центрированные маленькие круглые ползунки перемотки/громкости. Android уже аппаратно декодирует и выводит через SurfaceView/TextureView; его код/APK и commonMain здесь не менять. Версия приложения1.0.25, r2 только ревизия архива/тега.
+
+WindowsVideoMode: AUTO(auto/GPU), HARDWARE_GPU(d3d11va/GPU), HARDWARE_COMPATIBLE(auto-copy/SW), SOFTWARE(no/SW), отдельные desktop preferences windows_video_mode. Legacy setting не перезаписывает явный выбор. MX Player HW+ не означает смесь CPU/GPU, поэтому вариант назван «Аппаратный — совместимый». Диагностика отдельно сообщает реальный hwdec-current и videoOutput; software/WARP-драйвер не выдаётся за аппаратный GPU.
+
+MpvGpuRenderer/MpvGlContext: libmpv OpenGL render API -> ANGLE ES3/D3D11 -> FBO -> GPU Skia Surface/snapshot -> Compose Drawable/Canvas. Нет HWND embedding и CPU readback в production GPU. GpuBinding отражает pinned Skiko0.144.6 AngleRedrawer context/device, перед нативным вызовом проверяет актуальность. WindowsGpuRuntime до Skiko грузит DLL из общей папки root, ZIP содержит одинаковые с JAR Skiko/ANGLE DLL и лицензию ANGLE. notifyDrawingChanged перед каждым drawDrawable обязателен. Hidden/minimized video service timer40ms потребляет pending frames через skip; если ANGLE binding не появился за2s или surface/error — совместимый SW-вывод с причиной. После пересоздания mpv render context обязательно vid=no -> прежний vid/auto: video-reload не работает. GPU initialize выполняет reset дорожки асинхронно вне render callback. При повторной попытке GPU обнулять gpuWaitStarted, иначе прежний timeout мгновенно запускает fallback.
+
+Main держит одно undecorated Compose Window с caption bar/resize/F11 WindowPlacement, чтобы не уничтожать EGL context при F11. Прежний отдельный FullscreenWindow удалён. suspendRendering перед закрытием, не перед F11. _state.hardwareDecode и hardwareSurfaceActive=false — старый контракт HWND presentation, реальное HW видно в PlayerDiagnostics.actualMode, их не подменять ради надписи.
+
+108 checks passed (Desktop20, player88), включая реальные Shell/Koin UI, вложенные progress tags(useUnmergedTree=true), оси ползунков, label-marker, старые архив/избранное/мышь/keyboard. Нативные проверки окончательных ZIP JRE/JAR/DLL под Wine10: production auto fallback, повторный GPU request/fallback, видимые frames, ход часов, release passed; raw ANGLE/libmpv render API AVC95+102 и HEVC91+97 кадров с реальными пикселями, восстановление после recreate. Физического Windows GPU нет; полный Skia GPU composite здесь не подтверждён: виртуальный драйвер не умеет оборачивать Skia GPU surface. Не называть это физической GPU/HDMI проверкой. Manifest честно fullSkiaGpuCompositionVerified=false. Native helpers tools/validation/WindowsFallbackSmoke.java,WindowsGlSmoke.java. Только QA-helper делает glReadPixels.
+
+ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r2.zip,178593754bytes,SHA c47cb5d87b912cea28f252112cd1a0ab3e63cea959f367f08a77d79f50e05892. CRC/PE x64/JAR hashes/root native DLL equality passed; Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R2_RU.md, releases/windows/validation-1.0.25-r2.json, PNG/native evidence в validation-1.0.25-r2/.
+
+ПУБЛИКАЦИЯ ОЖИДАЕТСЯ: workflow Windows-only, новый tag windows-v1.0.25-r2, старые Android/Windows релизы не трогать. Служебные ZIPparts64MiB в portable-parts; source backup уже work/windows-1.0.25-r2 (82befe5, далее есть проверенный timeout fix/документация). Итоговый URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip . Дождаться Actions assemble/windows success, скачать обратно, проверить SHA, обновить manifest/handoff; только после этого выдавать ссылку.
+
+
 ## Android и Windows 1.0.25 — 16.11.2026
 
 Пользователь явно расширил задачу на Android: в медиатеке только избранный фильм отмечать заполненной жёлтой звездой в левом верхнем углу постера, убрать звезду из названия, существующую папку не менять; исправить видео с главной поверх каталога. Версию обеих сборок поднять до1.0.25 (code1025). Прежнее ограничение «Android не трогать» уступило этому прямому запросу. В Windows дополнительно исправлены избранное и категории полноэкранного списка.

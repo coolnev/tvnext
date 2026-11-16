@@ -1,0 +1,11 @@
+PASS shared ANGLE native directory detected
+PASS automatic unsupported GPU detection
+PASS compatibility playback produces frames after GPU fallback
+PASS diagnostics report actual software output
+PASS compatible mode remains usable
+PASS software mode uses CPU decoder
+PASS explicit GPU mode attempts GPU output
+PASS repeated fallback restores video track
+PASS clock advances after output recreation
+WINDOWS_FALLBACK_SMOKE_PASSED
+PASS release

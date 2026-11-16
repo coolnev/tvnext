@@ -1,0 +1,11 @@
+GL OpenGL ES 3.0.0 (ANGLE 2.1.25511 git hash: ec4d8f8e4d3f)
+PASS GPU framebuffer complete
+PASS mpv initialized
+POSITION 4.000000
+PASS GPU frames round 0 count=95
+PASS video pixels produced by GPU
+RESET VID 0 / 0
+POSITION 8.560000
+PASS GPU frames round 1 count=102
+PASS video pixels produced by GPU
+WINDOWS_GL_SMOKE_PASSED

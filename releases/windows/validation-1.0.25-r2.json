@@ -1,0 +1,59 @@
+{
+  "version": "1.0.25",
+  "revision": "r2",
+  "archive": "TVNext-1.0.25-windows-x64-portable-r2.zip",
+  "bytes": 178593754,
+  "sha256": "c47cb5d87b912cea28f252112cd1a0ab3e63cea959f367f08a77d79f50e05892",
+  "sourceTag": "windows-v1.0.25-r2",
+  "checks": {
+    "desktop": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "player": {
+      "tests": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "backendJars": {
+    "desktop-1.0.25.jar": "9995b9bd153775ea167cba909a190df07e8e82d56cf240d0f89e7a59813224c1",
+    "player-desktop-1.0.25.jar": "38aa9f4db0158d61e75e1d88574b06bfa0dfce8283ddebb15a3f4d6c2b8fd1ba"
+  },
+  "nativeDlls": {
+    "libmpv-2.dll": "04e4d27dc385dc18ddd93fbe69c75e635b864f3c6ec53a9122df54c2f7842f4a",
+    "skiko-windows-x64.dll": "3ce1b2621ce4905333064341568d0e9493efc0d4971a63b096261c774bc6e5a8",
+    "libEGL.dll": "65f3caf38112894db3938f6bec4bf0c536be938dcc26a25d420a8ebe6a4f4fea",
+    "libGLESv2.dll": "af324951ac3d387253874bef144cf8d135eeb17525b085cf9bc0dbf68a1441bb"
+  },
+  "zipCrcPassed": true,
+  "packagedJarsMatchTestedJars": true,
+  "sharedNativeDirectoriesVerified": true,
+  "androidSourceUnchanged": true,
+  "commonMainUnchanged": true,
+  "androidApkSha256": "f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72",
+  "physicalWindowsPc": false,
+  "fullSkiaGpuCompositionVerified": false,
+  "gpuValidationLimit": "Wine virtual graphics cannot wrap a Skia GPU surface. Raw ANGLE/libmpv rendering and production compatibility fallback are tested separately.",
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip",
+  "githubDownloadVerified": false,
+  "nativeValidation": {
+    "runtime": "Packaged Windows JRE + libmpv DLL under Wine 10; virtual graphics",
+    "productionControllerFallback": true,
+    "repeatedOutputSwitchAndTrackRecovery": true,
+    "nativeRelease": true,
+    "angleRenderApiAvcFrames": [
+      95,
+      102
+    ],
+    "angleRenderApiHevcFrames": [
+      91,
+      97
+    ],
+    "physicalHardwareDecode": false,
+    "sourceFrameReadback": "Only in the validation helper to inspect pixels; absent from the production GPU renderer"
+  }
+}

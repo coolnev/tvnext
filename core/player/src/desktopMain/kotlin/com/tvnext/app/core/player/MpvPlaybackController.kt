@@ -157,6 +157,7 @@ class MpvPlaybackController(
             renderContext=null;frameStorage?.close();frameStorage=null;_frames.value=null
             _gpuOutput.value=wantGpu
             if(wantGpu) {
+                gpuWaitStarted=0L;lastGpuDraw=0L
                 restoreVideoAfterGpuInit=replacing && currentItem!=null
                 gpuRenderer=MpvGpuRenderer(api,ctx,::requestGpuDraw);_renderStatus.value="GPU • подготовка"
             } else {
