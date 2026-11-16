@@ -1,0 +1,9 @@
+{
+  "version": "1.0.25",
+  "revision": "r2",
+  "assemble": "success",
+  "windows": "success",
+  "workflow": "https://github.com/coolnev/tvnext/actions/runs/43858121176",
+  "windowsDownload": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip",
+  "windowsSha256": "c47cb5d87b912cea28f252112cd1a0ab3e63cea959f367f08a77d79f50e05892"
+}
