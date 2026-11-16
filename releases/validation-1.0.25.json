@@ -1,0 +1,329 @@
+{
+  "version": "1.0.25",
+  "versionCode": 1025,
+  "sourceTags": [
+    "v1.0.25",
+    "windows-v1.0.25"
+  ],
+  "files": {
+    "android": {
+      "name": "TVNext-1.0.25.apk",
+      "bytes": 20283986,
+      "sha256": "f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72"
+    },
+    "windows": {
+      "name": "TVNext-1.0.25-windows-x64-portable.zip",
+      "bytes": 163252761,
+      "sha256": "b6a56af5e298e7f7b3d9bf33d4f24b9ef432e336774afb2644c480e82aee76ce"
+    }
+  },
+  "tests": {
+    "desktop": 17,
+    "player": 85,
+    "media": 17,
+    "android": 245
+  },
+  "totalTests": 364,
+  "suites": {
+    "desktop": [
+      {
+        "name": "com.tvnext.app.DesktopTimelineTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.MediaPresentationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.DesktopRuntimeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.DesktopInputUiTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0
+      }
+    ],
+    "player": [
+      {
+        "name": "VlcDecoderDetectorTest[desktop]",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "PlaybackErrorTest[desktop]",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "AutoFrameRateTest[desktop]",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "PlaybackErrorClassifierTest[desktop]",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "TimeShiftBoundsTest[desktop]",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "AndroidPlaybackSessionTest[desktop]",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "VlcErrorClassifierTest[desktop]",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "PlaybackStateTest[desktop]",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "MpvRuntimeLocatorTest[desktop]",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "StallFallbackTest[desktop]",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "HlsPrefetchServerTest[desktop]",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "VideoSurfaceSelectionTest[desktop]",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "VideoAspectModeTest[desktop]",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "RecoveredPolicyTest[desktop]",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      }
+    ],
+    "media": [
+      {
+        "name": "MediaSettingsUiTest[desktop]",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "SettingsAndPlayerOverlaysTest[desktop]",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "MediaPreferencesTest[desktop]",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      }
+    ],
+    "android": [
+      {
+        "name": "com.tvnext.app.RecordingFailureRegressionTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.VideoOutputStartupGateTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.RealtekCodecQueueTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.PlaybackFactsRegressionTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.AutoFrameRateRegressionTest",
+        "tests": 18,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.VideoSurfaceModeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.EpgDownloadRegressionTest",
+        "tests": 30,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.TextureCodecResetTest",
+        "tests": 22,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.BufferedPlaybackRecoveryTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.VideoCadenceRegressionTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.PlaybackSettingsReturnTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.PlaybackTuneIsolationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.HlsAudioDiscoveryTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.PlaybackDisplayLifecycleTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.RecordingPlaybackRegressionTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.AndroidEpgRegressionTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.PlaybackNetworkIsolationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.AndroidGuideAccessRegressionTest",
+        "tests": 24,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.StreamInfoDiagnosticsTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.MediaNavigationRegressionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.AmlogicVideoQueueTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.VideoStartupReadinessTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.CacheStorageRegressionTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.GoogleTvLauncherIconTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0
+      },
+      {
+        "name": "com.tvnext.app.WakeLaunchRegressionTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0
+      }
+    ]
+  },
+  "apkPackage": "com.tvnext.app",
+  "apkSignatureSha256": "455e62e0dfcffa94a9c75e3daf438b0de97b113949acfae7bafa7b99b8d1162f",
+  "apkUpdatesPreviousRelease": true,
+  "unchangedAndroidNativeLibraries": 8,
+  "unchangedWindowsNativeRuntimeAndDependencyFiles": 423,
+  "playerIptvTmdbSourceUnchanged": true,
+  "uiEnvironment": "Linux/Xvfb: actual desktop shell and shared Android media screen; synthetic player and EPG fixtures",
+  "androidTests": "JVM/Robolectric, API 28/35 where applicable; plus three media destination policy regression tests",
+  "physicalAndroidTvTested": false,
+  "physicalWindowsPcTested": false,
+  "zipCrcVerified": true,
+  "githubDownloadsVerified": false,
+  "downloadUrls": {
+    "android": "https://github.com/coolnev/tvnext/releases/download/v1.0.25/TVNext-1.0.25.apk",
+    "windows": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25/TVNext-1.0.25-windows-x64-portable.zip"
+  }
+}

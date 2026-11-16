@@ -115,6 +115,10 @@ fun AppShell(
 ) {
     val childStack by component.childStack.subscribeAsState()
     val activeTab = childStack.active.configuration
+    val media=childStack.active.instance as? AppTabComponent.Media
+    val mediaState=media?.component?.state?.collectAsState()?.value
+    val mediaPlayback=media?.component?.playbackController?.state?.collectAsState()?.value
+    val videoDestination=appHasVideoDestination(activeTab,overlayFullScreen,mediaState?.selectedItemId,mediaPlayback?.item)
     val settings by component.settings.collectAsState()
     androidx.compose.runtime.SideEffect {
         com.tvnext.app.core.ui.i18n.UiLocale.language = settings.language
@@ -143,10 +147,7 @@ fun AppShell(
             if(scene!=null && sharedPlaybackController!=null) com.tvnext.app.core.ui.component.SharedVideoStage(
                 scene,sharedPlaybackController,animateVideoTransitions,
                 transitionKey = Triple(activeTab, activeTab == AppTab.CHANNELS && immersive, overlayFullScreen),
-                hasVideoDestination = !overlayFullScreen && when(activeTab) {
-                    AppTab.HOME, AppTab.CHANNELS, AppTab.TV_GUIDE, AppTab.MEDIA_LIBRARY -> true
-                    else -> false
-                })
+                hasVideoDestination = videoDestination)
             if (!overlayFullScreen) {
             Column(
                 modifier = Modifier

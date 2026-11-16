@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
 import com.tvnext.app.core.player.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -44,12 +45,12 @@ fun SharedVideoStage(
     }.collectAsState(initial = controller.state.value.item != null)
     var presentedNavigation by remember { mutableStateOf(transitionKey) }
     val navigationLayout = remember(transitionKey) { scene.layoutRevision }
-    val navigationPending = animated && presentedNavigation != transitionKey
-    LaunchedEffect(transitionKey, animated) {
+    val navigationPending = animated && hasVideoDestination && presentedNavigation != transitionKey
+    LaunchedEffect(transitionKey, animated, hasVideoDestination) {
         if (navigationPending) {
             // Keep the old video above destination chrome from its first frame,
             // before the new placeholder has been measured and flight can start.
-            snapshotFlow { scene.layoutRevision }.first { it > navigationLayout }
+            withTimeoutOrNull(650) { snapshotFlow { scene.layoutRevision }.first { it > navigationLayout } }
         }
         presentedNavigation = transitionKey
     }
@@ -100,7 +101,7 @@ fun SharedVideoStage(
     val layoutClip=if(flying)layoutBounds else viewport?.clip ?: Rect.Zero
     val full=layoutBounds.translate(-scene.origin)
     val clip=layoutClip.translate(-scene.origin)
-    val usable=(target!=null || visible) && !clip.isEmpty && !full.isEmpty
+    val usable=hasVideoDestination && hasItem && (target!=null || visible) && !clip.isEmpty && !full.isEmpty
     // Native content is above chrome only during flight; normal controls paint above it.
     Box(modifier.offset {IntOffset(clip.left.roundToInt(),clip.top.roundToInt())}
         .requiredSize(with(density){clip.width.coerceAtLeast(1f).toDp()},with(density){clip.height.coerceAtLeast(1f).toDp()})

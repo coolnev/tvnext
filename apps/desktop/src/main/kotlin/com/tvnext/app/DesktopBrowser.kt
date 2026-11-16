@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class,androidx.compose.ui.ExperimentalComposeUiApi::class)
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class,androidx.compose.ui.ExperimentalComposeUiApi::class,androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.tvnext.app
 
 import androidx.compose.foundation.*
@@ -28,6 +28,9 @@ import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import com.tvnext.app.core.player.*
 import com.tvnext.app.core.tmdb.*
 import com.tvnext.app.core.ui.component.TvPlayerPanel
+import com.tvnext.app.core.ui.component.FavoriteStar
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.tvnext.app.core.ui.image.ChannelLogo
 import com.tvnext.app.core.ui.i18n.uiText
 import com.tvnext.app.feature.channels.ui.*
@@ -150,7 +153,6 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
     val nowPlaying by component.nowPlaying.collectAsState()
     val playingEpg by component.playingEpg.collectAsState()
     val timeline by component.timeline.collectAsState()
-    var categories by remember {mutableStateOf(false)}
     var previewId by remember(component){mutableStateOf(player.item?.id ?: state.selectedChannelId)}
     val channel=state.channels.firstOrNull {it.id==(previewId ?: state.selectedChannelId)} ?: state.filteredChannels.firstOrNull()
     val channelList=rememberLazyListState()
@@ -212,11 +214,18 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
                         Text(uiText("Каналы"),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
                         TextButton(onCloseOverlay){Text(uiText("Закрыть"))}
                     }
-                    DesktopCursorList(state.filteredChannels,Channel::id,player.item?.id,"desktop-hover-channels",onActivate={choose(it,true)},
-                        anchor=player.item?.id?.let {DesktopListAnchor(it)},modifier=Modifier.fillMaxSize()) {c,selected->
-                        Column(Modifier.fillMaxWidth().padding(10.dp)) {
-                            Text(c.name,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1,overflow=TextOverflow.Ellipsis)
-                            nowPlaying[c.id]?.let {Text(it.title,style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)}
+                    DesktopChannelCategories(state.selectedCategory,state.categories,{
+                        if(state.query.isNotBlank())component.dispatch(ChannelsIntent.SearchChanged(""))
+                        component.dispatch(ChannelsIntent.CategorySelected(it))
+                    },
+                        Modifier.fillMaxWidth().padding(bottom=8.dp),"desktop-hover-categories",true)
+                    key(state.selectedCategory,state.query) {
+                        DesktopCursorList(state.filteredChannels,Channel::id,player.item?.id,"desktop-hover-channels",onActivate={choose(it,true)},
+                            anchor=player.item?.id?.let {DesktopListAnchor(it)},modifier=Modifier.fillMaxSize()) {c,selected->
+                            Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                                Text(c.name,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1,overflow=TextOverflow.Ellipsis)
+                                nowPlaying[c.id]?.let {Text(it.title,style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)}
+                            }
                         }
                     }
                 }
@@ -232,16 +241,7 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
     Row(Modifier.fillMaxSize().padding(10.dp),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
         Column(Modifier.fillMaxHeight().weight(.46f),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement=Arrangement.spacedBy(6.dp),verticalAlignment=Alignment.CenterVertically) {
-                Box {
-                    OutlinedButton({categories=true},shape=RoundedCornerShape(4.dp)){Text(when(state.selectedCategory){null->uiText("Все каналы");"__favorites"->uiText("Избранное");else->state.selectedCategory.orEmpty()},maxLines=1)}
-                    DropdownMenu(categories,{categories=false},modifier=Modifier.heightIn(max=420.dp)) {
-                        (listOf<String?>(null,"__favorites")+state.categories).forEach {category->
-                            DropdownMenuItem(text={Text(when(category){null->uiText("Все каналы");"__favorites"->uiText("Избранное");else->category})},onClick={
-                                categories=false;component.dispatch(ChannelsIntent.CategorySelected(category))
-                            })
-                        }
-                    }
-                }
+                DesktopChannelCategories(state.selectedCategory,state.categories,{component.dispatch(ChannelsIntent.CategorySelected(it))})
                 OutlinedTextField(state.query,{component.dispatch(ChannelsIntent.SearchChanged(it))},singleLine=true,
                     placeholder={Text(uiText("Поиск"))},textStyle=MaterialTheme.typography.bodyMedium,
                     modifier=Modifier.weight(1f).onFocusChanged {onEditing(it.isFocused)}.testTag("desktop-channel-search"))
@@ -333,15 +333,51 @@ internal fun DesktopDescription(title:String,date:String,art:String?,frame:Boole
 }
 
 @Composable
+internal fun DesktopChannelCategories(selected:String?,categories:List<String>,onSelect:(String?)->Unit,
+    modifier:Modifier=Modifier,tag:String="desktop-channel-categories",showLabel:Boolean=false) {
+    var expanded by remember {mutableStateOf(false)}
+    fun label(category:String?)=when(category){null->uiText("Все каналы");"__favorites"->uiText("Избранное");else->category}
+    Box(modifier) {
+        OutlinedButton({expanded=true},shape=RoundedCornerShape(4.dp),modifier=(if(showLabel)Modifier.fillMaxWidth() else Modifier).testTag(tag)) {
+            Text((if(showLabel)uiText("Категории")+": " else "")+label(selected),maxLines=1,overflow=TextOverflow.Ellipsis)
+        }
+        DropdownMenu(expanded,{expanded=false},modifier=Modifier.heightIn(max=420.dp)) {
+            (listOf<String?>(null,"__favorites")+categories).distinct().forEach {category->
+                DropdownMenuItem(text={Text(label(category),fontWeight=if(category==selected)FontWeight.Bold else FontWeight.Normal)},
+                    modifier=Modifier.testTag("$tag-${category ?: "all"}"),onClick={expanded=false;if(category!=selected)onSelect(category)})
+            }
+        }
+    }
+}
+
+internal fun desktopMediaItems(state:MediaState,favoritesOnly:Boolean):List<MediaItem> =
+    (if(favoritesOnly)state.copy(selectedCategory=null) else state).filteredItems.filter {!favoritesOnly || it.isFavorite}
+
+@Composable
+internal fun DesktopFavoriteToggle(item:MediaItem,onToggle:()->Unit,modifier:Modifier=Modifier) {
+    val label=desktopText(if(item.isFavorite)"Удалить из избранного" else "Добавить в избранное")
+    TooltipBox(positionProvider=TooltipDefaults.rememberPlainTooltipPositionProvider(),tooltip={PlainTooltip {Text(label)}},state=rememberTooltipState()) {
+        Surface(checked=item.isFavorite,onCheckedChange={onToggle()},shape=RoundedCornerShape(4.dp),color=Color.Black.copy(alpha=.75f),
+            modifier=modifier.size(44.dp).testTag("desktop-favorite-${item.id}").semantics {contentDescription=label}) {
+            Box(contentAlignment=Alignment.Center) {FavoriteStar(Modifier.size(30.dp),filled=item.isFavorite)}
+        }
+    }
+}
+
+@Composable
 internal fun DesktopMedia(component:MediaComponent,runtime:DesktopServices,open:Boolean,onOpen:(Boolean)->Unit,
     cinema:Boolean,chrome:Boolean,pause:()->Unit,fullscreen:()->Unit,back:()->Unit,onEditing:(Boolean)->Unit,onVideoFocus:(Boolean)->Unit,clockPosition:ClockPosition=ClockPosition.OFF) {
     val state by component.state.collectAsState()
     var categories by remember {mutableStateOf(false)}
     var sources by remember {mutableStateOf(false)}
+    val favoritesOnly by runtime.mediaFavoritesOnly.collectAsState()
+    val hasFavorites=state.content.allItems.any {it.isFavorite}
+    val films=desktopMediaItems(state,favoritesOnly)
+    LaunchedEffect(hasFavorites,state.isLoading){if(!state.isLoading && !hasFavorites)runtime.mediaFavoritesOnly.value=false}
     val gridState=rememberLazyGridState()
-    LaunchedEffect(open,state.filteredItems,state.preferences.rememberPosition) {
+    LaunchedEffect(open,films,state.preferences.rememberPosition) {
         if(!open && state.preferences.rememberPosition) {
-            val index=state.filteredItems.indexOfFirst {it.id==state.browser.itemId}
+            val index=films.indexOfFirst {it.id==state.browser.itemId}
             if(index>=0 && gridState.firstVisibleItemIndex==0)gridState.scrollToItem(index)
         }
     }
@@ -361,15 +397,20 @@ internal fun DesktopMedia(component:MediaComponent,runtime:DesktopServices,open:
             Box {
                 OutlinedButton({sources=true},shape=RoundedCornerShape(4.dp)){Text(state.content.sources.firstOrNull {it.id==state.selectedSourceId}?.name ?: uiText("Все источники"))}
                 DropdownMenu(sources,{sources=false}) {
-                    DropdownMenuItem(text={Text(uiText("Все источники"))},onClick={sources=false;component.dispatch(MediaIntent.SourceSelected(null))})
-                    state.content.sources.forEach {source->DropdownMenuItem(text={Text(source.name)},onClick={sources=false;component.dispatch(MediaIntent.SourceSelected(source.id))})}
+                    DropdownMenuItem(text={Text(uiText("Все источники"))},onClick={sources=false;runtime.mediaFavoritesOnly.value=false;component.dispatch(MediaIntent.SourceSelected(null))})
+                    state.content.sources.forEach {source->DropdownMenuItem(text={Text(source.name)},onClick={sources=false;runtime.mediaFavoritesOnly.value=false;component.dispatch(MediaIntent.SourceSelected(source.id))})}
                 }
             }
             Box {
-                OutlinedButton({categories=true},shape=RoundedCornerShape(4.dp)){Text(state.selectedCategory ?: uiText("Все категории"))}
+                OutlinedButton({categories=true},shape=RoundedCornerShape(4.dp),modifier=Modifier.testTag("desktop-media-categories")) {
+                    Text(if(favoritesOnly)uiText("Избранное") else state.selectedCategory ?: uiText("Все категории"))
+                }
                 DropdownMenu(categories,{categories=false},modifier=Modifier.heightIn(max=420.dp)) {
-                    DropdownMenuItem(text={Text(uiText("Все категории"))},onClick={categories=false;component.dispatch(MediaIntent.CategorySelected(null))})
-                    state.categories.forEach {category->DropdownMenuItem(text={Text(category)},onClick={categories=false;component.dispatch(MediaIntent.CategorySelected(category))})}
+                    DropdownMenuItem(text={Text(uiText("Все категории"))},modifier=Modifier.testTag("desktop-media-category-all"),onClick={categories=false;runtime.mediaFavoritesOnly.value=false;if(state.selectedCategory!=null)component.dispatch(MediaIntent.CategorySelected(null))})
+                    if(hasFavorites)DropdownMenuItem(text={Text(uiText("Избранное"))},modifier=Modifier.testTag("desktop-media-category-favorites"),onClick={
+                        categories=false;runtime.mediaFavoritesOnly.value=true;if(state.selectedCategory!=null)component.dispatch(MediaIntent.CategorySelected(null))
+                    })
+                    state.categories.forEach {category->DropdownMenuItem(text={Text(category)},onClick={categories=false;runtime.mediaFavoritesOnly.value=false;if(state.selectedCategory!=category)component.dispatch(MediaIntent.CategorySelected(category))})}
                 }
             }
             OutlinedTextField(state.query,{component.dispatch(MediaIntent.SearchChanged(it))},singleLine=true,
@@ -377,13 +418,18 @@ internal fun DesktopMedia(component:MediaComponent,runtime:DesktopServices,open:
             TextButton({component.dispatch(MediaIntent.Refresh)}){Text(uiText("Обновить"))}
         }
         if(state.isLoading)LinearProgressIndicator(Modifier.fillMaxWidth())
+        if(!state.isLoading && films.isEmpty())Text(uiText("Ничего не найдено"),modifier=Modifier.padding(16.dp))
         LazyVerticalGrid(GridCells.Adaptive(state.preferences.posterSize.width.dp),state=gridState,horizontalArrangement=Arrangement.spacedBy(10.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
-            items(state.filteredItems,key={it.id}) {item->
+            items(films,key={it.id}) {item->
                 Card(onClick={component.dispatch(MediaIntent.BrowserMoved(com.tvnext.app.feature.settings.domain.MediaBrowserPosition(
-                    state.selectedSourceId,state.selectedCategory,item.id,inFilms=true)));component.dispatch(MediaIntent.SelectItem(item.id));onOpen(true)},shape=RoundedCornerShape(4.dp),modifier=Modifier.testTag("desktop-movie-${item.id}")) {
-                    ChannelLogo(item.logoUrl,Modifier.fillMaxWidth().aspectRatio(2f/3f),placeholderText=item.name)
+                    state.selectedSourceId,state.selectedCategory,item.id,favorites=favoritesOnly,inFilms=true)));component.dispatch(MediaIntent.SelectItem(item.id));onOpen(true)},shape=RoundedCornerShape(4.dp),modifier=Modifier.testTag("desktop-movie-${item.id}")) {
+                    Box(Modifier.fillMaxWidth().aspectRatio(2f/3f).testTag("desktop-poster-${item.id}")) {
+                        ChannelLogo(item.logoUrl,Modifier.fillMaxSize(),placeholderText=item.name)
+                        Box(Modifier.align(Alignment.TopStart).padding(8.dp)) {
+                            DesktopFavoriteToggle(item,{component.dispatch(MediaIntent.FavoriteToggled(item.id))})
+                        }
+                    }
                     Text(item.name,style=MaterialTheme.typography.bodyMedium,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(8.dp))
-                    TextButton({component.dispatch(MediaIntent.FavoriteToggled(item.id))}){Text(if(item.isFavorite)"★" else "☆")}
                 }
             }
         }

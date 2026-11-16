@@ -1,5 +1,7 @@
 package com.tvnext.app.feature.media.ui
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+
 import androidx.compose.ui.platform.testTag
 import com.tvnext.app.feature.settings.domain.MediaBrowserPosition
 import com.tvnext.app.feature.settings.domain.MediaResumeMode
@@ -368,9 +370,15 @@ internal fun AndroidMediaScreen(
                                         } else false
                                     }) {
                                 Column(Modifier.fillMaxSize()) {
-                                    ChannelLogo(url = if (item.id == selected?.id) state.tmdbMetadata?.posterUrl ?: item.logoUrl else item.logoUrl,
-                                        placeholderText = item.name, modifier = Modifier.fillMaxWidth().weight(1f))
-                                    Text((if (item.isFavorite) "★ " else "") + item.name, color = MaterialTheme.colorScheme.onSurface,
+                                    Box(Modifier.fillMaxWidth().weight(1f).testTag("media-poster-${item.id}")) {
+                                        ChannelLogo(url = if (item.id == selected?.id) state.tmdbMetadata?.posterUrl ?: item.logoUrl else item.logoUrl,
+                                            placeholderText = item.name, modifier = Modifier.fillMaxSize())
+                                        if(item.isFavorite)Box(Modifier.align(Alignment.TopStart).padding(6.dp).size(34.dp)
+                                            .background(Color.Black.copy(alpha=.7f),RoundedCornerShape(4.dp)),contentAlignment=Alignment.Center) {
+                                            com.tvnext.app.core.ui.component.FavoriteStar(Modifier.size(26.dp).testTag("media-favorite-${item.id}"))
+                                        }
+                                    }
+                                    Text(item.name, color = MaterialTheme.colorScheme.onSurface,
                                         style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.padding(top = 8.dp))
                                 }

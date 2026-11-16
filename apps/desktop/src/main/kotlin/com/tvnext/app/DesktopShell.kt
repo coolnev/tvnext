@@ -149,7 +149,11 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
                     }
                 }
                 .onGloballyPositioned {scene.origin=it.positionInRoot()}.testTag("desktop-shell")) {
-                SharedVideoStage(scene,runtime.playback,animation,transitionKey=Triple(active,cinema,page),hasVideoDestination=true)
+                SharedVideoStage(scene,runtime.playback,animation,transitionKey=Triple(active,cinema,page),hasVideoDestination=recordingVideo || page==DesktopPage.NONE && when(active) {
+                    AppTab.HOME,AppTab.CHANNELS,AppTab.TV_GUIDE->true
+                    AppTab.MEDIA_LIBRARY->movieOpen && player.item?.kind==PlaybackContentKind.VOD
+                    else->false
+                })
                 Column(Modifier.fillMaxSize()) {
                     if(!cinema)DesktopNavigation(active,page,::navigate,::home,::back,::fullscreen,isFullscreen,runtime)
                     Box(Modifier.weight(1f).fillMaxWidth()) {

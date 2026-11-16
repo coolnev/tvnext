@@ -8,6 +8,8 @@ import com.tvnext.app.core.ui.i18n.uiText
 internal fun desktopText(source:String):String {
     val labels=when(source) {
         "Выберите раздел слева"->"Choose a section on the left" to "在左侧选择设置类别"
+        "Добавить в избранное"->"Add to favorites" to "添加到收藏"
+        "Удалить из избранного"->"Remove from favorites" to "取消收藏"
         "В эфир"->"Back to live" to "返回直播"
         "Перемотка"->"Seek" to "跳转进度"
         "Громкость"->"Volume" to "音量"

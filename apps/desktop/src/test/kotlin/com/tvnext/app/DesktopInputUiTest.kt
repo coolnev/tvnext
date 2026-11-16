@@ -15,12 +15,17 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.*
 import com.tvnext.app.core.app.*
+import com.tvnext.app.core.app.tab.AppTabComponent
 import com.tvnext.app.core.app.tab.AppTab
 import com.tvnext.app.core.common.result.AppResult
 import com.tvnext.app.core.iptv.data.*
 import com.tvnext.app.core.iptv.archive.*
 import com.tvnext.app.core.iptv.xmltv.EpgProgramme
 import com.tvnext.app.feature.channels.ui.ChannelEpg
+import com.tvnext.app.core.iptv.domain.MediaItem
+import com.tvnext.app.core.iptv.domain.Playlist
+import com.tvnext.app.core.iptv.domain.PlaylistType
+import com.tvnext.app.feature.media.ui.*
 import com.tvnext.app.core.iptv.domain.Channel
 import com.tvnext.app.core.player.*
 import com.tvnext.app.feature.settings.data.SettingsRepository
@@ -100,13 +105,25 @@ class DesktopInputUiTest {
         val koin=startDesktopDependencies();val player=Player()
         koin.declare<PlaybackController>(player,allowOverride=true)
         koin.declare<ChannelsRepository>(object:ChannelsRepository {
-            val channels=(1..20).map {Channel("qa-$it","Канал $it",it,"Тест","https://fixture.invalid/$it",playlistId="qa")}
+            val channels=(1..20).map {Channel("qa-$it","Канал $it",it,if(it<=10)"Тест" else "Другие каналы","https://fixture.invalid/$it",playlistId="qa")}
             override suspend fun getChannels()=channels
             override suspend fun getChannelsByPlaylist(playlistId:String)=channels
             override suspend fun isConfigured()=true
             override suspend fun refresh():AppResult<Unit> = AppResult.Success(Unit)
             override suspend fun getFavoriteIds()=emptySet<String>()
             override suspend fun setFavorite(channelId:String,favorite:Boolean)=Unit
+        },allowOverride=true)
+        val movieSources=listOf(Playlist("vod-a","Фильмы","https://fixture.invalid/vod.m3u",type=PlaylistType.VOD))
+        val movieItems=listOf(MediaItem("movie-a","vod-a","Фильм A",1,"Кино","https://fixture.invalid/a.mp4"),
+            MediaItem("movie-b","vod-a","Фильм B",2,"Сериалы","https://fixture.invalid/b.mp4"))
+        val favoriteMovies=mutableSetOf<String>()
+        val oldLibrary=koin.get<MediaLibraryRepository>()
+        koin.declare<MediaLibraryRepository>(object:MediaLibraryRepository by oldLibrary {
+            override suspend fun getSources()=movieSources
+            override suspend fun getItems(playlistId:String?)=movieItems.filter {playlistId==null || it.playlistId==playlistId}.map {it.copy(isFavorite=it.id in favoriteMovies)}
+            override suspend fun getFavoriteIds()=favoriteMovies.toSet()
+            override suspend fun getItemById(id:String)=getItems(null).find {it.id==id}
+            override suspend fun setFavorite(itemId:String,favorite:Boolean){if(favorite)favoriteMovies+=itemId else favoriteMovies-=itemId}
         },allowOverride=true)
         val haveEpg=MutableStateFlow(false)
         val fixtureNow=System.currentTimeMillis()
@@ -229,6 +246,14 @@ class DesktopInputUiTest {
             onNodeWithTag("desktop-hover-channels-qa-3").performClick()
             waitUntil(timeoutMillis=10_000){player.state.value.item?.id=="qa-3"}
             assertEquals(PlaybackContentKind.LIVE,player.state.value.item?.kind)
+            onNodeWithTag("desktop-hover-categories").performClick()
+            onNodeWithTag("desktop-hover-categories-Другие каналы").performClick()
+            onNodeWithTag("desktop-hover-channels-qa-1").assertDoesNotExist()
+            onNodeWithTag("desktop-hover-channels-qa-12").assertIsDisplayed().performClick()
+            waitUntil(timeoutMillis=10_000){player.state.value.item?.id=="qa-12"}
+            assertEquals(PlaybackContentKind.LIVE,player.state.value.item?.kind)
+            onNodeWithTag("desktop-channel-overlay").assertIsDisplayed()
+            capture("desktop-hover-categories.png")
             onNodeWithTag("desktop-shell").performMouseInput {moveTo(androidx.compose.ui.geometry.Offset(width-50f,height/2f))}
             onNodeWithTag("desktop-channel-overlay").assertDoesNotExist()
             runOnIdle {immersive=false}
@@ -240,6 +265,33 @@ class DesktopInputUiTest {
             onNodeWithTag("desktop-media-search").assertDoesNotExist();onNodeWithTag("desktop-video").assertIsDisplayed()
             onNodeWithTag("desktop-nav-MEDIA_LIBRARY").performClick();waitForIdle()
             onNodeWithTag("desktop-media-search").assertIsDisplayed()
+            onNodeWithTag("desktop-media-categories").performClick()
+            onNodeWithTag("desktop-media-category-favorites").assertDoesNotExist()
+            onNodeWithTag("desktop-media-category-all").performClick()
+            val poster=onNodeWithTag("desktop-poster-movie-a",useUnmergedTree=true).fetchSemanticsNode().boundsInRoot
+            val star=onNodeWithTag("desktop-favorite-movie-a").fetchSemanticsNode().boundsInRoot
+            assertTrue(star.left>=poster.left && star.top>=poster.top && star.bottom<poster.bottom)
+            assertTrue(star.width>=43f && star.left-poster.left<12f,"Favorite target must be large and in the poster corner")
+            onNodeWithTag("desktop-favorite-movie-a").performClick()
+            waitUntil(timeoutMillis=10_000){"movie-a" in favoriteMovies}
+            assertFalse(runtime!!.moviePlayerOpen.value,"Favorite click must not activate the parent film card")
+            onNodeWithTag("desktop-media-categories").performClick()
+            onNodeWithTag("desktop-media-category-favorites").assertIsDisplayed().performClick()
+            onNodeWithTag("desktop-movie-movie-a").assertIsDisplayed()
+            onNodeWithTag("desktop-movie-movie-b").assertDoesNotExist()
+            capture("desktop-media-favorites.png")
+            runOnIdle {windowRevision++};waitForIdle()
+            onNodeWithTag("desktop-movie-movie-a").assertIsDisplayed()
+            onNodeWithTag("desktop-movie-movie-b").assertDoesNotExist()
+            val media=(root.childStack.value.active.instance as AppTabComponent.Media).component
+            runOnIdle {media.dispatch(MediaIntent.Load)}
+            waitUntil(timeoutMillis=10_000){!media.state.value.isLoading && media.state.value.content.allItems.any {it.id=="movie-a" && it.isFavorite}}
+            onNodeWithTag("desktop-favorite-movie-a").performClick()
+            waitUntil(timeoutMillis=10_000){favoriteMovies.isEmpty()}
+            waitForIdle();onNodeWithTag("desktop-movie-movie-b").assertIsDisplayed()
+            onNodeWithTag("desktop-media-categories").performClick()
+            onNodeWithTag("desktop-media-category-favorites").assertDoesNotExist()
+            onNodeWithTag("desktop-media-category-all").performClick()
         }} finally {
             runtime?.close();lifecycle.destroy();stopKoin()
             if(before==null)System.clearProperty("tvnext.data.dir") else System.setProperty("tvnext.data.dir",before)
