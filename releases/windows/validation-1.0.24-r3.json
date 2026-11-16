@@ -61,5 +61,8 @@
   "sharedSourceUnchanged": true,
   "androidApkSha256": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
   "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r3/TVNext-1.0.24-windows-x64-portable-r3.zip",
-  "githubDownloadVerified": false
+  "githubDownloadVerified": true,
+  "githubDownloadVerifiedDate": "2026-11-16T06:56:10.866619+00:00",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43820025728",
+  "sourceCommit": "9921884e34cc0f0cd9966c796615c3876b3b0607"
 }
