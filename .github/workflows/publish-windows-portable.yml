@@ -1,10 +1,11 @@
-name: Publish Windows portable 1.0.24 r3
+name: Publish TVNext 1.0.25 Android and Windows
 
 on:
   push:
     branches: [main]
     paths:
       - releases/windows/portable-parts/**
+      - releases/android/TVNext-1.0.25.apk
       - .github/workflows/publish-windows-portable.yml
   workflow_dispatch:
 
@@ -12,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-windows-portable-1.0.24-r3
+  group: publish-tvnext-1.0.25
   cancel-in-progress: false
 
 jobs:
@@ -22,20 +23,23 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          sparse-checkout: releases/windows
-      - name: Reassemble and verify the tested archive
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /releases/windows/
+            /releases/android/TVNext-1.0.25.apk
+            /releases/android/TVNext-1.0.25.apk.sha256
+      - name: Verify the tested Android APK and Windows archive
         id: assemble
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/tvnext-portable"
-          cat releases/windows/portable-parts/TVNext-1.0.24-windows-x64-portable-r3.zip.part-* > "$RUNNER_TEMP/tvnext-portable/TVNext-1.0.24-windows-x64-portable-r3.zip"
-          cp releases/windows/TVNext-1.0.24-windows-x64-portable-r3.zip.sha256 "$RUNNER_TEMP/tvnext-portable/"
-          cd "$RUNNER_TEMP/tvnext-portable"
-          sha256sum --check TVNext-1.0.24-windows-x64-portable-r3.zip.sha256
-          unzip -tq TVNext-1.0.24-windows-x64-portable-r3.zip
-      - name: Publish one ZIP as a GitHub release asset
-        id: publish
+          cat releases/windows/portable-parts/TVNext-1.0.25-windows-x64-portable.zip.part-* > "$RUNNER_TEMP/tvnext-portable/TVNext-1.0.25-windows-x64-portable.zip"
+          cp releases/windows/TVNext-1.0.25-windows-x64-portable.zip.sha256 "$RUNNER_TEMP/tvnext-portable/"
+          (cd "$RUNNER_TEMP/tvnext-portable" && sha256sum --check TVNext-1.0.25-windows-x64-portable.zip.sha256 && unzip -tq TVNext-1.0.25-windows-x64-portable.zip)
+          (cd releases/android && sha256sum --check TVNext-1.0.25.apk.sha256)
+      - name: Publish Windows portable
+        id: windows
         if: steps.assemble.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -43,14 +47,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag=windows-v1.0.24-r3
+          tag=windows-v1.0.25
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --verify-tag --latest=false \
-              --title 'TVNext 1.0.24 — Windows portable x64 r3' \
-              --notes 'Настройки сразу открываются целиком; постер слева от описания, адаптивное верхнее меню, список каналов у левого края видео, эфир без случайной паузы. Добавлены тонкая громкость, перемотка архива мышью, отметка эфира и кнопка «В эфир». Исправлено положение текущей передачи и сброс архивного выбора при смене каналов. Распакуйте весь ZIP и запустите TVNext.exe. Java и кодеки включены. Версия приложения 1.0.24 сохранена. Свою папку data сохраните при обновлении. Android-код и APK не изменены.'
+            gh release create "$tag" --verify-tag --latest=false --title 'TVNext 1.0.25 — Windows portable x64' \
+              --notes 'Добавлены категория «Избранное», крупная звезда на постере и выбор категории в полноэкранном списке каналов. Сохранены предыдущие исправления. Распакуйте весь ZIP, перенесите папку data из прежней сборки рядом с новым TVNext.exe. Java и кодеки включены.'
           fi
           cd "$RUNNER_TEMP/tvnext-portable"
-          for file in TVNext-1.0.24-windows-x64-portable-r3.zip TVNext-1.0.24-windows-x64-portable-r3.zip.sha256; do
+          for file in TVNext-1.0.25-windows-x64-portable.zip TVNext-1.0.25-windows-x64-portable.zip.sha256; do
             if gh release view "$tag" --json assets --jq '.assets[].name' | grep -Fxq "$file"; then
               mkdir -p existing
               gh release download "$tag" --pattern "$file" --dir existing --clobber
@@ -59,33 +62,61 @@ jobs:
               gh release upload "$tag" "$file"
             fi
           done
-      - name: Record publication status in the repository
+      - name: Publish Android APK
+        id: android
+        if: steps.assemble.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v1.0.25
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --latest=true --title 'TVNext 1.0.25 — Android' \
+              --notes 'Жёлтая звезда избранного перенесена в левый верхний угол постера; у остальных фильмов звезды нет. Исправлено видео с главной поверх медиатеки при включённой анимации. Пакет com.tvnext.app, versionCode1025, подпись прежняя — установка обновлением. Windows portable опубликован отдельно: https://github.com/coolnev/tvnext/releases/tag/windows-v1.0.25 . Все364 проверки прошли.'
+          fi
+          cd releases/android
+          for file in TVNext-1.0.25.apk TVNext-1.0.25.apk.sha256; do
+            if gh release view "$tag" --json assets --jq '.assets[].name' | grep -Fxq "$file"; then
+              mkdir -p "$RUNNER_TEMP/tvnext-apk-existing"
+              gh release download "$tag" --pattern "$file" --dir "$RUNNER_TEMP/tvnext-apk-existing" --clobber
+              cmp "$file" "$RUNNER_TEMP/tvnext-apk-existing/$file"
+            else
+              gh release upload "$tag" "$file"
+            fi
+          done
+      - name: Record publication status
         if: always()
         env:
           ASSEMBLE_OUTCOME: ${{ steps.assemble.outcome }}
-          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          WINDOWS_OUTCOME: ${{ steps.windows.outcome }}
+          ANDROID_OUTCOME: ${{ steps.android.outcome }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         shell: bash
         run: |
-          python3 - <<'PY'
+          python3 - <<'PYREPORT'
           import json, os
           from pathlib import Path
           base='https://github.com/'+os.environ['REPOSITORY']
           payload={
-            'version':'1.0.24',
+            'version':'1.0.25',
             'assemble':os.environ['ASSEMBLE_OUTCOME'],
-            'publish':os.environ['PUBLISH_OUTCOME'],
+            'windows':os.environ['WINDOWS_OUTCOME'],
+            'android':os.environ['ANDROID_OUTCOME'],
             'workflow':base+'/actions/runs/'+os.environ['RUN_ID'],
-            'download':base+'/releases/download/windows-v1.0.24-r3/TVNext-1.0.24-windows-x64-portable-r3.zip',
-            'sha256':'69af3162ccbc5839fc79a795eaa7a3133a019f3886f690e599f1e90ca4572196',
+            'windowsDownload':base+'/releases/download/windows-v1.0.25/TVNext-1.0.25-windows-x64-portable.zip',
+            'apkDownload':base+'/releases/download/v1.0.25/TVNext-1.0.25.apk',
+            'windowsSha256':'b6a56af5e298e7f7b3d9bf33d4f24b9ef432e336774afb2644c480e82aee76ce',
+            'apkSha256':'f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72',
           }
-          Path('releases/windows/publication-1.0.24-r3.json').write_text(json.dumps(payload,indent=2)+'\n')
-          PY
+          Path('releases/windows/publication-1.0.25.json').write_text(json.dumps(payload,indent=2)+'\n')
+          PYREPORT
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add releases/windows/publication-1.0.24-r3.json
+          git add releases/windows/publication-1.0.25.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Record Windows portable 1.0.24 publication result'
+            git commit -m 'Record Android and Windows 1.0.25 publication result'
             git push origin HEAD:main
           fi
