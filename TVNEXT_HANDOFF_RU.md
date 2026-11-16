@@ -16,7 +16,7 @@ DesktopWindowDiagnostics: data/window-transitions.log,128КБ+одна128КБк�
 
 ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r5.zip,178619549bytes,SHA387aefe9f2f62b678f0cfa44d869900223a8541cd672d2be8d564e73fcebf384. CRC,JAR hashes/nativeRuntimeunchanged passed. Отr4 изменилисьdesktop.jar/player.jar/README. Android APK SHAf7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R5_RU.md, manifest releases/windows/validation-1.0.25-r5.json, native/PNG evidence validation-1.0.25-r5/.
 
-ПУБЛИКАЦИЯ ОЖИДАЕТСЯ r5: source/main и tag windows-v1.0.25-r5, Windows-only workflow; прежние tags/assets сохранять. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r5/TVNext-1.0.25-windows-x64-portable-r5.zip . Дождаться Actions assemble/windows success, скачать публичныйZIP обратно, проверитьSHA/размер и отметитьmanifest/handoff. Перед запуском закрыть старуюкопиюAlt+F4, вcaptionновойдолжно бытьr5.
+ПУБЛИКАЦИЯ ЗАВЕРШЕНА r5: GitHub Actions43895384358 assemble/windows success, publication-1.0.25-r5.json наmain. Source/main и tag windows-v1.0.25-r5 опубликованы; source commit78ed82d1e706db6e73528511e302c2d44074f723. ПубличныйZIP скачан обратно:178619549bytes,SHA387aefe9f2f62b678f0cfa44d869900223a8541cd672d2be8d564e73fcebf384 совпал. Выдавать https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r5/TVNext-1.0.25-windows-x64-portable-r5.zip . Перед запуском полностьюзакрытьстаруюкопиюAlt+F4, caption новой1.0.25r5. Еслиповторитсячёрныйэкран, нужен data/window-transitions.log. Старыеtags/assets/Android сохранены.
 
 ## Windows 1.0.25 r4 — чёрный UI после fullscreen GPU, 16.11.2026
 

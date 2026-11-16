@@ -37,7 +37,7 @@
   "diagnosticLog": "data/window-transitions.log",
   "diagnosticLogLimitBytes": 262144,
   "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r5/TVNext-1.0.25-windows-x64-portable-r5.zip",
-  "githubDownloadVerified": false,
+  "githubDownloadVerified": true,
   "nativeWindowTransitions": {
     "environment": "Windows JRE under Wine 10, production DesktopBorderlessFullscreen.forWindow and real AWT Frame/Canvas",
     "cycles": 5,
@@ -48,5 +48,8 @@
     "resizeAndTopmostFlagsRestored": true,
     "diagnosticLogBuildMarkerVerified": "r5",
     "physicalGpuCompositionVerified": false
-  }
+  },
+  "sourceCommit": "78ed82d1e706db6e73528511e302c2d44074f723",
+  "githubDownloadVerifiedDate": "2026-11-16",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43895384358"
 }
