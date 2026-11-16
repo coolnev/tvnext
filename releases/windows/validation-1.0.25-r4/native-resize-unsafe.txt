@@ -1,0 +1,5 @@
+PASS native player initialized
+PASS fixture opened
+PASS video target complete 320x180
+NATIVE_RESIZE 640x360 inherited framebuffer=1
+java.lang.AssertionError: Skiko native resize selects window framebuffer, actual=1

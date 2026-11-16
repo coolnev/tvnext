@@ -1,0 +1,88 @@
+{
+  "version": "1.0.25",
+  "revision": "r4",
+  "sourceTag": "windows-v1.0.25-r4",
+  "archive": "TVNext-1.0.25-windows-x64-portable-r4.zip",
+  "bytes": 178596957,
+  "sha256": "5e2726d4282bf35ddc8af3d2c3e50c5758e9b5a9c43d9e905428384dcc9a5330",
+  "checks": {
+    "desktop": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "player": {
+      "tests": 91,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "zipCrcPassed": true,
+  "changedPackagedFiles": [
+    "README_RU.txt",
+    "lib/player-desktop-1.0.25.jar"
+  ],
+  "backendJars": {
+    "desktop-1.0.25.jar": "b1a2da2977ceb25eb4a5d5f694fd99485aac3c71100150223234b6191b9366ec",
+    "player-desktop-1.0.25.jar": "f3aa9892c50a93073a4e7dba84d11fe1cb5de5e1f70ea6797dea44e6662dc4e7"
+  },
+  "packagedJarsMatchTestedJars": true,
+  "runtimeAndNativeDllsUnchangedFromR3": true,
+  "androidSourceUnchanged": true,
+  "androidApkSha256": "f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72",
+  "nativeResize": {
+    "environment": "Windows JRE + libmpv/ANGLE under Wine 10, updated player JAR; pinned Skiko native AngleRedrawer.makeRenderTarget",
+    "unsafeStateLeakReproduced": true,
+    "windowSizes": [
+      [
+        640,
+        360
+      ],
+      [
+        1280,
+        720
+      ],
+      [
+        640,
+        360
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        640,
+        360
+      ],
+      [
+        960,
+        540
+      ],
+      [
+        640,
+        360
+      ]
+    ],
+    "videoFrames": [
+      14,
+      23,
+      22,
+      1,
+      21,
+      21,
+      21
+    ],
+    "uprightCornerChecks": 28,
+    "nativeWindowUiPixelChecks": 8,
+    "hiddenVideoAndCleanupPassed": true,
+    "cpuReadbackOnlyInTest": true,
+    "pausedResizePreservesFrameAndClock": true
+  },
+  "physicalWindowsPc": false,
+  "fullComposeFullscreenVerified": false,
+  "fullSkiaGpuCompositionVerified": false,
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r4/TVNext-1.0.25-windows-x64-portable-r4.zip",
+  "githubDownloadVerified": false
+}

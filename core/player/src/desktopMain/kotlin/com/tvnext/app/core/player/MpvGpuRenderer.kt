@@ -33,13 +33,17 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
         return drawWithBinding(canvas,binding,w,h,revision,ready)
     }
     fun drawWithBinding(canvas:Canvas,binding:GpuBinding,w:Int,h:Int,revision:Long,ready:Boolean):Boolean {
+        return withWindowState(binding) {drawFrame(canvas,binding,w,h,revision,ready)}
+    }
+    private fun drawFrame(canvas:Canvas,binding:GpuBinding,w:Int,h:Int,revision:Long,ready:Boolean):Boolean {
         ensure(binding)
         val changed=w!=width || h!=height
         if(changed)resize(binding,w,h)
         if(lastRevision!=revision) {snapshot?.close();snapshot=null;lastRevision=revision}
         if(!ready) return true
         val dirty=render!!.dirty()
-        if(dirty || changed && snapshot!=null) {
+        // A resized target is empty, including while paused with no new frame.
+        if(dirty || changed) {
             binding.context.flush().submit(false)
             target!!.notifyContentWillChange(ContentChangeMode.DISCARD)
             render!!.render(fbo,width,height)
@@ -50,11 +54,20 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
         snapshot?.let {canvas.drawImageRect(it,Rect.makeWH(w.toFloat(),h.toFloat()))}
         return true
     }
-    private fun ensure(binding:GpuBinding) {
+    private fun <T> withWindowState(binding:GpuBinding,action:()->T):T {
         if(owner!=null && owner?.context!==binding.context) {
             close()
         }
         binding.current()
+        binding.context.flush().submit(false)
+        try {
+            return GlFramebufferState.capture(gl).use {action()}
+        } finally {
+            // A cache reset alone leaves mpv's FBO bound at the next native resize.
+            binding.context.resetGLAll()
+        }
+    }
+    private fun ensure(binding:GpuBinding) {
         if(render==null) {
             rendererName=gl.glGetString(0x1F01)?.getString(0).orEmpty()
             check(!softwareGpu(rendererName)){"Программный графический драйвер: $rendererName"}
@@ -66,9 +79,11 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
     /** Consume frames without drawing while the video is hidden or the window is minimized. */
     fun service(host:Window):Boolean {
         val binding=GpuBinding.acquire(host) ?: return false
-        ensure(binding)
-        if(render!!.dirty()){render!!.skip();binding.context.resetGLAll()}
-        return true
+        return withWindowState(binding) {
+            ensure(binding)
+            if(render!!.dirty())render!!.skip()
+            true
+        }
     }
     private fun resize(binding:GpuBinding,w:Int,h:Int) {
         freeTarget()
@@ -98,14 +113,24 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
     override fun close() {
         val binding=owner ?: return
         val current=runCatching {binding.current();binding.context.flush().submit(false)}.isSuccess
-        if(current)render?.close() else render?.closeWithoutCurrent()
-        render=null
-        freeTarget(current)
-        if(current)binding.context.resetGLAll()
-        owner=null
+        try {
+            if(current) {
+                try {
+                    GlFramebufferState.capture(gl).use {
+                        render?.close();render=null
+                        freeTarget()
+                    }
+                } finally {binding.context.resetGLAll()}
+            } else {
+                render?.closeWithoutCurrent();render=null
+                freeTarget(false)
+            }
+        } finally {owner=null}
     }
     internal interface Gles:Library {
         fun glGetString(name:Int):Pointer?
+        fun glGetIntegerv(name:Int,result:IntArray)
+        fun glViewport(x:Int,y:Int,width:Int,height:Int)
         fun glGenTextures(n:Int,result:IntArray)
         fun glDeleteTextures(n:Int,names:IntArray)
         fun glBindTexture(target:Int,name:Int)

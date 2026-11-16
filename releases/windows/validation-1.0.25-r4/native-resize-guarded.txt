@@ -1,0 +1,114 @@
+PASS native player initialized
+PASS fixture opened
+PASS video target complete 320x180
+NATIVE_RESIZE 640x360 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 0, frames=14
+PASS video 0: window draw/read framebuffer restored
+PASS video 0: window viewport restored
+PASS hidden video 0: window draw/read framebuffer restored
+PASS hidden video 0: window viewport restored
+PASS upright video corner 0 after resize 0
+PASS upright video corner 1 after resize 0
+PASS upright video corner 2 after resize 0
+PASS upright video corner 3 after resize 0
+PASS window UI pixels visible after resize 0
+PASS UI 0: window draw/read framebuffer restored
+PASS UI 0: window viewport restored
+PASS video target complete 640x360
+NATIVE_RESIZE 1280x720 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 1, frames=23
+PASS video 1: window draw/read framebuffer restored
+PASS video 1: window viewport restored
+PASS hidden video 1: window draw/read framebuffer restored
+PASS hidden video 1: window viewport restored
+PASS upright video corner 0 after resize 1
+PASS upright video corner 1 after resize 1
+PASS upright video corner 2 after resize 1
+PASS upright video corner 3 after resize 1
+PASS window UI pixels visible after resize 1
+PASS UI 1: window draw/read framebuffer restored
+PASS UI 1: window viewport restored
+PASS video target complete 320x180
+NATIVE_RESIZE 640x360 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 2, frames=22
+PASS video 2: window draw/read framebuffer restored
+PASS video 2: window viewport restored
+PASS hidden video 2: window draw/read framebuffer restored
+PASS hidden video 2: window viewport restored
+PASS upright video corner 0 after resize 2
+PASS upright video corner 1 after resize 2
+PASS upright video corner 2 after resize 2
+PASS upright video corner 3 after resize 2
+PASS window UI pixels visible after resize 2
+PASS UI 2: window draw/read framebuffer restored
+PASS UI 2: window viewport restored
+PASS pause before fullscreen-sized resize
+PASS video target complete 640x360
+NATIVE_RESIZE 1920x1080 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS paused playback clock stays still across resize
+PASS paused frame redrawn after resize 3
+PASS video 3: window draw/read framebuffer restored
+PASS video 3: window viewport restored
+PASS hidden video 3: window draw/read framebuffer restored
+PASS hidden video 3: window viewport restored
+PASS upright video corner 0 after resize 3
+PASS upright video corner 1 after resize 3
+PASS upright video corner 2 after resize 3
+PASS upright video corner 3 after resize 3
+PASS window UI pixels visible after resize 3
+PASS UI 3: window draw/read framebuffer restored
+PASS UI 3: window viewport restored
+PASS resume after fullscreen-sized resize
+PASS video target complete 320x180
+NATIVE_RESIZE 640x360 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 4, frames=21
+PASS video 4: window draw/read framebuffer restored
+PASS video 4: window viewport restored
+PASS hidden video 4: window draw/read framebuffer restored
+PASS hidden video 4: window viewport restored
+PASS upright video corner 0 after resize 4
+PASS upright video corner 1 after resize 4
+PASS upright video corner 2 after resize 4
+PASS upright video corner 3 after resize 4
+PASS window UI pixels visible after resize 4
+PASS UI 4: window draw/read framebuffer restored
+PASS UI 4: window viewport restored
+PASS video target complete 640x360
+NATIVE_RESIZE 960x540 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 5, frames=21
+PASS video 5: window draw/read framebuffer restored
+PASS video 5: window viewport restored
+PASS hidden video 5: window draw/read framebuffer restored
+PASS hidden video 5: window viewport restored
+PASS upright video corner 0 after resize 5
+PASS upright video corner 1 after resize 5
+PASS upright video corner 2 after resize 5
+PASS upright video corner 3 after resize 5
+PASS window UI pixels visible after resize 5
+PASS UI 5: window draw/read framebuffer restored
+PASS UI 5: window viewport restored
+PASS video target complete 320x180
+NATIVE_RESIZE 640x360 inherited framebuffer=0
+PASS Skiko native resize selects window framebuffer, actual=0
+PASS video advances after resize 6, frames=21
+PASS video 6: window draw/read framebuffer restored
+PASS video 6: window viewport restored
+PASS hidden video 6: window draw/read framebuffer restored
+PASS hidden video 6: window viewport restored
+PASS upright video corner 0 after resize 6
+PASS upright video corner 1 after resize 6
+PASS upright video corner 2 after resize 6
+PASS upright video corner 3 after resize 6
+PASS window UI pixels visible after resize 6
+PASS UI 6: window draw/read framebuffer restored
+PASS UI 6: window viewport restored
+PASS cleanup: window draw/read framebuffer restored
+PASS cleanup: window viewport restored
+PASS window UI pixels visible after resize 7
+WINDOWS_GPU_RESIZE_SMOKE_PASSED

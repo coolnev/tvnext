@@ -4,6 +4,20 @@
 
 
 
+## Windows 1.0.25 r4 — чёрный UI после fullscreen GPU, 16.11.2026
+
+Жалоба пользователя: в Windows Hardware GPU оконное видео видно, после fullscreen только звук/чёрный экран, возврат оставляет чёрным всё окно включая меню. Исправление только desktop player; Android/commonMain/APK не менять. App version1.0.25, архив/tag r4.
+
+Найдена утечка native GL framebuffer/viewport: MpvGpuRenderer менял FBO при resize/render/create/service/free, но только context.resetGLAll(), который инвалидирует кеш Skia и не восстанавливает нативные привязки. Skiko0.144.6 AngleRedrawer.cc makeAngleRenderTarget после замены EGLSurface читает GL_FRAMEBUFFER_BINDING как target окна. Если там video FBO, теряется весь UI. GlFramebufferState теперь сохраняет отдельные DRAW/READ framebuffer и viewport, восстанавливает AutoCloseable/use/finally; MpvGpuRenderer.withWindowState flushes caller, wraps create/draw/resize/service, invalidates Skia cache ПОСЛЕ restore. Close тоже guarded; потерянный контекст использует прежний closeWithoutCurrent. Нельзя заменять сохранённые bindings на постоянный0: nested Skia offscreen layers имеют ненулевые FBO. Hardware/GPU режим не отключается, Main/F11 window placement не менялся.
+
+Также resize освобождает snapshot, поэтому прежнее dirty || changed && snapshot!=null никогда не перерисовывало кадр на паузе. Теперь dirty || changed: последний кадр рисуется в новый FBO и без нового FRAME. SourceReady gate сохранён, flipY=1 изr3 не менять.
+
+111 tests pass (Desktop20,player91): новые3 guard теста default/nested separate read-draw/error. Native helper WindowsGpuResizeSmoke.java вызывает настоящий pinned Skiko AngleRedrawer.makeRenderTarget и Windows mpv/ANGLE под Wine. unsafe (без guard) действительно inherited framebuffer=1, assertion вместо window0; guarded7 sizes640x360->1280x720->640->1920x1080->640->960x540->640 passed; frames[14, 23, 22, 1, 21, 21, 21],28 orientation corner checks,8 native window UI pixel checks, hidden skip/cleanup. На1920x1080 stage3 пауза: последний кадр перерисован, часы неподвижны, resume passed. Это проверка native GPU buffer contract, не физический Windows ПК и не полный Compose F11 screenshot test; manifest честно fullComposeFullscreenVerified/fullSkiaGpuCompositionVerified=false. Native helper UI пиксели читает только в QA, production GPU CPU readback не добавлен.
+
+ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r4.zip, 178596957bytes,SHA5e2726d4282bf35ddc8af3d2c3e50c5758e9b5a9c43d9e905428384dcc9a5330. CRC/hash passed. Отr3 отличаются только player.jar и README_RU.txt; desktop.jar, DLL/runtime/dependencies прежние. Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R4_RU.md, manifest releases/windows/validation-1.0.25-r4.json и PNG/native evidence в validation-1.0.25-r4/.
+
+ПУБЛИКАЦИЯ ОЖИДАЕТСЯ r4: новый windows-v1.0.25-r4 tag, source/main+ZIPparts64MiB, Windows-only workflow. Старые tags/assets не двигать. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r4/TVNext-1.0.25-windows-x64-portable-r4.zip . Перед ответом Actions assemble/windows success, скачивание публичного ZIP обратно с проверкой размера/SHA и обновление manifest/handoff.
+
 ## Windows 1.0.25 r3 — ориентация GPU и предыдущий канал, 16.11.2026
 
 Пользователь сообщил: Windows «Аппаратный — GPU» показывает видео вверх ногами; значок предыдущего канала похож на previous-track и не подходит. Исправления только Windows; app version1.0.25, новый архив/tag r3. Android/commonMain/APK не менять.
