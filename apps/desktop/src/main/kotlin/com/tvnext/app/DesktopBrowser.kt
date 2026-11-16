@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,7 +38,8 @@ import org.koin.core.context.GlobalContext
 @Composable
 internal fun DesktopPlayerView(controller:PlaybackController,cinema:Boolean,controlsVisible:Boolean,onPause:()->Unit,
     onFullscreen:()->Unit,onPrevious:()->Unit,onRecord:()->Unit,onInfo:()->Unit,onAspect:()->Unit,onVideoFocus:(Boolean)->Unit,
-    epg:ChannelEpg=ChannelEpg(),modifier:Modifier=Modifier,clockPosition:ClockPosition=ClockPosition.OFF) {
+    epg:ChannelEpg=ChannelEpg(),modifier:Modifier=Modifier,clockPosition:ClockPosition=ClockPosition.OFF,
+    onReturnLive:()->Unit={(controller as? TimeShiftController)?.returnToLive()}) {
     val state by controller.state.collectAsState()
     val audio by remember(controller){(controller as? MpvPlaybackController)?.audioOutput ?: kotlinx.coroutines.flow.MutableStateFlow(DesktopAudioOutput())}.collectAsState()
     val viewport: @Composable (Modifier)->Unit = {m ->
@@ -47,7 +50,7 @@ internal fun DesktopPlayerView(controller:PlaybackController,cinema:Boolean,cont
             }
             .testTag("desktop-video")) {
             TvPlayerPanel(controller=controller,channelName=state.item?.title.orEmpty(),channelNameVisible=false,
-                showControls=false,showDiagnostics=false,rounded=false,clockPosition=clockPosition,onVideoTap=onPause,
+                showControls=false,showDiagnostics=false,rounded=false,clockPosition=clockPosition,onVideoTap={if(state.item?.kind!=PlaybackContentKind.LIVE)onPause()},
                 onVideoFocusedChange=onVideoFocus,onRetry={state.item?.let(controller::play)},onClose=controller::stop,
                 onTogglePlayback=onPause,onToggleFullscreen=onFullscreen,modifier=Modifier.fillMaxSize())
         }
@@ -65,7 +68,7 @@ internal fun DesktopPlayerView(controller:PlaybackController,cinema:Boolean,cont
                     modifier=Modifier.fillMaxWidth(),textAlign=androidx.compose.ui.text.style.TextAlign.End,
                     style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=1,overflow=TextOverflow.Ellipsis)
             }
-            DesktopTransport(controller,onPause,onFullscreen,onPrevious,onRecord,onInfo,onAspect,seekStepMs=LocalDesktopSettings.current.archiveSeekStepMs)
+            DesktopTransport(controller,onPause,onFullscreen,onPrevious,onRecord,onInfo,onAspect,seekStepMs=LocalDesktopSettings.current.archiveSeekStepMs,epg=epg,onReturnLive=onReturnLive)
             audio.error?.let {Text(it,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.error,maxLines=2)}
         }
     }
@@ -84,11 +87,12 @@ internal fun DesktopPlayerView(controller:PlaybackController,cinema:Boolean,cont
 }
 
 /** Row cursors scroll before moving focus, so arrows work beyond the visible viewport. */
+internal data class DesktopListAnchor(val id:String,val offsetPx:Float?=null)
+
 @Composable
 internal fun <T> DesktopCursorList(items:List<T>,id:(T)->String,selected:String?,tag:String,
     onFocus:(T)->Unit={},onActivate:(T)->Unit,onSelect:(T)->Unit=onActivate,onLeft:(()->Unit)?=null,onRight:(()->Unit)?=null,
-    modifier:Modifier=Modifier,content:@Composable (T,Boolean)->Unit) {
-    val list=rememberLazyListState()
+    modifier:Modifier=Modifier,list:LazyListState=rememberLazyListState(),anchor:DesktopListAnchor?=null,content:@Composable (T,Boolean)->Unit) {
     val scope=rememberCoroutineScope()
     val requesters=remember {mutableMapOf<String,FocusRequester>()}
     var cursor by remember(tag){mutableStateOf(selected)}
@@ -96,6 +100,16 @@ internal fun <T> DesktopCursorList(items:List<T>,id:(T)->String,selected:String?
         if(cursor==null)cursor=selected
         val i=items.indexOfFirst {id(it)==selected}
         if(i>=0 && list.layoutInfo.visibleItemsInfo.none {it.index==i})list.scrollToItem((i-2).coerceAtLeast(0))
+    }
+    LaunchedEffect(anchor,items.size) {
+        val target=anchor ?: return@LaunchedEffect
+        val index=items.indexOfFirst {id(it)==target.id};if(index<0)return@LaunchedEffect
+        withFrameNanos {}
+        list.scrollToItem(index)
+        withFrameNanos {}
+        val height=list.layoutInfo.visibleItemsInfo.firstOrNull {it.index==index}?.size ?: return@LaunchedEffect
+        val center=(target.offsetPx ?: (list.layoutInfo.viewportSize.height*.45f)).coerceIn(height/2f,(list.layoutInfo.viewportSize.height-height/2f).coerceAtLeast(height/2f))
+        list.scrollToItem(index,-(center-height/2f).toInt())
     }
     LazyColumn(modifier.testTag(tag),state=list,verticalArrangement=Arrangement.spacedBy(2.dp)) {
         itemsIndexed(items,key={_,item->id(item)}) {index,item->
@@ -129,7 +143,8 @@ internal fun <T> DesktopCursorList(items:List<T>,id:(T)->String,selected:String?
 @Composable
 internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices,cinema:Boolean,chrome:Boolean,
     pause:()->Unit,fullscreen:()->Unit,home:()->Unit,guide:()->Unit,refreshEpg:()->Unit,epgState:EpgState,
-    onEditing:(Boolean)->Unit,onVideoFocus:(Boolean)->Unit,clockPosition:ClockPosition=ClockPosition.OFF) {
+    onEditing:(Boolean)->Unit,onVideoFocus:(Boolean)->Unit,clockPosition:ClockPosition=ClockPosition.OFF,
+    showChannelOverlay:Boolean=false,onCloseOverlay:()->Unit={}) {
     val state by component.state.collectAsState()
     val player by component.playbackController.state.collectAsState()
     val nowPlaying by component.nowPlaying.collectAsState()
@@ -138,33 +153,76 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
     var categories by remember {mutableStateOf(false)}
     var previewId by remember(component){mutableStateOf(player.item?.id ?: state.selectedChannelId)}
     val channel=state.channels.firstOrNull {it.id==(previewId ?: state.selectedChannelId)} ?: state.filteredChannels.firstOrNull()
+    val channelList=rememberLazyListState()
+    val programmeList=rememberLazyListState()
+    val channelOffset by remember(channel?.id){derivedStateOf {
+        channelList.layoutInfo.visibleItemsInfo.firstOrNull {it.key==channel?.id}?.let {it.offset+it.size/2f}
+    }}
     val channelFocus=remember {FocusRequester()}
     val programmeFocus=remember {FocusRequester()}
     val videoFocus=remember {FocusRequester()}
     var programme by remember(channel?.id){mutableStateOf<EpgProgramme?>(null)}
-    var anchored by remember(channel?.id){mutableStateOf(false)}
+    var anchored by remember(channel?.id,player.item?.id,player.item?.kind,player.item?.archiveEpgAnchorMs){mutableStateOf(false)}
+    var programmeAnchor by remember(channel?.id){mutableStateOf<String?>(null)}
     var now by remember {mutableLongStateOf(System.currentTimeMillis())}
     LaunchedEffect(Unit){while(true){delay(1000);now=System.currentTimeMillis()}}
     LaunchedEffect(component){component.effects.collect {effect->if(effect is ChannelsEffect.ShowError)runtime.message(effect.error.toUserMessage())}}
     DisposableEffect(component){component.setScreenVisible(true);onDispose {component.setScreenVisible(false);component.setBackHandler {false}}}
+    LaunchedEffect(player.item?.id){
+        player.item?.takeIf {it.kind!=PlaybackContentKind.VOD}?.let {previewId=it.id}
+    }
+    LaunchedEffect(cinema) {
+        if(!cinema) {
+            player.item?.takeIf {it.kind!=PlaybackContentKind.VOD}?.let {previewId=it.id}
+            anchored=false
+        }
+    }
     LaunchedEffect(channel?.id){channel?.let {component.dispatch(ChannelsIntent.ShowChannelTimeline(it.id))}}
-    LaunchedEffect(channel?.id,timeline.programmes){
+    LaunchedEffect(channel?.id,timeline.channelId,timeline.programmes,anchored){
         if(!anchored && timeline.channelId==channel?.id && timeline.programmes.isNotEmpty()) {
             val at=if(player.item?.id==channel?.id && player.item?.kind==PlaybackContentKind.ARCHIVE)
                 (player.item?.archiveEpgAnchorMs ?: now)+player.positionMs else now
-            programme=timeline.programmes.firstOrNull {at>=it.start && at<it.stop};anchored=true
+            programme=timeline.programmes.firstOrNull {at>=it.start && at<it.stop}
+            programmeAnchor=programme?.start?.toString();anchored=true
         }
     }
-    fun choose(c:Channel,play:Boolean){previewId=c.id;component.dispatch(ChannelsIntent.FocusChannel(c.id));if(play)component.dispatch(ChannelsIntent.SelectChannel(c.id))}
+    fun choose(c:Channel,play:Boolean){
+        previewId=c.id
+        component.dispatch(ChannelsIntent.FocusChannel(c.id))
+        // A channel click always tunes live; only an explicit programme action opens archive.
+        if(play){programme=null;programmeAnchor=null;anchored=false;component.dispatch(ChannelsIntent.SelectChannel(c.id))}
+    }
     fun playProgramme(p:EpgProgramme){val c=channel ?: return
+        if(timeline.channelId!=c.id || p !in timeline.programmes)return
         if(p.start<=now && p.stop>now)component.dispatch(ChannelsIntent.SelectChannel(c.id))
         else if(p.start<now)component.dispatch(ChannelsIntent.ArchiveProgrammeClicked(p,c.id))
         else runtime.scheduleRequest.value=RecordingScheduleRequest(c.name,p.title,c.streamUrl,p.start,p.stop,c.id)
     }
     val video:@Composable (Modifier)->Unit = {m->DesktopPlayerView(component.playbackController,cinema,chrome,pause,fullscreen,
         PlaybackUiRequests::previousChannel,runtime::toggleRecording,PlaybackUiRequests::showStreamInfo,
-        {runtime.aspectDialog.value=true},onVideoFocus,playingEpg,m,clockPosition)}
-    if(cinema){video(Modifier.fillMaxSize());return}
+        {runtime.aspectDialog.value=true},onVideoFocus,playingEpg,m,clockPosition,
+        onReturnLive={player.item?.id?.let {component.dispatch(ChannelsIntent.SelectChannel(it))};anchored=false})}
+    if(cinema){
+        Box(Modifier.fillMaxSize()) {
+            video(Modifier.fillMaxSize())
+            if(showChannelOverlay)Surface(Modifier.align(Alignment.CenterStart).width(360.dp).fillMaxHeight().padding(top=52.dp).testTag("desktop-channel-overlay"),
+                color=MaterialTheme.colorScheme.surface.copy(alpha=.98f),shadowElevation=8.dp) {
+                Column(Modifier.padding(10.dp)) {
+                    Row(verticalAlignment=Alignment.CenterVertically) {
+                        Text(uiText("Каналы"),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+                        TextButton(onCloseOverlay){Text(uiText("Закрыть"))}
+                    }
+                    DesktopCursorList(state.filteredChannels,Channel::id,player.item?.id,"desktop-hover-channels",onActivate={choose(it,true)},
+                        anchor=player.item?.id?.let {DesktopListAnchor(it)},modifier=Modifier.fillMaxSize()) {c,selected->
+                        Column(Modifier.fillMaxWidth().padding(10.dp)) {
+                            Text(c.name,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1,overflow=TextOverflow.Ellipsis)
+                            nowPlaying[c.id]?.let {Text(it.title,style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)}
+                        }
+                    }
+                }
+            }
+        };return
+    }
     if(state.isLoading && state.channels.isEmpty()) {
         Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally){CircularProgressIndicator();Text(uiText("Пожалуйста, подождите"))}};return
     }
@@ -190,9 +248,9 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
             }
             Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f)) {
-                    Text(uiText("Каналы"),style=MaterialTheme.typography.labelLarge,modifier=Modifier.padding(bottom=6.dp))
+                    Text(uiText("Каналы"),style=MaterialTheme.typography.labelLarge,modifier=Modifier.height(40.dp).wrapContentHeight(Alignment.CenterVertically))
                     DesktopCursorList(state.filteredChannels,Channel::id,player.item?.id,"desktop-channels",
-                        onFocus={choose(it,false)},onActivate={choose(it,true)},onRight={if(timeline.channelId==channel?.id && timeline.programmes.isNotEmpty())programmeFocus.requestFocus() else videoFocus.requestFocus()},modifier=Modifier.fillMaxSize().focusRequester(channelFocus).focusGroup()) {c,selected->
+                        list=channelList,anchor=player.item?.id?.let {DesktopListAnchor(it)},onFocus={choose(it,false)},onActivate={choose(it,true)},onRight={if(timeline.channelId==channel?.id && timeline.programmes.isNotEmpty())programmeFocus.requestFocus() else videoFocus.requestFocus()},modifier=Modifier.fillMaxSize().focusRequester(channelFocus).focusGroup()) {c,selected->
                         Row(Modifier.fillMaxWidth().heightIn(min=62.dp).padding(8.dp),verticalAlignment=Alignment.CenterVertically,
                             horizontalArrangement=Arrangement.spacedBy(7.dp)) {
                             if(LocalDesktopSettings.current.showChannelNumbers)Text(c.number.toString(),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -204,7 +262,7 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
                     }
                 }
                 Column(Modifier.weight(1.15f)) {
-                    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().height(40.dp),verticalAlignment=Alignment.CenterVertically) {
                         Text(channel?.name.orEmpty(),style=MaterialTheme.typography.labelLarge,modifier=Modifier.weight(1f),maxLines=1,overflow=TextOverflow.Ellipsis)
                         TextButton({programme=timeline.programmes.firstOrNull {now in it.start until it.stop};anchored=false}){Text(uiText("Сейчас"))}
                     }
@@ -214,7 +272,7 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
                         if(!epgState.isLoading)OutlinedButton(refreshEpg,shape=RoundedCornerShape(4.dp)){Text(uiText("Обновить EPG"))}
                         epgState.lastError?.let {Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.error)}
                     } else DesktopCursorList(programmes,{it.start.toString()},programme?.start?.toString(),"desktop-programmes",
-                        onFocus={programme=it},onActivate={programme=it;playProgramme(it)},onSelect={programme=it},onLeft={if(state.filteredChannels.isNotEmpty())channelFocus.requestFocus()},onRight={videoFocus.requestFocus()},modifier=Modifier.weight(1f).focusRequester(programmeFocus).focusGroup()) {p,selected->
+                        list=programmeList,anchor=programmeAnchor?.let {DesktopListAnchor(it,channelOffset)},onFocus={programme=it},onActivate={programme=it;playProgramme(it)},onSelect={programme=it},onLeft={if(state.filteredChannels.isNotEmpty())channelFocus.requestFocus()},onRight={videoFocus.requestFocus()},modifier=Modifier.weight(1f).focusRequester(programmeFocus).focusGroup()) {p,selected->
                         Column(Modifier.fillMaxWidth().padding(horizontal=7.dp,vertical=5.dp).combinedClickable(
                             onClick={programme=p},onDoubleClick={programme=p;playProgramme(p)})) {
                             Text(p.title,style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis,
@@ -250,10 +308,27 @@ private fun DesktopProgrammeDetails(programme:EpgProgramme?,modifier:Modifier=Mo
         catch(cancelled:CancellationException){throw cancelled}catch(_:Exception){} }
     DisposableEffect(request){onDispose {request?.let {finder?.forget(it)}}}
     val description=remote?.overview?.takeIf(::hasProgrammeSynopsis) ?: programme?.description?.takeIf(::hasProgrammeSynopsis)
+    DesktopDescription(programme?.title.orEmpty(),programme?.let {formatDateTime(it.start)}.orEmpty(),
+        remote?.frameUrl ?: remote?.posterUrl,remote?.frameUrl!=null,description ?: uiText("Описание отсутствует"),modifier)
+}
+
+/** Artwork has finite bounds even inside a vertically scrolling description. */
+@Composable
+internal fun DesktopDescription(title:String,date:String,art:String?,frame:Boolean,text:String,modifier:Modifier=Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-        programme?.let {Text(it.title,style=MaterialTheme.typography.titleMedium);Text(formatDateTime(it.start),style=MaterialTheme.typography.labelSmall)}
-        (remote?.frameUrl ?: remote?.posterUrl)?.let {ChannelLogo(it,Modifier.fillMaxWidth().heightIn(max=180.dp).aspectRatio(16f/9f),showPlaceholder=false)}
-        Text(description ?: uiText("Описание отсутствует"),style=MaterialTheme.typography.bodyMedium)
+        if(title.isNotBlank())Text(title,style=MaterialTheme.typography.titleMedium)
+        if(date.isNotBlank())Text(date,style=MaterialTheme.typography.labelSmall)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val width=(maxWidth*.34f).coerceAtMost(if(frame)200.dp else 140.dp)
+            Row(horizontalArrangement=Arrangement.spacedBy(12.dp),verticalAlignment=Alignment.Top) {
+                art?.let {
+                    Box(Modifier.width(width).height(if(frame)width*9f/16f else width*1.5f).testTag("desktop-description-art")) {
+                        ChannelLogo(it,Modifier.fillMaxSize(),showPlaceholder=false)
+                    }
+                }
+                Text(text,Modifier.weight(1f).testTag("desktop-description-text"),style=MaterialTheme.typography.bodyMedium)
+            }
+        }
     }
 }
 

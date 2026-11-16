@@ -136,14 +136,14 @@ internal fun DesktopRow(label:String,value:String="",checked:Boolean?=null,onCli
 }
 
 @Composable
-private fun DesktopSettings(component:SettingsComponent,runtime:DesktopServices,onBack:(()->Unit)?) {
+internal fun DesktopSettings(component:SettingsComponent,runtime:DesktopServices,onBack:(()->Unit)?) {
     val animation by runtime.animation.collectAsState()
     val state by component.state.collectAsState()
     var choice by remember {mutableStateOf<Pair<String,List<Pair<String,()->Unit>>>?>(null)}
     val scope=rememberCoroutineScope()
     fun options(label:String,items:List<Pair<String,()->Unit>>) {choice=uiText(label) to items}
-    SettingsScreen(component,onBackHome=onBack,platformSections=listOf(
-        PlatformSettingsSection(uiText("Общее")) {
+    DesktopSettingsScreen(component,onBackHome=onBack,platformSections=listOf(
+        DesktopSettingsSection(uiText("Общее")) {
             DesktopRow("Экран при запуске",startScreenLabel(state.settings.startScreen)) {
                 options("Экран при запуске",StartScreen.entries.map {screen ->
                     uiText(when(screen){StartScreen.HOME->"Главная";StartScreen.CHANNELS->"Каналы";StartScreen.TV_GUIDE->"ТВ-гид";StartScreen.MEDIA_LIBRARY->"Медиатека"}) to
@@ -155,11 +155,11 @@ private fun DesktopSettings(component:SettingsComponent,runtime:DesktopServices,
             DesktopRow("Разрешение окна (Windows)",state.settings.windowResolution.displayName){options("Разрешение окна (Windows)",WindowResolution.entries.map {it.displayName to {component.dispatch(SettingsIntent.WindowResolutionChanged(it))}})}
             Text("F11 · "+uiText("Полный экран")+"   Esc · "+uiText("Назад")+"   Enter · OK   I · "+uiText("Информация о потоке"),style=MaterialTheme.typography.bodySmall)
         },
-        PlatformSettingsSection(uiText("Запись")) {DesktopRecordingSettings(runtime)},
-        PlatformSettingsSection(uiText("Профили")) {
+        DesktopSettingsSection(uiText("Запись")) {DesktopRecordingSettings(runtime)},
+        DesktopSettingsSection(uiText("Профили")) {
             DesktopRow("Профили",runtime.profiles.profiles().firstOrNull {it.id==runtime.profiles.activeProfileId()}?.name.orEmpty()) {runtime.page.value=DesktopPage.PROFILES}
         },
-        PlatformSettingsSection(uiText("Родительский контроль")) {DesktopParentalSettings(runtime)},
+        DesktopSettingsSection(uiText("Родительский контроль")) {DesktopParentalSettings(runtime)},
     ),sectionContent={section,current ->when(section) {
         0->{
             Text(uiText("Воспроизведение"),style=MaterialTheme.typography.titleLarge)

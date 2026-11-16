@@ -292,6 +292,39 @@ val sharedRecordingSources=tasks.register("prepareSharedRecordingSources") {
 }
 sourceSets.main {kotlin.srcDir(layout.buildDirectory.dir("generated/recording"))}
 tasks.named("compileKotlin"){dependsOn(sharedRecordingSources)}
+// Reuse every settings section without changing the Android/shared screen.
+// Only the Windows copy replaces the accordion with an always-visible section.
+val desktopSettingsSources=tasks.register("prepareDesktopSettingsSources") {
+    val source=rootProject.layout.projectDirectory.file("features/settings/src/commonMain/kotlin/com/tvnext/app/feature/settings/ui/SettingsScreen.kt")
+    val output=layout.buildDirectory.dir("generated/settings")
+    inputs.file(source);outputs.dir(output)
+    doLast {
+        var text=source.asFile.readText().replace("\r\n","\n")
+            .replace("package com.tvnext.app.feature.settings.ui", "package com.tvnext.app\nimport com.tvnext.app.feature.settings.ui.*")
+            .replace("PlatformSettingsSection", "DesktopSettingsSection")
+            .replace("Modifier.width(170.dp)","Modifier.width(230.dp)")
+            .replace("uiText(\"↑↓ разделы   OK / → открыть   Назад к разделам\")","desktopText(\"Выберите раздел слева\")")
+            .replace("fun SettingsScreen(", "fun DesktopSettingsScreen(")
+        val start=text.indexOf("@Composable\nprivate fun SettingsSection(")
+        val end=text.indexOf("@Composable\nprivate fun SettingsSelectRow(",start)
+        check(start>=0 && end>start) {"Shared settings section boundaries changed"}
+        val flat="""
+            @Composable
+            private fun SettingsSection(title:String,initiallyExpanded:Boolean=false,content:@Composable ()->Unit) {
+                Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+                    Text(title,style=MaterialTheme.typography.headlineSmall,color=MaterialTheme.colorScheme.onSurface)
+                    content()
+                }
+            }
+
+        """.trimIndent()
+        text=text.substring(0,start)+flat+text.substring(end)
+        output.get().asFile.apply {mkdirs()}.resolve("DesktopSettingsScreen.kt").writeText(text)
+    }
+}
+sourceSets.main {kotlin.srcDir(layout.buildDirectory.dir("generated/settings"))}
+tasks.named("compileKotlin"){dependsOn(desktopSettingsSources)}
+
 val generatedDesktopDefaults=tasks.register("generateDesktopDefaults") {
     val configured=providers.gradleProperty("tvnext.kinopoisk.defaultKey").orElse("")
     inputs.property("configuredKey",configured);outputs.dir(layout.buildDirectory.dir("generated/defaults"))

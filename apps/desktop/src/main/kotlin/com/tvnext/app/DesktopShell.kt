@@ -21,6 +21,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -68,6 +70,8 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
     var videoFocused by remember {mutableStateOf(false)}
     var lastActivity by remember {mutableLongStateOf(System.currentTimeMillis())}
     var chrome by remember {mutableStateOf(true)}
+    var channelOverlay by remember {mutableStateOf(false)}
+    val density=androidx.compose.ui.platform.LocalDensity.current
     val shortcuts=remember {DesktopShortcuts()}
     val focus=remember {FocusRequester()}
     val scene=remember(runtime.playback){VideoScene()}
@@ -100,11 +104,11 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
             channels.dispatch(ChannelsIntent.SelectChannel(list[(index+delta+list.size)%list.size].id))
         }
     }
-    LaunchedEffect(active){editing=false;videoFocused=false;shortcuts.reset();activity()}
+    LaunchedEffect(active){editing=false;videoFocused=false;channelOverlay=false;shortcuts.reset();activity()}
     LaunchedEffect(isFullscreen){if(isFullscreen && watching)onImmersiveChange(true)}
-    LaunchedEffect(lastActivity,cinema,player.state){
+    LaunchedEffect(lastActivity,cinema,player.state,channelOverlay){
         chrome=true
-        if(cinema && player.state==PlaybackState.PLAYING){delay(3000);chrome=false}
+        if(cinema && !channelOverlay && player.state==PlaybackState.PLAYING){delay(3000);chrome=false}
     }
     LaunchedEffect(Unit){focus.requestFocus()}
     SideEffect {UiLocale.language=settings.language;PlayerClockStyle.withoutBackground.value=settings.clockWithoutBackground}
@@ -135,7 +139,15 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
                         DesktopCommand.CHANNELS->onImmersiveChange(!immersive)
                     };true}else held
                 }.focusable()
-                .onPointerEvent(PointerEventType.Move){activity()}
+                .onPointerEvent(PointerEventType.Press){activity()}
+                .onPointerEvent(PointerEventType.Move){event->
+                    activity()
+                    if(cinema && active==AppTab.CHANNELS && page==DesktopPage.NONE) {
+                        val x=event.changes.firstOrNull()?.position?.x ?: Float.MAX_VALUE
+                        if(x<with(density){24.dp.toPx()})channelOverlay=true
+                        else if(x>with(density){380.dp.toPx()})channelOverlay=false
+                    }
+                }
                 .onGloballyPositioned {scene.origin=it.positionInRoot()}.testTag("desktop-shell")) {
                 SharedVideoStage(scene,runtime.playback,animation,transitionKey=Triple(active,cinema,page),hasVideoDestination=true)
                 Column(Modifier.fillMaxSize()) {
@@ -158,7 +170,7 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
                                     })
                                 is AppTabComponent.Channels->DesktopChannels(tab.component,runtime,immersive,chrome,
                                     ::pause,::fullscreen,::home,{navigate(AppTab.TV_GUIDE)},::refreshEpg,epg,
-                                    {editing=it},{videoFocused=it},settings.clockPosition)
+                                    {editing=it},{videoFocused=it},settings.clockPosition,channelOverlay,{channelOverlay=false})
                                 is AppTabComponent.Tvg->TvgScreen(tab.component,onBackHome={navigate(AppTab.CHANNELS)})
                                 is AppTabComponent.Media->DesktopMedia(tab.component,runtime,movieOpen,{runtime.moviePlayerOpen.value=it},
                                     immersive,chrome,::pause,::fullscreen,::back,{editing=it},{videoFocused=it},settings.clockPosition)
@@ -180,63 +192,104 @@ internal fun DesktopShell(root:DefaultAppComponent,runtime:DesktopServices,isFul
 }
 
 @Composable
-private fun DesktopNavigation(active:AppTab,page:DesktopPage,navigate:(AppTab)->Unit,home:()->Unit,back:()->Unit,
+internal fun DesktopNavigation(active:AppTab,page:DesktopPage,navigate:(AppTab)->Unit,home:()->Unit,back:()->Unit,
     fullscreen:()->Unit,isFullscreen:Boolean,runtime:DesktopServices,modifier:Modifier=Modifier) {
     var more by remember {mutableStateOf(false)}
+    val tabs=listOf(AppTab.HOME to "Главная",AppTab.CHANNELS to "Каналы",AppTab.TV_GUIDE to "ТВ-гид",
+        AppTab.MEDIA_LIBRARY to "Медиатека",AppTab.SEARCH to "Поиск",AppTab.SETTINGS to "Настройки")
+    val extras=listOf("Мои записи" to DesktopPage.RECORDINGS,"Редактор каналов" to DesktopPage.EDITOR,"Профили" to DesktopPage.PROFILES)
+    val labels=tabs.map {uiText(it.second)}+extras.map {uiText(it.first)}
+    val measure=rememberTextMeasurer();val density=androidx.compose.ui.platform.LocalDensity.current
+    val style=MaterialTheme.typography.labelLarge
+    val widths=labels.map {with(density){measure.measure(AnnotatedString(it),style.copy(fontWeight=FontWeight.Bold)).size.width.toDp()}+28.dp}.map {it.coerceAtLeast(64.dp)}
+    val brand="TVNext ${AppVersion.NAME}"
+    val brandWidth=with(density){measure.measure(AnnotatedString(brand),MaterialTheme.typography.bodyLarge).size.width.toDp()}+16.dp
     Surface(modifier.fillMaxWidth(),color=MaterialTheme.colorScheme.surface.copy(alpha=.97f),tonalElevation=2.dp) {
-        Row(Modifier.fillMaxWidth().height(52.dp).horizontalScroll(rememberScrollState()).padding(horizontal=10.dp),
-            horizontalArrangement=Arrangement.spacedBy(4.dp),verticalAlignment=Alignment.CenterVertically) {
-            Text("TVNext ${AppVersion.NAME}",fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(end=10.dp))
-            TextButton(onClick=back,modifier=Modifier.testTag("desktop-back")){Text(uiText("Назад"))}
-            listOf(AppTab.HOME to "Главная",AppTab.CHANNELS to "Каналы",AppTab.TV_GUIDE to "ТВ-гид",
-                AppTab.MEDIA_LIBRARY to "Медиатека",AppTab.SEARCH to "Поиск",AppTab.SETTINGS to "Настройки").forEach {(tab,label)->
-                TextButton(onClick={if(tab==AppTab.HOME)home() else navigate(tab)},
-                    modifier=Modifier.testTag("desktop-nav-${tab.name}"),
-                    colors=ButtonDefaults.textButtonColors(contentColor=if(tab==active && page==DesktopPage.NONE)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) {
-                    Text(uiText(label),fontWeight=if(tab==active)FontWeight.Bold else FontWeight.Normal)
-                }
-            }
-            Box {
-                TextButton({more=true}){Text("•••")}
-                DropdownMenu(more,{more=false}) {
-                    listOf("Мои записи" to DesktopPage.RECORDINGS,"Редактор каналов" to DesktopPage.EDITOR,"Профили" to DesktopPage.PROFILES).forEach {(label,destination)->
-                        DropdownMenuItem(text={Text(uiText(label))},onClick={more=false;runtime.page.value=destination})
+        BoxWithConstraints {
+            val available=maxWidth-brandWidth-20.dp-128.dp
+            val total=widths.fold(0.dp){a,b->a+b}+4.dp*widths.size
+            var used=0.dp
+            val count=if(total<=available)widths.size else widths.takeWhile {width->
+                (used+width+4.dp<=available-52.dp).also {if(it)used+=width+4.dp}
+            }.size
+            Row(Modifier.fillMaxWidth().height(52.dp).padding(horizontal=10.dp),
+                horizontalArrangement=Arrangement.spacedBy(4.dp),verticalAlignment=Alignment.CenterVertically) {
+                Text(brand,fontWeight=FontWeight.SemiBold,modifier=Modifier.width(brandWidth))
+                TextButton(onClick=back,modifier=Modifier.width(60.dp).testTag("desktop-back"),contentPadding=PaddingValues(horizontal=6.dp)){Text(uiText("Назад"),maxLines=1)}
+                fun activate(index:Int) {if(index<tabs.size) {val tab=tabs[index].first;if(tab==AppTab.HOME)home() else navigate(tab)} else runtime.page.value=extras[index-tabs.size].second}
+                labels.take(count).forEachIndexed {index,label->
+                    val selected=if(index<tabs.size)tabs[index].first==active && page==DesktopPage.NONE else extras[index-tabs.size].second==page
+                    val tag=if(index<tabs.size)"desktop-nav-${tabs[index].first.name}" else "desktop-nav-${extras[index-tabs.size].second.name}"
+                    TextButton(onClick={activate(index)},modifier=Modifier.width(widths[index]).testTag(tag),contentPadding=PaddingValues(horizontal=12.dp),
+                        colors=ButtonDefaults.textButtonColors(contentColor=if(selected)MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)) {
+                        Text(label,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1)
                     }
                 }
+                if(count<labels.size)Box {
+                    TextButton({more=true},modifier=Modifier.width(48.dp).testTag("desktop-nav-more"),contentPadding=PaddingValues(0.dp)){Text("•••")}
+                    DropdownMenu(more,{more=false}) {
+                        (count until labels.size).forEach {index->DropdownMenuItem(text={Text(labels[index])},onClick={more=false;activate(index)})}
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(fullscreen,modifier=Modifier.width(60.dp).testTag("desktop-window-fullscreen"),contentPadding=PaddingValues(0.dp)){Text(if(isFullscreen)"F11 ↙" else "F11 ↗")}
             }
-            TextButton(fullscreen,modifier=Modifier.testTag("desktop-window-fullscreen")){Text(if(isFullscreen)"F11 ↙" else "F11 ↗")}
         }
     }
 }
 
 @Composable
 internal fun DesktopTransport(controller:PlaybackController,onPause:()->Unit,onFullscreen:()->Unit,onPrevious:()->Unit,
-    onRecord:()->Unit,onInfo:()->Unit,onAspect:()->Unit,modifier:Modifier=Modifier,seekStepMs:Long=10_000L) {
+    onRecord:()->Unit,onInfo:()->Unit,onAspect:()->Unit,modifier:Modifier=Modifier,seekStepMs:Long=10_000L,
+    epg:ChannelEpg=ChannelEpg(),onReturnLive:()->Unit={(controller as? TimeShiftController)?.returnToLive()}) {
     val state by controller.state.collectAsState()
-    var drag by remember(state.item?.id){mutableStateOf<Float?>(null)}
-    val duration=state.durationMs.coerceAtLeast(0)
-    val seekable=state.item?.kind==PlaybackContentKind.VOD && duration>0 ||
-        (controller as? TimeShiftController)?.timeShiftState?.value?.oldestMs!=null
+    val shift by remember(controller){(controller as? TimeShiftController)?.timeShiftState ?: kotlinx.coroutines.flow.MutableStateFlow(TimeShiftState())}.collectAsState()
+    var now by remember {mutableLongStateOf(System.currentTimeMillis())}
+    LaunchedEffect(state.item?.kind){if(state.item?.kind!=PlaybackContentKind.VOD)while(true){delay(1000);now=System.currentTimeMillis()}}
+    var drag by remember(state.item){mutableStateOf<Float?>(null)}
+    val model=desktopTimeline(state,shift,epg,now)
+    val seekable=state.item?.kind==PlaybackContentKind.VOD && state.durationMs>0 || controller is TimeShiftController &&
+        (state.item?.kind==PlaybackContentKind.ARCHIVE || shift.oldestMs!=null)
     Column(modifier.fillMaxWidth().testTag("desktop-transport")) {
-        if(state.item?.kind==PlaybackContentKind.VOD && duration>0) {
-            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                Text(desktopTime(((drag ?: (state.positionMs.toFloat()/duration))*duration).toLong()),style=MaterialTheme.typography.labelMedium)
-                Slider(value=drag ?: (state.positionMs.toFloat()/duration).coerceIn(0f,1f),onValueChange={drag=it},
-                    onValueChangeFinished={drag?.let {controller.seekTo((duration*it).toLong())};drag=null},
-                    modifier=Modifier.weight(1f).height(30.dp).testTag("desktop-seek"))
-                Text(desktopTime(duration),style=MaterialTheme.typography.labelMedium)
+        if(model!=null) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                fun label(at:Long)=if(model.broadcast)formatTimeOfDay(at) else desktopTime(at)
+                Text(label(drag?.let(model::target) ?: model.position),style=MaterialTheme.typography.labelMedium)
+                Box(Modifier.weight(1f)) {
+                    Slider(value=drag ?: model.fraction(model.position),onValueChange={drag=it.coerceAtMost(model.fraction(model.seekEnd))},enabled=seekable,
+                        onValueChangeFinished={drag?.let {val target=model.target(it);if(model.broadcast)(controller as? TimeShiftController)?.seekToTime(target) else controller.seekTo(target)};drag=null},
+                        thumb={Box(Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary,androidx.compose.foundation.shape.CircleShape))},
+                        track={SliderDefaults.Track(it,Modifier.height(4.dp),thumbTrackGapSize=0.dp)},
+                        modifier=Modifier.fillMaxWidth().height(30.dp).semantics {contentDescription=desktopText("Перемотка")}.testTag("desktop-seek"))
+                    model.live?.let {live->
+                        val tint=MaterialTheme.colorScheme.error
+                        Canvas(Modifier.fillMaxWidth().height(30.dp).testTag("desktop-live-marker").semantics {contentDescription=uiText("Эфир")}) {
+                            val x=6.dp.toPx()+(size.width-12.dp.toPx())*model.fraction(live)
+                            drawLine(tint,Offset(x,7.dp.toPx()),Offset(x,23.dp.toPx()),2.dp.toPx())
+                        }
+                    }
+                }
+                Text(if(model.live!=null)uiText("Эфир")+" "+label(model.live)+" · "+label(model.end) else label(model.end),style=MaterialTheme.typography.labelMedium)
             }
         }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),verticalAlignment=Alignment.CenterVertically,
-            horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+            horizontalArrangement=Arrangement.spacedBy(5.dp)) {
             DesktopIconButton("desktop-rewind",uiText("Назад")+" · "+uiText("{0} с",seekStepMs/1000),DesktopIcon.REWIND,seekable){controller.seekBy(-seekStepMs)}
             DesktopIconButton("desktop-pause",uiText(if(state.state==PlaybackState.PAUSED)"Продолжить" else "Пауза"),
                 if(state.state==PlaybackState.PAUSED)DesktopIcon.PLAY else DesktopIcon.PAUSE,state.item!=null,onPause)
             DesktopIconButton("desktop-forward",uiText("Вперёд")+" · "+uiText("{0} с",seekStepMs/1000),DesktopIcon.FORWARD,seekable){controller.seekBy(seekStepMs)}
-            DesktopIconButton("desktop-mute",uiText(if(state.isMuted)"Включить звук" else "Выключить звук"),
-                if(state.isMuted)DesktopIcon.MUTED else DesktopIcon.VOLUME){controller.setMuted(!state.isMuted)}
-            Slider(value=if(state.isMuted)0f else state.volume,onValueChange={controller.setMuted(false);controller.setVolume(it)},
-                modifier=Modifier.width(82.dp).height(30.dp).semantics {contentDescription="Громкость"}.testTag("desktop-volume"))
+            Row(Modifier.height(36.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha=.5f),RoundedCornerShape(4.dp)).padding(horizontal=5.dp),
+                verticalAlignment=Alignment.CenterVertically) {
+                DesktopIconButton("desktop-mute",uiText(if(state.isMuted)"Включить звук" else "Выключить звук"),
+                    if(state.isMuted)DesktopIcon.MUTED else DesktopIcon.VOLUME){controller.setMuted(!state.isMuted)}
+                Slider(value=if(state.isMuted)0f else state.volume,onValueChange={controller.setMuted(false);controller.setVolume(it)},
+                    thumb={Box(Modifier.size(9.dp).background(MaterialTheme.colorScheme.primary,androidx.compose.foundation.shape.CircleShape))},
+                    track={SliderDefaults.Track(it,Modifier.height(3.dp),thumbTrackGapSize=0.dp)},
+                    modifier=Modifier.width(82.dp).height(30.dp).semantics {contentDescription=desktopText("Громкость")}.testTag("desktop-volume"))
+                Text(if(state.isMuted)"0%" else "${(state.volume*100).toInt()}%",style=MaterialTheme.typography.labelSmall,modifier=Modifier.width(34.dp),textAlign=TextAlign.End)
+            }
+            if(state.item?.kind==PlaybackContentKind.ARCHIVE)OutlinedButton(onReturnLive,shape=RoundedCornerShape(4.dp),contentPadding=PaddingValues(horizontal=9.dp),
+                modifier=Modifier.height(38.dp).testTag("desktop-return-live")){Text(desktopText("В эфир"),maxLines=1)}
             DesktopIconButton("desktop-previous",uiText("Предыдущий канал"),DesktopIcon.PREVIOUS,state.item?.kind!=PlaybackContentKind.VOD,onClick=onPrevious)
             DesktopIconButton("desktop-aspect",uiText("Соотношение сторон"),DesktopIcon.ASPECT,onClick=onAspect)
             DesktopIconButton("desktop-record",uiText("Запись"),DesktopIcon.RECORD,state.item?.kind==PlaybackContentKind.LIVE,onRecord)

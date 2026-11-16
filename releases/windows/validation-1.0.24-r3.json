@@ -1,0 +1,65 @@
+{
+  "version": "1.0.24",
+  "revision": "r3",
+  "archive": "TVNext-1.0.24-windows-x64-portable-r3.zip",
+  "bytes": 163230844,
+  "sha256": "69af3162ccbc5839fc79a795eaa7a3133a019f3886f690e599f1e90ca4572196",
+  "sourceTag": "windows-v1.0.24-r3",
+  "tests": {
+    "apps/desktop": 14,
+    "suites": [
+      {
+        "suite": "com.tvnext.app.DesktopInputUiTest",
+        "tests": 7,
+        "passed": true,
+        "seconds": 8.793,
+        "cases": [
+          "archiveSeekUsesBroadcastTimeAndLiveVideoClicksDoNotPause",
+          "artworkHasBoundedSizeAndDescriptionStaysToItsRight",
+          "shortcutsPreserveTypingAndSuppressRepeatedPauseAndFullscreen",
+          "mouseControlsSeekVolumeAndCenteredGlyphsAtNarrowWidth",
+          "actualDesktopShellOpensHomeByMouseAndSpaceDoesNotActivateNavigationOrEatSearchText",
+          "differentlySizedRowsAlignAtSameViewportPosition",
+          "channelCursorMovesBeyondVisibleRowsWithArrowKeysAndEnter"
+        ]
+      },
+      {
+        "suite": "com.tvnext.app.DesktopRuntimeTest",
+        "tests": 4,
+        "passed": true,
+        "seconds": 0.62,
+        "cases": [
+          "activeScheduledRecordingUsesTheSameStopActionAndOwnedDeletionRules",
+          "temporaryDisplaySwitchRestoresAndDoesNotPretend59Is5994",
+          "preferencesRetainTypesAndUnrelatedUpdates",
+          "portableProfilesPinAndChannelChangesSurviveReopeningWithoutEditingProviderData"
+        ]
+      },
+      {
+        "suite": "com.tvnext.app.DesktopTimelineTest",
+        "tests": 3,
+        "passed": true,
+        "seconds": 0.001,
+        "cases": [
+          "archiveOfOngoingProgrammeKeepsFutureVisibleButCannotSeekPastLive",
+          "staleProgrammeOfOtherChannelCannotChangeArchiveTimeline",
+          "channelLiveAndFileOffsetsStayIndependentAndProviderDepthIsRespected"
+        ]
+      }
+    ]
+  },
+  "zipCrcVerified": true,
+  "backendJars": {
+    "player-desktop-1.0.24.jar": "11fb380191ad4870efc0994fa41b56ec2040bdcccefcc292210ee4786e131f52",
+    "iptv-desktop-1.0.24.jar": "ea722278f1b542afc6a1e62f61e07f635f36abf8a3c216382ba1913af616f16c"
+  },
+  "unchangedNativeAndDependencyFilesComparedWithR2": 438,
+  "priorNativeValidation": "releases/windows/validation-1.0.24-r2.json",
+  "uiEnvironment": "Linux/Xvfb; real DesktopShell/SettingsScreen, Koin and shared channels component, synthetic EPG/player fixtures",
+  "physicalWindowsPc": false,
+  "androidSourceUnchanged": true,
+  "sharedSourceUnchanged": true,
+  "androidApkSha256": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r3/TVNext-1.0.24-windows-x64-portable-r3.zip",
+  "githubDownloadVerified": false
+}

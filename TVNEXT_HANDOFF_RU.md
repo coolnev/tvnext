@@ -3,6 +3,18 @@
 Текущая версия TVNext: `1.0.24`, versionCode 1024, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
 
+## Windows 1.0.24 r3 — 16.11.2026
+
+Исправляется ТОЛЬКО Windows, версия приложения остаётся 1.0.24. Android, core, features и APK побайтно/по git без изменений относительно windows-v1.0.24-r2. SHA Android APK: 85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438.
+
+Готов и проверен ZIP `/workspace/TVNext-1.0.24-windows-x64-portable-r3.zip`: 163230844 байт, SHA256 69af3162ccbc5839fc79a795eaa7a3133a019f3886f690e599f1e90ca4572196. Публиковать новым тегом windows-v1.0.24-r3, старые релизы/tag не менять. Ожидаемая ссылка: https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r3/TVNext-1.0.24-windows-x64-portable-r3.zip . Пока публикация не подтверждена, не выдавать пользователю эту ссылку как готовую; дождаться success report и скачать обратно с проверкой SHA.
+
+Изменения только apps/desktop: Windows-копия SettingsScreen генерируется из общей при сборке, заменяет SettingsSection на всегда открытый, расширяет rail230dp и Windows-подсказку. Исходник shared/Android не редактировался. DesktopDescription: конечные width/height постера/кадра слева, текст справа, общий scroll. Верхняя навигация измеряет подписи и показывает все вмещающиеся пункты; overflow только при нехватке места. При полноэкранном просмотре TV левая граница мыши открывает overlay каналов; click канала -> SelectChannel/LIVE. Click по LIVE не ставит паузу; Space/явная пауза сохранены. Громкость тонким слайдером с процентами.
+
+DesktopTimeline различает epoch-time архива/эфира и file-offset VOD. Есть slider архива и текущей передачи, отметка live и ограничение будущего. Кнопка «В эфир» у канального проигрывателя делает SelectChannel того же id (cancellation общих archive jobs), fallback TimeShiftController для другого playback context. При смене/повторном открытии списков сбрасывается только курсор просмотра; выбирается воспроизводимая передача. Защита от передачи из устаревшей timeline, независимое выравнивание строк каналов/передач по пиксельному положению. Старый selectChannel уже открывал LIVE; важно не переносить старый programme cursor на новый канал и не менять Android/common ради Windows.
+
+14 Desktop-тестов pass: 7 UI с настоящим Shell/Koin/shared ChannelsComponent и синтетическими EPG/плеером, 3 timeline, 4 runtime. Включены direct archive->other channel LIVE, returnLive, repeat-list anchoring, different-height alignment, narrow/wide nav, left hover overlay, clickLIVE noPause, mouse archive seek/clamp/live marker, bounded artwork, typing/Space, F11. Package CRC/PE headers проверены; 438 файлов runtime/dependencies (всё кроме app JAR/README) совпали с r2, включая player/iptv JAR. Повторно физический Windows GPU/HDMI не тестировался; native WASAPI/AC3/gzip подтверждения r2 применимы к тем же байтам. Сводка releases/windows/validation-1.0.24-r3.json, изображения validation-r3, описание RELEASE_WINDOWS_1.0.24_R3_RU.md.
+
 ## Windows 1.0.24 r2 — 16.11.2026
 
 ПУБЛИКАЦИЯ ЗАВЕРШЕНА: GitHub Actions43814397796 success; `publication-1.0.24-r2.json` assemble/publish success. Конечный публичный GitHub ZIP скачан обратно:163082416байт, SHA74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396 совпал. Пользователю выдаётся только ссылка r2 выше/ниже; локальные ссылки не использовать. Источники/tag main на GitHub.
