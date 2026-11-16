@@ -5,6 +5,8 @@
 
 ## Windows portable 1.0.24 — 15.11.2026
 
+ПУБЛИКАЦИЯ 16.11.2026: по прямой просьбе пользователя ZIP размещён в GitHub Releases: https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24/TVNext-1.0.24-windows-x64-portable.zip . Релиз: https://github.com/coolnev/tvnext/releases/tag/windows-v1.0.24 . Это один исходный ZIP, версия/байты/контрольная сумма не менялись. GitHub Actions восстановил ZIP из служебных частей, проверил SHA-256 и целостность ZIP и загрузил asset. Подтверждение: releases/windows/publication-1.0.24.json, workflow run43806367792. Пользователю давать прямую GitHub-ссылку, локальную ссылку он скачать не смог. Сведения ниже о прежнем локальном способе выдачи — история.
+
 Пользователь запросил Windows с текущими Android-экранами и портативный архив, явно сохранив версию **1.0.24**. Реализован общий актуальный интерфейс, DesktopServices (профили/PIN/редактор/записи/планирование), индексированный DesktopEpgRepository, общая broadcast timeshift-сессия, MPV ABI/init/event/source guards/pause/FPS/buffering/file fixes и временный Windows AFR. Подробности и ограничения: `RELEASE_WINDOWS_1.0.24_RU.md`.
 
 Исходный код Windows: коммит `8a46d79`; тег публикации `windows-v1.0.24`. Android APK и тег `v1.0.24` сохранены, SHA Android `85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438`.

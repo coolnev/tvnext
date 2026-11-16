@@ -38,5 +38,7 @@
     "nativeExeAsciiLaunch": "Main initialized portable SQLite databases"
   },
   "gitTag": "windows-v1.0.24",
-  "sourceCommit": "8a46d79"
+  "sourceCommit": "8a46d79",
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24/TVNext-1.0.24-windows-x64-portable.zip",
+  "releaseUrl": "https://github.com/coolnev/tvnext/releases/tag/windows-v1.0.24"
 }
