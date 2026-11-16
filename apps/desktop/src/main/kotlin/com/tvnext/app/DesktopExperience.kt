@@ -88,29 +88,9 @@ internal fun DesktopExperience(hostWindow:java.awt.Window,root:DefaultAppCompone
             else->Unit
         }
     }
-    Box(Modifier.fillMaxSize().onKeyEvent {event ->
-        if(event.type!=KeyEventType.KeyDown)return@onKeyEvent false
-        if(page!=DesktopPage.NONE && event.key in listOf(Key.Back,Key.Escape)) {
-            if(page==DesktopPage.RECORDING_VIDEO)runtime.closeRecording() else runtime.page.value=DesktopPage.NONE
-            true
-        }else if(event.key==Key.I){PlaybackUiRequests.showStreamInfo();true}
-        else if(event.key==Key.L && stack.active.configuration in listOf(AppTab.CHANNELS,AppTab.MEDIA_LIBRARY)) {
-            onImmersiveChange(!immersive);true
-        }else false
-    }) {
-        AppShell(component=root,onToggleFullscreen=onToggleFullscreen,isFullscreen=isFullscreen,immersive=immersive,
-            onImmersiveChange=onImmersiveChange,showDiagnostics=showDiagnostics,onToggleDiagnostics=onToggleDiagnostics,
-            sharedPlaybackController=runtime.playback,animateVideoTransitions=animation,
-            epgLoading=epg.isLoading,epgLoadedChannels=epg.channelCount,epgLoadedProgrammes=epg.programmeCount,
-            epgProgressText=epg.notice,recordingActive=active!=null,textNotice=notice,
-            profileChoices=remember(revision){runtime.profiles.profiles().map {it.id to it.name}},
-            activeProfileId=runtime.profiles.activeProfileId(),onProfileSelected={runtime.switchProfile(it);root.selectTab(AppTab.HOME)},
-            onOpenRecoverySection={runtime.page.value=if(it=="editor")DesktopPage.EDITOR else DesktopPage.RECORDINGS},
-            androidSettingsContent={component,back->DesktopSettings(component,runtime,back)},
-            overlayFullScreen=page!=DesktopPage.NONE,
-            overlayVisible=page!=DesktopPage.NONE || pendingPin!=null || pendingSchedule!=null || aspect,
-            overlayContent={DesktopOverlays(runtime)})
-    }
+    DesktopShell(root,runtime,isFullscreen,onToggleFullscreen,immersive,onImmersiveChange,animation,epg,notice,active!=null,
+        settingsContent={component,back->DesktopSettings(component,runtime,back)},overlays={DesktopOverlays(runtime)})
+
 }
 
 @Composable
@@ -123,7 +103,7 @@ private fun DesktopOverlays(runtime:DesktopServices) {
         DesktopPage.EDITOR->ProfileChannelEditor {runtime.changed();runtime.page.value=DesktopPage.NONE}
         DesktopPage.RECORDINGS->DesktopRecordings(runtime)
         DesktopPage.PROFILES->DesktopProfiles(runtime)
-        DesktopPage.RECORDING_VIDEO->RecordingPlaybackScreen(runtime.playback,runtime::closeRecording)
+        DesktopPage.RECORDING_VIDEO->Unit
         DesktopPage.NONE->Unit
     }
     pin?.let {granted ->ParentalPinEntryDialog(uiText("Родительский контроль"),{runtime.pinRequest.value=null}) {value ->
@@ -208,7 +188,6 @@ private fun DesktopSettings(component:SettingsComponent,runtime:DesktopServices,
             DesktopRow("Часы без фона",checked=current.settings.clockWithoutBackground){component.dispatch(SettingsIntent.ClockWithoutBackgroundChanged(!current.settings.clockWithoutBackground))}
             DesktopRow("Подпись архива на видео",checked=current.settings.showArchiveLabel){component.dispatch(SettingsIntent.ShowArchiveLabelChanged(!current.settings.showArchiveLabel))}
             DesktopRow("Статус обновления EPG",checked=current.settings.showEpgUpdateStatus){component.dispatch(SettingsIntent.ShowEpgUpdateStatusChanged(!current.settings.showEpgUpdateStatus))}
-            DesktopRow("Описание справа",checked=current.settings.programmeDescriptionRight){component.dispatch(SettingsIntent.ProgrammeDescriptionPlacementChanged(!current.settings.programmeDescriptionRight))}
             DesktopRow("Анимация",checked=animation){runtime.setAnimation(!animation)}
             DesktopRow("Прозрачность панелей",current.settings.panelTransparencyPercent.toString()+" %") {
                 options("Прозрачность панелей",listOf(0,20,40,60,80).map {it.toString()+" %" to {component.dispatch(SettingsIntent.PanelTransparencyChanged(it))}})

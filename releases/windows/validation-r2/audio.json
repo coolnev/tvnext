@@ -1,0 +1,15 @@
+{
+  "nativeExit": 0,
+  "nativeReleased": true,
+  "output": "Windows libmpv WASAPI -> Wine PulseAudio -> captured monitor PCM",
+  "rms": {
+    "aac": 0.06242261533818119,
+    "muted": 0.0,
+    "quiet": 0.0026782031297819574,
+    "ac3": 0.027426782072514127
+  },
+  "mutedExpectedSilent": true,
+  "level35PercentExpectedRatio": 0.04290437232199429,
+  "samples": 1760446,
+  "physicalDevice": false
+}

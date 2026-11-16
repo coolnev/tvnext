@@ -23,6 +23,8 @@ dependencies {
     implementation(if (providers.gradleProperty("desktopTarget").orNull == "windows") compose.desktop.windows_x64 else compose.desktop.currentOs)
     implementation(compose.material3)
     testImplementation(kotlin("test"))
+    testImplementation(compose.desktop.uiTestJUnit4)
+    testImplementation(compose.desktop.currentOs)
     implementation(libs.decompose)
     implementation(libs.essenty.lifecycle.coroutines)
     implementation(libs.koin.core)

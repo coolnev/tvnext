@@ -18,7 +18,15 @@ import java.util.zip.GZIPInputStream
 
 actual fun openEpgTextSource(path: String): EpgTextSource =
     object : EpgTextSource {
-        private val reader = File(path).inputStream().reader(Charsets.UTF_8).buffered(1 shl 20)
+        // Staging names end in .ready; the wire format must be detected from bytes.
+        private val reader = BufferedInputStream(File(path).inputStream(),64*1024).let {input ->
+            try {
+                input.mark(2)
+                val gzip=input.read()==0x1f && input.read()==0x8b
+                input.reset()
+                (if(gzip)GZIPInputStream(input,64*1024) else input).reader(Charsets.UTF_8).buffered(1 shl 20)
+            } catch(error:Throwable) {input.close();throw error}
+        }
         override fun read(into: CharArray, offset: Int, length: Int): Int = reader.read(into, offset, length)
         override fun close() {
             runCatching { reader.close() }

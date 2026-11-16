@@ -215,6 +215,10 @@ fun main() {
         onDispose {demoScope.cancel();com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value=false}
     }
 
+    val startupSettings = remember {
+        // Read the small local settings snapshot before constructing the first tab.
+        kotlinx.coroutines.runBlocking(Dispatchers.IO) { koin.get<SettingsRepository>().load() }
+    }
     val lifecycle = remember { LifecycleRegistry() }
     val rootComponent = remember {
         DefaultAppComponent(
@@ -224,6 +228,13 @@ fun main() {
             reminderService = koin.get(),
             playlistRepository = koin.get(),
             epgRepository = koin.get(),
+            initialSettings = startupSettings,
+            initialTab = when(startupSettings.startScreen) {
+                com.tvnext.app.feature.settings.domain.StartScreen.HOME -> com.tvnext.app.core.app.tab.AppTab.HOME
+                com.tvnext.app.feature.settings.domain.StartScreen.CHANNELS -> com.tvnext.app.core.app.tab.AppTab.CHANNELS
+                com.tvnext.app.feature.settings.domain.StartScreen.TV_GUIDE -> com.tvnext.app.core.app.tab.AppTab.TV_GUIDE
+                com.tvnext.app.feature.settings.domain.StartScreen.MEDIA_LIBRARY -> com.tvnext.app.core.app.tab.AppTab.MEDIA_LIBRARY
+            },
             onExitRequested = ::exitApplication,
             mainContext = koin.get(named("mainDispatcher")),
         )
@@ -487,25 +498,6 @@ private fun AppContent(
                 onStartFullscreenApplied()
                 onToggleFullscreen()
             }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        val dispatcher = KeyEventDispatcher { event ->
-            when {
-                event.id == KeyEvent.KEY_PRESSED && event.keyCode == KeyEvent.VK_F11 -> {
-                    onToggleFullscreen()
-                    true
-                }
-
-                else -> false
-            }
-        }
-        KeyboardFocusManager.getCurrentKeyboardFocusManager()
-            .addKeyEventDispatcher(dispatcher)
-        onDispose {
-            KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                .removeKeyEventDispatcher(dispatcher)
         }
     }
 

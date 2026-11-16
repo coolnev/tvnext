@@ -1,0 +1,25 @@
+{
+  "version": "1.0.24",
+  "revision": "r2",
+  "archive": "TVNext-1.0.24-windows-x64-portable-r2.zip",
+  "bytes": 163082416,
+  "sha256": "74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396",
+  "sourceTag": "windows-v1.0.24-r2",
+  "tests": {
+    "apps/desktop": 8,
+    "core/iptv": 235,
+    "core/player": 85
+  },
+  "backendJars": {
+    "player-desktop-1.0.24.jar": "11fb380191ad4870efc0994fa41b56ec2040bdcccefcc292210ee4786e131f52",
+    "iptv-desktop-1.0.24.jar": "ea722278f1b542afc6a1e62f61e07f635f36abf8a3c216382ba1913af616f16c"
+  },
+  "nativeAudio": "WASAPI AAC/AC3, nonzero captured PCM; mute silent; volume attenuation confirmed",
+  "nativePlayback": "four AVC/HEVC switches; pause/resume/seek/stop/release passed on Windows JRE+DLLs",
+  "nativeEpg": "gzip HTTP -> Windows SQLite; reopened and restarted without another download",
+  "physicalWindowsPc": false,
+  "fullWindowsGui": "Wine font environment prevents full GUI validation; Windows UI tested on Linux/Xvfb",
+  "androidSourceUnchanged": true,
+  "androidApkSha256": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip"
+}

@@ -27,6 +27,7 @@ public class WindowsPlaybackSmoke {
                 System.out.println("FACTS "+state.getDiagnostics());
                 check(state.getDiagnostics().getFps()!=null,"source FPS available");
                 check(state.getDiagnostics().getAudio()!=null,"audio discovered");
+                check(player.getAudioOutput().getValue().getDriver()!=null,"audio output initialized");
                 check(state.getDiagnostics().getActualMode().equals(PlayerDiagnostics.MODE_SOFTWARE),"actual software decode");
                 Thread.sleep(1200);
                 player.pause();Thread.sleep(1200);

@@ -1,0 +1,9 @@
+{
+  "windowsJre": true,
+  "gzipImport": "passed",
+  "reopen": "passed",
+  "restartProcess": "passed",
+  "httpRequestsForImportAndBothReopens": 1,
+  "fixtureRecords": 1,
+  "providerLiveStreamTest": false
+}

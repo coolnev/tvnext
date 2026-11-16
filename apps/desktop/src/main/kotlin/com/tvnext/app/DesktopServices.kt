@@ -17,6 +17,7 @@ internal class DesktopServices(val playback:PlaybackController,val channels:Chan
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main)
     private val preferences=context.getSharedPreferences("desktop_ui",0)
     val page=MutableStateFlow(DesktopPage.NONE)
+    val moviePlayerOpen=MutableStateFlow(false)
     val notice=MutableStateFlow<String?>(null)
     val aspectDialog=MutableStateFlow(false)
     val pinRequest=MutableStateFlow<(() -> Unit)?>(null)

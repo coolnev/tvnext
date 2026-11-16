@@ -15,7 +15,9 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 
 class DesktopEpgPersistenceTest {
-    @Test fun portableIndexSurvivesReopenWithoutHttpOrRetainedXml()=runBlocking<Unit> {
+    @Test fun portableIndexSurvivesReopenWithoutHttpOrRetainedXml()=verifySource(false)
+    @Test fun gzipSourceWithoutGzipFilenameSurvivesReopenWithoutAnotherDownload()=verifySource(true)
+    private fun verifySource(compressed:Boolean)=runBlocking<Unit> {
         val root=Files.createTempDirectory("TVNext переносной ").toFile()
         val previous=System.getProperty("tvnext.data.dir")
         val calls=AtomicInteger()
@@ -23,9 +25,12 @@ class DesktopEpgPersistenceTest {
         val now=System.currentTimeMillis()
         val stamp=DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z").withZone(ZoneOffset.UTC)
         val xml="""<tv><channel id="news"><display-name>Новости HD</display-name></channel><programme channel="news" start="${stamp.format(Instant.ofEpochMilli(now-3600000))}" stop="${stamp.format(Instant.ofEpochMilli(now+3600000))}"><title>Сохранённая программа</title><desc>Описание из EPG</desc></programme></tv>""".toByteArray()
+        val wire=if(compressed)java.io.ByteArrayOutputStream().also {out->
+            java.util.zip.GZIPOutputStream(out).use {it.write(xml)}
+        }.toByteArray() else xml
         server.createContext("/epg.xml") {exchange->
-            calls.incrementAndGet();exchange.responseHeaders.add("Content-Type","application/xml")
-            exchange.sendResponseHeaders(200,xml.size.toLong());exchange.responseBody.use {it.write(xml)}
+            calls.incrementAndGet();exchange.responseHeaders.add("Content-Type",if(compressed)"application/gzip" else "application/xml")
+            exchange.sendResponseHeaders(200,wire.size.toLong());exchange.responseBody.use {it.write(wire)}
         }
         server.start()
         val url="http://127.0.0.1:${server.address.port}/epg.xml"

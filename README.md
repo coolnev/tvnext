@@ -1,6 +1,6 @@
 # TVNext — IPTV-клиент для Android TV и Windows
 
-Текущий релиз Android и Windows: **TVNext 1.0.24**. [Windows portable: сборка и ограничения](RELEASE_WINDOWS_1.0.24_RU.md). [Скачать Windows ZIP](https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24/TVNext-1.0.24-windows-x64-portable.zip). [Android APK](releases/android/TVNext-1.0.24.apk) · [Описание релиза](RELEASE_ANDROID_1.0.24_RU.md). Полные исходники находятся в ветке **main**: Android — `apps/android`, Desktop — `apps/desktop`, общие модули — `core` и `features`.
+Текущий релиз Android и Windows: **TVNext 1.0.24**. [Windows portable: сборка и ограничения](RELEASE_WINDOWS_1.0.24_R2_RU.md). [Скачать Windows ZIP](https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip). [Android APK](releases/android/TVNext-1.0.24.apk) · [Описание релиза](RELEASE_ANDROID_1.0.24_RU.md). Полные исходники находятся в ветке **main**: Android — `apps/android`, Desktop — `apps/desktop`, общие модули — `core` и `features`.
 
 Мультиплатформенное IPTV-приложение (Kotlin Multiplatform + Compose Multiplatform) с поддержкой **Android TV** и **Windows desktop**. Работает с плейлистами формата **M3U**: LIVE-каналы, VOD-медиатека, телепрограмма (EPG/XMLTV), ТВ-гид, архив передач (catch-up), поиск, напоминания и история просмотров.
 
@@ -105,7 +105,7 @@ features/             — функциональные экраны
 ./gradlew :apps:desktop:run
 ```
 
-Портативная Windows-версия включает Java и libmpv. Распакуйте весь архив и запустите `TVNext.exe`; данные сохраняются в соседней папке `data`. Подробности и команды сборки: [Windows 1.0.24](RELEASE_WINDOWS_1.0.24_RU.md).
+Портативная Windows-версия включает Java и libmpv. Распакуйте весь архив и запустите `TVNext.exe`; данные сохраняются в соседней папке `data`. Подробности и команды сборки: [Windows 1.0.24](RELEASE_WINDOWS_1.0.24_R2_RU.md).
 
 ---
 

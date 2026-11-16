@@ -44,7 +44,7 @@ import org.jetbrains.skia.ImageInfo
  *  - DECODING stays on the GPU: `hwdec=auto` (d3d11va/dxva2/nvdec) is kept,
  *    only the final colour conversion/copy happens in software (dxva2-copy
  *    style) — weak CPUs are not forced to decode video.
- *  - libmpv is **LGPL** (commercial-friendly), unlike vlcj (GPLv3).
+ *  - runtime sources and applicable license notices are bundled with the portable build.
  */
 class MpvPlaybackController(
     private val clock: () -> Long = { currentTimeMillis() },
@@ -56,6 +56,8 @@ class MpvPlaybackController(
     override val state: StateFlow<PlayerState> = _state.asStateFlow()
     private val _videoSignal=MutableStateFlow<VideoFrameSignal?>(null)
     val videoSignal:StateFlow<VideoFrameSignal?> = _videoSignal.asStateFlow()
+    private val _audioOutput=MutableStateFlow(DesktopAudioOutput())
+    val audioOutput:StateFlow<DesktopAudioOutput> = _audioOutput.asStateFlow()
     @Volatile private var audioOutputMode=AudioOutputMode.AUTO
     @Volatile private var aspectMode=VideoAspectMode.AUTO
     fun updateAudioOutputMode(mode:AudioOutputMode) {
@@ -176,6 +178,7 @@ class MpvPlaybackController(
         sourceReady=false;eventSourceGeneration=-1
         if(timeShift?.opening!=true)timeShift?.cancel()
         _videoSignal.value=null
+        _audioOutput.value=DesktopAudioOutput()
         _frames.value=null
         val gen = generation + 1
         generation = gen
@@ -402,7 +405,8 @@ class MpvPlaybackController(
             "cache-secs" to if (isVod) "60" else "30",
             "keep-open" to if (item.kind == PlaybackContentKind.LIVE) "yes" else "no",
             "terminal" to "no",
-            "ao" to (System.getProperty("tvnext.mpv.audioOutput") ?: "auto"),
+            // An omitted ao selects the OS device. "auto" is NOT an mpv driver.
+            "config" to "no",
             "audio-client-name" to "TVNext",
             // Render API is used instead of a video window (see class doc):
             // frames are delivered to Compose via the SW renderer.
@@ -410,6 +414,11 @@ class MpvPlaybackController(
             "hwdec" to if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto-copy",
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
         )
+        System.getProperty("tvnext.mpv.audioOutput")?.takeUnless {it.isBlank() || it=="auto"}?.let {
+            opts += "ao" to it
+        }
+        opts += "volume" to (_state.value.volume*100).toInt().toString()
+        opts += "mute" to if(_state.value.isMuted)"yes" else "no"
         opts.forEach { (name, value) ->
             runCatching { api.mpv_set_option_string(ctx, name, value) }
         }
@@ -593,6 +602,13 @@ class MpvPlaybackController(
                     val event = Mpv.MpvEvent().bind(eventPtr)
                     when (event.event_id) {
                         Mpv.MPV_EVENT_SHUTDOWN -> break
+                        Mpv.MPV_EVENT_LOG_MESSAGE -> {
+                            val prefix=event.data?.getPointer(0)?.getString(0,"UTF-8").orEmpty()
+                            val level=event.data?.getPointer(8)?.getString(0,"UTF-8").orEmpty()
+                            val text=event.data?.getPointer(16)?.getString(0,"UTF-8").orEmpty()
+                            if(level in listOf("error","fatal") && (prefix.startsWith("ao") || "audio device" in text))
+                                _audioOutput.update {it.copy(error=text.trim().take(400))}
+                        }
                         Mpv.MPV_EVENT_START_FILE -> {
                             val entry=event.data?.getLong(0)
                             val current=getString(api,ctx,"playlist/0/id")?.toLongOrNull()
@@ -720,6 +736,11 @@ class MpvPlaybackController(
         val videoCodec = getString(api, ctx, "video-codec")
         val videoBitrate = getString(api, ctx, "video-bitrate")?.toLongOrNull()
         val audioCodec = getString(api, ctx, "audio-codec")
+        val outputDriver=getString(api,ctx,"current-ao")
+        _audioOutput.update {it.copy(driver=outputDriver,
+            device=getString(api,ctx,"audio-device"),error=if(outputDriver!=null)null else it.error)}
+        val actualVolume=getDouble(api,ctx,"volume")?.let {(it/100).toFloat().coerceIn(0f,1f)}
+        val actualMute=getFlag(api,ctx,"mute")
         val audioChannels = getInt(api, ctx, "audio-params/channel-count")
         val audioSampleRate = getInt(api, ctx, "audio-params/samplerate")
         val width = getInt(api, ctx, "width")
@@ -777,6 +798,7 @@ class MpvPlaybackController(
                 positionMs = posMs,
                 durationMs = durationMs,
                 diagnostics = diagnostics,
+                volume=actualVolume ?: it.volume,isMuted=actualMute ?: it.isMuted,
                 hardwareDecode = false,
             )
         }
