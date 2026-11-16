@@ -321,9 +321,12 @@
   "physicalAndroidTvTested": false,
   "physicalWindowsPcTested": false,
   "zipCrcVerified": true,
-  "githubDownloadsVerified": false,
+  "githubDownloadsVerified": true,
   "downloadUrls": {
     "android": "https://github.com/coolnev/tvnext/releases/download/v1.0.25/TVNext-1.0.25.apk",
     "windows": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25/TVNext-1.0.25-windows-x64-portable.zip"
-  }
+  },
+  "githubDownloadVerifiedAt": "2026-11-16T09:51:28.115248+00:00",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43843111787",
+  "sourceCommit": "9dfee2494e4fe6b96963a2f165108c74530b7e42"
 }
