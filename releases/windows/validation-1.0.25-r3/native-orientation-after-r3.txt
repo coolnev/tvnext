@@ -1,0 +1,18 @@
+PASS GPU framebuffer complete
+PASS mpv initialized
+POSITION 3.960000
+PASS GPU frames round 0 count=89
+PASS video pixels produced by GPU
+PASS upright framebuffer corner 0 expected=ff0000 actual=fe0000
+PASS upright framebuffer corner 1 expected=ff00 actual=ff00
+PASS upright framebuffer corner 2 expected=ff actual=fe
+PASS upright framebuffer corner 3 expected=ffff00 actual=feff00
+RESET VID 0 / 0
+POSITION 8.960000
+PASS GPU frames round 1 count=100
+PASS video pixels produced by GPU
+PASS upright framebuffer corner 0 expected=ff0000 actual=fe0000
+PASS upright framebuffer corner 1 expected=ff00 actual=ff00
+PASS upright framebuffer corner 2 expected=ff actual=fe
+PASS upright framebuffer corner 3 expected=ffff00 actual=feff00
+WINDOWS_GL_SMOKE_PASSED

@@ -1,0 +1,53 @@
+{
+  "version": "1.0.25",
+  "revision": "r3",
+  "sourceTag": "windows-v1.0.25-r3",
+  "archive": "TVNext-1.0.25-windows-x64-portable-r3.zip",
+  "bytes": 178593912,
+  "sha256": "66fb72f38c552a9c7fe9a0d0056b105ef9590de645c47958c342fe2928586f04",
+  "checks": {
+    "desktop": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "player": {
+      "tests": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "zipCrcPassed": true,
+  "changedPackagedFiles": [
+    "README_RU.txt",
+    "lib/desktop-1.0.25.jar",
+    "lib/player-desktop-1.0.25.jar"
+  ],
+  "backendJars": {
+    "desktop-1.0.25.jar": "b1a2da2977ceb25eb4a5d5f694fd99485aac3c71100150223234b6191b9366ec",
+    "player-desktop-1.0.25.jar": "a14d7b71081935fddbe06ae194be30354ac9e2320f96cc3650b507bb67c0bda9"
+  },
+  "packagedJarsMatchTestedJars": true,
+  "runtimeAndNativeDllsUnchangedFromR2": true,
+  "androidSourceUnchanged": true,
+  "androidApkSha256": "f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72",
+  "nativeOrientation": {
+    "environment": "Packaged Windows JRE/ANGLE/libmpv under Wine 10, updated packaged player JAR",
+    "r2RegressionReproduced": true,
+    "r3UprightCorners": 8,
+    "renderContextRecreationPassed": true,
+    "frames": [
+      89,
+      100
+    ],
+    "cpuReadbackOnlyInTest": true,
+    "fixture": "tools/validation/fixtures/orientation.mp4",
+    "fixtureSha256": "7483634e0532086caaf2afd1e05532c406740cc600d5bbc0ac8bd68d61518e66"
+  },
+  "physicalWindowsPc": false,
+  "fullSkiaGpuCompositionVerified": false,
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r3/TVNext-1.0.25-windows-x64-portable-r3.zip",
+  "githubDownloadVerified": false
+}

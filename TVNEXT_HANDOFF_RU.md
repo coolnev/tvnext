@@ -4,6 +4,18 @@
 
 
 
+## Windows 1.0.25 r3 — ориентация GPU и предыдущий канал, 16.11.2026
+
+Пользователь сообщил: Windows «Аппаратный — GPU» показывает видео вверх ногами; значок предыдущего канала похож на previous-track и не подходит. Исправления только Windows; app version1.0.25, новый архив/tag r3. Android/commonMain/APK не менять.
+
+MpvGlContext.render: MPV_RENDER_PARAM_FLIP_Y=1 вместо0, потому что существующий FBO обёрнут Skia SurfaceOrigin.BOTTOM_LEFT. Без flip вход mpv top-down выглядел вверх ногами. CPU copy не добавлялся. DesktopIcon.PREVIOUS теперь контурная изогнутая стрелка возврата вместо '|◀'; label/callback/геометрия кнопки сохранены.
+
+Ошибка r2 реально воспроизведена на Windows libmpv+ANGLE под Wine: fixture четыре цвета (верх красный/зелёный, низ синий/жёлтый), подписи TOP/BOTTOM; capture r2 перевёрнут, expected red vs actual blue. После исправления 8 проверок углов (4 до/4 после recreate) passed,89+100 native frames. Tools WindowsGlSmoke принимает третий аргумент orientation, fixture tools/validation/fixtures/orientation.mp4 содержит AAC silence: vid=no на video-only источнике завершает playback, поэтому для проверки восстановления нужна аудиодорожка. Это особенность smoke-fixture, механика восстановления r2 в этой правке не менялась. Полный Skia GPU/физический Windows GPU по-прежнему здесь не проверен; native orientation capture соответствует контракту BottomLeft и жалобе пользователя. Evidence releases/windows/validation-1.0.25-r3/*, manifest validation-1.0.25-r3.json.
+
+108 checks passed: Desktop20/player88. ZIP CRC, packaged/tested JAR hashes checked. В сравнении с r2 изменены только desktop.jar/player.jar/README_RU.txt, все DLL/runtime/dependencies побайтно те же. Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 тот же. ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r3.zip,178593912bytes,SHA66fb72f38c552a9c7fe9a0d0056b105ef9590de645c47958c342fe2928586f04. Release doc RELEASE_WINDOWS_1.0.25_R3_RU.md.
+
+ПУБЛИКАЦИЯ ОЖИДАЕТСЯ: новый tag windows-v1.0.25-r3, source/main и Windows-only workflow; старые tags/assets не двигать. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r3/TVNext-1.0.25-windows-x64-portable-r3.zip . Перед ответом дождаться assemble/windows success, скачать итоговый ZIP и проверить размер/SHA, отметить manifest/handoff.
+
 ## Windows 1.0.25 r2 — GPU, 16.11.2026
 
 Задача только Windows: полноценный GPU-вывод плюс отдельный прежний смешанный режим; прогресс передач под каждым каналом, подпись «Эфир» у красного маркера, центрированные маленькие круглые ползунки перемотки/громкости. Android уже аппаратно декодирует и выводит через SurfaceView/TextureView; его код/APK и commonMain здесь не менять. Версия приложения1.0.25, r2 только ревизия архива/тега.

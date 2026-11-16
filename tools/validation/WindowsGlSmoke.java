@@ -6,10 +6,10 @@ import java.io.*;
 import javax.swing.*;
 import kotlin.Unit;
 /** Low-level Windows ANGLE/libmpv check. Not a physical GPU or Skia compositor test.
- * args: native fixture path, optional PNG output directory. Decode is forced to software.
+ * args: native fixture path, optional PNG output directory, optional "orientation" for the four-colour fixture. Decode is forced to software.
  */
 public class WindowsGlSmoke {
- static File outputDir;
+ static File outputDir;static boolean verifyOrientation;
  public interface GL extends MpvGpuRenderer.Gles {void glReadPixels(int x,int y,int w,int h,int format,int type,Pointer data);Pointer glGetString(int key);}
  static SkiaLayer layer;static boolean started;
  static void check(boolean ok,String label){if(!ok)throw new AssertionError(label);System.out.println("PASS "+label);}
@@ -49,6 +49,14 @@ public class WindowsGlSmoke {
     java.awt.image.BufferedImage image=new java.awt.image.BufferedImage(640,360,java.awt.image.BufferedImage.TYPE_INT_RGB);
     for(int y=0;y<360;y++)for(int x=0;x<640;x++){int i=((359-y)*640+x)*4;image.setRGB(x,y,((data[i]&255)<<16)|((data[i+1]&255)<<8)|(data[i+2]&255));}
     javax.imageio.ImageIO.write(image,"png",new File(outputDir,"gl-frame-"+round+".png"));
+    if(verifyOrientation) {
+     int[] xs={100,540,100,540},ys={80,80,280,280},expected={0xff0000,0x00ff00,0x0000ff,0xffff00};
+     for(int corner=0;corner<4;corner++) {
+      int actual=image.getRGB(xs[corner],ys[corner])&0xffffff;int reference=expected[corner];
+      int difference=0;for(int shift:new int[]{16,8,0})difference+=Math.abs((actual>>shift&255)-(reference>>shift&255));
+      check(difference<90,"upright framebuffer corner "+corner+" expected="+Integer.toHexString(reference)+" actual="+Integer.toHexString(actual));
+     }
+    }
    }
    render.close();
    if(round==0){render=new MpvGlContext(api,client,()->Unit.INSTANCE);System.out.println("RESET VID "+api.mpv_set_property_string(client,"vid","no")+" / "+api.mpv_set_property_string(client,"vid","auto"));}
@@ -56,7 +64,7 @@ public class WindowsGlSmoke {
   api.mpv_terminate_destroy(client);System.out.println("WINDOWS_GL_SMOKE_PASSED");
  }
  public static void main(String[] args)throws Exception {
-  outputDir=new File(args.length>1?args[1]:".");outputDir.mkdirs();
+  outputDir=new File(args.length>1?args[1]:".");outputDir.mkdirs();verifyOrientation=args.length>2 && args[2].equals("orientation");
   WindowsGpuRuntime.INSTANCE.prepare();System.setProperty("skiko.renderApi","ANGLE");
   SwingUtilities.invokeAndWait(()->{
    layer=new SkiaLayer(c->null,false,false,FrameBuffering.DOUBLE,GraphicsApi.ANGLE,new SkiaLayerAnalytics(){},org.jetbrains.skia.PixelGeometry.UNKNOWN);

@@ -1,0 +1,6 @@
+PASS GPU framebuffer complete
+PASS mpv initialized
+POSITION 3.960000
+PASS GPU frames round 0 count=96
+PASS video pixels produced by GPU
+java.lang.AssertionError: upright framebuffer corner 0 expected=ff0000 actual=ff

@@ -25,7 +25,9 @@ internal class MpvGlContext(private val api:Mpv,client:Pointer,updated:()->Unit)
     fun render(fbo:Int,width:Int,height:Int) {
         val rc=Memory(16).use {format->Memory(4).use {flip->Memory(4).use {block->Memory(64).use {params->
             format.setInt(0,fbo);format.setInt(4,width);format.setInt(8,height);format.setInt(12,0x8058)
-            flip.setInt(0,0);block.setInt(0,0)
+            // Skia wraps this OpenGL FBO with BOTTOM_LEFT origin; mpv's normal
+            // output is top-down, so invert Y once to match the wrapped surface.
+            flip.setInt(0,1);block.setInt(0,0)
             params.clear();params.setInt(0,3);params.setPointer(8,format);params.setInt(16,4);params.setPointer(24,flip)
             params.setInt(32,12);params.setPointer(40,block)
             api.mpv_render_context_render(context,params)

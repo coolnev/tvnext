@@ -328,7 +328,13 @@ internal fun DesktopIconButton(tag:String,label:String,icon:DesktopIcon,enabled:
                         DesktopIcon.PAUSE->{drawRect(tint,Offset(w*.23f,h*.16f),androidx.compose.ui.geometry.Size(w*.17f,h*.68f));drawRect(tint,Offset(w*.60f,h*.16f),androidx.compose.ui.geometry.Size(w*.17f,h*.68f))}
                         DesktopIcon.REWIND->{line(.55f,.2f,.2f,.5f);line(.2f,.5f,.55f,.8f);line(.85f,.2f,.5f,.5f);line(.5f,.5f,.85f,.8f)}
                         DesktopIcon.FORWARD->{line(.15f,.2f,.5f,.5f);line(.5f,.5f,.15f,.8f);line(.45f,.2f,.8f,.5f);line(.8f,.5f,.45f,.8f)}
-                        DesktopIcon.PREVIOUS->{triangle(true,.08f);line(.17f,.16f,.17f,.84f)}
+                        DesktopIcon.PREVIOUS->{
+                            val path=Path()
+                            path.moveTo(w*.18f,h*.36f);path.lineTo(w*.55f,h*.36f)
+                            path.cubicTo(w*.94f,h*.36f,w*.94f,h*.84f,w*.55f,h*.84f)
+                            drawPath(path,tint,style=androidx.compose.ui.graphics.drawscope.Stroke(1.8.dp.toPx(),cap=StrokeCap.Round))
+                            line(.18f,.36f,.39f,.15f);line(.18f,.36f,.39f,.57f)
+                        }
                         DesktopIcon.RECORD->drawCircle(Color(0xfff45b68),radius=w*.32f)
                         DesktopIcon.ASPECT->drawRect(tint,Offset(w*.08f,h*.2f),androidx.compose.ui.geometry.Size(w*.84f,h*.6f),style=androidx.compose.ui.graphics.drawscope.Stroke(1.7.dp.toPx()))
                         DesktopIcon.FULLSCREEN->{line(.1f,.35f,.1f,.1f);line(.1f,.1f,.35f,.1f);line(.65f,.1f,.9f,.1f);line(.9f,.1f,.9f,.35f);line(.1f,.65f,.1f,.9f);line(.1f,.9f,.35f,.9f);line(.65f,.9f,.9f,.9f);line(.9f,.9f,.9f,.65f)}
