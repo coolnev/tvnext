@@ -18,7 +18,7 @@ Main держит одно undecorated Compose Window с caption bar/resize/F11 
 
 ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r2.zip,178593754bytes,SHA c47cb5d87b912cea28f252112cd1a0ab3e63cea959f367f08a77d79f50e05892. CRC/PE x64/JAR hashes/root native DLL equality passed; Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R2_RU.md, releases/windows/validation-1.0.25-r2.json, PNG/native evidence в validation-1.0.25-r2/.
 
-ПУБЛИКАЦИЯ ОЖИДАЕТСЯ: workflow Windows-only, новый tag windows-v1.0.25-r2, старые Android/Windows релизы не трогать. Служебные ZIPparts64MiB в portable-parts; source backup уже work/windows-1.0.25-r2 (82befe5, далее есть проверенный timeout fix/документация). Итоговый URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip . Дождаться Actions assemble/windows success, скачать обратно, проверить SHA, обновить manifest/handoff; только после этого выдавать ссылку.
+ПУБЛИКАЦИЯ ЗАВЕРШЕНА: GitHub Actions43858121176 assemble/windows success; publication-1.0.25-r2.json на main. Исходники main и tag windows-v1.0.25-r2 опубликованы, source commit9246096bd156b2b50ac0e491fc313dce8264be9a (включает timeout fix). Публичный ZIP скачан обратно:178593754bytes, SHA c47cb5d87b912cea28f252112cd1a0ab3e63cea959f367f08a77d79f50e05892 совпал. Пользователю давать https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip . Старые Android/Windows релизы/tag сохранены, Android не пересобирался. Служебные ZIPparts64MiB в portable-parts; source backup также work/windows-1.0.25-r2.
 
 
 ## Android и Windows 1.0.25 — 16.11.2026

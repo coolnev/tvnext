@@ -39,7 +39,7 @@
   "fullSkiaGpuCompositionVerified": false,
   "gpuValidationLimit": "Wine virtual graphics cannot wrap a Skia GPU surface. Raw ANGLE/libmpv rendering and production compatibility fallback are tested separately.",
   "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r2/TVNext-1.0.25-windows-x64-portable-r2.zip",
-  "githubDownloadVerified": false,
+  "githubDownloadVerified": true,
   "nativeValidation": {
     "runtime": "Packaged Windows JRE + libmpv DLL under Wine 10; virtual graphics",
     "productionControllerFallback": true,
@@ -55,5 +55,8 @@
     ],
     "physicalHardwareDecode": false,
     "sourceFrameReadback": "Only in the validation helper to inspect pixels; absent from the production GPU renderer"
-  }
+  },
+  "sourceCommit": "9246096bd156b2b50ac0e491fc313dce8264be9a",
+  "githubDownloadVerifiedDate": "2026-11-16",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43858121176"
 }
