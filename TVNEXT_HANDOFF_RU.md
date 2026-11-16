@@ -1,7 +1,21 @@
-# TVNext — актуальный контекст, 2026-11-15
+# TVNext — актуальный контекст, 2026-11-16
 
 Текущая версия TVNext: `1.0.24`, versionCode 1024, Android release, пакет `com.tvnext.app`. Подпись исходной 0.5.21 и последующих восстановительных сборок.
 
+
+## Windows 1.0.24 r2 — 16.11.2026
+
+По жалобе пользователя исправляется ТОЛЬКО WINDOWS. Android-код/общие commonMain/Android APK не менялись. AppVersion остаётся1.0.24 по прежнему требованию; r2 — ревизия ZIP/tag. Source commit195bf25, тег `windows-v1.0.24-r2`, URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip . ZIP 163082416 байт, SHA256 74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396. Старый Windows v1.0.24 и Android v1.0.24 не передвигать/не перезаписывать.
+
+Подтверждены две ошибки первой Windows сборки: MPV `ao=auto` -> `Audio output auto not found`, драйвер выключал звук; теперь ao не задаётся для автоматики, есть реальный DesktopAudioOutput/ошибки. Desktop openEpgTextSource читал gzip как UTF8; теперь magic1f8b->stream GZIPInputStream, независимо от .ready/.gz имени. Regression gzip до fix падал, после проходит; plain/reopen/noHTTP тоже.
+
+В apps/desktop отдельные DesktopShell/DesktopBrowser/DesktopShortcuts: навигация мышью со всех экранов, компактные центрированные кнопки и tooltips, Space/K pause, M mute, J/L/стрелки seek, volume, PgUp/Down channel, F11/AltEnter и Esc, AltHome. Текстовый ввод не перехватывается. Списки стрелками скроллятся за viewport; Right при пустом EPG безопасен. NativeVODконтролы больше не уходят под нижний край широкого окна, moviePlayerOpen хранится в DesktopServices и переживает F11 Window recreation. Сохранены записи/профили/PIN/редактор и метаданные; obsolete TV-only description placement скрыт из Windows. Настройка экрана запуска применяется до создания первого таба; main/settings только локальное чтение IO без HTTP.
+
+328 JVM checks (8 Desktop с real Koin/DesktopShell UI,235 IPTV,85 player) pass; tests includemouse/buttons/slider,typing+Space,focus12rows,centre glyphbounds,contrast,rootHome/settings and F11 window recreation. Native Windows JRE/DLL под Wine10 + реальный WASAPI->Pulse monitor PCM: AAC rms0.0624, AC3 rms0.0274,mute0,35%volume rms0.00268 (mpv perceptual law),exit0/release passed. Четыре AVC/HEVC switches+pause/seek/FPS/audio-output initialized passed. Real Windows Ktor/JDBC/SQLite gzip fixture import+sameprocessreopen+JVM restart =1 HTTP request. Бэкенд JARs в окончательном ZIP побайтно совпадают с протестированными. Физического Windows-ПК/GPU/HDMI нет; полный GUI Wine всё ещё не рисуется из-за системных шрифтов (FontCache Array empty), UI screenshots/интеракции проверены на Linux/Xvfb. Не называть Linux/Wine физической проверкой Windows.
+
+Сводка/подробности: RELEASE_WINDOWS_1.0.24_R2_RU.md, releases/windows/validation-1.0.24-r2.json и validation-r2. Native repro Java: tools/validation/WindowsPlaybackSmoke,WindowsAudioSmoke,WindowsEpgSmoke. Последняя native EPG server/count1 зафиксирована до отдельной попытки GUI (та могла сделать ещё один QA-запрос).
+
+Публикация через .github/workflows/publish-windows-portable.yml: 3 части по64MiB максимум в releases/windows/portable-parts, checksumR2; создаёт новый GitHub Release asset и report `publication-1.0.24-r2.json`. Дождаться publish success и скачать конечный GitHub ZIP с проверкой SHA. Исходники + tag также push main. Не выдавать локальную ссылку: пользователь её не смог скачать.
 
 ## Windows portable 1.0.24 — 15.11.2026
 

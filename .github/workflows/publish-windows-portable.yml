@@ -1,4 +1,4 @@
-name: Publish Windows portable 1.0.24
+name: Publish Windows portable 1.0.24 r2
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-windows-portable-1.0.24
+  group: publish-windows-portable-1.0.24-r2
   cancel-in-progress: false
 
 jobs:
@@ -29,11 +29,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/tvnext-portable"
-          cat releases/windows/portable-parts/TVNext-1.0.24-windows-x64-portable.zip.part-* > "$RUNNER_TEMP/tvnext-portable/TVNext-1.0.24-windows-x64-portable.zip"
-          cp releases/windows/TVNext-1.0.24-windows-x64-portable.zip.sha256 "$RUNNER_TEMP/tvnext-portable/"
+          cat releases/windows/portable-parts/TVNext-1.0.24-windows-x64-portable-r2.zip.part-* > "$RUNNER_TEMP/tvnext-portable/TVNext-1.0.24-windows-x64-portable-r2.zip"
+          cp releases/windows/TVNext-1.0.24-windows-x64-portable-r2.zip.sha256 "$RUNNER_TEMP/tvnext-portable/"
           cd "$RUNNER_TEMP/tvnext-portable"
-          sha256sum --check TVNext-1.0.24-windows-x64-portable.zip.sha256
-          unzip -tq TVNext-1.0.24-windows-x64-portable.zip
+          sha256sum --check TVNext-1.0.24-windows-x64-portable-r2.zip.sha256
+          unzip -tq TVNext-1.0.24-windows-x64-portable-r2.zip
       - name: Publish one ZIP as a GitHub release asset
         id: publish
         if: steps.assemble.outcome == 'success'
@@ -43,14 +43,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag=windows-v1.0.24
+          tag=windows-v1.0.24-r2
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" --verify-tag --latest=false \
-              --title 'TVNext 1.0.24 — Windows portable x64' \
-              --notes 'Распакуйте весь ZIP и запустите TVNext.exe. Java и кодеки включены. Версия 1.0.24. Настройки и записи сохраняются в соседней папке data. Android-релиз не заменяется.'
+              --title 'TVNext 1.0.24 — Windows portable x64 r2' \
+              --notes 'Исправлены звук и сжатый EPG Windows; добавлены управление мышью и клавиатурой, главное меню, пауза по пробелу и компактные кнопки. Распакуйте весь ZIP и запустите TVNext.exe. Java и кодеки включены. Версия приложения 1.0.24 сохранена. Свою папку data сохраните при обновлении. Android-код и APK не изменены.'
           fi
           cd "$RUNNER_TEMP/tvnext-portable"
-          for file in TVNext-1.0.24-windows-x64-portable.zip TVNext-1.0.24-windows-x64-portable.zip.sha256; do
+          for file in TVNext-1.0.24-windows-x64-portable-r2.zip TVNext-1.0.24-windows-x64-portable-r2.zip.sha256; do
             if gh release view "$tag" --json assets --jq '.assets[].name' | grep -Fxq "$file"; then
               mkdir -p existing
               gh release download "$tag" --pattern "$file" --dir existing --clobber
@@ -77,14 +77,14 @@ jobs:
             'assemble':os.environ['ASSEMBLE_OUTCOME'],
             'publish':os.environ['PUBLISH_OUTCOME'],
             'workflow':base+'/actions/runs/'+os.environ['RUN_ID'],
-            'download':base+'/releases/download/windows-v1.0.24/TVNext-1.0.24-windows-x64-portable.zip',
-            'sha256':'5368d7df3f8aa661430778b3bd3d9d348c07529c2586c112a888b30032a9c184',
+            'download':base+'/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip',
+            'sha256':'74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396',
           }
-          Path('releases/windows/publication-1.0.24.json').write_text(json.dumps(payload,indent=2)+'\n')
+          Path('releases/windows/publication-1.0.24-r2.json').write_text(json.dumps(payload,indent=2)+'\n')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add releases/windows/publication-1.0.24.json
+          git add releases/windows/publication-1.0.24-r2.json
           if ! git diff --cached --quiet; then
             git commit -m 'Record Windows portable 1.0.24 publication result'
             git push origin HEAD:main

@@ -1,5 +1,5 @@
-Служебные части проверенного ZIP для автоматической публикации в GitHub Releases.
+Служебные части текущего Windows portable r2.
 
-[Скачать готовый портативный ZIP](https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24/TVNext-1.0.24-windows-x64-portable.zip).
+[Скачать один готовый ZIP](https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip).
 
-Workflow соединяет части и проверяет исходный SHA-256 перед загрузкой одного файла релиза.
+GitHub Actions соединяет части и проверяет SHA-256 перед публикацией. Старый релиз Windows сохранён отдельно.
