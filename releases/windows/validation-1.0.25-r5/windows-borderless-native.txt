@@ -1,0 +1,113 @@
+PASS initial UI corner 0 actual=ff0000
+PASS initial UI corner 1 actual=ff00
+PASS initial UI corner 2 actual=ff
+PASS initial UI corner 3 actual=ffff00
+PASS entered 0
+PASS fills whole monitor 0
+PASS fullscreen resize handles disabled 0
+PASS full 0 keeps root HWND
+PASS full 0 keeps rendering HWND
+PASS full 0 keeps peers displayable
+PASS full 0 avoids exclusive fullscreen
+PASS full 0 UI corner 0 actual=ff0000
+PASS full 0 UI corner 1 actual=ff00
+PASS full 0 UI corner 2 actual=ff
+PASS full 0 UI corner 3 actual=ffff00
+PASS windowed 0 keeps root HWND
+PASS windowed 0 keeps rendering HWND
+PASS windowed 0 keeps peers displayable
+PASS windowed 0 avoids exclusive fullscreen
+PASS windowed 0 UI corner 0 actual=ff0000
+PASS windowed 0 UI corner 1 actual=ff00
+PASS windowed 0 UI corner 2 actual=ff
+PASS windowed 0 UI corner 3 actual=ffff00
+PASS original bounds restored 0
+PASS resize handles restored 0
+PASS topmost restored 0
+PASS entered 1
+PASS fills whole monitor 1
+PASS fullscreen resize handles disabled 1
+PASS full 1 keeps root HWND
+PASS full 1 keeps rendering HWND
+PASS full 1 keeps peers displayable
+PASS full 1 avoids exclusive fullscreen
+PASS full 1 UI corner 0 actual=ff0000
+PASS full 1 UI corner 1 actual=ff00
+PASS full 1 UI corner 2 actual=ff
+PASS full 1 UI corner 3 actual=ffff00
+PASS windowed 1 keeps root HWND
+PASS windowed 1 keeps rendering HWND
+PASS windowed 1 keeps peers displayable
+PASS windowed 1 avoids exclusive fullscreen
+PASS windowed 1 UI corner 0 actual=ff0000
+PASS windowed 1 UI corner 1 actual=ff00
+PASS windowed 1 UI corner 2 actual=ff
+PASS windowed 1 UI corner 3 actual=ffff00
+PASS original bounds restored 1
+PASS resize handles restored 1
+PASS topmost restored 1
+PASS entered 2
+PASS fills whole monitor 2
+PASS fullscreen resize handles disabled 2
+PASS full 2 keeps root HWND
+PASS full 2 keeps rendering HWND
+PASS full 2 keeps peers displayable
+PASS full 2 avoids exclusive fullscreen
+PASS full 2 UI corner 0 actual=ff0000
+PASS full 2 UI corner 1 actual=ff00
+PASS full 2 UI corner 2 actual=ff
+PASS full 2 UI corner 3 actual=ffff00
+PASS windowed 2 keeps root HWND
+PASS windowed 2 keeps rendering HWND
+PASS windowed 2 keeps peers displayable
+PASS windowed 2 avoids exclusive fullscreen
+PASS windowed 2 UI corner 0 actual=ff0000
+PASS windowed 2 UI corner 1 actual=ff00
+PASS windowed 2 UI corner 2 actual=ff
+PASS windowed 2 UI corner 3 actual=ffff00
+PASS original bounds restored 2
+PASS resize handles restored 2
+PASS topmost restored 2
+PASS entered 3
+PASS fills whole monitor 3
+PASS fullscreen resize handles disabled 3
+PASS full 3 keeps root HWND
+PASS full 3 keeps rendering HWND
+PASS full 3 keeps peers displayable
+PASS full 3 avoids exclusive fullscreen
+PASS full 3 UI corner 0 actual=ff0000
+PASS full 3 UI corner 1 actual=ff00
+PASS full 3 UI corner 2 actual=ff
+PASS full 3 UI corner 3 actual=ffff00
+PASS windowed 3 keeps root HWND
+PASS windowed 3 keeps rendering HWND
+PASS windowed 3 keeps peers displayable
+PASS windowed 3 avoids exclusive fullscreen
+PASS windowed 3 UI corner 0 actual=ff0000
+PASS windowed 3 UI corner 1 actual=ff00
+PASS windowed 3 UI corner 2 actual=ff
+PASS windowed 3 UI corner 3 actual=ffff00
+PASS original bounds restored 3
+PASS resize handles restored 3
+PASS topmost restored 3
+PASS full from maximized keeps root HWND
+PASS full from maximized keeps rendering HWND
+PASS full from maximized keeps peers displayable
+PASS full from maximized avoids exclusive fullscreen
+PASS full from maximized UI corner 0 actual=ff0000
+PASS full from maximized UI corner 1 actual=ff00
+PASS full from maximized UI corner 2 actual=ff
+PASS full from maximized UI corner 3 actual=ffff00
+PASS maximized state restored
+PASS floating bounds retained after unmaximizing
+PASS restored from maximized keeps root HWND
+PASS restored from maximized keeps rendering HWND
+PASS restored from maximized keeps peers displayable
+PASS restored from maximized avoids exclusive fullscreen
+PASS restored from maximized UI corner 0 actual=ff0000
+PASS restored from maximized UI corner 1 actual=ff00
+PASS restored from maximized UI corner 2 actual=ff
+PASS restored from maximized UI corner 3 actual=ffff00
+PASS bounded transition log written
+PASS UI keeps repainting, count=35
+WINDOWS_BORDERLESS_SMOKE_PASSED

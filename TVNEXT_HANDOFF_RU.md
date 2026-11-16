@@ -4,6 +4,20 @@
 
 
 
+## Windows 1.0.25 r5 — borderless вместо exclusive fullscreen, 16.11.2026
+
+Пользователь подтвердил: r4 НЕ устранила чёрное окно при fullscreen и возврате. Поэтому не считать найденную в r4 утечку FBO доказанной основной причиной пользовательского сбоя. R5 меняет сам оконный механизм. Текущий app version1.0.25, Windows revisionr5; Android/commonMain/APK не трогать.
+
+Проверен pinned Skiko0.144.6 PlatformOperations.kt: Windows setFullscreen -> GraphicsDevice.fullScreenWindow=window. Main больше не использует WindowPlacement.Fullscreen. DesktopBorderlessFullscreen.forWindow расширяет существующий undecorated Frame до monitorBounds, state NORMAL, resizable=false, active topmost; не регистрирует exclusive window. Выход восстанавливает bounds/state/resizable/topmost; отдельный кеш floatingBounds сохраняет нормальные размеры при входе изMaximized, monitor-negative coords сохранены. FocusLost снимает topmost, FocusGained возвращает. ComponentMoved/Resized обновляет floatingBounds либо придерживает полные monitorBounds. Main синхронизирует WindowState в Floating/Maximized +bounds, Window props resizable/alwaysOnTop совпадают с controller state; isFullscreen для Shell/AFR независим от native placement. Caption/Window title показывают1.0.25r5 (WINDOWS_BUILD_REVISION); AppVersionобщий прежний.
+
+DesktopWindowDiagnostics: data/window-transitions.log,128КБ+одна128КБкопия, UTF8, daemon writer boundedqueue64. Enter/exit before/after:HWND/bounds/monitor/exclusive flag иMpvPlaybackController.gpuWindowSnapshot. Дополнительные snapshot через250ms/1.25s/4.75s: actualrenderApi,decoder/mode,frame/draw counts,target/FBO/contextid,last draw age,AFRstate. SourceURLs/channelTitles не записываются. GPU rendering вr5 функционально не менялось, только diagnostic counters/snapshot; r4guards/r3flip оставлены. Если повторится физический сбой, нужен этот журнал.
+
+115 checks pass (Desktop24/player91). Новые4 теста controller bounds/repeated/idempotent toggles/negative monitor origin/maximized restore/focus/monitorchange иlogrotation. Native WindowsBorderlessSmoke.java использует Windows JRE подWine10 и настоящийFrame+Canvas, тот же production forWindow:5 cycles (4 normal+1Maximized),10 проверок Root/CanvasHWND continuity,44 UI screenshot pixel checks, noexclusive, flags/bounds/max restore иnativejournal build=r5 passed. Скриншоты actualAWT UI, а неTVNextCompose. Физический WindowsGPU иполнаяCompose/libmpv GPUкомпозиция по-прежнему не проверены; manifest fullComposeGpuFullscreenVerified=false. Native helper нужен именно дляоконногоAPI, не называть его полнымGPUplayerтестом.
+
+ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r5.zip,178619549bytes,SHA387aefe9f2f62b678f0cfa44d869900223a8541cd672d2be8d564e73fcebf384. CRC,JAR hashes/nativeRuntimeunchanged passed. Отr4 изменилисьdesktop.jar/player.jar/README. Android APK SHAf7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R5_RU.md, manifest releases/windows/validation-1.0.25-r5.json, native/PNG evidence validation-1.0.25-r5/.
+
+ПУБЛИКАЦИЯ ОЖИДАЕТСЯ r5: source/main и tag windows-v1.0.25-r5, Windows-only workflow; прежние tags/assets сохранять. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r5/TVNext-1.0.25-windows-x64-portable-r5.zip . Дождаться Actions assemble/windows success, скачать публичныйZIP обратно, проверитьSHA/размер и отметитьmanifest/handoff. Перед запуском закрыть старуюкопиюAlt+F4, вcaptionновойдолжно бытьr5.
+
 ## Windows 1.0.25 r4 — чёрный UI после fullscreen GPU, 16.11.2026
 
 Жалоба пользователя: в Windows Hardware GPU оконное видео видно, после fullscreen только звук/чёрный экран, возврат оставляет чёрным всё окно включая меню. Исправление только desktop player; Android/commonMain/APK не менять. App version1.0.25, архив/tag r4.

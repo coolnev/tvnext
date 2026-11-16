@@ -101,6 +101,12 @@ class MpvPlaybackController(
         mpv?.let {ctx->watcherScope.launch {loadMutex.withLock {prepareOutput(Mpv.load(),ctx)}}}
     }
     fun detachGpuWindow(window:java.awt.Window) {if(gpuWindow===window){gpuTimer?.stop();gpuTimer=null;gpuWindow=null}}
+    /** Small transition snapshot; intentionally excludes source IDs, titles and URLs. */
+    fun gpuWindowSnapshot():String {
+        val diagnostics=_state.value.diagnostics
+        val age=if(lastGpuDraw==0L)-1L else (System.nanoTime()-lastGpuDraw)/1_000_000L
+        return "gpu=${_gpuOutput.value} failed=$gpuFailed suspended=$renderSuspended changing=$pipelineChanging ready=$sourceReady last_draw_ms=$age status=${_renderStatus.value} decoder=${diagnostics?.decoder} mode=${diagnostics?.actualMode} ${gpuRenderer?.windowSnapshot.orEmpty()}"
+    }
     fun requestGpuDraw(){_gpuRevision.update {it+1}}
     fun drawGpu(canvas:org.jetbrains.skia.Canvas,width:Int,height:Int) {
         if(renderSuspended || pipelineChanging)return

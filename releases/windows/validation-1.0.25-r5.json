@@ -1,0 +1,52 @@
+{
+  "version": "1.0.25",
+  "revision": "r5",
+  "sourceTag": "windows-v1.0.25-r5",
+  "archive": "TVNext-1.0.25-windows-x64-portable-r5.zip",
+  "bytes": 178619549,
+  "sha256": "387aefe9f2f62b678f0cfa44d869900223a8541cd672d2be8d564e73fcebf384",
+  "checks": {
+    "desktop": {
+      "tests": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "player": {
+      "tests": 91,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "zipCrcPassed": true,
+  "changedPackagedFiles": [
+    "README_RU.txt",
+    "lib/desktop-1.0.25.jar",
+    "lib/player-desktop-1.0.25.jar"
+  ],
+  "backendJars": {
+    "desktop-1.0.25.jar": "7280d24e79abcd314dbd1d22cf20dcc29f8a3a7e4a0994a9596f541fdefe720e",
+    "player-desktop-1.0.25.jar": "1d8f31ddfa27b1d8526881d670a8487537dc3f4107c8560b2888c984bede87dd"
+  },
+  "runtimeAndNativeDllsUnchangedFromR4": true,
+  "androidSourceUnchanged": true,
+  "androidApkSha256": "f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72",
+  "physicalWindowsPc": false,
+  "fullComposeGpuFullscreenVerified": false,
+  "diagnosticLog": "data/window-transitions.log",
+  "diagnosticLogLimitBytes": 262144,
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r5/TVNext-1.0.25-windows-x64-portable-r5.zip",
+  "githubDownloadVerified": false,
+  "nativeWindowTransitions": {
+    "environment": "Windows JRE under Wine 10, production DesktopBorderlessFullscreen.forWindow and real AWT Frame/Canvas",
+    "cycles": 5,
+    "rootAndCanvasHwndStableAcrossTransitions": 10,
+    "nativeUiPixelChecks": 44,
+    "exclusiveFullscreenNotEntered": true,
+    "maximizedAndFloatingBoundsRestored": true,
+    "resizeAndTopmostFlagsRestored": true,
+    "diagnosticLogBuildMarkerVerified": "r5",
+    "physicalGpuCompositionVerified": false
+  }
+}

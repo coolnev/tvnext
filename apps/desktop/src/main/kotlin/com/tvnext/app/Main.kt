@@ -311,17 +311,8 @@ fun main() {
     val mpvController = remember {
         koin.getOrNull<PlaybackController>() as? MpvPlaybackController
     }
-    var restoredPlacement by remember {mutableStateOf(androidx.compose.ui.window.WindowPlacement.Floating)}
-    fun toggleFullscreen() {
-        if(!fullscreen) {
-            restoredPlacement=windowState.placement
-            windowState.placement=androidx.compose.ui.window.WindowPlacement.Fullscreen
-            fullscreen=true
-        } else {
-            windowState.placement=restoredPlacement
-            fullscreen=false
-        }
-    }
+    var fullscreenTopmost by remember {mutableStateOf(false)}
+    var fullscreenTransition by remember {mutableStateOf(0)}
 
     // Window/taskbar icon, loaded from the bundled resource (tvnext.png).
     val appIcon = remember {
@@ -335,12 +326,38 @@ fun main() {
         }.getOrNull()
     }
 
-    // Keep one native window and ANGLE context for F11; only its bounds change.
+    // Borderless monitor-sized F11 never calls AWT/Skiko exclusive fullscreen.
     Window(
         onCloseRequest = {mpvController?.suspendRendering();exitApplication()},
-        state=windowState,undecorated=true,title="TVNext",
+        state=windowState,undecorated=true,title="TVNext ${com.tvnext.app.core.common.AppVersion.NAME} $WINDOWS_BUILD_REVISION",
+        resizable=!fullscreen,alwaysOnTop=fullscreen && fullscreenTopmost,
         icon=appIcon?.let {BitmapPainter(it)},
     ) {
+        val borderless=remember(window) {DesktopBorderlessFullscreen.forWindow(window,
+            trace={DesktopWindowDiagnostics.record("$it ${mpvController?.gpuWindowSnapshot().orEmpty()}")},
+            onTopmost={fullscreenTopmost=it})}
+        DisposableEffect(borderless) {onDispose {borderless.close()}}
+        fun syncWindowState() {
+            val bounds=window.bounds
+            windowState.placement=if(window.extendedState and java.awt.Frame.MAXIMIZED_BOTH!=0)
+                androidx.compose.ui.window.WindowPlacement.Maximized else androidx.compose.ui.window.WindowPlacement.Floating
+            windowState.position=androidx.compose.ui.window.WindowPosition(bounds.x.dp,bounds.y.dp)
+            windowState.size=DpSize(bounds.width.dp,bounds.height.dp)
+        }
+        fun toggleFullscreen() {
+            if(borderless.isFullscreen)borderless.exit() else borderless.enter()
+            syncWindowState()
+            fullscreen=borderless.isFullscreen
+            fullscreenTransition++
+            mpvController?.requestGpuDraw()
+        }
+        LaunchedEffect(fullscreenTransition) {
+            if(fullscreenTransition>0)for(waitMs in listOf(250L,1000L,3500L)) {
+                delay(waitMs)
+                mpvController?.requestGpuDraw()
+                DesktopWindowDiagnostics.record("transition=$fullscreenTransition fullscreen=$fullscreen bounds=${window.bounds} renderApi=${window.renderApi} exclusive=${window.graphicsConfiguration.device.fullScreenWindow===window} ${mpvController?.gpuWindowSnapshot().orEmpty()} afr=${DesktopFrameRateRuntime.status.value.state}")
+            }
+        }
         androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
             if(!fullscreen)WindowsTitleBar(windowState,{mpvController?.suspendRendering();exitApplication()})
             Box(Modifier.weight(1f).fillMaxSize()) {
@@ -365,7 +382,7 @@ private fun androidx.compose.ui.window.WindowScope.WindowsTitleBar(state:android
         .background(androidx.compose.ui.graphics.Color(0xFF151B20)),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
         WindowDraggableArea(Modifier.weight(1f).fillMaxSize()) {
             Box(Modifier.fillMaxSize(),contentAlignment=androidx.compose.ui.Alignment.CenterStart) {
-                androidx.compose.material3.Text("TVNext",color=androidx.compose.ui.graphics.Color.White,modifier=Modifier.padding(horizontal=12.dp))
+                androidx.compose.material3.Text("TVNext ${com.tvnext.app.core.common.AppVersion.NAME} $WINDOWS_BUILD_REVISION",color=androidx.compose.ui.graphics.Color.White,modifier=Modifier.padding(horizontal=12.dp))
             }
         }
         androidx.compose.material3.TextButton({state.isMinimized=true},modifier=Modifier.width(42.dp).focusProperties {canFocus=false}) {androidx.compose.material3.Text("—",color=androidx.compose.ui.graphics.Color.White)}

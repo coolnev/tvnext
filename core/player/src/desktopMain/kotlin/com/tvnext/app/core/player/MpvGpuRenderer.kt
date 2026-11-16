@@ -23,7 +23,9 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
     private var height=0
     private var lastRevision=-1L
     private var rendererName=""
+    private var draws=0L
     var frames=0L;private set
+    val windowSnapshot get()="gpu_context=${owner?.context?.let {System.identityHashCode(it).toString(16)} ?: "none"} fbo=$fbo target=${width}x$height draws=$draws frames=$frames"
     val initialized get()=render!=null
     val description get()="GPU • ANGLE / Direct3D 11"+(rendererName.takeIf {it.isNotBlank()}?.let {" • $it"} ?: "")
     private val gl by lazy {Native.load("libGLESv2",Gles::class.java)}
@@ -36,6 +38,7 @@ internal class MpvGpuRenderer(private val api:Mpv,private val client:Pointer,pri
         return withWindowState(binding) {drawFrame(canvas,binding,w,h,revision,ready)}
     }
     private fun drawFrame(canvas:Canvas,binding:GpuBinding,w:Int,h:Int,revision:Long,ready:Boolean):Boolean {
+        draws++
         ensure(binding)
         val changed=w!=width || h!=height
         if(changed)resize(binding,w,h)
