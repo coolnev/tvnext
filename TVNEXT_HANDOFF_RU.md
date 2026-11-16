@@ -14,7 +14,7 @@ MpvGlContext.render: MPV_RENDER_PARAM_FLIP_Y=1 вместо0, потому чт�
 
 108 checks passed: Desktop20/player88. ZIP CRC, packaged/tested JAR hashes checked. В сравнении с r2 изменены только desktop.jar/player.jar/README_RU.txt, все DLL/runtime/dependencies побайтно те же. Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 тот же. ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r3.zip,178593912bytes,SHA66fb72f38c552a9c7fe9a0d0056b105ef9590de645c47958c342fe2928586f04. Release doc RELEASE_WINDOWS_1.0.25_R3_RU.md.
 
-ПУБЛИКАЦИЯ ОЖИДАЕТСЯ: новый tag windows-v1.0.25-r3, source/main и Windows-only workflow; старые tags/assets не двигать. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r3/TVNext-1.0.25-windows-x64-portable-r3.zip . Перед ответом дождаться assemble/windows success, скачать итоговый ZIP и проверить размер/SHA, отметить manifest/handoff.
+ПУБЛИКАЦИЯ ЗАВЕРШЕНА: GitHub Actions43859836541 assemble/windows success, publication-1.0.25-r3.json на main. Исходники main и tag windows-v1.0.25-r3 опубликованы; source commit6618f5fbf300a2512f5f1f5b7d4b37ce220bb5c1. Итоговый публичный ZIP скачан обратно:178593912bytes, SHA66fb72f38c552a9c7fe9a0d0056b105ef9590de645c47958c342fe2928586f04 совпал. Пользователю выдавать https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r3/TVNext-1.0.25-windows-x64-portable-r3.zip . Старые tags/assets и Android сохранены.
 
 ## Windows 1.0.25 r2 — GPU, 16.11.2026
 
