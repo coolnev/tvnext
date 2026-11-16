@@ -5,6 +5,8 @@
 
 ## Windows 1.0.24 r2 — 16.11.2026
 
+ПУБЛИКАЦИЯ ЗАВЕРШЕНА: GitHub Actions43814397796 success; `publication-1.0.24-r2.json` assemble/publish success. Конечный публичный GitHub ZIP скачан обратно:163082416байт, SHA74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396 совпал. Пользователю выдаётся только ссылка r2 выше/ниже; локальные ссылки не использовать. Источники/tag main на GitHub.
+
 По жалобе пользователя исправляется ТОЛЬКО WINDOWS. Android-код/общие commonMain/Android APK не менялись. AppVersion остаётся1.0.24 по прежнему требованию; r2 — ревизия ZIP/tag. Source commit195bf25, тег `windows-v1.0.24-r2`, URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip . ZIP 163082416 байт, SHA256 74ae306d741a444f18c55e9fab695a4a4e322cea66f19ea737b36bb0d2473396. Старый Windows v1.0.24 и Android v1.0.24 не передвигать/не перезаписывать.
 
 Подтверждены две ошибки первой Windows сборки: MPV `ao=auto` -> `Audio output auto not found`, драйвер выключал звук; теперь ao не задаётся для автоматики, есть реальный DesktopAudioOutput/ошибки. Desktop openEpgTextSource читал gzip как UTF8; теперь magic1f8b->stream GZIPInputStream, независимо от .ready/.gz имени. Regression gzip до fix падал, после проходит; plain/reopen/noHTTP тоже.

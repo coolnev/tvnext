@@ -21,5 +21,8 @@
   "fullWindowsGui": "Wine font environment prevents full GUI validation; Windows UI tested on Linux/Xvfb",
   "androidSourceUnchanged": true,
   "androidApkSha256": "85c7a1561aab5f25c672bdab9882a1e0ccebad5b2c056b0f1a7878340bd1f438",
-  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip"
+  "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.24-r2/TVNext-1.0.24-windows-x64-portable-r2.zip",
+  "githubDownloadVerified": true,
+  "githubDownloadVerifiedDate": "2026-11-16",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43814397796"
 }
