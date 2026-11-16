@@ -21,6 +21,7 @@ java {
 
 dependencies {
     implementation(if (providers.gradleProperty("desktopTarget").orNull == "windows") compose.desktop.windows_x64 else compose.desktop.currentOs)
+    if(providers.gradleProperty("desktopTarget").orNull=="windows")runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-angle-windows-x64:0.144.6")
     implementation(compose.material3)
     testImplementation(kotlin("test"))
     testImplementation(compose.desktop.uiTestJUnit4)
@@ -356,6 +357,9 @@ tasks.register<Zip>("windowsPortableZip") {
     into("TVNext-${project.version}") {
         from(tasks.named("jar")){into("lib")}
         from(configurations.runtimeClasspath){into("lib")}
+        from(provider {configurations.runtimeClasspath.get().filter {it.name.startsWith("skiko-awt-runtime-") && it.name.contains("windows-x64")}.map {zipTree(it)}}) {
+            include("skiko-windows-x64.dll","icudtl.dat","libEGL.dll","libGLESv2.dll","*.dll.sha256")
+        }
         from(portableJavaDir){into("runtime")}
         from(portableRuntimeDir){include("*.dll","*.txt","*.json")}
         from(rootProject.file(".local/windows-launcher/TVNext.exe"))

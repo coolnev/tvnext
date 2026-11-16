@@ -31,6 +31,8 @@ import com.tvnext.app.core.ui.component.TvPlayerPanel
 import com.tvnext.app.core.ui.component.FavoriteStar
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.tvnext.app.core.ui.image.ChannelLogo
 import com.tvnext.app.core.ui.i18n.uiText
 import com.tvnext.app.feature.channels.ui.*
@@ -224,7 +226,7 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
                             anchor=player.item?.id?.let {DesktopListAnchor(it)},modifier=Modifier.fillMaxSize()) {c,selected->
                             Column(Modifier.fillMaxWidth().padding(10.dp)) {
                                 Text(c.name,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1,overflow=TextOverflow.Ellipsis)
-                                nowPlaying[c.id]?.let {Text(it.title,style=MaterialTheme.typography.bodySmall,maxLines=1,overflow=TextOverflow.Ellipsis)}
+                                nowPlaying[c.id]?.let {DesktopChannelProgramme(c.id,it,now)}
                             }
                         }
                     }
@@ -256,7 +258,7 @@ internal fun DesktopChannels(component:ChannelsComponent,runtime:DesktopServices
                             if(LocalDesktopSettings.current.showChannelNumbers)Text(c.number.toString(),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                             Column(Modifier.weight(1f)) {
                                 Text(c.name,style=MaterialTheme.typography.bodyMedium,fontWeight=if(selected)FontWeight.Bold else FontWeight.Normal,maxLines=1,overflow=TextOverflow.Ellipsis)
-                                nowPlaying[c.id]?.let {Text(it.title,style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+                                nowPlaying[c.id]?.let {DesktopChannelProgramme(c.id,it,now)}
                             }
                         }
                     }
@@ -329,6 +331,20 @@ internal fun DesktopDescription(title:String,date:String,art:String?,frame:Boole
                 Text(text,Modifier.weight(1f).testTag("desktop-description-text"),style=MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+}
+
+@Composable
+internal fun DesktopChannelProgramme(channelId:String,programme:EpgProgramme,now:Long) {
+    Text(programme.title,style=MaterialTheme.typography.labelSmall,maxLines=2,overflow=TextOverflow.Ellipsis,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    val fraction=((now-programme.start).toDouble()/(programme.stop-programme.start).coerceAtLeast(1)).toFloat().coerceIn(0f,1f)
+    val active=MaterialTheme.colorScheme.primary
+    val track=MaterialTheme.colorScheme.onSurface.copy(alpha=.16f)
+    Canvas(Modifier.fillMaxWidth().padding(top=4.dp).height(2.dp).testTag("desktop-channel-progress-$channelId")
+        .semantics {progressBarRangeInfo=ProgressBarRangeInfo(fraction,0f..1f)}) {
+        val y=size.height/2
+        drawLine(track,androidx.compose.ui.geometry.Offset(0f,y),androidx.compose.ui.geometry.Offset(size.width,y),size.height)
+        drawLine(active,androidx.compose.ui.geometry.Offset(0f,y),androidx.compose.ui.geometry.Offset(size.width*fraction,y),size.height)
     }
 }
 

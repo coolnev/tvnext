@@ -19,6 +19,9 @@ internal class DesktopServices(val playback:PlaybackController,val channels:Chan
     val page=MutableStateFlow(DesktopPage.NONE)
     val moviePlayerOpen=MutableStateFlow(false)
     val mediaFavoritesOnly=MutableStateFlow(false)
+    private val fallbackVideoMode=MutableStateFlow(WindowsVideoMode.AUTO)
+    val windowsVideoMode=(playback as? MpvPlaybackController)?.windowsVideoMode ?: fallbackVideoMode
+    val videoRenderStatus=(playback as? MpvPlaybackController)?.renderStatus ?: MutableStateFlow("")
     val notice=MutableStateFlow<String?>(null)
     val aspectDialog=MutableStateFlow(false)
     val pinRequest=MutableStateFlow<(() -> Unit)?>(null)
@@ -31,6 +34,9 @@ internal class DesktopServices(val playback:PlaybackController,val channels:Chan
     private val mainScope get()=scope
 
     init {
+        preferences.getString("windows_video_mode",null)?.let {saved->
+            WindowsVideoMode.entries.find {it.name==saved}?.let {fallbackVideoMode.value=it;(playback as? MpvPlaybackController)?.updateWindowsVideoMode(it)}
+        }
         profiles.recoverInterrupted()
         ParentalChannelGate.handler={channel,granted ->
             if(!protection.enabled || protection.unlocked || !ParentalChannelGate.isRestricted(channel))true
@@ -68,6 +74,11 @@ internal class DesktopServices(val playback:PlaybackController,val channels:Chan
     }
     fun message(text:String) {notice.value=text;noticeJob?.cancel();noticeJob=scope.launch {delay(3_500);notice.value=null}}
     fun changed(){revision.value++}
+    fun setWindowsVideoMode(mode:WindowsVideoMode) {
+        preferences.edit().putString("windows_video_mode",mode.name).apply()
+        fallbackVideoMode.value=mode
+        (playback as? MpvPlaybackController)?.updateWindowsVideoMode(mode)
+    }
     fun setAnimation(enabled:Boolean){preferences.edit().putBoolean("animation",enabled).apply();animation.value=enabled}
     fun setAspect(mode:VideoAspectMode) {
         preferences.edit().putString("aspect",mode.token).apply()

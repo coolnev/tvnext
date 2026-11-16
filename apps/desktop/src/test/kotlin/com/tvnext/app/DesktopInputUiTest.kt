@@ -180,6 +180,10 @@ class DesktopInputUiTest {
             onNodeWithTag("desktop-nav-HOME").performClick();waitForIdle()
             assertEquals(AppTab.HOME,root.childStack.value.active.configuration)
             onNodeWithTag("desktop-nav-SETTINGS").performClick();waitForIdle()
+            onNodeWithText("Декодирование и вывод видео").performClick()
+            for(label in listOf("Авто","Аппаратный — GPU","Аппаратный — совместимый","Программный"))assertTrue(onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty())
+            onNodeWithText("Аппаратный — совместимый").performClick()
+            assertEquals(WindowsVideoMode.HARDWARE_COMPATIBLE,runtime!!.windowsVideoMode.value)
             onNodeWithText("Архив").performClick()
             onNodeWithText("Максимальная глубина архива").assertIsDisplayed()
             onNodeWithText("Плейлисты").performClick()
@@ -206,6 +210,7 @@ class DesktopInputUiTest {
             val channelBounds=onNodeWithTag("desktop-channels-qa-1").fetchSemanticsNode().boundsInRoot
             val programmeBounds=onNodeWithTag("desktop-programmes-$current").fetchSemanticsNode().boundsInRoot
             assertTrue(kotlin.math.abs(channelBounds.center.y-programmeBounds.center.y)<4f,"Current programme must align with channel: $channelBounds / $programmeBounds")
+            onNodeWithTag("desktop-channel-progress-qa-1",useUnmergedTree=true).assertIsDisplayed()
             capture("desktop-channel-epg-alignment.png")
             // Browsing an old programme must not become the playback cursor when reopening the list.
             val browsed=current-1_800_000
@@ -253,6 +258,7 @@ class DesktopInputUiTest {
             waitUntil(timeoutMillis=10_000){player.state.value.item?.id=="qa-12"}
             assertEquals(PlaybackContentKind.LIVE,player.state.value.item?.kind)
             onNodeWithTag("desktop-channel-overlay").assertIsDisplayed()
+            onNodeWithTag("desktop-channel-progress-qa-12",useUnmergedTree=true).assertIsDisplayed()
             capture("desktop-hover-categories.png")
             onNodeWithTag("desktop-shell").performMouseInput {moveTo(androidx.compose.ui.geometry.Offset(width-50f,height/2f))}
             onNodeWithTag("desktop-channel-overlay").assertDoesNotExist()

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.layout.onSizeChanged
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.tvnext.app.core.app.*
 import com.tvnext.app.core.app.tab.*
@@ -258,22 +259,27 @@ internal fun DesktopTransport(controller:PlaybackController,onPause:()->Unit,onF
         if(model!=null) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 fun label(at:Long)=if(model.broadcast)formatTimeOfDay(at) else desktopTime(at)
-                Text(label(drag?.let(model::target) ?: model.position),style=MaterialTheme.typography.labelMedium)
-                Box(Modifier.weight(1f)) {
-                    Slider(value=drag ?: model.fraction(model.position),onValueChange={drag=it.coerceAtMost(model.fraction(model.seekEnd))},enabled=seekable,
+                Text(label(drag?.let(model::target) ?: model.position),style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=if(model.live!=null)17.dp else 0.dp))
+                BoxWithConstraints(Modifier.weight(1f).height(if(model.live!=null)47.dp else 30.dp)) {
+                    val density=androidx.compose.ui.platform.LocalDensity.current
+                    DesktopSlider(value=drag ?: model.fraction(model.position),onValueChange={drag=it.coerceAtMost(model.fraction(model.seekEnd))},enabled=seekable,
                         onValueChangeFinished={drag?.let {val target=model.target(it);if(model.broadcast)(controller as? TimeShiftController)?.seekToTime(target) else controller.seekTo(target)};drag=null},
-                        thumb={Box(Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary,androidx.compose.foundation.shape.CircleShape))},
-                        track={SliderDefaults.Track(it,Modifier.height(4.dp),thumbTrackGapSize=0.dp)},
-                        modifier=Modifier.fillMaxWidth().height(30.dp).semantics {contentDescription=desktopText("Перемотка")}.testTag("desktop-seek"))
+                        modifier=Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(30.dp).semantics {contentDescription=desktopText("Перемотка")},tag="desktop-seek")
                     model.live?.let {live->
                         val tint=MaterialTheme.colorScheme.error
-                        Canvas(Modifier.fillMaxWidth().height(30.dp).testTag("desktop-live-marker").semantics {contentDescription=uiText("Эфир")}) {
+                        var textWidth by remember {mutableIntStateOf(0)}
+                        val widthPx=with(density){maxWidth.toPx()}
+                        val markerX=with(density){6.dp.toPx()}+(widthPx-with(density){12.dp.toPx()})*model.fraction(live)
+                        Text(uiText("Эфир"),color=tint,style=MaterialTheme.typography.labelSmall,
+                            modifier=Modifier.offset {IntOffset((markerX-textWidth/2f).coerceIn(0f,(widthPx-textWidth).coerceAtLeast(0f)).toInt(),0)}
+                                .onSizeChanged {textWidth=it.width}.testTag("desktop-live-label"))
+                        Canvas(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(30.dp).testTag("desktop-live-marker").semantics {contentDescription=uiText("Эфир")}) {
                             val x=6.dp.toPx()+(size.width-12.dp.toPx())*model.fraction(live)
                             drawLine(tint,Offset(x,7.dp.toPx()),Offset(x,23.dp.toPx()),2.dp.toPx())
                         }
                     }
                 }
-                Text(if(model.live!=null)uiText("Эфир")+" "+label(model.live)+" · "+label(model.end) else label(model.end),style=MaterialTheme.typography.labelMedium)
+                Text(label(model.end),style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(top=if(model.live!=null)17.dp else 0.dp))
             }
         }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),verticalAlignment=Alignment.CenterVertically,
@@ -286,10 +292,8 @@ internal fun DesktopTransport(controller:PlaybackController,onPause:()->Unit,onF
                 verticalAlignment=Alignment.CenterVertically) {
                 DesktopIconButton("desktop-mute",uiText(if(state.isMuted)"Включить звук" else "Выключить звук"),
                     if(state.isMuted)DesktopIcon.MUTED else DesktopIcon.VOLUME){controller.setMuted(!state.isMuted)}
-                Slider(value=if(state.isMuted)0f else state.volume,onValueChange={controller.setMuted(false);controller.setVolume(it)},
-                    thumb={Box(Modifier.size(9.dp).background(MaterialTheme.colorScheme.primary,androidx.compose.foundation.shape.CircleShape))},
-                    track={SliderDefaults.Track(it,Modifier.height(3.dp),thumbTrackGapSize=0.dp)},
-                    modifier=Modifier.width(82.dp).height(30.dp).semantics {contentDescription=desktopText("Громкость")}.testTag("desktop-volume"))
+                DesktopSlider(value=if(state.isMuted)0f else state.volume,onValueChange={controller.setMuted(false);controller.setVolume(it)},
+                    modifier=Modifier.width(82.dp).height(30.dp).semantics {contentDescription=desktopText("Громкость")},tag="desktop-volume")
                 Text(if(state.isMuted)"0%" else "${(state.volume*100).toInt()}%",style=MaterialTheme.typography.labelSmall,modifier=Modifier.width(34.dp),textAlign=TextAlign.End)
             }
             if(state.item?.kind==PlaybackContentKind.ARCHIVE)OutlinedButton(onReturnLive,shape=RoundedCornerShape(4.dp),contentPadding=PaddingValues(horizontal=9.dp),

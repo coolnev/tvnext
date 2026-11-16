@@ -26,26 +26,7 @@ import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.ImageInfo
 
-/**
- * Desktop playback backend built on **libmpv** (libmpv-2.dll), rendering video
- * via the mpv render API into Compose [ImageBitmap] frames (the SOFTWARE
- * renderer of libmpv — `MPV_RENDER_API_TYPE_SW`).
- *
- * Why this shape (and NOT `--wid` / HWND embedding):
- *  - the mpv manual itself warns that HWND embedding "can cause various
- *    issues, especially with GUI toolkits" — and in practice a native D3D11
- *    swapchain in an AWT canvas froze the whole window when the layout/window
- *    size changed (Media Library / F11): the UI thread stayed alive but the
- *    native render blocked the window message loop;
- *  - rendering into Compose frames uses exactly the SAME stable path the
- *    libVLC SOFTWARE mode already uses (BGRA bitmap → Compose Image), so
- *    overlays, F11, immersive mode and diagnostics all work unchanged, and
- *    window resizes simply change the frame size;
- *  - DECODING stays on the GPU: `hwdec=auto` (d3d11va/dxva2/nvdec) is kept,
- *    only the final colour conversion/copy happens in software (dxva2-copy
- *    style) — weak CPUs are not forced to decode video.
- *  - runtime sources and applicable license notices are bundled with the portable build.
- */
+/** libmpv playback with shared ANGLE GPU textures and a compatible copy-back path. */
 class MpvPlaybackController(
     private val clock: () -> Long = { currentTimeMillis() },
     private val channelsRepository: com.tvnext.app.core.iptv.data.ChannelsRepository? = null,
@@ -78,6 +59,113 @@ class MpvPlaybackController(
 
     private val _decodeMode = MutableStateFlow(VideoDecodeMode.AUTO)
     val decodeMode: StateFlow<VideoDecodeMode> = _decodeMode.asStateFlow()
+
+    private val _windowsVideoMode=MutableStateFlow(WindowsVideoMode.AUTO)
+    val windowsVideoMode:StateFlow<WindowsVideoMode> = _windowsVideoMode.asStateFlow()
+    private var explicitVideoMode=false
+    private val _gpuOutput=MutableStateFlow(false)
+    val gpuOutput:StateFlow<Boolean> = _gpuOutput.asStateFlow()
+    private val _gpuRevision=MutableStateFlow(0L)
+    val gpuRevision:StateFlow<Long> = _gpuRevision.asStateFlow()
+    private val _renderStatus=MutableStateFlow("Совместимый вывод")
+    val renderStatus:StateFlow<String> = _renderStatus.asStateFlow()
+    @Volatile private var gpuWindow:java.awt.Window?=null
+    @Volatile private var gpuRenderer:MpvGpuRenderer?=null
+    @Volatile private var gpuFailed=false
+    @Volatile private var renderSuspended=false
+    @Volatile private var pipelineChanging=false
+    @Volatile private var restoreVideoAfterGpuInit=false
+    private var gpuWaitStarted=0L
+    private var lastGpuDraw=0L
+    private var gpuTimer:javax.swing.Timer?=null
+    fun updateWindowsVideoMode(mode:WindowsVideoMode) {
+        explicitVideoMode=true;_windowsVideoMode.value=mode;gpuFailed=false
+        _decodeMode.value=when(mode){WindowsVideoMode.SOFTWARE->VideoDecodeMode.SOFTWARE;WindowsVideoMode.AUTO->VideoDecodeMode.AUTO;else->VideoDecodeMode.HARDWARE}
+        mpv?.let {ctx->watcherScope.launch {loadMutex.withLock {prepareOutput(Mpv.load(),ctx);applyHwdec(Mpv.load(),ctx,currentItem ?: return@withLock)}}}
+    }
+    fun attachGpuWindow(window:java.awt.Window) {
+        gpuWindow=window;gpuWaitStarted=0L
+        gpuTimer?.stop()
+        gpuTimer=javax.swing.Timer(40) {
+            if(_gpuOutput.value && !renderSuspended && !pipelineChanging && System.nanoTime()-lastGpuDraw>250_000_000L) {
+                try {
+                    val initialized=gpuRenderer?.initialized==true
+                    if(gpuRenderer?.service(window)==true){
+                        if(!initialized && restoreVideoAfterGpuInit)restoreVideoTrackAsync()
+                        gpuWaitStarted=0L;_renderStatus.value=gpuRenderer?.description.orEmpty()
+                    }
+                    else if(window.isShowing)checkGpuWait()
+                }catch(error:Exception){fallbackGpu(error.message ?: "Ошибка GPU")}
+            }
+        }.apply {start()}
+        mpv?.let {ctx->watcherScope.launch {loadMutex.withLock {prepareOutput(Mpv.load(),ctx)}}}
+    }
+    fun detachGpuWindow(window:java.awt.Window) {if(gpuWindow===window){gpuTimer?.stop();gpuTimer=null;gpuWindow=null}}
+    fun requestGpuDraw(){_gpuRevision.update {it+1}}
+    fun drawGpu(canvas:org.jetbrains.skia.Canvas,width:Int,height:Int) {
+        if(renderSuspended || pipelineChanging)return
+        val host=gpuWindow ?: return
+        lastGpuDraw=System.nanoTime()
+        val renderer=gpuRenderer ?: return
+        try {
+            val wasInitialized=renderer.initialized
+            if(renderer.draw(canvas,host,width,height,generation.toLong(),sourceReady)) {
+                if(!wasInitialized && restoreVideoAfterGpuInit)restoreVideoTrackAsync()
+                gpuWaitStarted=0L
+                _renderStatus.value=renderer.description
+            } else {
+                checkGpuWait()
+            }
+        }catch(error:Exception){fallbackGpu(error.message ?: "Ошибка GPU")}
+    }
+    private fun restoreVideoTrack(api:Mpv,ctx:Pointer) {
+        val track=getString(api,ctx,"vid")?.takeUnless {it=="no"} ?: "auto"
+        api.mpv_set_property_string(ctx,"vid","no")
+        api.mpv_set_property_string(ctx,"vid",track)
+    }
+    private fun restoreVideoTrackAsync() {
+        restoreVideoAfterGpuInit=false
+        mpv?.let {ctx->watcherScope.launch {loadMutex.withLock {restoreVideoTrack(Mpv.load(),ctx)}}}
+    }
+    private fun checkGpuWait() {
+        if(gpuWaitStarted==0L)gpuWaitStarted=System.nanoTime()
+        if(System.nanoTime()-gpuWaitStarted>2_000_000_000L)fallbackGpu("ANGLE / GPU недоступен")
+    }
+    private fun fallbackGpu(reason:String) {
+        if(gpuFailed)return
+        gpuFailed=true;_renderStatus.value="Совместимый вывод: $reason"
+        mpv?.let {ctx->watcherScope.launch {loadMutex.withLock {prepareOutput(Mpv.load(),ctx);applyHwdec(Mpv.load(),ctx,currentItem ?: return@withLock)}}}
+    }
+    private fun closeGpu() {
+        val renderer=gpuRenderer ?: return
+        val action={runCatching {renderer.close()};gpuRenderer=null}
+        if(javax.swing.SwingUtilities.isEventDispatchThread())action() else javax.swing.SwingUtilities.invokeAndWait {action()}
+    }
+    private fun prepareOutput(api:Mpv,ctx:Pointer) {
+        val wantGpu=_windowsVideoMode.value.gpu && !gpuFailed && WindowsGpuRuntime.prepared && !java.awt.GraphicsEnvironment.isHeadless() && com.sun.jna.Platform.isWindows()
+        if(wantGpu && gpuRenderer!=null)return
+        if(!wantGpu && renderContext!=null) {
+            if(!gpuFailed)_renderStatus.value=if(_windowsVideoMode.value==WindowsVideoMode.SOFTWARE)"Программный вывод" else "Совместимый вывод"
+            return
+        }
+        val replacing=renderContext!=null || gpuRenderer!=null
+        pipelineChanging=true
+        try {
+            stopRenderThread()
+            closeGpu()
+            renderContext?.let {api.mpv_render_context_set_update_callback(it,null,null);api.mpv_render_context_free(it)}
+            renderContext=null;frameStorage?.close();frameStorage=null;_frames.value=null
+            _gpuOutput.value=wantGpu
+            if(wantGpu) {
+                restoreVideoAfterGpuInit=replacing && currentItem!=null
+                gpuRenderer=MpvGpuRenderer(api,ctx,::requestGpuDraw);_renderStatus.value="GPU • подготовка"
+            } else {
+                createRenderContext(api,ctx)
+                if(replacing && currentItem!=null)restoreVideoTrack(api,ctx)
+                if(!gpuFailed)_renderStatus.value=if(_windowsVideoMode.value==WindowsVideoMode.SOFTWARE)"Программный вывод" else "Совместимый вывод"
+            }
+        }finally {pipelineChanging=false;requestGpuDraw()}
+    }
 
     // ---- DesktopVideoSurface ---------------------------------------------------
     // Video is rendered into Compose frames (NOT a native HWND), so the surface
@@ -271,6 +359,7 @@ class MpvPlaybackController(
     }
 
     override fun release() {
+        gpuTimer?.stop();gpuTimer=null
         timeShift?.cancel()
         generation++
         currentItem = null
@@ -279,6 +368,7 @@ class MpvPlaybackController(
         prefetchServer = null
         prefetchLocalUrl = null
         watcherScope.cancel()
+        closeGpu()
         stopRenderThread()
         stopEventThread()
         renderContext?.let { rc -> runCatching { Mpv.load().mpv_render_context_free(rc) } }
@@ -313,7 +403,7 @@ class MpvPlaybackController(
             // libmpv requires an initialized client before a render context exists.
             try {
                 configure(api, created, item)
-                createRenderContext(api, created)
+                prepareOutput(api, created)
             } catch(error:Exception) {
                 api.mpv_terminate_destroy(created);mpv=null
                 _state.update {it.copy(state=PlaybackState.ERROR,error=error.message ?: "libmpv init failed")}
@@ -321,6 +411,7 @@ class MpvPlaybackController(
             }
             created
         }
+        prepareOutput(api,ctx)
         applyHwdec(api, ctx, item)
         applyOutputPreferences(api,ctx)
         api.mpv_set_property_string(ctx,"keep-open",if(item.kind==PlaybackContentKind.LIVE)"yes" else "no")
@@ -411,7 +502,7 @@ class MpvPlaybackController(
             // Render API is used instead of a video window (see class doc):
             // frames are delivered to Compose via the SW renderer.
             "vo" to "libmpv",
-            "hwdec" to if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto-copy",
+            "hwdec" to if(_windowsVideoMode.value==WindowsVideoMode.SOFTWARE)"no" else if(gpuWindow!=null && !gpuFailed && _windowsVideoMode.value.gpu)_windowsVideoMode.value.hwdec else "auto-copy",
             "user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
         )
         System.getProperty("tvnext.mpv.audioOutput")?.takeUnless {it.isBlank() || it=="auto"}?.let {
@@ -454,7 +545,7 @@ class MpvPlaybackController(
     }
 
     private fun applyHwdec(api: Mpv, ctx: Pointer, item: PlaybackItem) {
-        val hwdec = if (_decodeMode.value == VideoDecodeMode.SOFTWARE) "no" else "auto-copy"
+        val hwdec = if(_windowsVideoMode.value==WindowsVideoMode.SOFTWARE)"no" else if(_gpuOutput.value)_windowsVideoMode.value.hwdec else "auto-copy"
         runCatching { api.mpv_set_property_string(ctx, "hwdec", hwdec) }
     }
 
@@ -500,6 +591,7 @@ class MpvPlaybackController(
      * video simply freezes for the ~100 ms the new window needs to appear.
      */
     fun suspendRendering() {
+        renderSuspended=true;restoreVideoAfterGpuInit=gpuRenderer?.initialized==true;closeGpu()
         renderAlive = false
         synchronized(renderMonitor) { renderMonitor.notifyAll() }
         renderThread?.join(500L)
@@ -508,6 +600,11 @@ class MpvPlaybackController(
 
     /** Resumes frame production after the window round-trip completed. */
     fun resumeRendering() {
+        renderSuspended=false
+        if(_gpuOutput.value) {
+            mpv?.let {ctx->if(gpuRenderer==null)gpuRenderer=MpvGpuRenderer(Mpv.load(),ctx,::requestGpuDraw)}
+            requestGpuDraw();return
+        }
         if (renderThread?.isAlive == true) return
         val api = runCatching { Mpv.load() }.getOrNull() ?: return
         if (renderContext == null) return
@@ -773,7 +870,7 @@ class MpvPlaybackController(
             actualMode = if (actualHardware) PlayerDiagnostics.MODE_HARDWARE else PlayerDiagnostics.MODE_SOFTWARE,
             fallback = !actualHardware && requested != PlayerDiagnostics.MODE_SOFTWARE,
             decoder = if (actualHardware) hwdecCurrent else "avcodec (software)",
-            videoOutput = "libmpv render (SW)",
+            videoOutput = if(gpuRenderer?.initialized==true)gpuRenderer!!.description else if(_gpuOutput.value)"GPU • подготовка" else if(gpuFailed)"libmpv render (SW) • ${_renderStatus.value}" else "libmpv render (SW)",
             codec = videoCodec?.takeIf { it.isNotBlank() },
             resolution = if (width > 0 && height > 0) "${width}x${height}" else "n/a",
             fps = fps?.let(::frameRateNumber),
@@ -868,7 +965,7 @@ class MpvPlaybackController(
     // ---- decode mode (settings) -----------------------------------------------------
 
     override fun updateDecodeMode(mode: VideoDecodeMode) {
-        _decodeMode.value = mode
+        if(!explicitVideoMode){_decodeMode.value = mode;_windowsVideoMode.value=WindowsVideoMode.legacy(mode)}
     }
 
     override fun updateNetworkCachingMs(ms:Long) {networkCachingMs=ms.coerceIn(1000,30_000)}

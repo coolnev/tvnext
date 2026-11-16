@@ -38,6 +38,10 @@ internal fun DesktopExperience(hostWindow:java.awt.Window,root:DefaultAppCompone
     immersive:Boolean,onImmersiveChange:(Boolean)->Unit,showDiagnostics:Boolean,onToggleDiagnostics:()->Unit) {
     val koin=GlobalContext.get()
     val runtime=remember {koin.get<DesktopServices>()}
+    DisposableEffect(runtime.playback,hostWindow) {
+        (runtime.playback as? MpvPlaybackController)?.attachGpuWindow(hostWindow)
+        onDispose {(runtime.playback as? MpvPlaybackController)?.detachGpuWindow(hostWindow)}
+    }
     val page by runtime.page.collectAsState()
     val notice by runtime.notice.collectAsState()
     val animation by runtime.animation.collectAsState()
@@ -163,9 +167,13 @@ internal fun DesktopSettings(component:SettingsComponent,runtime:DesktopServices
     ),sectionContent={section,current ->when(section) {
         0->{
             Text(uiText("Воспроизведение"),style=MaterialTheme.typography.titleLarge)
-            DesktopRow("Декодирование видео",uiText(current.settings.videoDecodeMode.displayName)) {
-                options("Декодирование видео",VideoDecodeMode.entries.map {uiText(it.displayName) to {component.dispatch(SettingsIntent.VideoDecodeModeChanged(it))}})
+            val mode by runtime.windowsVideoMode.collectAsState()
+            val renderStatus by runtime.videoRenderStatus.collectAsState()
+            DesktopRow(desktopText("Декодирование и вывод видео"),desktopText(mode.label)) {
+                options(desktopText("Декодирование и вывод видео"),WindowsVideoMode.entries.map {desktopText(it.label) to {runtime.setWindowsVideoMode(it)}})
             }
+            Text(desktopText("Совместимый режим сохраняет аппаратное декодирование и вывод через память."),style=MaterialTheme.typography.bodySmall)
+            if(renderStatus.isNotBlank())Text(desktopText(renderStatus),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             DesktopRow("Режим звука",audioModeLabel(current.settings.audioOutputMode)) {
                 options("Режим звука",AudioOutputMode.entries.map {mode ->uiText(when(mode){AudioOutputMode.AUTO->"Авто";AudioOutputMode.PCM_STEREO->"PCM стерео";AudioOutputMode.PASSTHROUGH->"Передавать на устройство"}) to
                     {component.dispatch(SettingsIntent.AudioOutputModeChanged(mode))}})

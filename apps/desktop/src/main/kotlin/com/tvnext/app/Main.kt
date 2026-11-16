@@ -3,6 +3,11 @@ package com.tvnext.app
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.key.Key
@@ -26,6 +32,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.DefaultComponentContext
@@ -151,6 +158,7 @@ internal fun startDesktopDependencies() = startKoin {
         }.koin
 
 fun main() {
+    com.tvnext.app.core.player.WindowsGpuRuntime.prepare()
     com.tvnext.app.core.iptv.data.AndroidCatalogBootstrap.pending.value=System.getProperty("tvnext.bootstrap")!="false"
     // Wipe the data directory if a previous «Сбросить все данные» left a
     // pending marker. Must run BEFORE the database and caches are opened.
@@ -163,14 +171,9 @@ fun main() {
     Runtime.getRuntime().addShutdownHook(Thread { KeepAwake.stop() })
 
     application {
-    // Enable interop blending so Compose overlays (channel name, error,    // controls) keep rendering above the native HWND video surface used by the
-    // hardware decode path. Must be set before the first Compose scene is
-    // created. (Note: Compose content cannot be drawn ABOVE a D3D11 video
-    // surface, so in hardware mode overlays live in the bar above the video;
-    // blending still matters for GDI-based interop surfaces.)
+    // Legacy Swing interop remains available for unsupported playback backends.
     System.setProperty("compose.interop.blending", "true")
-    // mpv publishes ordinary Compose images; let Skiko select the supported GPU backend.
-    // An explicit skiko.renderApi remains available for diagnostics.
+    // WindowsGpuRuntime selects ANGLE before Skia is initialized.
 
     val koin = remember {startDesktopDependencies()}
 
@@ -235,7 +238,7 @@ fun main() {
                 com.tvnext.app.feature.settings.domain.StartScreen.TV_GUIDE -> com.tvnext.app.core.app.tab.AppTab.TV_GUIDE
                 com.tvnext.app.feature.settings.domain.StartScreen.MEDIA_LIBRARY -> com.tvnext.app.core.app.tab.AppTab.MEDIA_LIBRARY
             },
-            onExitRequested = ::exitApplication,
+            onExitRequested = { (koin.getOrNull<PlaybackController>() as? MpvPlaybackController)?.suspendRendering();exitApplication() },
             mainContext = koin.get(named("mainDispatcher")),
         )
     }
@@ -305,20 +308,19 @@ fun main() {
         windowState.size = DpSize(width, height)
     }
 
-    // The mpv render thread keeps writing Skia bitmaps while the window is
-    // being re-created on F11. If it races the destruction of the old window's
-    // OpenGL surface, Skiko corrupts the heap (Windows 0xC0000374 → crash).
-    // Pause rendering around the window round-trip and resume afterwards.
     val mpvController = remember {
         koin.getOrNull<PlaybackController>() as? MpvPlaybackController
     }
-    LaunchedEffect(fullscreen) {
-        delay(150) // let the new window compose
-        mpvController?.resumeRendering()
-    }
+    var restoredPlacement by remember {mutableStateOf(androidx.compose.ui.window.WindowPlacement.Floating)}
     fun toggleFullscreen() {
-        mpvController?.suspendRendering()
-        fullscreen = !fullscreen
+        if(!fullscreen) {
+            restoredPlacement=windowState.placement
+            windowState.placement=androidx.compose.ui.window.WindowPlacement.Fullscreen
+            fullscreen=true
+        } else {
+            windowState.placement=restoredPlacement
+            fullscreen=false
+        }
     }
 
     // Window/taskbar icon, loaded from the bundled resource (tvnext.png).
@@ -333,53 +335,44 @@ fun main() {
         }.getOrNull()
     }
 
-    // Fullscreen switches to a dedicated undecorated window (the design that
-    // works): `WindowPlacement.Fullscreen` on the same window leaves the OS
-    // frame (minimize/maximize/close buttons) visible — that must not happen.
-    // (Double-click → fullscreen is handled by Compose itself on the software/
-    // libmpv render path; the libVLC backend wires onVideoDoubleClick above.)
-
-    if (fullscreen) {
-        FullscreenWindow(
-            rootComponent = rootComponent,
-            onCloseRequest = ::exitApplication,
-            onExitFullscreen = { toggleFullscreen() },
-            appIcon = appIcon,
-            immersive = immersive,
-            onImmersiveChange = { immersive = it },
-            showDiagnostics = showDiagnostics,
-            onToggleDiagnostics = { showDiagnostics = !showDiagnostics },
-            logoLoader = koin.getOrNull(),
-        )
-    } else {
-        Window(
-            onCloseRequest = ::exitApplication,
-            state = windowState,
-            title = "TVNext",
-            icon = appIcon?.let { BitmapPainter(it) },
-        ) {
-            DisposableEffect(Unit) {
-                if (DEBUG_ENABLED) println("[TVNext] normal window CREATED")
-                onDispose {
-                    if (DEBUG_ENABLED) println("[TVNext] normal window DISPOSED")
-                }
+    // Keep one native window and ANGLE context for F11; only its bounds change.
+    Window(
+        onCloseRequest = {mpvController?.suspendRendering();exitApplication()},
+        state=windowState,undecorated=true,title="TVNext",
+        icon=appIcon?.let {BitmapPainter(it)},
+    ) {
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
+            if(!fullscreen)WindowsTitleBar(windowState,{mpvController?.suspendRendering();exitApplication()})
+            Box(Modifier.weight(1f).fillMaxSize()) {
+                AppContent(
+                    hostWindow=window,rootComponent=rootComponent,
+                    onToggleFullscreen={toggleFullscreen()},isFullscreen=fullscreen,
+                    startFullscreenApplied=startFullscreenApplied,
+                    onStartFullscreenApplied={startFullscreenApplied=true},
+                    immersive=immersive,onImmersiveChange={immersive=it},
+                    showDiagnostics=showDiagnostics,onToggleDiagnostics={showDiagnostics=!showDiagnostics},
+                    logoLoader=koin.getOrNull(),
+                )
             }
-            AppContent(
-                hostWindow = window,
-                rootComponent = rootComponent,
-                onToggleFullscreen = { toggleFullscreen() },
-                isFullscreen = false,
-                startFullscreenApplied = startFullscreenApplied,
-                onStartFullscreenApplied = { startFullscreenApplied = true },
-                immersive = immersive,
-                onImmersiveChange = { immersive = it },
-                showDiagnostics = showDiagnostics,
-                onToggleDiagnostics = { showDiagnostics = !showDiagnostics },
-                logoLoader = koin.getOrNull(),
-            )
         }
     }
 }
+}
+
+@Composable
+private fun androidx.compose.ui.window.WindowScope.WindowsTitleBar(state:androidx.compose.ui.window.WindowState,onClose:()->Unit) {
+    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().height(32.dp)
+        .background(androidx.compose.ui.graphics.Color(0xFF151B20)),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+        WindowDraggableArea(Modifier.weight(1f).fillMaxSize()) {
+            Box(Modifier.fillMaxSize(),contentAlignment=androidx.compose.ui.Alignment.CenterStart) {
+                androidx.compose.material3.Text("TVNext",color=androidx.compose.ui.graphics.Color.White,modifier=Modifier.padding(horizontal=12.dp))
+            }
+        }
+        androidx.compose.material3.TextButton({state.isMinimized=true},modifier=Modifier.width(42.dp).focusProperties {canFocus=false}) {androidx.compose.material3.Text("—",color=androidx.compose.ui.graphics.Color.White)}
+        androidx.compose.material3.TextButton({state.placement=if(state.placement==androidx.compose.ui.window.WindowPlacement.Maximized)
+            androidx.compose.ui.window.WindowPlacement.Floating else androidx.compose.ui.window.WindowPlacement.Maximized},modifier=Modifier.width(42.dp).focusProperties {canFocus=false}) {androidx.compose.material3.Text("□",color=androidx.compose.ui.graphics.Color.White)}
+        androidx.compose.material3.TextButton(onClose,modifier=Modifier.width(42.dp).focusProperties {canFocus=false}) {androidx.compose.material3.Text("×",color=androidx.compose.ui.graphics.Color.White)}
+    }
 }
 
 /** Debug-seed: LIVE playlist (vivamax, крупный EPG для проверки). */
@@ -414,56 +407,6 @@ private fun initialWindowSize(
     }
     return size.first.coerceAtMost(maximumWidth.toDouble()).toFloat().dp to
         size.second.coerceAtMost(maximumHeight.toDouble()).toFloat().dp
-}
-
-@Composable
-private fun FullscreenWindow(
-    rootComponent: DefaultAppComponent,
-    onCloseRequest: () -> Unit,
-    onExitFullscreen: () -> Unit,
-    appIcon: androidx.compose.ui.graphics.ImageBitmap?,
-    immersive: Boolean,
-    onImmersiveChange: (Boolean) -> Unit,
-    showDiagnostics: Boolean,
-    onToggleDiagnostics: () -> Unit,
-    logoLoader: LogoImageLoader?,
-) {
-    Window(
-        onCloseRequest = onCloseRequest,
-        title = "TVNext",
-        undecorated = true,
-        icon = appIcon?.let { BitmapPainter(it) },
-    ) {
-        DisposableEffect(Unit) {
-            if (DEBUG_ENABLED) println("[TVNext] fullscreen window CREATED")
-            onDispose {
-                if (DEBUG_ENABLED) println("[TVNext] fullscreen window DISPOSED")
-            }
-        }
-        val screenBounds = remember {
-            java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration.bounds
-        }
-        LaunchedEffect(Unit) {
-            window.setBounds(screenBounds)
-            window.toFront()
-            // The undecorated fullscreen window does not automatically get
-            // KEYBOARD focus: without this, no key event reaches the app.
-            window.requestFocus()
-        }
-        AppContent(
-            hostWindow = window,
-            rootComponent = rootComponent,
-            onToggleFullscreen = onExitFullscreen,
-            isFullscreen = true,
-            startFullscreenApplied = true,
-            onStartFullscreenApplied = {},
-            immersive = immersive,
-            onImmersiveChange = onImmersiveChange,
-            showDiagnostics = showDiagnostics,
-            onToggleDiagnostics = onToggleDiagnostics,
-            logoLoader = logoLoader,
-        )
-    }
 }
 
 @Composable

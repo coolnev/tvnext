@@ -43,6 +43,10 @@ actual fun NativePlayerSurface(
     modifier: Modifier,
     useTextureView: Boolean,
 ) {
+    if(controller is MpvPlaybackController) {
+        val gpu by controller.gpuOutput.collectAsState()
+        if(gpu){MpvGpuSurface(controller,modifier);return}
+    }
     val desktopController = controller as? DesktopVideoSurface
     if (desktopController == null) {
         Box(modifier = modifier.background(Color.Black))
