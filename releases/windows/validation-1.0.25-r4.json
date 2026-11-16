@@ -84,5 +84,8 @@
   "fullComposeFullscreenVerified": false,
   "fullSkiaGpuCompositionVerified": false,
   "downloadUrl": "https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r4/TVNext-1.0.25-windows-x64-portable-r4.zip",
-  "githubDownloadVerified": false
+  "githubDownloadVerified": true,
+  "sourceCommit": "b84d34032de9df00e9e88c437848f04112771ad3",
+  "githubDownloadVerifiedDate": "2026-11-16",
+  "publicationWorkflow": "https://github.com/coolnev/tvnext/actions/runs/43863127705"
 }

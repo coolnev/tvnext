@@ -16,7 +16,7 @@
 
 ZIP /workspace/TVNext-1.0.25-windows-x64-portable-r4.zip, 178596957bytes,SHA5e2726d4282bf35ddc8af3d2c3e50c5758e9b5a9c43d9e905428384dcc9a5330. CRC/hash passed. Отr3 отличаются только player.jar и README_RU.txt; desktop.jar, DLL/runtime/dependencies прежние. Android APK SHA f7d4046e228ed974fcc9a357d83ef33a163956d39457c6fa3c46c8b85d9a5f72 прежний. Docs RELEASE_WINDOWS_1.0.25_R4_RU.md, manifest releases/windows/validation-1.0.25-r4.json и PNG/native evidence в validation-1.0.25-r4/.
 
-ПУБЛИКАЦИЯ ОЖИДАЕТСЯ r4: новый windows-v1.0.25-r4 tag, source/main+ZIPparts64MiB, Windows-only workflow. Старые tags/assets не двигать. URL https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r4/TVNext-1.0.25-windows-x64-portable-r4.zip . Перед ответом Actions assemble/windows success, скачивание публичного ZIP обратно с проверкой размера/SHA и обновление manifest/handoff.
+ПУБЛИКАЦИЯ ЗАВЕРШЕНА r4: GitHub Actions43863127705 assemble/windows success, publication-1.0.25-r4.json на main. Source/main и tag windows-v1.0.25-r4 опубликованы; source commitb84d34032de9df00e9e88c437848f04112771ad3. Публичный ZIP скачан обратно:178596957bytes,SHA5e2726d4282bf35ddc8af3d2c3e50c5758e9b5a9c43d9e905428384dcc9a5330 совпал. Пользователю выдавать https://github.com/coolnev/tvnext/releases/download/windows-v1.0.25-r4/TVNext-1.0.25-windows-x64-portable-r4.zip . Старые tags/assets и Android сохранены. Перед распаковкой закрыть старую копию (Alt+F4), перенести/сохранить data.
 
 ## Windows 1.0.25 r3 — ориентация GPU и предыдущий канал, 16.11.2026
 
